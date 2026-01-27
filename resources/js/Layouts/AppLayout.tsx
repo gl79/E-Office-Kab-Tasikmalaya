@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import Header from '@/Components/layout/Header';
 import Sidebar from '@/Components/layout/Sidebar';
 import Footer from '@/Components/layout/Footer';
+import { MenuItem } from '@/config/menu';
 
 interface AppLayoutProps {
     /** Main content of the page */
@@ -14,8 +15,16 @@ interface AppLayoutProps {
     headerLogo?: ReactNode;
     /** Custom right content for header (e.g., user dropdown) */
     headerRightContent?: ReactNode;
-    /** Custom sidebar content (e.g., navigation menu) */
+    /** 
+     * Custom sidebar content. 
+     * If provided, completely overrides the menu rendering.
+     */
     sidebarContent?: ReactNode;
+    /**
+     * Custom menu items for sidebar.
+     * Use this to filter or customize menu without replacing the whole sidebar.
+     */
+    sidebarMenuItems?: MenuItem[];
     /** Custom footer content */
     footerContent?: ReactNode;
 }
@@ -24,7 +33,7 @@ interface AppLayoutProps {
  * AppLayout Component
  * 
  * Layout utama (App Shell) untuk aplikasi E-Office.
- * Menggabungkan Header, Sidebar, Main Content, dan Footer.
+ * Menggabungkan Header, Sidebar dengan menu, Main Content, dan Footer.
  * Kompatibel dengan Inertia.js dan tidak menyebabkan full page reload.
  * 
  * Struktur:
@@ -32,13 +41,13 @@ interface AppLayoutProps {
  * │                   Header                       │
  * ├──────────────┬────────────────────────────────┤
  * │   Sidebar    │        Main Content            │
- * │              │         (children)             │
+ * │   (menu)     │         (children)             │
  * ├──────────────┴────────────────────────────────┤
  * │                   Footer                       │
  * └───────────────────────────────────────────────┘
  * 
  * @example
- * // Basic usage
+ * // Basic usage - renders default menu
  * <AppLayout>
  *   <h1>Page Content</h1>
  * </AppLayout>
@@ -50,8 +59,8 @@ interface AppLayoutProps {
  * </AppLayout>
  * 
  * @example
- * // With custom sidebar menu
- * <AppLayout sidebarContent={<NavigationMenu />}>
+ * // With filtered menu items (future: role-based)
+ * <AppLayout sidebarMenuItems={filteredMenuItems}>
  *   <h1>Page Content</h1>
  * </AppLayout>
  */
@@ -62,6 +71,7 @@ export default function AppLayout({
     headerLogo,
     headerRightContent,
     sidebarContent,
+    sidebarMenuItems,
     footerContent,
 }: AppLayoutProps) {
     return (
@@ -76,7 +86,7 @@ export default function AppLayout({
             <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar */}
                 {showSidebar && (
-                    <Sidebar>
+                    <Sidebar items={sidebarMenuItems}>
                         {sidebarContent}
                     </Sidebar>
                 )}
