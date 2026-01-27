@@ -3,9 +3,6 @@
  * 
  * Struktur data menu yang akan dirender di sidebar.
  * Bersifat statis dan tidak bergantung pada role/permission.
- * 
- * Untuk menambahkan role-based filtering di masa depan,
- * cukup tambahkan field `permission?: string` pada MenuItem.
  */
 
 export interface MenuItem {
@@ -17,20 +14,10 @@ export interface MenuItem {
     icon?: string;
     /** Nested submenu items */
     children?: MenuItem[];
-    // Future fields:
-    // permission?: string;
-    // badge?: string | number;
 }
 
 /**
  * Main menu configuration
- * 
- * Struktur menu:
- * - Dashboard
- * - Data Master (submenu)
- * - Persuratan (submenu)
- * - Cuti
- * - Penjadwalan (submenu)
  */
 export const menuItems: MenuItem[] = [
     {
@@ -77,11 +64,6 @@ export const menuItems: MenuItem[] = [
                 label: 'Surat Keluar',
                 href: '/persuratan/surat-keluar',
                 icon: 'send',
-            },
-            {
-                label: 'Sampah',
-                href: '/persuratan/sampah',
-                icon: 'trash',
             },
         ],
     },

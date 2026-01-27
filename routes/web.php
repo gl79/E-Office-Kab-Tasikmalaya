@@ -8,24 +8,14 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Route aplikasi E-Office.
-| Semua route kecuali auth (login/logout) dilindungi middleware 'auth'.
-|
 */
 
-/**
- * Root redirect
- * - Jika belum login: redirect ke login (handled by auth middleware)
- * - Jika sudah login: redirect ke dashboard
- */
 Route::get('/', function () {
     return redirect()->route('dashboard');
 })->middleware('auth');
 
 /**
  * Protected Routes
- * Semua route di bawah ini memerlukan autentikasi
  */
 Route::middleware('auth')->group(function () {
     // Dashboard
@@ -39,37 +29,62 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ================================================================
-    // PLACEHOLDER ROUTES - akan diisi sesuai modul yang dikembangkan
+    // DATA MASTER
     // ================================================================
+    Route::prefix('master')->name('master.')->group(function () {
+        Route::get('/kepegawaian', function () {
+            return Inertia::render('Master/Kepegawaian/Index');
+        })->name('kepegawaian.index');
 
-    // Master Data
-    // Route::prefix('master')->name('master.')->group(function () {
-    //     Route::resource('kepegawaian', KepegawaianController::class);
-    //     Route::resource('pengguna', PenggunaController::class);
-    //     Route::resource('unit-kerja', UnitKerjaController::class);
-    //     Route::resource('indeks-surat', IndeksSuratController::class);
-    // });
+        Route::get('/pengguna', function () {
+            return Inertia::render('Master/Pengguna/Index');
+        })->name('pengguna.index');
 
-    // Persuratan
-    // Route::prefix('persuratan')->name('persuratan.')->group(function () {
-    //     Route::resource('surat-masuk', SuratMasukController::class);
-    //     Route::resource('surat-keluar', SuratKeluarController::class);
-    //     Route::resource('sampah', SampahController::class);
-    // });
+        Route::get('/unit-kerja', function () {
+            return Inertia::render('Master/UnitKerja/Index');
+        })->name('unit-kerja.index');
 
-    // Cuti
-    // Route::resource('cuti', CutiController::class);
+        Route::get('/indeks-surat', function () {
+            return Inertia::render('Master/IndeksSurat/Index');
+        })->name('indeks-surat.index');
+    });
 
-    // Penjadwalan
-    // Route::prefix('penjadwalan')->name('penjadwalan.')->group(function () {
-    //     Route::resource('jadwal', JadwalController::class);
-    //     Route::resource('tentatif', TentatifController::class);
-    //     Route::resource('definitif', DefinitifController::class);
-    // });
+    // ================================================================
+    // PERSURATAN
+    // ================================================================
+    Route::prefix('persuratan')->name('persuratan.')->group(function () {
+        Route::get('/surat-masuk', function () {
+            return Inertia::render('Persuratan/SuratMasuk/Index');
+        })->name('surat-masuk.index');
+
+        Route::get('/surat-keluar', function () {
+            return Inertia::render('Persuratan/SuratKeluar/Index');
+        })->name('surat-keluar.index');
+    });
+
+    // ================================================================
+    // CUTI
+    // ================================================================
+    Route::get('/cuti', function () {
+        return Inertia::render('Cuti/Index');
+    })->name('cuti.index');
+
+    // ================================================================
+    // PENJADWALAN
+    // ================================================================
+    Route::prefix('penjadwalan')->name('penjadwalan.')->group(function () {
+        Route::get('/jadwal', function () {
+            return Inertia::render('Penjadwalan/Jadwal/Index');
+        })->name('jadwal.index');
+
+        Route::get('/tentatif', function () {
+            return Inertia::render('Penjadwalan/Tentatif/Index');
+        })->name('tentatif.index');
+
+        Route::get('/definitif', function () {
+            return Inertia::render('Penjadwalan/Definitif/Index');
+        })->name('definitif.index');
+    });
 });
 
-/**
- * Auth Routes (login, logout, register, etc)
- * Dihandle oleh auth.php
- */
 require __DIR__ . '/auth.php';
