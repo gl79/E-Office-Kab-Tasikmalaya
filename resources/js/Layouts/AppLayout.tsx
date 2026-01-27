@@ -1,8 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
-import Header from '@/Components/layout/Header';
-import Sidebar from '@/Components/layout/Sidebar';
-import Footer from '@/Components/layout/Footer';
+import { Header, Sidebar, Footer } from '@/Components/layout';
 import { MenuItem } from '@/config/menu';
 import { PageProps } from '@/types';
 import { Button, Modal, ToastProvider, useToast } from '@/Components/ui';
