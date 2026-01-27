@@ -1,40 +1,26 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import Header from '@/Components/layout/Header';
 import Sidebar from '@/Components/layout/Sidebar';
 import Footer from '@/Components/layout/Footer';
 import { MenuItem } from '@/config/menu';
 import { PageProps } from '@/types';
+import { Button, Modal, ToastProvider, useToast } from '@/Components/ui';
 
 interface AppLayoutProps {
-    /** Main content of the page */
     children: ReactNode;
-    /** Show/hide sidebar (default: true) */
     showSidebar?: boolean;
-    /** Show/hide footer (default: true) */
     showFooter?: boolean;
-    /** Custom logo for header */
     headerLogo?: ReactNode;
-    /** 
-     * Custom sidebar content. 
-     * If provided, completely overrides the menu rendering.
-     */
     sidebarContent?: ReactNode;
-    /**
-     * Custom menu items for sidebar.
-     * Use this to filter or customize menu without replacing the whole sidebar.
-     */
     sidebarMenuItems?: MenuItem[];
-    /** Custom footer content */
     footerContent?: ReactNode;
 }
 
 /**
- * AppLayout Component
- * 
- * Layout utama (App Shell) untuk aplikasi E-Office.
+ * Inner component yang menggunakan Toast context
  */
-export default function AppLayout({
+function AppLayoutInner({
     children,
     showSidebar = true,
     showFooter = true,
@@ -43,11 +29,25 @@ export default function AppLayout({
     sidebarMenuItems,
     footerContent,
 }: AppLayoutProps) {
-    const { auth } = usePage<PageProps>().props;
+    const { auth, flash } = usePage<PageProps & { flash: { success?: string; error?: string } }>().props;
     const user = auth.user;
+    const { showToast } = useToast();
+
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+    // Show flash messages as toast
+    useEffect(() => {
+        if (flash?.success) {
+            showToast('success', flash.success);
+        }
+        if (flash?.error) {
+            showToast('error', flash.error);
+        }
+    }, [flash]);
 
     // Logout handler
     const handleLogout = () => {
+        setShowLogoutModal(false);
         router.post(route('logout'));
     };
 
@@ -66,7 +66,7 @@ export default function AppLayout({
 
             {/* Logout Button */}
             <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="
                     inline-flex items-center gap-2
                     px-3 py-2 rounded-lg
@@ -86,34 +86,83 @@ export default function AppLayout({
     );
 
     return (
-        <div className="min-h-screen flex flex-col bg-background">
-            {/* Header */}
-            <Header 
-                logo={headerLogo} 
-                rightContent={userMenu} 
-            />
+        <>
+            <div className="min-h-screen flex flex-col bg-background">
+                {/* Header */}
+                <Header 
+                    logo={headerLogo} 
+                    rightContent={userMenu} 
+                />
 
-            {/* Main Container (Sidebar + Content) */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Sidebar */}
-                {showSidebar && (
-                    <Sidebar items={sidebarMenuItems}>
-                        {sidebarContent}
-                    </Sidebar>
+                {/* Main Container (Sidebar + Content) */}
+                <div className="flex flex-1 overflow-hidden">
+                    {/* Sidebar */}
+                    {showSidebar && (
+                        <Sidebar items={sidebarMenuItems}>
+                            {sidebarContent}
+                        </Sidebar>
+                    )}
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 overflow-y-auto p-6">
+                        {children}
+                    </main>
+                </div>
+
+                {/* Footer */}
+                {showFooter && (
+                    <Footer>
+                        {footerContent}
+                    </Footer>
                 )}
-
-                {/* Main Content Area */}
-                <main className="flex-1 overflow-y-auto p-6">
-                    {children}
-                </main>
             </div>
 
-            {/* Footer */}
-            {showFooter && (
-                <Footer>
-                    {footerContent}
-                </Footer>
-            )}
-        </div>
+            {/* Logout Confirmation Modal */}
+            <Modal
+                isOpen={showLogoutModal}
+                title="Konfirmasi Keluar"
+                onClose={() => setShowLogoutModal(false)}
+                size="sm"
+            >
+                <div className="text-center py-4">
+                    <div className="text-text-muted mb-4">
+                        <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </div>
+                    <p className="text-text-primary text-lg mb-6">
+                        Apakah Anda yakin ingin keluar?
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setShowLogoutModal(false)}
+                        >
+                            Batal
+                        </Button>
+                        <Button 
+                            variant="danger" 
+                            onClick={handleLogout}
+                        >
+                            Ya, Keluar
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+        </>
+    );
+}
+
+/**
+ * AppLayout Component
+ * 
+ * Layout utama (App Shell) untuk aplikasi E-Office.
+ * Wrapped dengan ToastProvider untuk notifikasi.
+ */
+export default function AppLayout(props: AppLayoutProps) {
+    return (
+        <ToastProvider>
+            <AppLayoutInner {...props} />
+        </ToastProvider>
     );
 }

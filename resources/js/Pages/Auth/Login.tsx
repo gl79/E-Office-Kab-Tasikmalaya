@@ -2,10 +2,10 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
-import { Button } from '@/Components/ui';
+import { Button, Modal } from '@/Components/ui';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState, useEffect } from 'react';
 
 export default function Login({
     status,
@@ -17,6 +17,17 @@ export default function Login({
         password: '',
         remember: false as boolean,
     });
+
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+
+    // Watch for errors and show modal
+    useEffect(() => {
+        if (errors.username) {
+            setErrorMessage(errors.username);
+            setShowErrorModal(true);
+        }
+    }, [errors.username]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -108,6 +119,31 @@ export default function Login({
                     </Button>
                 </div>
             </form>
+
+            {/* Error Modal */}
+            <Modal
+                isOpen={showErrorModal}
+                title="Login Gagal"
+                onClose={() => setShowErrorModal(false)}
+                size="sm"
+            >
+                <div className="text-center py-4">
+                    <div className="text-danger mb-4">
+                        <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <p className="text-text-primary mb-4">
+                        {errorMessage || 'Username atau password salah'}
+                    </p>
+                    <Button 
+                        variant="primary" 
+                        onClick={() => setShowErrorModal(false)}
+                    >
+                        Tutup
+                    </Button>
+                </div>
+            </Modal>
         </GuestLayout>
     );
 }
