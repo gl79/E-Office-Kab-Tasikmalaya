@@ -10,23 +10,25 @@ class UserSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     * 
+     * Membuat user awal untuk testing dan first login.
      */
     public function run(): void
     {
         $users = [
+            [
+                'name' => 'Tata Usaha',
+                'username' => 'tata_usaha',
+                'email' => 'tata.usaha@eoffice.test',
+                'password' => Hash::make('password'),
+                'role' => User::ROLE_TU,
+            ],
             [
                 'name' => 'Super Admin',
                 'username' => 'superadmin',
                 'email' => 'superadmin@eoffice.test',
                 'password' => Hash::make('password'),
                 'role' => User::ROLE_SUPERADMIN,
-            ],
-            [
-                'name' => 'Tata Usaha',
-                'username' => 'tu',
-                'email' => 'tu@eoffice.test',
-                'password' => Hash::make('password'),
-                'role' => User::ROLE_TU,
             ],
             [
                 'name' => 'Sekpri Bupati',
@@ -51,6 +53,7 @@ class UserSeeder extends Seeder
             );
         }
 
-        $this->command->info('Created/updated ' . count($users) . ' test users.');
+        $this->command->info('Created/updated ' . count($users) . ' users.');
+        $this->command->info('Default login: tata_usaha / password');
     }
 }
