@@ -1,21 +1,19 @@
-import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import Checkbox from '@/Components/Checkbox';
+import { Button } from '@/Components/ui';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 export default function Login({
     status,
-    canResetPassword,
 }: {
     status?: string;
-    canResetPassword: boolean;
 }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
+        username: '',
         password: '',
         remember: false as boolean,
     });
@@ -30,30 +28,39 @@ export default function Login({
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title="Login" />
+
+            <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold text-text-primary">
+                    E-Office
+                </h1>
+                <p className="text-text-secondary text-sm mt-1">
+                    Kabupaten Tasikmalaya
+                </p>
+            </div>
 
             {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
+                <div className="mb-4 text-sm font-medium text-secondary">
                     {status}
                 </div>
             )}
 
             <form onSubmit={submit}>
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="username" value="Username" />
 
                     <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
+                        id="username"
+                        type="text"
+                        name="username"
+                        value={data.username}
                         className="mt-1 block w-full"
                         autoComplete="username"
                         isFocused={true}
-                        onChange={(e) => setData('email', e.target.value)}
+                        onChange={(e) => setData('username', e.target.value)}
                     />
 
-                    <InputError message={errors.email} className="mt-2" />
+                    <InputError message={errors.username} className="mt-2" />
                 </div>
 
                 <div className="mt-4">
@@ -84,25 +91,21 @@ export default function Login({
                                 )
                             }
                         />
-                        <span className="ms-2 text-sm text-gray-600">
-                            Remember me
+                        <span className="ms-2 text-sm text-text-secondary">
+                            Ingat saya
                         </span>
                     </label>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    {canResetPassword && (
-                        <Link
-                            href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Forgot your password?
-                        </Link>
-                    )}
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
-                    </PrimaryButton>
+                <div className="mt-6">
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        disabled={processing}
+                        className="w-full justify-center"
+                    >
+                        {processing ? 'Memproses...' : 'Masuk'}
+                    </Button>
                 </div>
             </form>
         </GuestLayout>
