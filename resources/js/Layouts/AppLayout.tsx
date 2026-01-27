@@ -1,8 +1,10 @@
 import { ReactNode } from 'react';
+import { usePage, router } from '@inertiajs/react';
 import Header from '@/Components/layout/Header';
 import Sidebar from '@/Components/layout/Sidebar';
 import Footer from '@/Components/layout/Footer';
 import { MenuItem } from '@/config/menu';
+import { PageProps } from '@/types';
 
 interface AppLayoutProps {
     /** Main content of the page */
@@ -13,8 +15,6 @@ interface AppLayoutProps {
     showFooter?: boolean;
     /** Custom logo for header */
     headerLogo?: ReactNode;
-    /** Custom right content for header (e.g., user dropdown) */
-    headerRightContent?: ReactNode;
     /** 
      * Custom sidebar content. 
      * If provided, completely overrides the menu rendering.
@@ -33,53 +33,64 @@ interface AppLayoutProps {
  * AppLayout Component
  * 
  * Layout utama (App Shell) untuk aplikasi E-Office.
- * Menggabungkan Header, Sidebar dengan menu, Main Content, dan Footer.
- * Kompatibel dengan Inertia.js dan tidak menyebabkan full page reload.
- * 
- * Struktur:
- * ┌───────────────────────────────────────────────┐
- * │                   Header                       │
- * ├──────────────┬────────────────────────────────┤
- * │   Sidebar    │        Main Content            │
- * │   (menu)     │         (children)             │
- * ├──────────────┴────────────────────────────────┤
- * │                   Footer                       │
- * └───────────────────────────────────────────────┘
- * 
- * @example
- * // Basic usage - renders default menu
- * <AppLayout>
- *   <h1>Page Content</h1>
- * </AppLayout>
- * 
- * @example
- * // Without sidebar
- * <AppLayout showSidebar={false}>
- *   <h1>Full Width Content</h1>
- * </AppLayout>
- * 
- * @example
- * // With filtered menu items (future: role-based)
- * <AppLayout sidebarMenuItems={filteredMenuItems}>
- *   <h1>Page Content</h1>
- * </AppLayout>
  */
 export default function AppLayout({
     children,
     showSidebar = true,
     showFooter = true,
     headerLogo,
-    headerRightContent,
     sidebarContent,
     sidebarMenuItems,
     footerContent,
 }: AppLayoutProps) {
+    const { auth } = usePage<PageProps>().props;
+    const user = auth.user;
+
+    // Logout handler
+    const handleLogout = () => {
+        router.post(route('logout'));
+    };
+
+    // User menu untuk header
+    const userMenu = (
+        <div className="flex items-center gap-3">
+            {/* User Info */}
+            <div className="text-right hidden sm:block">
+                <div className="text-sm font-medium text-text-primary">
+                    {user?.name}
+                </div>
+                <div className="text-xs text-text-secondary">
+                    {user?.role_label || user?.role}
+                </div>
+            </div>
+
+            {/* Logout Button */}
+            <button
+                onClick={handleLogout}
+                className="
+                    inline-flex items-center gap-2
+                    px-3 py-2 rounded-lg
+                    text-sm font-medium
+                    text-text-secondary hover:text-danger
+                    hover:bg-danger-light
+                    transition-colors
+                "
+                title="Keluar"
+            >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span className="hidden sm:inline">Keluar</span>
+            </button>
+        </div>
+    );
+
     return (
-        <div className="min-h-screen flex flex-col bg-gray-100">
+        <div className="min-h-screen flex flex-col bg-background">
             {/* Header */}
             <Header 
                 logo={headerLogo} 
-                rightContent={headerRightContent} 
+                rightContent={userMenu} 
             />
 
             {/* Main Container (Sidebar + Content) */}
