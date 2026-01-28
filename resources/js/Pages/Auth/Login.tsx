@@ -1,7 +1,4 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import TextInput from '@/Components/TextInput';
-import Checkbox from '@/Components/Checkbox';
+import { InputError, InputLabel, TextInput, Checkbox } from '@/Components/form';
 import { Button, Modal } from '@/Components/ui';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
