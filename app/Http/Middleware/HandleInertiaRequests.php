@@ -43,9 +43,10 @@ class HandleInertiaRequests extends Middleware
                     'role_label' => $user->role_label,
                 ] : null,
             ],
+            // Flash messages - dieksekusi langsung, bukan lazy
             'flash' => [
-                'success' => fn() => $request->session()->get('success'),
-                'error' => fn() => $request->session()->get('error'),
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
             ],
         ];
     }

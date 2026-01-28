@@ -38,10 +38,13 @@ function AppLayoutInner({
         if (flash?.success) {
             showToast('success', flash.success);
         }
+    }, [flash?.success]);
+
+    useEffect(() => {
         if (flash?.error) {
             showToast('error', flash.error);
         }
-    }, [flash]);
+    }, [flash?.error]);
 
     // Logout handler
     const handleLogout = () => {
