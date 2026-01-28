@@ -117,9 +117,10 @@ export default function SidebarMenuItem({
                     {renderContent()}
                 </button>
             ) : item.href ? (
-                // Leaf item with href - Inertia Link
+                // Leaf item with href - Inertia Link with prefetch
                 <Link
                     href={item.href}
+                    prefetch="hover"
                     className={`${baseClasses} ${activeClasses}`}
                     style={{ paddingLeft }}
                 >
