@@ -49,10 +49,13 @@ class MasterArchiveController extends Controller
             // Given the context, we'll apply search to the combined result via a subquery or just apply where clause if possible.
             // Laravel's union builder allows chaining where, but it applies to the final query.
 
-            // Actually, for a proper search on the union, it's often better to treat the union as a subquery.
+            // Search logic for combined query
             $query = DB::table(DB::raw("({$query->toSql()}) as combined_table"))
                 ->mergeBindings($query) // Add bindings from subqueries
-                ->where('nama', 'like', '%' . $search . '%');
+                ->where(function ($q) use ($search) {
+                    $q->whereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $search . '%'])
+                        ->orWhereRaw('LOWER(type) LIKE LOWER(?)', ['%' . $search . '%']);
+                });
         }
 
         // Order and Paginate

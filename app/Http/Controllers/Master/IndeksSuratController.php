@@ -19,8 +19,8 @@ class IndeksSuratController extends Controller
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
-                $q->where('kode', 'like', '%' . $request->search . '%')
-                    ->orWhere('nama', 'like', '%' . $request->search . '%');
+                $q->whereRaw('LOWER(kode) LIKE LOWER(?)', ['%' . $request->search . '%'])
+                    ->orWhereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $request->search . '%']);
             });
         }
 
@@ -76,8 +76,8 @@ class IndeksSuratController extends Controller
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
-                $q->where('kode', 'like', '%' . $request->search . '%')
-                    ->orWhere('nama', 'like', '%' . $request->search . '%');
+                $q->whereRaw('LOWER(kode) LIKE LOWER(?)', ['%' . $request->search . '%'])
+                    ->orWhereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $request->search . '%']);
             });
         }
 

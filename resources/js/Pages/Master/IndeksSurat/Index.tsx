@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
@@ -49,13 +49,28 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
         urutan: 0,
     });
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        router.get(route('master.indeks-surat.index'), { search }, { preserveState: true });
-    };
+    // Debounced search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (search !== (filters.search || '')) {
+                router.get(route('master.indeks-surat.index'), { search }, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                    only: ['indeksSurat', 'filters'],
+                });
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [search]);
 
     const handlePageChange = (page: number) => {
-        router.get(route('master.indeks-surat.index'), { search, page }, { preserveState: true });
+        router.get(route('master.indeks-surat.index'), { search, page }, { 
+            preserveState: true,
+            preserveScroll: true,
+            only: ['indeksSurat', 'filters'],
+        });
     };
 
     const openCreateModal = () => {
@@ -144,7 +159,7 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-                            <form onSubmit={handleSearch} className="flex gap-2 w-full sm:w-1/3">
+                            <div className="flex gap-2 w-full sm:w-1/3">
                                 <TextInput
                                     type="text"
                                     placeholder="Cari Indeks Surat..."
@@ -152,10 +167,10 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                                     className="w-full"
                                 />
-                                <Button type="submit" variant="secondary">
+                                <Button variant="secondary" disabled>
                                     <Search className="h-4 w-4" />
                                 </Button>
-                            </form>
+                            </div>
                             <div className="flex gap-2">
                                 <Button onClick={openCreateModal}>
                                     <Plus className="h-4 w-4 mr-2" />

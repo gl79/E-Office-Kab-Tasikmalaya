@@ -18,8 +18,10 @@ class UnitKerjaController extends Controller
         $query = UnitKerja::query();
 
         if ($request->search) {
-            $query->where('nama', 'like', '%' . $request->search . '%')
-                ->orWhere('singkatan', 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->whereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $request->search . '%'])
+                    ->orWhereRaw('LOWER(singkatan) LIKE LOWER(?)', ['%' . $request->search . '%']);
+            });
         }
 
         $unitKerja = $query->latest()->paginate(10)->withQueryString();
@@ -71,8 +73,8 @@ class UnitKerjaController extends Controller
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%')
-                    ->orWhere('singkatan', 'like', '%' . $request->search . '%');
+                $q->whereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $request->search . '%'])
+                    ->orWhereRaw('LOWER(singkatan) LIKE LOWER(?)', ['%' . $request->search . '%']);
             });
         }
 
