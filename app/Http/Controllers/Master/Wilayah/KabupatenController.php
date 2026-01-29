@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Http\Controllers\Master\Wilayah;
+
+use App\Http\Controllers\Controller;
+use App\Models\WilayahKabupaten;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+
+class KabupatenController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        $query = WilayahKabupaten::query()->with('provinsi');
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->whereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $request->search . '%'])
+                    ->orWhereRaw('LOWER(kode) LIKE LOWER(?)', ['%' . $request->search . '%']);
+            });
+        }
+
+        if ($request->provinsi_kode) {
+            $query->where('provinsi_kode', $request->provinsi_kode);
+        }
+
+        $data = $query->withCount('kecamatan')
+            ->orderBy('provinsi_kode')
+            ->orderBy('kode')
+            ->paginate(10)
+            ->withQueryString();
+
+        return Inertia::render('Master/Wilayah/Kabupaten/Index', [
+            'data' => $data,
+            'filters' => $request->only(['search', 'provinsi_kode']),
+        ]);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'provinsi_kode' => 'required|exists:wilayah_provinsi,kode',
+            'kode' => [
+                'required',
+                'string',
+                'size:2',
+                Rule::unique('wilayah_kabupaten')->where(function ($query) use ($request) {
+                    return $query->where('provinsi_kode', $request->provinsi_kode);
+                }),
+            ],
+            'nama' => 'required|string|max:255',
+        ]);
+
+        WilayahKabupaten::create($validated);
+
+        return redirect()->back()->with('success', 'Kabupaten berhasil ditambahkan.');
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $provinsi_kode, string $kode)
+    {
+        $kabupaten = WilayahKabupaten::where('provinsi_kode', $provinsi_kode)
+            ->where('kode', $kode)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'nama' => 'required|string|max:255',
+        ]);
+
+        $kabupaten->update($validated);
+
+        return redirect()->back()->with('success', 'Kabupaten berhasil diperbarui.');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $provinsi_kode, string $kode)
+    {
+        $kabupaten = WilayahKabupaten::where('provinsi_kode', $provinsi_kode)
+            ->where('kode', $kode)
+            ->firstOrFail();
+
+        $kabupaten->delete();
+
+        return redirect()->back()->with('success', 'Kabupaten berhasil dihapus.');
+    }
+
+    /**
+     * Get kabupaten by provinsi for dropdown.
+     */
+    public function getKabupatenByProvinsi(string $provinsiKode)
+    {
+        return response()->json(
+            WilayahKabupaten::where('provinsi_kode', $provinsiKode)
+                ->orderBy('nama')
+                ->get()
+        );
+    }
+}

@@ -32,6 +32,16 @@ export const menuItems: MenuItem[] = [
         icon: 'database',
         children: [
             {
+                label: 'Wilayah',
+                icon: 'map',
+                children: [
+                    { label: 'Provinsi', href: '/master/wilayah/provinsi', icon: 'map-pin' },
+                    { label: 'Kabupaten', href: '/master/wilayah/kabupaten', icon: 'building-2' },
+                    { label: 'Kecamatan', href: '/master/wilayah/kecamatan', icon: 'home' },
+                    { label: 'Desa', href: '/master/wilayah/desa', icon: 'tent' },
+                ],
+            },
+            {
                 label: 'Kepegawaian',
                 href: '/master/kepegawaian',
                 icon: 'users',
@@ -56,6 +66,7 @@ export const menuItems: MenuItem[] = [
                 href: '/master/archive',
                 icon: 'archive',
             },
+
         ],
     },
     {

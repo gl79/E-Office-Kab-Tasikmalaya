@@ -1,0 +1,283 @@
+import React, { useState, useEffect } from 'react';
+import { Head, useForm, router } from '@inertiajs/react';
+import AppLayout from '@/Layouts/AppLayout';
+import { PageProps } from '@/types';
+import Button from '@/Components/ui/Button';
+import TextInput from '@/Components/form/TextInput';
+import InputLabel from '@/Components/form/InputLabel';
+import Table, { TableHeader } from '@/Components/ui/Table';
+import Modal from '@/Components/ui/Modal';
+import { Pencil, Trash2, Plus, Search } from 'lucide-react';
+import Pagination from '@/Components/ui/Pagination';
+
+interface WilayahProvinsi {
+    kode: string;
+    nama: string;
+    kabupaten_count?: number;
+    [key: string]: unknown;
+}
+
+interface Props extends PageProps {
+    data: {
+        data: WilayahProvinsi[];
+        links: any[];
+        current_page: number;
+        last_page: number;
+        total: number;
+        from: number;
+    };
+    filters: {
+        search?: string;
+    };
+}
+
+export default function Index({ auth, data, filters }: Props) {
+    const [search, setSearch] = useState(filters.search || '');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<WilayahProvinsi | null>(null);
+
+    const { data: formData, setData, post, put, processing, errors, reset, clearErrors } = useForm({
+        kode: '',
+        nama: '',
+    });
+
+    // Debounced search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (search !== (filters.search || '')) {
+                router.get(route('master.wilayah.provinsi.index'), { search }, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                    only: ['data', 'filters'],
+                });
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const handlePageChange = (page: number) => {
+        router.get(route('master.wilayah.provinsi.index'), { search, page }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['data', 'filters'],
+        });
+    };
+
+    const openCreateModal = () => {
+        reset();
+        clearErrors();
+        setIsCreateModalOpen(true);
+    };
+
+    const openEditModal = (item: WilayahProvinsi) => {
+        setSelectedItem(item);
+        setData({
+            kode: item.kode,
+            nama: item.nama,
+        });
+        clearErrors();
+        setIsEditModalOpen(true);
+    };
+
+    const openDeleteAlert = (item: WilayahProvinsi) => {
+        setSelectedItem(item);
+        setIsDeleteAlertOpen(true);
+    };
+
+    const handleCreate = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('master.wilayah.provinsi.store'), {
+            onSuccess: () => {
+                setIsCreateModalOpen(false);
+                reset();
+            },
+        });
+    };
+
+    const handleUpdate = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedItem) return;
+        put(route('master.wilayah.provinsi.update', selectedItem.kode), {
+            onSuccess: () => {
+                setIsEditModalOpen(false);
+                reset();
+            },
+        });
+    };
+
+    const handleDelete = () => {
+        if (!selectedItem) return;
+        router.delete(route('master.wilayah.provinsi.destroy', selectedItem.kode), {
+            onSuccess: () => {
+                setIsDeleteAlertOpen(false);
+            },
+        });
+    };
+
+    const tableHeaders: TableHeader<WilayahProvinsi>[] = [
+        { 
+            key: 'no', 
+            label: 'No',
+            className: 'w-16',
+            render: (_: unknown, __: unknown, index: number) => (data.from + index).toString()
+        },
+        { key: 'kode', label: 'Kode', className: 'w-24' },
+        { key: 'nama', label: 'Nama Provinsi' },
+        { 
+            key: 'kabupaten_count', 
+            label: 'Jumlah Kabupaten',
+            render: (value) => <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{String(value)}</span>
+        },
+        {
+            key: 'actions',
+            label: 'Aksi',
+            className: 'text-right',
+            render: (_: unknown, item: WilayahProvinsi) => (
+                <div className="flex justify-end gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => openEditModal(item)}>
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => openDeleteAlert(item)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <AppLayout>
+            <Head title="Wilayah Provinsi" />
+
+            <div className="py-12">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+                            <div className="flex gap-2 w-full sm:w-1/3">
+                                <TextInput
+                                    type="text"
+                                    placeholder="Cari Provinsi..."
+                                    value={search}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                    className="w-full"
+                                />
+                                <Button variant="secondary" disabled>
+                                    <Search className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button onClick={openCreateModal}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Tambah
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="rounded-md border">
+                            <Table<WilayahProvinsi>
+                                headers={tableHeaders}
+                                data={data.data}
+                                keyExtractor={(item) => item.kode}
+                                emptyMessage="Tidak ada data provinsi."
+                            />
+                        </div>
+
+                        <div className="mt-4">
+                            <Pagination
+                                currentPage={data.current_page}
+                                totalPages={data.last_page}
+                                onPageChange={handlePageChange}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Create Modal */}
+            <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Tambah Provinsi">
+                <form onSubmit={handleCreate} className="space-y-4">
+                    <div className="space-y-2">
+                        <InputLabel htmlFor="kode" value="Kode Provinsi" />
+                        <TextInput
+                            id="kode"
+                            value={formData.kode}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('kode', e.target.value)}
+                            placeholder="Contoh: 32"
+                            maxLength={2}
+                            className="w-full"
+                        />
+                        {errors.kode && <p className="text-sm text-red-500">{errors.kode}</p>}
+                    </div>
+                    <div className="space-y-2">
+                        <InputLabel htmlFor="nama" value="Nama Provinsi" />
+                        <TextInput
+                            id="nama"
+                            value={formData.nama}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
+                            placeholder="Contoh: JAWA BARAT"
+                            className="w-full"
+                        />
+                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                    </div>
+                    <div className="flex justify-end gap-2 mt-6">
+                        <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Batal</Button>
+                        <Button type="submit" disabled={processing}>Simpan</Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Edit Modal */}
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Provinsi">
+                <form onSubmit={handleUpdate} className="space-y-4">
+                    <div className="space-y-2">
+                        <InputLabel htmlFor="edit-kode" value="Kode Provinsi" />
+                        <TextInput
+                            id="edit-kode"
+                            value={formData.kode}
+                            disabled
+                            className="w-full bg-gray-100"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <InputLabel htmlFor="edit-nama" value="Nama Provinsi" />
+                        <TextInput
+                            id="edit-nama"
+                            value={formData.nama}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
+                            className="w-full"
+                        />
+                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                    </div>
+                    <div className="flex justify-end gap-2 mt-6">
+                        <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>Batal</Button>
+                        <Button type="submit" disabled={processing}>Simpan Perubahan</Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <Modal isOpen={isDeleteAlertOpen} onClose={() => setIsDeleteAlertOpen(false)} title="Konfirmasi Hapus">
+                <div className="space-y-4">
+                    <p>Apakah Anda yakin ingin menghapus provinsi ini?</p>
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                        <div className="flex">
+                            <div className="ml-3">
+                                <p className="text-sm text-yellow-700">
+                                    PERINGATAN: Menghapus provinsi akan menghapus semua Kabupaten, Kecamatan, dan Desa yang ada di bawahnya.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-6">
+                        <Button variant="secondary" onClick={() => setIsDeleteAlertOpen(false)}>Batal</Button>
+                        <Button variant="danger" onClick={handleDelete}>Hapus</Button>
+                    </div>
+                </div>
+            </Modal>
+        </AppLayout>
+    );
+}

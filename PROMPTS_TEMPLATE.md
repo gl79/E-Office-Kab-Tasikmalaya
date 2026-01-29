@@ -152,46 +152,374 @@ git commit -m "feat(master): complete CRUD indeks_surat with archive functionali
 
 ---
 
-## PHASE 2: Wilayah (Read-only)
+## PHASE 2A: Wilayah - Database & Models
 
 ```
 
-Lanjutkan dari Phase 1. Baca IMPLEMENTATION_GUIDE.md untuk schema wilayah.
+Lanjutkan dari Phase 1.
 
-**Tugas Phase 2 - Wilayah Tables:**
+**Tugas Phase 2A - Wilayah Database Setup:**
 
-1. Buat migration `create_wilayah_tables.php` dengan 4 tabel:
-    - wilayah_provinsi (kode char(2) primary, nama)
-    - wilayah_kabupaten (composite primary key)
-    - wilayah_kecamatan (composite primary key)
-    - wilayah_desa (composite primary key)
+Buat Full CRUD untuk 4 tabel wilayah dengan cascading relationship.
 
-2. Buat 4 models:
-    - WilayahProvinsi (hasMany kabupaten)
-    - WilayahKabupaten (belongsTo provinsi, hasMany kecamatan)
-    - WilayahKecamatan (belongsTo kabupaten, hasMany desa)
-    - WilayahDesa (belongsTo kecamatan)
+**Schema:**
 
-3. Buat seeder `WilayahSeeder` dengan data minimal:
-    - 1 provinsi (Jawa Barat)
-    - 1 kabupaten (Tasikmalaya)
-    - 3-5 kecamatan
-    - 5-10 desa
+- wilayah_provinsi: kode (char 2, primary), nama
+- wilayah_kabupaten: provinsi_kode, kode (char 2), nama, primary key composite
+- wilayah_kecamatan: provinsi_kode, kabupaten_kode, kode (char 2), nama, primary key composite
+- wilayah_desa: provinsi_kode, kabupaten_kode, kecamatan_kode, kode (char 4), nama, primary key composite
 
-4. Buat controller `WilayahController` dengan method untuk cascading dropdown (API):
-    - getKabupaten(provinsiKode)
-    - getKecamatan(provinsiKode, kabupatenKode)
-    - getDesa(provinsiKode, kabupatenKode, kecamatanKode)
+1. Buat migration `create_wilayah_tables.php`:
 
-5. Halaman wilayah tidak wajib, fokus ke API untuk digunakan di form lain
+```php
+// Provinsi
+Schema::create('wilayah_provinsi', function (Blueprint $table) {
+    $table->char('kode', 2)->primary();
+    $table->string('nama');
+    $table->timestamps();
+});
 
-6. Jalankan: `php artisan migrate:fresh --seed` dan test
+// Kabupaten
+Schema::create('wilayah_kabupaten', function (Blueprint $table) {
+    $table->char('provinsi_kode', 2);
+    $table->char('kode', 2);
+    $table->string('nama');
+    $table->primary(['provinsi_kode', 'kode']);
+    $table->foreign('provinsi_kode')->references('kode')->on('wilayah_provinsi')
+        ->cascadeOnDelete()->cascadeOnUpdate();
+    $table->timestamps();
+});
+
+// Kecamatan
+Schema::create('wilayah_kecamatan', function (Blueprint $table) {
+    $table->char('provinsi_kode', 2);
+    $table->char('kabupaten_kode', 2);
+    $table->char('kode', 2);
+    $table->string('nama');
+    $table->primary(['provinsi_kode', 'kabupaten_kode', 'kode']);
+    $table->foreign(['provinsi_kode', 'kabupaten_kode'])
+        ->references(['provinsi_kode', 'kode'])->on('wilayah_kabupaten')
+        ->cascadeOnDelete()->cascadeOnUpdate();
+    $table->timestamps();
+});
+
+// Desa
+Schema::create('wilayah_desa', function (Blueprint $table) {
+    $table->char('provinsi_kode', 2);
+    $table->char('kabupaten_kode', 2);
+    $table->char('kecamatan_kode', 2);
+    $table->char('kode', 4);
+    $table->string('nama');
+    $table->primary(['provinsi_kode', 'kabupaten_kode', 'kecamatan_kode', 'kode']);
+    $table->foreign(['provinsi_kode', 'kabupaten_kode', 'kecamatan_kode'])
+        ->references(['provinsi_kode', 'kabupaten_kode', 'kode'])->on('wilayah_kecamatan')
+        ->cascadeOnDelete()->cascadeOnUpdate();
+    $table->timestamps();
+});
+```
+
+2. Buat 4 models dengan composite primary keys:
+
+**WilayahProvinsi.php:**
+
+```php
+class WilayahProvinsi extends Model {
+    protected $table = 'wilayah_provinsi';
+    protected $primaryKey = 'kode';
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $fillable = ['kode', 'nama'];
+
+    public function kabupaten() {
+        return $this->hasMany(WilayahKabupaten::class, 'provinsi_kode', 'kode');
+    }
+}
+```
+
+**WilayahKabupaten.php:**
+
+```php
+class WilayahKabupaten extends Model {
+    protected $table = 'wilayah_kabupaten';
+    public $incrementing = false;
+    protected $fillable = ['provinsi_kode', 'kode', 'nama'];
+
+    public function getKeyName() { return ['provinsi_kode', 'kode']; }
+
+    public function provinsi() {
+        return $this->belongsTo(WilayahProvinsi::class, 'provinsi_kode', 'kode');
+    }
+
+    public function kecamatan() {
+        return $this->hasMany(WilayahKecamatan::class, ['provinsi_kode', 'kabupaten_kode'], ['provinsi_kode', 'kode']);
+    }
+}
+```
+
+**WilayahKecamatan.php & WilayahDesa.php** - pattern serupa dengan composite keys
+
+3. Buat seeder `WilayahSeeder` dengan data sample:
+    - Provinsi: Jawa Barat (32)
+    - Kabupaten: Tasikmalaya (06)
+    - 3-5 Kecamatan
+    - 5-10 Desa
+
+4. Update menu.ts - tambah submenu Wilayah di Data Master:
+
+```typescript
+{
+    label: 'Wilayah',
+    children: [
+        { label: 'Provinsi', href: '/master/wilayah/provinsi' },
+        { label: 'Kabupaten', href: '/master/wilayah/kabupaten' },
+        { label: 'Kecamatan', href: '/master/wilayah/kecamatan' },
+        { label: 'Desa', href: '/master/wilayah/desa' },
+    ],
+},
+```
+
+5. Jalankan: `php artisan migrate:fresh --seed`
 
 **Git commit:**
 
 ```bash
 git add .
-git commit -m "feat(wilayah): add wilayah tables with cascading API"
+git commit -m "feat(wilayah): add wilayah tables migration and models"
+```
+
+```
+
+---
+
+## PHASE 2B: CRUD Wilayah Provinsi
+
+```
+
+Lanjutkan dari Phase 2A.
+
+**Tugas Phase 2B - CRUD Provinsi:**
+
+1. Buat `app/Http/Controllers/Master/Wilayah/ProvinsiController.php`:
+
+```php
+class ProvinsiController extends Controller {
+    public function index(Request $request) {
+        $data = WilayahProvinsi::query()
+            ->when($request->search, fn($q, $s) => $q->where('nama', 'ilike', "%{$s}%"))
+            ->orderBy('kode')
+            ->paginate(10);
+
+        return Inertia::render('Master/Wilayah/Provinsi/Index', [
+            'data' => $data,
+            'filters' => $request->only(['search']),
+        ]);
+    }
+
+    public function store(Request $request) {
+        $validated = $request->validate([
+            'kode' => 'required|string|size:2|unique:wilayah_provinsi,kode',
+            'nama' => 'required|string|max:255',
+        ]);
+        WilayahProvinsi::create($validated);
+        return back()->with('success', 'Provinsi berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, string $kode) {
+        $provinsi = WilayahProvinsi::findOrFail($kode);
+        $validated = $request->validate([
+            'nama' => 'required|string|max:255',
+        ]);
+        $provinsi->update($validated);
+        return back()->with('success', 'Provinsi berhasil diperbarui.');
+    }
+
+    public function destroy(string $kode) {
+        $provinsi = WilayahProvinsi::findOrFail($kode);
+        $provinsi->delete(); // Cascade delete kabupaten, kecamatan, desa
+        return back()->with('success', 'Provinsi berhasil dihapus.');
+    }
+}
+```
+
+2. Tambah routes di `routes/web.php`:
+
+```php
+Route::prefix('master/wilayah')->name('master.wilayah.')->middleware('auth')->group(function () {
+    Route::get('provinsi', [ProvinsiController::class, 'index'])->name('provinsi.index');
+    Route::post('provinsi', [ProvinsiController::class, 'store'])->name('provinsi.store');
+    Route::put('provinsi/{kode}', [ProvinsiController::class, 'update'])->name('provinsi.update');
+    Route::delete('provinsi/{kode}', [ProvinsiController::class, 'destroy'])->name('provinsi.destroy');
+});
+```
+
+3. Buat `resources/js/Pages/Master/Wilayah/Provinsi/Index.tsx`:
+    - Tabel dengan kolom: Kode, Nama, Jumlah Kabupaten, Aksi
+    - Modal Create dengan input: Kode (2 digit), Nama
+    - Modal Edit (kode tidak bisa diubah)
+    - Delete confirmation (warning: akan menghapus semua kabupaten, kecamatan, desa di bawahnya)
+
+4. Jalankan: `npm run build` dan test
+
+**Git commit:**
+
+```bash
+git add .
+git commit -m "feat(wilayah): complete CRUD provinsi"
+```
+
+```
+
+---
+
+## PHASE 2C: CRUD Wilayah Kabupaten
+
+```
+
+Lanjutkan dari Phase 2B.
+
+**Tugas Phase 2C - CRUD Kabupaten:**
+
+1. Buat `app/Http/Controllers/Master/Wilayah/KabupatenController.php`:
+    - index(): list dengan filter provinsi, search, pagination
+    - store(): dengan validasi provinsi_kode exists dan composite unique
+    - update(): update nama saja
+    - destroy(): cascade delete kecamatan, desa
+
+2. Validasi untuk store:
+
+```php
+$validated = $request->validate([
+    'provinsi_kode' => 'required|exists:wilayah_provinsi,kode',
+    'kode' => 'required|string|size:2',
+    'nama' => 'required|string|max:255',
+]);
+// Check composite unique manually
+```
+
+3. Tambah routes dengan pattern sama
+
+4. Buat `resources/js/Pages/Master/Wilayah/Kabupaten/Index.tsx`:
+    - Filter dropdown provinsi (select dari API)
+    - Tabel: Kode Lengkap (provinsi.kode + kode), Nama, Provinsi, Jumlah Kecamatan, Aksi
+    - Modal Create: Select Provinsi, Input Kode (2 digit), Input Nama
+    - Modal Edit: Provinsi readonly, Kode readonly, Nama editable
+
+5. Buat API endpoint untuk dropdown:
+
+```php
+// Di ProvinsiController atau WilayahApiController
+public function getAll() {
+    return response()->json(WilayahProvinsi::orderBy('nama')->get());
+}
+```
+
+6. Jalankan: `npm run build` dan test
+
+**Git commit:**
+
+```bash
+git add .
+git commit -m "feat(wilayah): complete CRUD kabupaten"
+```
+
+```
+
+---
+
+## PHASE 2D: CRUD Wilayah Kecamatan
+
+```
+
+Lanjutkan dari Phase 2C.
+
+**Tugas Phase 2D - CRUD Kecamatan:**
+
+1. Buat `app/Http/Controllers/Master/Wilayah/KecamatanController.php`:
+    - index(): filter provinsi + kabupaten, search, pagination
+    - store(), update(), destroy() dengan composite key handling
+
+2. Cascading dropdown: Pilih Provinsi → Load Kabupaten → Pilih Kabupaten
+
+3. Tambah API endpoint cascading:
+
+```php
+public function getKabupatenByProvinsi(string $provinsiKode) {
+    return response()->json(
+        WilayahKabupaten::where('provinsi_kode', $provinsiKode)->orderBy('nama')->get()
+    );
+}
+```
+
+4. Buat `resources/js/Pages/Master/Wilayah/Kecamatan/Index.tsx`:
+    - Filter: Select Provinsi → Select Kabupaten (cascading)
+    - Tabel: Kode Lengkap, Nama, Kabupaten, Jumlah Desa, Aksi
+    - Modal CRUD dengan cascading dropdown
+
+5. Jalankan: `npm run build` dan test
+
+**Git commit:**
+
+```bash
+git add .
+git commit -m "feat(wilayah): complete CRUD kecamatan with cascading filter"
+```
+
+```
+
+---
+
+## PHASE 2E: CRUD Wilayah Desa
+
+```
+
+Lanjutkan dari Phase 2D.
+
+**Tugas Phase 2E - CRUD Desa:**
+
+1. Buat `app/Http/Controllers/Master/Wilayah/DesaController.php`:
+    - index(): filter provinsi + kabupaten + kecamatan, search, pagination
+    - store(), update(), destroy() dengan composite key handling (4 field)
+
+2. Tambah API endpoint:
+
+```php
+public function getKecamatanByKabupaten(string $provinsiKode, string $kabupatenKode) {
+    return response()->json(
+        WilayahKecamatan::where('provinsi_kode', $provinsiKode)
+            ->where('kabupaten_kode', $kabupatenKode)
+            ->orderBy('nama')->get()
+    );
+}
+```
+
+3. Buat `resources/js/Pages/Master/Wilayah/Desa/Index.tsx`:
+    - Filter: Provinsi → Kabupaten → Kecamatan (3-level cascading)
+    - Tabel: Kode Lengkap, Nama, Kecamatan, Aksi
+    - Modal CRUD dengan 3-level cascading dropdown
+    - Kode desa adalah 4 digit (bukan 2)
+
+4. Buat komponen reusable `CascadingWilayahSelect.tsx` untuk dipakai di form lain:
+
+```tsx
+interface Props {
+    value: {
+        provinsi?: string;
+        kabupaten?: string;
+        kecamatan?: string;
+        desa?: string;
+    };
+    onChange: (value: Props["value"]) => void;
+    level: "provinsi" | "kabupaten" | "kecamatan" | "desa";
+}
+```
+
+5. Jalankan: `npm run build` dan test
+
+**Git commit:**
+
+```bash
+git add .
+git commit -m "feat(wilayah): complete CRUD desa with cascading components"
 ```
 
 ```

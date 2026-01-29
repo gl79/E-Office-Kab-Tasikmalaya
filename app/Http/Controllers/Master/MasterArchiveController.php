@@ -38,8 +38,57 @@ class MasterArchiveController extends Controller
             )
             ->whereNotNull('deleted_at');
 
+        // Query for Wilayah Provinsi
+        $provinsi = DB::table('wilayah_provinsi')
+            ->select(
+                'kode as id',
+                'nama',
+                'deleted_at',
+                DB::raw("'Provinsi' as type"),
+                DB::raw("'wilayah.provinsi' as resource_name")
+            )
+            ->whereNotNull('deleted_at');
+
+        // Query for Wilayah Kabupaten
+        $kabupaten = DB::table('wilayah_kabupaten')
+            ->select(
+                DB::raw("CONCAT(provinsi_kode, '.', kode) as id"),
+                'nama',
+                'deleted_at',
+                DB::raw("'Kabupaten' as type"),
+                DB::raw("'wilayah.kabupaten' as resource_name")
+            )
+            ->whereNotNull('deleted_at');
+
+        // Query for Wilayah Kecamatan
+        $kecamatan = DB::table('wilayah_kecamatan')
+            ->select(
+                DB::raw("CONCAT(provinsi_kode, '.', kabupaten_kode, '.', kode) as id"),
+                'nama',
+                'deleted_at',
+                DB::raw("'Kecamatan' as type"),
+                DB::raw("'wilayah.kecamatan' as resource_name")
+            )
+            ->whereNotNull('deleted_at');
+
+        // Query for Wilayah Desa
+        $desa = DB::table('wilayah_desa')
+            ->select(
+                DB::raw("CONCAT(provinsi_kode, '.', kabupaten_kode, '.', kecamatan_kode, '.', kode) as id"),
+                'nama',
+                'deleted_at',
+                DB::raw("'Desa' as type"),
+                DB::raw("'wilayah.desa' as resource_name")
+            )
+            ->whereNotNull('deleted_at');
+
         // Combine queries
-        $query = $unitKerja->union($indeksSurat);
+        $query = $unitKerja
+            ->union($indeksSurat)
+            ->union($provinsi)
+            ->union($kabupaten)
+            ->union($kecamatan)
+            ->union($desa);
 
         // Apply search if exists
         if ($search) {

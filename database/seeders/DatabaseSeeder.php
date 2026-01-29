@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             UnitKerjaSeeder::class,
             IndeksSuratSeeder::class,
             UserSeeder::class,
+            WilayahSeeder::class,
         ]);
     }
 }

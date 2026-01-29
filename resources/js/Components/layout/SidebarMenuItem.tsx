@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { MenuItem } from '@/config/menu';
 import { 
@@ -18,6 +18,10 @@ import {
     CalendarCheck, 
     CalendarClock, 
     CalendarCheck2,
+    Map,
+    MapPin,
+    Home,
+    Tent,
     LucideIcon
 } from 'lucide-react';
 
@@ -45,6 +49,11 @@ const iconMap: Record<string, LucideIcon> = {
     'calendar-check': CalendarCheck,
     'calendar-clock': CalendarClock,
     'calendar-check-2': CalendarCheck2,
+    'building-2': Building2,
+    'map': Map,
+    'map-pin': MapPin,
+    'home': Home,
+    'tent': Tent,
 };
 
 /**
@@ -62,34 +71,34 @@ export default function SidebarMenuItem({
     depth = 0 
 }: SidebarMenuItemProps) {
     const { url } = usePage();
-    const [isOpen, setIsOpen] = useState(false);
-    
     const hasChildren = item.children && item.children.length > 0;
-    
-    // Check if current route matches this item or any of its children
-    const isActive = item.href 
-        ? (
-            (url === item.href || url.startsWith(item.href + '/')) && 
-            (!item.excludePaths || !item.excludePaths.some(path => url.startsWith(path)))
-        )
-        : false;
 
     const hasActiveChild = item.children?.some(child => 
         child.href 
             ? (
-                (url === child.href || url.startsWith(child.href + '/')) &&
+                (url === child.href || url.startsWith(child.href + '/') || url.startsWith(child.href + '?')) &&
                 (!child.excludePaths || !child.excludePaths.some(path => url.startsWith(path)))
                 )
             : false
     );
 
-    // Sync isOpen with hasActiveChild when it changes
-    const [hasInitialized, setHasInitialized] = useState(false);
+    const [isOpen, setIsOpen] = useState(hasActiveChild);
 
-    if (hasActiveChild && !hasInitialized) {
-        setIsOpen(true);
-        setHasInitialized(true);
-    }
+    // Check if current route matches this item or any of its children
+    const isActive = (item.href 
+        ? (
+            (url === item.href || url.startsWith(item.href + '/') || url.startsWith(item.href + '?')) && 
+            (!item.excludePaths || !item.excludePaths.some(path => url.startsWith(path)))
+        )
+        : false) || hasActiveChild;
+
+    // Sync isOpen with hasActiveChild when it changes
+    // This ensures that if we navigate to a child, the parent opens
+    useEffect(() => {
+        if (hasActiveChild) {
+            setIsOpen(true);
+        }
+    }, [hasActiveChild]);
 
     // Auto-expand if has active child (only on mount/update)
     // We use a separate effect or state initialization to allow toggling
