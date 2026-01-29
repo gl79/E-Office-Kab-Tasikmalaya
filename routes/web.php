@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Master\Wilayah\DesaController;
+use App\Http\Controllers\Master\Wilayah\KabupatenController;
+use App\Http\Controllers\Master\Wilayah\KecamatanController;
+use App\Http\Controllers\Master\Wilayah\ProvinsiController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -47,33 +51,33 @@ Route::middleware('auth')->group(function () {
 
         // Wilayah Routes
         Route::prefix('wilayah')->name('wilayah.')->group(function () {
-            Route::get('provinsi/all', [\App\Http\Controllers\Master\Wilayah\ProvinsiController::class, 'getAll'])->name('provinsi.all');
-            Route::resource('provinsi', \App\Http\Controllers\Master\Wilayah\ProvinsiController::class)->except(['create', 'show', 'edit']);
-            Route::post('provinsi/{kode}/restore', [\App\Http\Controllers\Master\Wilayah\ProvinsiController::class, 'restore'])->name('provinsi.restore');
-            Route::delete('provinsi/{kode}/force-delete', [\App\Http\Controllers\Master\Wilayah\ProvinsiController::class, 'forceDelete'])->name('provinsi.force-delete');
+            Route::get('provinsi/all', [ProvinsiController::class, 'getAll'])->name('provinsi.all');
+            Route::resource('provinsi', ProvinsiController::class)->except(['create', 'show', 'edit']);
+            Route::post('provinsi/{kode}/restore', [ProvinsiController::class, 'restore'])->name('provinsi.restore');
+            Route::delete('provinsi/{kode}/force-delete', [ProvinsiController::class, 'forceDelete'])->name('provinsi.force-delete');
 
-            Route::get('kabupaten', [\App\Http\Controllers\Master\Wilayah\KabupatenController::class, 'index'])->name('kabupaten.index');
-            Route::post('kabupaten', [\App\Http\Controllers\Master\Wilayah\KabupatenController::class, 'store'])->name('kabupaten.store');
-            Route::put('kabupaten/{provinsi_kode}/{kode}', [\App\Http\Controllers\Master\Wilayah\KabupatenController::class, 'update'])->name('kabupaten.update');
-            Route::delete('kabupaten/{provinsi_kode}/{kode}', [\App\Http\Controllers\Master\Wilayah\KabupatenController::class, 'destroy'])->name('kabupaten.destroy');
-            Route::post('kabupaten/{id}/restore', [\App\Http\Controllers\Master\Wilayah\KabupatenController::class, 'restore'])->name('kabupaten.restore');
-            Route::delete('kabupaten/{id}/force-delete', [\App\Http\Controllers\Master\Wilayah\KabupatenController::class, 'forceDelete'])->name('kabupaten.force-delete');
-            Route::get('kabupaten/by-provinsi/{provinsiKode}', [\App\Http\Controllers\Master\Wilayah\KabupatenController::class, 'getKabupatenByProvinsi'])->name('kabupaten.by-provinsi');
+            Route::get('kabupaten', [KabupatenController::class, 'index'])->name('kabupaten.index');
+            Route::post('kabupaten', [KabupatenController::class, 'store'])->name('kabupaten.store');
+            Route::put('kabupaten/{provinsi_kode}/{kode}', [KabupatenController::class, 'update'])->name('kabupaten.update');
+            Route::delete('kabupaten/{provinsi_kode}/{kode}', [KabupatenController::class, 'destroy'])->name('kabupaten.destroy');
+            Route::post('kabupaten/{id}/restore', [KabupatenController::class, 'restore'])->name('kabupaten.restore');
+            Route::delete('kabupaten/{id}/force-delete', [KabupatenController::class, 'forceDelete'])->name('kabupaten.force-delete');
+            Route::get('kabupaten/by-provinsi/{provinsiKode}', [KabupatenController::class, 'getKabupatenByProvinsi'])->name('kabupaten.by-provinsi');
 
-            Route::get('kecamatan', [\App\Http\Controllers\Master\Wilayah\KecamatanController::class, 'index'])->name('kecamatan.index');
-            Route::post('kecamatan', [\App\Http\Controllers\Master\Wilayah\KecamatanController::class, 'store'])->name('kecamatan.store');
-            Route::put('kecamatan/{provinsi_kode}/{kabupaten_kode}/{kode}', [\App\Http\Controllers\Master\Wilayah\KecamatanController::class, 'update'])->name('kecamatan.update');
-            Route::delete('kecamatan/{provinsi_kode}/{kabupaten_kode}/{kode}', [\App\Http\Controllers\Master\Wilayah\KecamatanController::class, 'destroy'])->name('kecamatan.destroy');
-            Route::post('kecamatan/{id}/restore', [\App\Http\Controllers\Master\Wilayah\KecamatanController::class, 'restore'])->name('kecamatan.restore');
-            Route::delete('kecamatan/{id}/force-delete', [\App\Http\Controllers\Master\Wilayah\KecamatanController::class, 'forceDelete'])->name('kecamatan.force-delete');
-            Route::get('kecamatan/by-kabupaten/{provinsiKode}/{kabupatenKode}', [\App\Http\Controllers\Master\Wilayah\KecamatanController::class, 'getKecamatanByKabupaten'])->name('kecamatan.by-kabupaten');
+            Route::get('kecamatan', [KecamatanController::class, 'index'])->name('kecamatan.index');
+            Route::post('kecamatan', [KecamatanController::class, 'store'])->name('kecamatan.store');
+            Route::put('kecamatan/{provinsi_kode}/{kabupaten_kode}/{kode}', [KecamatanController::class, 'update'])->name('kecamatan.update');
+            Route::delete('kecamatan/{provinsi_kode}/{kabupaten_kode}/{kode}', [KecamatanController::class, 'destroy'])->name('kecamatan.destroy');
+            Route::post('kecamatan/{id}/restore', [KecamatanController::class, 'restore'])->name('kecamatan.restore');
+            Route::delete('kecamatan/{id}/force-delete', [KecamatanController::class, 'forceDelete'])->name('kecamatan.force-delete');
+            Route::get('kecamatan/by-kabupaten/{provinsiKode}/{kabupatenKode}', [KecamatanController::class, 'getKecamatanByKabupaten'])->name('kecamatan.by-kabupaten');
 
-            Route::get('desa', [\App\Http\Controllers\Master\Wilayah\DesaController::class, 'index'])->name('desa.index');
-            Route::post('desa', [\App\Http\Controllers\Master\Wilayah\DesaController::class, 'store'])->name('desa.store');
-            Route::put('desa/{provinsi_kode}/{kabupaten_kode}/{kecamatan_kode}/{kode}', [\App\Http\Controllers\Master\Wilayah\DesaController::class, 'update'])->name('desa.update');
-            Route::delete('desa/{provinsi_kode}/{kabupaten_kode}/{kecamatan_kode}/{kode}', [\App\Http\Controllers\Master\Wilayah\DesaController::class, 'destroy'])->name('desa.destroy');
-            Route::post('desa/{id}/restore', [\App\Http\Controllers\Master\Wilayah\DesaController::class, 'restore'])->name('desa.restore');
-            Route::delete('desa/{id}/force-delete', [\App\Http\Controllers\Master\Wilayah\DesaController::class, 'forceDelete'])->name('desa.force-delete');
+            Route::get('desa', [DesaController::class, 'index'])->name('desa.index');
+            Route::post('desa', [DesaController::class, 'store'])->name('desa.store');
+            Route::put('desa/{provinsi_kode}/{kabupaten_kode}/{kecamatan_kode}/{kode}', [DesaController::class, 'update'])->name('desa.update');
+            Route::delete('desa/{provinsi_kode}/{kabupaten_kode}/{kecamatan_kode}/{kode}', [DesaController::class, 'destroy'])->name('desa.destroy');
+            Route::post('desa/{id}/restore', [DesaController::class, 'restore'])->name('desa.restore');
+            Route::delete('desa/{id}/force-delete', [DesaController::class, 'forceDelete'])->name('desa.force-delete');
         });
     });
 
