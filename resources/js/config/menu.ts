@@ -51,7 +51,7 @@ export const menuItems: MenuItem[] = [
             },
             {
                 label: 'Archive',
-                href: '/master/archive',
+                href: '/master/unit-kerja/archive',
                 icon: 'archive',
             },
         ],

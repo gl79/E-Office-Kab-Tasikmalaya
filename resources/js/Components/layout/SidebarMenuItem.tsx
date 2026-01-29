@@ -1,6 +1,25 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { MenuItem } from '@/config/menu';
+import { 
+    LayoutDashboard, 
+    Database, 
+    Users, 
+    User, 
+    Building2, 
+    FileText, 
+    Archive, 
+    Mail, 
+    Inbox, 
+    Send, 
+    CalendarOff, 
+    List, 
+    Calendar, 
+    CalendarCheck, 
+    CalendarClock, 
+    CalendarCheck2,
+    LucideIcon
+} from 'lucide-react';
 
 interface SidebarMenuItemProps {
     /** Menu item data */
@@ -8,6 +27,25 @@ interface SidebarMenuItemProps {
     /** Nesting depth level (for indentation) */
     depth?: number;
 }
+
+const iconMap: Record<string, LucideIcon> = {
+    'dashboard': LayoutDashboard,
+    'database': Database,
+    'users': Users,
+    'user': User,
+    'building': Building2,
+    'file-text': FileText,
+    'archive': Archive,
+    'mail': Mail,
+    'inbox': Inbox,
+    'send': Send,
+    'calendar-off': CalendarOff,
+    'list': List,
+    'calendar': Calendar,
+    'calendar-check': CalendarCheck,
+    'calendar-clock': CalendarClock,
+    'calendar-check-2': CalendarCheck2,
+};
 
 /**
  * SidebarMenuItem Component
@@ -61,22 +99,17 @@ export default function SidebarMenuItem({
         }
     };
 
+    // Get icon component
+    const IconComponent = item.icon ? iconMap[item.icon] : null;
+
     // Render menu item content
     const renderContent = () => (
         <>
             <span className="flex items-center gap-3">
-                {/* Icon placeholder */}
-                {item.icon && (
-                    <span className="w-5 h-5 flex items-center justify-center text-gray-400">
-                        {/* Icon akan diimplementasikan nanti */}
-                        <svg 
-                            className="w-4 h-4" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                        >
-                            <circle cx="12" cy="12" r="3" strokeWidth="2" />
-                        </svg>
+                {/* Icon */}
+                {IconComponent && (
+                    <span className={`w-5 h-5 flex items-center justify-center ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                        <IconComponent className="w-4 h-4" />
                     </span>
                 )}
                 <span>{item.label}</span>

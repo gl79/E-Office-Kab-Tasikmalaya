@@ -79,7 +79,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/definitif', function () {
             return Inertia::render('Penjadwalan/Definitif/Index');
         })->name('definitif.index');
+
+        Route::get('/archive', function () {
+            return Inertia::render('ComingSoon');
+        })->name('archive');
     });
+
+    // Placeholder Routes for other Archives
+    Route::get('/persuratan/archive', function () {
+        return Inertia::render('ComingSoon');
+    })->name('persuratan.archive');
+
+    Route::get('/cuti/archive', function () {
+        return Inertia::render('ComingSoon');
+    })->name('cuti.archive');
 });
 
 require __DIR__ . '/auth.php';

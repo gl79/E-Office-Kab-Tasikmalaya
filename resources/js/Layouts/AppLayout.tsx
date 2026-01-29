@@ -158,12 +158,7 @@ function AppLayoutInner({
  * AppLayout Component
  * 
  * Layout utama (App Shell) untuk aplikasi E-Office.
- * Wrapped dengan ToastProvider untuk notifikasi.
  */
 export default function AppLayout(props: AppLayoutProps) {
-    return (
-        <ToastProvider>
-            <AppLayoutInner {...props} />
-        </ToastProvider>
-    );
+    return <AppLayoutInner {...props} />;
 }
