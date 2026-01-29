@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
@@ -10,6 +10,7 @@ import Modal from '@/Components/ui/Modal';
 import { useToast } from '@/Components/ui/Toast';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
+import { useServerSearch } from '@/hooks/useServerSearch';
 
 interface IndeksSurat {
     id: string;
@@ -37,7 +38,10 @@ interface Props extends PageProps {
 
 export default function Index({ auth, indeksSurat, filters }: Props) {
     const { showToast } = useToast();
-    const [search, setSearch] = useState(filters.search || '');
+    const { search, setSearch } = useServerSearch({
+        url: route('master.indeks-surat.index'),
+        initialSearch: filters.search
+    });
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -49,28 +53,15 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
         urutan: 0,
     });
 
-    // Debounced search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (search !== (filters.search || '')) {
-                router.get(route('master.indeks-surat.index'), { search }, {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                    only: ['indeksSurat', 'filters'],
-                });
-            }
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [search]);
-
     const handlePageChange = (page: number) => {
-        router.get(route('master.indeks-surat.index'), { search, page }, { 
-            preserveState: true,
-            preserveScroll: true,
-            only: ['indeksSurat', 'filters'],
-        });
+        const url = indeksSurat.links.find((l: any) => l.label == page)?.url;
+        if (url) {
+            router.get(url, { search }, { 
+                preserveState: true,
+                preserveScroll: true,
+                only: ['indeksSurat', 'filters'],
+            });
+        }
     };
 
     const openCreateModal = () => {

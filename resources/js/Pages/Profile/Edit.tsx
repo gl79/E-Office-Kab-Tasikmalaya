@@ -14,7 +14,7 @@ export default function Edit({ mustVerifyEmail, status }: Props) {
     const { data, setData, post, errors, processing, recentlySuccessful } = useForm({
         name: user.name,
         username: user.username,
-        email: user.email,
+        email: user.email || '',
         nip: user.nip || '',
         jenis_kelamin: user.jenis_kelamin || '',
         jabatan: user.jabatan || '',
@@ -28,15 +28,14 @@ export default function Edit({ mustVerifyEmail, status }: Props) {
     };
 
     return (
-        <AppLayout
-            title="Profile"
-            renderHeader={() => (
+        <AppLayout>
+            <Head title="Profile" />
+            
+            <div className="mb-6">
                 <h2 className="font-semibold text-xl text-gray-800 leading-tight">
                     Profile
                 </h2>
-            )}
-        >
-            <Head title="Profile" />
+            </div>
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">

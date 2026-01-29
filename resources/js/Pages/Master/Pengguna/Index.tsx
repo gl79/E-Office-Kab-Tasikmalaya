@@ -1,15 +1,17 @@
 import { useState, useRef, FormEvent, useMemo } from 'react';
 import { Head, router, useForm, usePage, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Button, Modal } from '@/Components/ui';
+import { Button, Modal, Pagination } from '@/Components/ui';
 import { InputLabel, TextInput, InputError } from '@/Components/form';
 import { User, PageProps } from '@/types';
+import { useServerSearch } from '@/hooks/useServerSearch';
 
 interface Props extends PageProps {
     data: {
         data: User[];
         links: any;
         current_page: number;
+        last_page: number;
         from: number;
     };
     filters: {
@@ -43,9 +45,19 @@ export default function Index({ data, filters, roles, modules }: Props) {
     const [previewFoto, setPreviewFoto] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     
-    // Client-side search for true SPA experience
-    const [localSearch, setLocalSearch] = useState('');
     const [roleFilter, setRoleFilter] = useState(filters.role || '');
+
+    // Server-side search
+    const { search, setSearch } = useServerSearch({
+        url: route('master.pengguna.index'),
+        initialSearch: filters.search,
+        filters: { role: roleFilter }
+    });
+
+    // Update role filter to trigger server search
+    const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setRoleFilter(e.target.value);
+    };
 
     const form = useForm({
         name: '',
@@ -60,27 +72,8 @@ export default function Index({ data, filters, roles, modules }: Props) {
         foto: null as File | null,
     });
 
-    // Client-side filtered data - true SPA without reload
-    const filteredData = useMemo(() => {
-        let result = data.data;
-        
-        // Filter by local search (case insensitive)
-        if (localSearch) {
-            const searchLower = localSearch.toLowerCase();
-            result = result.filter(item => 
-                item.name.toLowerCase().includes(searchLower) ||
-                item.username.toLowerCase().includes(searchLower) ||
-                (item.nip && item.nip.toLowerCase().includes(searchLower))
-            );
-        }
-        
-        // Filter by role
-        if (roleFilter) {
-            result = result.filter(item => item.role === roleFilter);
-        }
-        
-        return result;
-    }, [data.data, localSearch, roleFilter]);
+    // Data is already filtered from server
+    const filteredData = data.data;
 
     // Ordered modules matching sidebar
     const orderedModules = useMemo(() => {
@@ -225,20 +218,20 @@ export default function Index({ data, filters, roles, modules }: Props) {
                 </div>
             </div>
 
-            {/* Filters - Client side, no reload */}
+            {/* Filters - Server side */}
             <div className="mb-4 flex gap-4">
                 <div className="flex-1 max-w-xs">
                     <TextInput
                         type="text"
                         placeholder="Cari nama, username, NIP..."
-                        value={localSearch}
-                        onChange={(e) => setLocalSearch(e.target.value)}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
                         className="w-full"
                     />
                 </div>
                 <select
                     value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
+                    onChange={handleRoleChange}
                     className="border border-border-default rounded-lg px-3 py-2"
                 >
                     <option value="">Semua Role</option>
@@ -266,7 +259,7 @@ export default function Index({ data, filters, roles, modules }: Props) {
                         {filteredData.map((item, index) => (
                             <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-text-secondary text-sm">
-                                    {index + 1}
+                                    {data.from + index}
                                 </td>
                                 <td className="px-4 py-3">
                                     <img
@@ -303,7 +296,7 @@ export default function Index({ data, filters, roles, modules }: Props) {
                         {filteredData.length === 0 && (
                             <tr>
                                 <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
-                                    {localSearch || roleFilter ? 'Tidak ada data yang cocok dengan filter' : 'Tidak ada data pengguna'}
+                                    {search || roleFilter ? 'Tidak ada data yang cocok dengan filter' : 'Tidak ada data pengguna'}
                                 </td>
                             </tr>
                         )}
@@ -311,25 +304,14 @@ export default function Index({ data, filters, roles, modules }: Props) {
                 </table>
             </div>
 
-            {/* Pagination - only show if no local filter */}
-            {!localSearch && !roleFilter && data.links && (
-                <div className="mt-4 flex justify-center gap-1">
-                    {data.links.map((link: any, index: number) => (
-                        <button
-                            key={index}
-                            type="button"
-                            disabled={!link.url}
-                            onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
-                            className={`px-3 py-1.5 text-sm rounded-lg border ${
-                                link.active 
-                                    ? 'bg-primary text-white border-primary' 
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                            } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            dangerouslySetInnerHTML={{ __html: link.label }}
-                        />
-                    ))}
-                </div>
-            )}
+            {/* Pagination */}
+            <div className="mt-4 flex justify-center">
+                <Pagination
+                    currentPage={data.current_page}
+                    totalPages={data.last_page}
+                    onPageChange={(page: number) => router.get(data.links.find((l: any) => l.label == page)?.url || '', {}, { preserveState: true, preserveScroll: true })}
+                />
+            </div>
 
             {/* Create/Edit Modal - Fixed stable layout */}
             <Modal

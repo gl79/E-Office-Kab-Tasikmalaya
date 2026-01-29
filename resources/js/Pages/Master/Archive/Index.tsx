@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
@@ -9,6 +9,7 @@ import Modal from '@/Components/ui/Modal';
 import { useToast } from '@/Components/ui/Toast';
 import { RefreshCw, Trash2, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
+import { useServerSearch } from '@/hooks/useServerSearch';
 
 interface ArchiveItem {
     id: string;
@@ -35,33 +36,23 @@ interface Props extends PageProps {
 
 export default function Index({ auth, archives, filters }: Props) {
     const { showToast } = useToast();
-    const [search, setSearch] = useState(filters.search || '');
+    const { search, setSearch } = useServerSearch({
+        url: route('master.archive'),
+        initialSearch: filters.search
+    });
     const [isRestoreAlertOpen, setIsRestoreAlertOpen] = useState(false);
     const [isForceDeleteAlertOpen, setIsForceDeleteAlertOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ArchiveItem | null>(null);
 
-    // Debounced search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (search !== (filters.search || '')) {
-                router.get(route('master.archive'), { search }, {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                    only: ['archives', 'filters'],
-                });
-            }
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [search]);
-
     const handlePageChange = (page: number) => {
-        router.get(route('master.archive'), { search, page }, { 
-            preserveState: true,
-            preserveScroll: true,
-            only: ['archives', 'filters'],
-        });
+        const url = archives.links.find((l: any) => l.label == page)?.url;
+        if (url) {
+            router.get(url, { search }, { 
+                preserveState: true,
+                preserveScroll: true,
+                only: ['archives', 'filters'],
+            });
+        }
     };
 
     const openRestoreAlert = (item: ArchiveItem) => {

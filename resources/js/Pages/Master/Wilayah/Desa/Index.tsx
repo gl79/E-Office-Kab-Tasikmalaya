@@ -9,6 +9,7 @@ import Table, { TableHeader } from '@/Components/ui/Table';
 import Modal from '@/Components/ui/Modal';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
+import { useServerSearch } from '@/hooks/useServerSearch';
 import axios from 'axios';
 import CascadingWilayahSelect from '@/Components/form/CascadingWilayahSelect';
 
@@ -66,10 +67,19 @@ interface Props extends PageProps {
 }
 
 export default function Index({ auth, data, filters }: Props) {
-    const [search, setSearch] = useState(filters.search || '');
     const [provinsiKode, setProvinsiKode] = useState(filters.provinsi_kode || '');
     const [kabupatenKode, setKabupatenKode] = useState(filters.kabupaten_kode || '');
     const [kecamatanKode, setKecamatanKode] = useState(filters.kecamatan_kode || '');
+    
+    const { search, setSearch } = useServerSearch({
+        url: route('master.wilayah.desa.index'),
+        initialSearch: filters.search,
+        filters: { 
+            provinsi_kode: provinsiKode,
+            kabupaten_kode: kabupatenKode,
+            kecamatan_kode: kecamatanKode
+        }
+    });
     
     const [provinsiList, setProvinsiList] = useState<WilayahProvinsi[]>([]);
     const [kabupatenList, setKabupatenList] = useState<WilayahKabupaten[]>([]);
@@ -121,44 +131,20 @@ export default function Index({ auth, data, filters }: Props) {
         }
     }, [provinsiKode, kabupatenKode]);
 
-    // Debounced search and filter
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (
-                search !== (filters.search || '') || 
-                provinsiKode !== (filters.provinsi_kode || '') ||
-                kabupatenKode !== (filters.kabupaten_kode || '') ||
-                kecamatanKode !== (filters.kecamatan_kode || '')
-            ) {
-                router.get(route('master.wilayah.desa.index'), { 
-                    search, 
-                    provinsi_kode: provinsiKode,
-                    kabupaten_kode: kabupatenKode,
-                    kecamatan_kode: kecamatanKode
-                }, {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                    only: ['data', 'filters'],
-                });
-            }
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [search, provinsiKode, kabupatenKode, kecamatanKode]);
-
     const handlePageChange = (page: number) => {
-        router.get(route('master.wilayah.desa.index'), { 
-            search, 
-            provinsi_kode: provinsiKode,
-            kabupaten_kode: kabupatenKode,
-            kecamatan_kode: kecamatanKode,
-            page 
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            only: ['data', 'filters'],
-        });
+        const url = data.links.find((l: any) => l.label == page)?.url;
+        if (url) {
+            router.get(url, { 
+                search, 
+                provinsi_kode: provinsiKode,
+                kabupaten_kode: kabupatenKode,
+                kecamatan_kode: kecamatanKode
+            }, {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['data', 'filters'],
+            });
+        }
     };
 
     const openCreateModal = () => {

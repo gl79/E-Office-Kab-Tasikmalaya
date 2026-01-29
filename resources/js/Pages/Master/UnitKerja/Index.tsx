@@ -10,6 +10,7 @@ import Modal from '@/Components/ui/Modal';
 import { useToast } from '@/Components/ui/Toast';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
+import { useServerSearch } from '@/hooks/useServerSearch';
 
 interface UnitKerja {
     id: string;
@@ -36,7 +37,11 @@ interface Props extends PageProps {
 
 export default function Index({ auth, unitKerja, filters }: Props) {
     const { showToast } = useToast();
-    const [search, setSearch] = useState(filters.search || '');
+    const { search, setSearch } = useServerSearch({
+        url: route('master.unit-kerja.index'),
+        initialSearch: filters.search
+    });
+
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -47,28 +52,15 @@ export default function Index({ auth, unitKerja, filters }: Props) {
         singkatan: '',
     });
 
-    // Debounced search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (search !== (filters.search || '')) {
-                router.get(route('master.unit-kerja.index'), { search }, {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                    only: ['unitKerja', 'filters'],
-                });
-            }
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [search]);
-
     const handlePageChange = (page: number) => {
-        router.get(route('master.unit-kerja.index'), { search, page }, { 
-            preserveState: true,
-            preserveScroll: true,
-            only: ['unitKerja', 'filters'],
-        });
+        const url = unitKerja.links.find((l: any) => l.label == page)?.url;
+        if (url) {
+            router.get(url, { search }, { 
+                preserveState: true,
+                preserveScroll: true,
+                only: ['unitKerja', 'filters'],
+            });
+        }
     };
 
     const openCreateModal = () => {
