@@ -106,4 +106,46 @@ class KabupatenController extends Controller
                 ->get()
         );
     }
+
+    /**
+     * Restore the specified resource from storage.
+     */
+    public function restore(string $id)
+    {
+        $parts = explode('.', $id);
+        if (count($parts) !== 2) {
+            return redirect()->back()->with('error', 'Invalid ID format.');
+        }
+        [$provinsi_kode, $kode] = $parts;
+
+        $kabupaten = WilayahKabupaten::onlyTrashed()
+            ->where('provinsi_kode', $provinsi_kode)
+            ->where('kode', $kode)
+            ->firstOrFail();
+
+        $kabupaten->restore();
+
+        return redirect()->back()->with('success', 'Kabupaten berhasil dipulihkan.');
+    }
+
+    /**
+     * Remove the specified resource from storage permanently.
+     */
+    public function forceDelete(string $id)
+    {
+        $parts = explode('.', $id);
+        if (count($parts) !== 2) {
+            return redirect()->back()->with('error', 'Invalid ID format.');
+        }
+        [$provinsi_kode, $kode] = $parts;
+
+        $kabupaten = WilayahKabupaten::onlyTrashed()
+            ->where('provinsi_kode', $provinsi_kode)
+            ->where('kode', $kode)
+            ->firstOrFail();
+
+        $kabupaten->forceDelete();
+
+        return redirect()->back()->with('success', 'Kabupaten berhasil dihapus permanen.');
+    }
 }

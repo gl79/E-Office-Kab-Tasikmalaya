@@ -122,4 +122,50 @@ class DesaController extends Controller
 
         return redirect()->back()->with('success', 'Desa berhasil dihapus.');
     }
+
+    /**
+     * Restore the specified resource from storage.
+     */
+    public function restore(string $id)
+    {
+        $parts = explode('.', $id);
+        if (count($parts) !== 4) {
+            return redirect()->back()->with('error', 'Invalid ID format.');
+        }
+        [$provinsi_kode, $kabupaten_kode, $kecamatan_kode, $kode] = $parts;
+
+        $desa = WilayahDesa::onlyTrashed()
+            ->where('provinsi_kode', $provinsi_kode)
+            ->where('kabupaten_kode', $kabupaten_kode)
+            ->where('kecamatan_kode', $kecamatan_kode)
+            ->where('kode', $kode)
+            ->firstOrFail();
+
+        $desa->restore();
+
+        return redirect()->back()->with('success', 'Desa berhasil dipulihkan.');
+    }
+
+    /**
+     * Remove the specified resource from storage permanently.
+     */
+    public function forceDelete(string $id)
+    {
+        $parts = explode('.', $id);
+        if (count($parts) !== 4) {
+            return redirect()->back()->with('error', 'Invalid ID format.');
+        }
+        [$provinsi_kode, $kabupaten_kode, $kecamatan_kode, $kode] = $parts;
+
+        $desa = WilayahDesa::onlyTrashed()
+            ->where('provinsi_kode', $provinsi_kode)
+            ->where('kabupaten_kode', $kabupaten_kode)
+            ->where('kecamatan_kode', $kecamatan_kode)
+            ->where('kode', $kode)
+            ->firstOrFail();
+
+        $desa->forceDelete();
+
+        return redirect()->back()->with('success', 'Desa berhasil dihapus permanen.');
+    }
 }

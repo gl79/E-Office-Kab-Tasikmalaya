@@ -73,16 +73,26 @@ export default function SidebarMenuItem({
     const { url } = usePage();
     const hasChildren = item.children && item.children.length > 0;
 
-    const hasActiveChild = item.children?.some(child => 
-        child.href 
-            ? (
-                (url === child.href || url.startsWith(child.href + '/') || url.startsWith(child.href + '?')) &&
-                (!child.excludePaths || !child.excludePaths.some(path => url.startsWith(path)))
-                )
-            : false
-    );
+    // Recursive function to check if any descendant is active
+    const checkIsActive = (menuItem: MenuItem): boolean => {
+        // Check if current item matches
+        if (menuItem.href) {
+            return (url === menuItem.href || url.startsWith(menuItem.href + '/') || url.startsWith(menuItem.href + '?')) &&
+                   (!menuItem.excludePaths || !menuItem.excludePaths.some(path => url.startsWith(path)));
+        }
+        
+        // Check children recursively
+        if (menuItem.children) {
+            return menuItem.children.some(child => checkIsActive(child));
+        }
 
-    const [isOpen, setIsOpen] = useState(hasActiveChild);
+        return false;
+    };
+
+    // Check if any direct child is active (or has active descendants)
+    const hasActiveChild = item.children?.some(child => checkIsActive(child));
+
+    const [isOpen, setIsOpen] = useState(!!hasActiveChild);
 
     // Check if current route matches this item or any of its children
     const isActive = (item.href 

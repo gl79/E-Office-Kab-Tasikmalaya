@@ -81,4 +81,26 @@ class ProvinsiController extends Controller
     {
         return response()->json(WilayahProvinsi::orderBy('nama')->get());
     }
+
+    /**
+     * Restore the specified resource from storage.
+     */
+    public function restore(string $kode)
+    {
+        $provinsi = WilayahProvinsi::onlyTrashed()->findOrFail($kode);
+        $provinsi->restore();
+
+        return redirect()->back()->with('success', 'Provinsi berhasil dipulihkan.');
+    }
+
+    /**
+     * Remove the specified resource from storage permanently.
+     */
+    public function forceDelete(string $kode)
+    {
+        $provinsi = WilayahProvinsi::onlyTrashed()->findOrFail($kode);
+        $provinsi->forceDelete();
+
+        return redirect()->back()->with('success', 'Provinsi berhasil dihapus permanen.');
+    }
 }
