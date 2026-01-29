@@ -7,6 +7,26 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $username
+ * @property string $role
+ * @property string|null $email
+ * @property string $password
+ * @property string|null $foto
+ * @property string|null $nip
+ * @property string|null $jenis_kelamin
+ * @property string|null $jabatan
+ * @property array|null $module_access
+ * @property \Illuminate\Support\Carbon|null $password_changed_at
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read string|null $foto_url
+ * @property-read string $role_label
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
@@ -70,6 +90,7 @@ class User extends Authenticatable
         'jenis_kelamin',
         'jabatan',
         'module_access',
+        'password_changed_at',
     ];
 
     /**
@@ -97,6 +118,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'module_access' => 'array',
+            'password_changed_at' => 'datetime',
         ];
     }
 

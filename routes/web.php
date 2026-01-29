@@ -27,6 +27,15 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
+    // Profile Routes
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Password Routes
+    Route::put('/password', [App\Http\Controllers\PasswordController::class, 'update'])->name('password.update');
+    Route::put('/password/force', [App\Http\Controllers\PasswordController::class, 'forceUpdate'])->name('password.force_update');
+
     // ================================================================
     // DATA MASTER
     // ================================================================

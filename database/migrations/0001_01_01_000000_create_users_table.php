@@ -16,10 +16,17 @@ return new class extends Migration
             $table->string('name');
             $table->string('username')->unique();
             $table->string('role')->default('tu');
+            $table->string('foto')->nullable();
+            $table->string('nip', 30)->nullable();
+            $table->enum('jenis_kelamin', ['L', 'P'])->nullable();
+            $table->string('jabatan')->nullable();
+            $table->json('module_access')->nullable();
             $table->string('email')->unique()->nullable();
             $table->string('password');
+            $table->timestamp('password_changed_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

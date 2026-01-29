@@ -21,7 +21,7 @@ class PenggunaController extends Controller
     private function authorizeUserManagement(): void
     {
         /** @var User|null $user */
-        $user = auth()->user();
+        $user = \Illuminate\Support\Facades\Auth::user();
         if (!$user || !$user->canManageUsers()) {
             abort(403, 'Anda tidak memiliki akses untuk mengelola pengguna.');
         }
@@ -133,7 +133,7 @@ class PenggunaController extends Controller
 
         // Prevent self-deletion
         /** @var User|null $currentUser */
-        $currentUser = auth()->user();
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
         if ($currentUser && $pengguna->id === $currentUser->id) {
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
         }
