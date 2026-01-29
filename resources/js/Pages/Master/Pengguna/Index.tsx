@@ -211,9 +211,6 @@ export default function Index({ data, filters, roles, modules }: Props) {
                     <p className="text-text-secondary text-sm mt-1">Kelola data pengguna sistem</p>
                 </div>
                 <div className="flex gap-2">
-                    <Link href={route('master.pengguna.archive')}>
-                        <Button variant="secondary">Archive</Button>
-                    </Link>
                     <Button onClick={openCreate}>Tambah Pengguna</Button>
                 </div>
             </div>
