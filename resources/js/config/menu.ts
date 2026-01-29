@@ -14,6 +14,8 @@ export interface MenuItem {
     icon?: string;
     /** Nested submenu items */
     children?: MenuItem[];
+    /** Paths to exclude from active state matching */
+    excludePaths?: string[];
 }
 
 /**
@@ -51,7 +53,7 @@ export const menuItems: MenuItem[] = [
             },
             {
                 label: 'Archive',
-                href: '/master/unit-kerja/archive',
+                href: '/master/archive',
                 icon: 'archive',
             },
         ],
@@ -85,6 +87,7 @@ export const menuItems: MenuItem[] = [
                 label: 'Data Cuti',
                 href: '/cuti',
                 icon: 'list',
+                excludePaths: ['/cuti/archive'],
             },
             {
                 label: 'Archive',

@@ -7,79 +7,86 @@ import TextInput from '@/Components/form/TextInput';
 import Table, { TableHeader } from '@/Components/ui/Table';
 import Modal from '@/Components/ui/Modal';
 import { useToast } from '@/Components/ui/Toast';
-import { ArrowLeft, RefreshCw, Trash2, Search } from 'lucide-react';
+import { RefreshCw, Trash2, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
 
-interface UnitKerja {
+interface ArchiveItem {
     id: string;
     nama: string;
-    singkatan: string;
     deleted_at: string;
+    type: string;
+    resource_name: string;
     [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    unitKerja: {
-        data: UnitKerja[];
+    archives: {
+        data: ArchiveItem[];
         links: any[];
         current_page: number;
         last_page: number;
         total: number;
+        from: number;
     };
     filters: {
         search?: string;
     };
 }
 
-export default function Archive({ auth, unitKerja, filters }: Props) {
+export default function Index({ auth, archives, filters }: Props) {
     const { showToast } = useToast();
     const [search, setSearch] = useState(filters.search || '');
     const [isRestoreAlertOpen, setIsRestoreAlertOpen] = useState(false);
     const [isForceDeleteAlertOpen, setIsForceDeleteAlertOpen] = useState(false);
-    const [selectedUnit, setSelectedUnit] = useState<UnitKerja | null>(null);
+    const [selectedItem, setSelectedItem] = useState<ArchiveItem | null>(null);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get(route('master.unit-kerja.archive'), { search }, { preserveState: true });
+        router.get(route('master.archive'), { search }, { preserveState: true });
     };
 
     const handlePageChange = (page: number) => {
-        router.get(route('master.unit-kerja.archive'), { search, page }, { preserveState: true });
+        router.get(route('master.archive'), { search, page }, { preserveState: true });
     };
 
-    const openRestoreAlert = (unit: UnitKerja) => {
-        setSelectedUnit(unit);
+    const openRestoreAlert = (item: ArchiveItem) => {
+        setSelectedItem(item);
         setIsRestoreAlertOpen(true);
     };
 
-    const openForceDeleteAlert = (unit: UnitKerja) => {
-        setSelectedUnit(unit);
+    const openForceDeleteAlert = (item: ArchiveItem) => {
+        setSelectedItem(item);
         setIsForceDeleteAlertOpen(true);
     };
 
     const handleRestore = () => {
-        if (!selectedUnit) return;
-        router.post(route('master.unit-kerja.restore', selectedUnit.id), {}, {
+        if (!selectedItem) return;
+        router.post(route(`master.${selectedItem.resource_name}.restore`, selectedItem.id), {}, {
             onSuccess: () => {
                 setIsRestoreAlertOpen(false);
-                showToast('success', "Unit Kerja berhasil dipulihkan.");
+                showToast('success', `${selectedItem.type} berhasil dipulihkan.`);
             },
         });
     };
 
     const handleForceDelete = () => {
-        if (!selectedUnit) return;
-        router.delete(route('master.unit-kerja.force-delete', selectedUnit.id), {
+        if (!selectedItem) return;
+        router.delete(route(`master.${selectedItem.resource_name}.force-delete`, selectedItem.id), {
             onSuccess: () => {
                 setIsForceDeleteAlertOpen(false);
-                showToast('success', "Unit Kerja berhasil dihapus permanen.");
+                showToast('success', `${selectedItem.type} berhasil dihapus permanen.`);
             },
         });
     };
 
-    const tableHeaders: TableHeader<UnitKerja>[] = [
-        { key: 'nama', label: 'Nama Unit Kerja' },
-        { key: 'singkatan', label: 'Singkatan' },
+    const tableHeaders: TableHeader<ArchiveItem>[] = [
+        { 
+            key: 'no', 
+            label: 'No',
+            render: (_: unknown, __: unknown, index: number) => (archives.from + index).toString()
+        },
+        { key: 'type', label: 'Jenis Menu' },
+        { key: 'nama', label: 'Nama Data' },
         { 
             key: 'deleted_at', 
             label: 'Dihapus Pada',
@@ -89,12 +96,12 @@ export default function Archive({ auth, unitKerja, filters }: Props) {
             key: 'actions',
             label: 'Aksi',
             className: 'text-right',
-            render: (_: unknown, unit: UnitKerja) => (
+            render: (_: unknown, item: ArchiveItem) => (
                 <div className="flex justify-end gap-2">
-                    <Button variant="secondary" size="sm" onClick={() => openRestoreAlert(unit)}>
+                    <Button variant="secondary" size="sm" onClick={() => openRestoreAlert(item)}>
                         <RefreshCw className="h-4 w-4 text-green-600" />
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => openForceDeleteAlert(unit)}>
+                    <Button variant="danger" size="sm" onClick={() => openForceDeleteAlert(item)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
@@ -104,7 +111,7 @@ export default function Archive({ auth, unitKerja, filters }: Props) {
 
     return (
         <AppLayout>
-            <Head title="Arsip Unit Kerja" />
+            <Head title="Arsip Data Master" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -122,27 +129,21 @@ export default function Archive({ auth, unitKerja, filters }: Props) {
                                     <Search className="h-4 w-4" />
                                 </Button>
                             </form>
-                            <Link href={route('master.unit-kerja.index')}>
-                                <Button variant="secondary">
-                                    <ArrowLeft className="h-4 w-4 mr-2" />
-                                    Kembali
-                                </Button>
-                            </Link>
                         </div>
 
                         <div className="rounded-md border">
-                            <Table<UnitKerja>
+                            <Table<ArchiveItem>
                                 headers={tableHeaders}
-                                data={unitKerja.data}
-                                keyExtractor={(unit) => unit.id}
+                                data={archives.data}
+                                keyExtractor={(item) => `${item.type}-${item.id}`}
                                 emptyMessage="Tidak ada data arsip."
                             />
                         </div>
 
                         <div className="mt-4">
                             <Pagination 
-                                currentPage={unitKerja.current_page}
-                                totalPages={unitKerja.last_page}
+                                currentPage={archives.current_page}
+                                totalPages={archives.last_page}
                                 onPageChange={handlePageChange}
                             />
                         </div>

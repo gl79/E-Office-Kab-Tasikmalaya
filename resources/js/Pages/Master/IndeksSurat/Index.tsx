@@ -28,6 +28,7 @@ interface Props extends PageProps {
         current_page: number;
         last_page: number;
         total: number;
+        from: number;
     };
     filters: {
         search?: string;
@@ -113,6 +114,11 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
     };
 
     const tableHeaders: TableHeader<IndeksSurat>[] = [
+        { 
+            key: 'no', 
+            label: 'No',
+            render: (_: unknown, __: unknown, index: number) => (indeksSurat.from + index).toString()
+        },
         { key: 'kode', label: 'Kode' },
         { key: 'nama', label: 'Nama Indeks' },
         { key: 'urutan', label: 'Urutan' },
@@ -154,9 +160,6 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
                                 </Button>
                             </form>
                             <div className="flex gap-2">
-                                <Link href={route('master.indeks-surat.archive')}>
-                                    <Button variant="secondary">Archive</Button>
-                                </Link>
                                 <Button onClick={openCreateModal}>
                                     <Plus className="h-4 w-4 mr-2" />
                                     Tambah

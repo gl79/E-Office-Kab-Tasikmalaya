@@ -34,13 +34,14 @@ Route::middleware('auth')->group(function () {
             return Inertia::render('Master/Pengguna/Index');
         })->name('pengguna.index');
 
+        // Unified Archive
+        Route::get('/archive', [\App\Http\Controllers\Master\MasterArchiveController::class, 'index'])->name('archive');
+
         Route::resource('unit-kerja', \App\Http\Controllers\Master\UnitKerjaController::class)->except(['create', 'show', 'edit']);
-        Route::get('unit-kerja/archive', [\App\Http\Controllers\Master\UnitKerjaController::class, 'archive'])->name('unit-kerja.archive');
         Route::post('unit-kerja/{id}/restore', [\App\Http\Controllers\Master\UnitKerjaController::class, 'restore'])->name('unit-kerja.restore');
         Route::delete('unit-kerja/{id}/force-delete', [\App\Http\Controllers\Master\UnitKerjaController::class, 'forceDelete'])->name('unit-kerja.force-delete');
 
         Route::resource('indeks-surat', \App\Http\Controllers\Master\IndeksSuratController::class)->except(['create', 'show', 'edit']);
-        Route::get('indeks-surat/archive', [\App\Http\Controllers\Master\IndeksSuratController::class, 'archive'])->name('indeks-surat.archive');
         Route::post('indeks-surat/{id}/restore', [\App\Http\Controllers\Master\IndeksSuratController::class, 'restore'])->name('indeks-surat.restore');
         Route::delete('indeks-surat/{id}/force-delete', [\App\Http\Controllers\Master\IndeksSuratController::class, 'forceDelete'])->name('indeks-surat.force-delete');
     });

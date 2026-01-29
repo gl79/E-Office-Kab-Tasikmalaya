@@ -67,9 +67,20 @@ export default function SidebarMenuItem({
     const hasChildren = item.children && item.children.length > 0;
     
     // Check if current route matches this item or any of its children
-    const isActive = item.href ? url.startsWith(item.href) : false;
+    const isActive = item.href 
+        ? (
+            (url === item.href || url.startsWith(item.href + '/')) && 
+            (!item.excludePaths || !item.excludePaths.some(path => url.startsWith(path)))
+        )
+        : false;
+
     const hasActiveChild = item.children?.some(child => 
-        child.href ? url.startsWith(child.href) : false
+        child.href 
+            ? (
+                (url === child.href || url.startsWith(child.href + '/')) &&
+                (!child.excludePaths || !child.excludePaths.some(path => url.startsWith(path)))
+                )
+            : false
     );
 
     // Auto-expand if has active child

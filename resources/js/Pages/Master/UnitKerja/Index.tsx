@@ -27,6 +27,7 @@ interface Props extends PageProps {
         current_page: number;
         last_page: number;
         total: number;
+        from: number;
     };
     filters: {
         search?: string;
@@ -110,6 +111,11 @@ export default function Index({ auth, unitKerja, filters }: Props) {
     };
 
     const tableHeaders: TableHeader<UnitKerja>[] = [
+        { 
+            key: 'no', 
+            label: 'No',
+            render: (_: unknown, __: unknown, index: number) => (unitKerja.from + index).toString()
+        },
         { key: 'nama', label: 'Nama Unit Kerja' },
         { key: 'singkatan', label: 'Singkatan' },
         {
@@ -150,9 +156,6 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                                 </Button>
                             </form>
                             <div className="flex gap-2">
-                                <Link href={route('master.unit-kerja.archive')}>
-                                    <Button variant="secondary">Archive</Button>
-                                </Link>
                                 <Button onClick={openCreateModal}>
                                     <Plus className="h-4 w-4 mr-2" />
                                     Tambah
