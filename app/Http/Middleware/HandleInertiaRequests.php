@@ -41,6 +41,13 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'role' => $user->role,
                     'role_label' => $user->role_label,
+                    'foto' => $user->foto,
+                    'foto_url' => $user->foto_url,
+                    'nip' => $user->nip,
+                    'jabatan' => $user->jabatan,
+                    'jenis_kelamin' => $user->jenis_kelamin,
+                    'module_access' => $user->module_access,
+                    'can_manage_users' => $user->canManageUsers(),
                 ] : null,
             ],
             // Flash messages - dieksekusi langsung, bukan lazy

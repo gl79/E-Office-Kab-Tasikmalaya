@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Master\PenggunaController;
 use App\Http\Controllers\Master\Wilayah\DesaController;
 use App\Http\Controllers\Master\Wilayah\KabupatenController;
 use App\Http\Controllers\Master\Wilayah\KecamatanController;
@@ -34,9 +35,14 @@ Route::middleware('auth')->group(function () {
             return Inertia::render('Master/Kepegawaian/Index');
         })->name('kepegawaian.index');
 
-        Route::get('/pengguna', function () {
-            return Inertia::render('Master/Pengguna/Index');
-        })->name('pengguna.index');
+        // Pengguna CRUD
+        Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
+        Route::post('/pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');
+        Route::post('/pengguna/{pengguna}', [PenggunaController::class, 'update'])->name('pengguna.update');
+        Route::delete('/pengguna/{pengguna}', [PenggunaController::class, 'destroy'])->name('pengguna.destroy');
+        Route::get('/pengguna/archive', [PenggunaController::class, 'archive'])->name('pengguna.archive');
+        Route::post('/pengguna/{id}/restore', [PenggunaController::class, 'restore'])->name('pengguna.restore');
+        Route::delete('/pengguna/{id}/force-delete', [PenggunaController::class, 'forceDelete'])->name('pengguna.force-delete');
 
         // Unified Archive
         Route::get('/archive', [\App\Http\Controllers\Master\MasterArchiveController::class, 'index'])->name('archive');

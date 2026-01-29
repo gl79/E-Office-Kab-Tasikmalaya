@@ -87,9 +87,9 @@ function AppLayoutInner({
                 trigger={
                     <button className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition duration-150 ease-in-out">
                         <img 
-                            src={`https://ui-avatars.com/api/?name=${user?.name}&background=random&color=fff`} 
+                            src={user?.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=6366f1&color=fff`} 
                             alt={user?.name} 
-                            className="h-8 w-8 rounded-full object-cover"
+                            className="h-8 w-8 rounded-full object-cover border border-gray-200"
                         />
                         <div className="hidden sm:block text-left">
                             <div className="text-sm font-medium text-text-primary">

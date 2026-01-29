@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * Role Constants
@@ -40,9 +40,24 @@ class User extends Authenticatable
     ];
 
     /**
+     * Available modules for access control
+     */
+    public const MODULES = [
+        'dashboard' => 'Dashboard',
+        'master.kepegawaian' => 'Data Master - Kepegawaian',
+        'master.pengguna' => 'Data Master - Pengguna',
+        'master.unit-kerja' => 'Data Master - Unit Kerja',
+        'master.indeks-surat' => 'Data Master - Indeks Surat',
+        'persuratan.surat-masuk' => 'Persuratan - Surat Masuk',
+        'persuratan.surat-keluar' => 'Persuratan - Surat Keluar',
+        'cuti' => 'Cuti',
+        'penjadwalan.jadwal' => 'Penjadwalan - Jadwal',
+        'penjadwalan.tentatif' => 'Penjadwalan - Tentatif',
+        'penjadwalan.definitif' => 'Penjadwalan - Definitif',
+    ];
+
+    /**
      * The attributes that are mass assignable.
-     *
-     * @var list<string>
      */
     protected $fillable = [
         'name',
@@ -50,12 +65,15 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'foto',
+        'nip',
+        'jenis_kelamin',
+        'jabatan',
+        'module_access',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
      */
     protected $hidden = [
         'password',
@@ -63,15 +81,22 @@ class User extends Authenticatable
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     */
+    protected $appends = [
+        'foto_url',
+        'role_label',
+    ];
+
+    /**
      * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'module_access' => 'array',
         ];
     }
 
@@ -81,6 +106,17 @@ class User extends Authenticatable
     public function getRoleLabelAttribute(): string
     {
         return self::ROLE_LABELS[$this->role] ?? $this->role;
+    }
+
+    /**
+     * Get foto URL attribute
+     */
+    public function getFotoUrlAttribute(): ?string
+    {
+        if ($this->foto) {
+            return asset('storage/' . $this->foto);
+        }
+        return null;
     }
 
     /**
@@ -97,5 +133,36 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->role === self::ROLE_SUPERADMIN;
+    }
+
+    /**
+     * Check if user is TU.
+     */
+    public function isTU(): bool
+    {
+        return $this->role === self::ROLE_TU;
+    }
+
+    /**
+     * Check if user can manage users (superadmin or TU).
+     */
+    public function canManageUsers(): bool
+    {
+        return $this->isSuperAdmin() || $this->isTU();
+    }
+
+    /**
+     * Check if user has access to a specific module.
+     */
+    public function hasModuleAccess(string $module): bool
+    {
+        // Superadmin has access to all modules
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Check module_access array
+        $access = $this->module_access ?? [];
+        return in_array($module, $access);
     }
 }
