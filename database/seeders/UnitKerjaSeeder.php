@@ -36,7 +36,7 @@ class UnitKerjaSeeder extends Seeder
         ];
 
         foreach ($units as $unit) {
-            UnitKerja::create($unit);
+            UnitKerja::firstOrCreate(['singkatan' => $unit['singkatan']], $unit);
         }
     }
 }

@@ -54,6 +54,6 @@ class UserSeeder extends Seeder
         }
 
         $this->command->info('Created/updated ' . count($users) . ' users.');
-        $this->command->info('Default login: superadmin / tasik123');
+        $this->command->info('Default login: superadmin / tasik123@');
     }
 }

@@ -41,7 +41,7 @@ class IndeksSuratSeeder extends Seeder
         ];
 
         foreach ($indexes as $index) {
-            IndeksSurat::create($index);
+            IndeksSurat::firstOrCreate(['kode' => $index['kode']], $index);
         }
     }
 }
