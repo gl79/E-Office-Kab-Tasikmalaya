@@ -34,9 +34,10 @@ Route::middleware('auth')->group(function () {
             return Inertia::render('Master/Pengguna/Index');
         })->name('pengguna.index');
 
-        Route::get('/unit-kerja', function () {
-            return Inertia::render('Master/UnitKerja/Index');
-        })->name('unit-kerja.index');
+        Route::resource('unit-kerja', \App\Http\Controllers\Master\UnitKerjaController::class)->except(['create', 'show', 'edit']);
+        Route::get('unit-kerja/archive', [\App\Http\Controllers\Master\UnitKerjaController::class, 'archive'])->name('unit-kerja.archive');
+        Route::post('unit-kerja/{id}/restore', [\App\Http\Controllers\Master\UnitKerjaController::class, 'restore'])->name('unit-kerja.restore');
+        Route::delete('unit-kerja/{id}/force-delete', [\App\Http\Controllers\Master\UnitKerjaController::class, 'forceDelete'])->name('unit-kerja.force-delete');
 
         Route::get('/indeks-surat', function () {
             return Inertia::render('Master/IndeksSurat/Index');

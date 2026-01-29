@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UnitKerjaSeeder::class,
             IndeksSuratSeeder::class,
+            UserSeeder::class,
         ]);
     }
 }
