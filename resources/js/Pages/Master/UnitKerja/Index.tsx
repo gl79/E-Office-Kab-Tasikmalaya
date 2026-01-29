@@ -83,7 +83,6 @@ export default function Index({ auth, unitKerja, filters }: Props) {
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 reset();
-                showToast('success', "Unit Kerja berhasil ditambahkan.");
             },
         });
     };
@@ -95,7 +94,6 @@ export default function Index({ auth, unitKerja, filters }: Props) {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 reset();
-                showToast('success', "Unit Kerja berhasil diperbarui.");
             },
         });
     };
@@ -105,7 +103,6 @@ export default function Index({ auth, unitKerja, filters }: Props) {
         router.delete(route('master.unit-kerja.destroy', selectedUnit.id), {
             onSuccess: () => {
                 setIsDeleteAlertOpen(false);
-                showToast('success', "Unit Kerja berhasil dihapus.");
             },
         });
     };

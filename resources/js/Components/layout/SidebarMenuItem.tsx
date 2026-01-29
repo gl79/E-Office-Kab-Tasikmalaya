@@ -83,8 +83,20 @@ export default function SidebarMenuItem({
             : false
     );
 
-    // Auto-expand if has active child
-    const isExpanded = isOpen || hasActiveChild;
+    // Sync isOpen with hasActiveChild when it changes
+    const [hasInitialized, setHasInitialized] = useState(false);
+
+    if (hasActiveChild && !hasInitialized) {
+        setIsOpen(true);
+        setHasInitialized(true);
+    }
+
+    // Auto-expand if has active child (only on mount/update)
+    // We use a separate effect or state initialization to allow toggling
+    
+    // Simplified: isExpanded is just isOpen. 
+    // We rely on the initialization above to open it by default if active.
+    const isExpanded = isOpen;
 
     // Base styles
     const baseClasses = `

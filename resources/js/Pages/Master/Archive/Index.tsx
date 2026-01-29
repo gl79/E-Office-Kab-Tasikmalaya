@@ -64,7 +64,6 @@ export default function Index({ auth, archives, filters }: Props) {
         router.post(route(`master.${selectedItem.resource_name}.restore`, selectedItem.id), {}, {
             onSuccess: () => {
                 setIsRestoreAlertOpen(false);
-                showToast('success', `${selectedItem.type} berhasil dipulihkan.`);
             },
         });
     };
@@ -74,7 +73,6 @@ export default function Index({ auth, archives, filters }: Props) {
         router.delete(route(`master.${selectedItem.resource_name}.force-delete`, selectedItem.id), {
             onSuccess: () => {
                 setIsForceDeleteAlertOpen(false);
-                showToast('success', `${selectedItem.type} berhasil dihapus permanen.`);
             },
         });
     };

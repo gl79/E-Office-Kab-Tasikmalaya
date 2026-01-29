@@ -86,7 +86,6 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 reset();
-                showToast('success', "Indeks Surat berhasil ditambahkan.");
             },
         });
     };
@@ -98,7 +97,6 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 reset();
-                showToast('success', "Indeks Surat berhasil diperbarui.");
             },
         });
     };
@@ -108,7 +106,6 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
         router.delete(route('master.indeks-surat.destroy', selectedIndeks.id), {
             onSuccess: () => {
                 setIsDeleteAlertOpen(false);
-                showToast('success', "Indeks Surat berhasil dihapus.");
             },
         });
     };
