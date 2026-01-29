@@ -49,6 +49,11 @@ export const menuItems: MenuItem[] = [
                 href: '/master/indeks-surat',
                 icon: 'file-text',
             },
+            {
+                label: 'Archive',
+                href: '/master/archive',
+                icon: 'archive',
+            },
         ],
     },
     {
@@ -65,12 +70,28 @@ export const menuItems: MenuItem[] = [
                 href: '/persuratan/surat-keluar',
                 icon: 'send',
             },
+            {
+                label: 'Archive',
+                href: '/persuratan/archive',
+                icon: 'archive',
+            },
         ],
     },
     {
         label: 'Cuti',
-        href: '/cuti',
         icon: 'calendar-off',
+        children: [
+            {
+                label: 'Data Cuti',
+                href: '/cuti',
+                icon: 'list',
+            },
+            {
+                label: 'Archive',
+                href: '/cuti/archive',
+                icon: 'archive',
+            },
+        ],
     },
     {
         label: 'Penjadwalan',
@@ -90,6 +111,11 @@ export const menuItems: MenuItem[] = [
                 label: 'Jadwal Definitif',
                 href: '/penjadwalan/definitif',
                 icon: 'calendar-check-2',
+            },
+            {
+                label: 'Archive',
+                href: '/penjadwalan/archive',
+                icon: 'archive',
             },
         ],
     },
