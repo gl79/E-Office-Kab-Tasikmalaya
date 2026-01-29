@@ -17,31 +17,31 @@ class UserSeeder extends Seeder
     {
         $users = [
             [
-                'name' => 'Tata Usaha',
-                'username' => 'tata_usaha',
-                'email' => 'tata.usaha@eoffice.test',
-                'password' => Hash::make('password'),
-                'role' => User::ROLE_TU,
-            ],
-            [
                 'name' => 'Super Admin',
                 'username' => 'superadmin',
                 'email' => 'superadmin@eoffice.test',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('tasik123@'),
                 'role' => User::ROLE_SUPERADMIN,
             ],
             [
+                'name' => 'Tata Usaha',
+                'username' => 'tatausaha',
+                'email' => 'tatausaha@eoffice.test',
+                'password' => Hash::make('tatausaha123@'),
+                'role' => User::ROLE_TU,
+            ],
+            [
                 'name' => 'Sekpri Bupati',
-                'username' => 'sekpri_bupati',
-                'email' => 'sekpri.bupati@eoffice.test',
-                'password' => Hash::make('password'),
+                'username' => 'sekpribupati',
+                'email' => 'sekpribupati@eoffice.test',
+                'password' => Hash::make('sekpribupati123@'),
                 'role' => User::ROLE_SEKPRI_BUPATI,
             ],
             [
                 'name' => 'Sekpri Wakil Bupati',
-                'username' => 'sekpri_wakil',
-                'email' => 'sekpri.wakil@eoffice.test',
-                'password' => Hash::make('password'),
+                'username' => 'sekpriwabup123@',
+                'email' => 'sekpriwabup123@eoffice.test',
+                'password' => Hash::make('sekpripwabup123@'),
                 'role' => User::ROLE_SEKPRI_WAKIL_BUPATI,
             ],
         ];
@@ -54,6 +54,6 @@ class UserSeeder extends Seeder
         }
 
         $this->command->info('Created/updated ' . count($users) . ' users.');
-        $this->command->info('Default login: tata_usaha / password');
+        $this->command->info('Default login: superadmin / tasik123');
     }
 }

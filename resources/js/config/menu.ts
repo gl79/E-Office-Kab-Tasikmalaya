@@ -16,6 +16,8 @@ export interface MenuItem {
     children?: MenuItem[];
     /** Paths to exclude from active state matching */
     excludePaths?: string[];
+    /** Roles allowed to view this menu item */
+    roles?: string[];
 }
 
 /**
@@ -30,6 +32,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Data Master',
         icon: 'database',
+        roles: ['superadmin', 'tu'],
         children: [
             {
                 label: 'Wilayah',
@@ -72,6 +75,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Persuratan',
         icon: 'mail',
+        roles: ['superadmin', 'tu'],
         children: [
             {
                 label: 'Surat Masuk',
@@ -93,6 +97,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Cuti',
         icon: 'calendar-off',
+        roles: ['superadmin', 'tu'],
         children: [
             {
                 label: 'Data Cuti',
@@ -110,6 +115,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Penjadwalan',
         icon: 'calendar',
+        roles: ['superadmin', 'sekpri_bupati', 'sekpri_wakil_bupati'],
         children: [
             {
                 label: 'Jadwal',

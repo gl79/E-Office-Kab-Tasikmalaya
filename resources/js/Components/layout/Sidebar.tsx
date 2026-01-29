@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
+import { usePage } from '@inertiajs/react';
 import { menuItems, MenuItem } from '@/config/menu';
 import SidebarMenuItem from './SidebarMenuItem';
+import { PageProps } from '@/types';
 
 interface SidebarProps {
     /** Additional CSS classes for customization */
@@ -46,8 +48,27 @@ export default function Sidebar({
     width = 'w-64',
     items
 }: SidebarProps) {
+    const { auth } = usePage<PageProps>().props;
+    const userRole = auth.user?.role;
+
     // Use provided items, or default menuItems from config
-    const menuToRender = items ?? menuItems;
+    const sourceItems = items ?? menuItems;
+
+    // Filter items based on role
+    const menuToRender = sourceItems.filter(item => {
+        // If no roles defined, show to everyone
+        if (!item.roles || item.roles.length === 0) {
+            return true;
+        }
+        
+        // If user has no role but item requires one, hide it
+        if (!userRole) {
+            return false;
+        }
+
+        // Check if user's role is in the allowed roles
+        return item.roles.includes(userRole);
+    });
 
     return (
         <aside 
