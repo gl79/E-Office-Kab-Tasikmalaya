@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Master\Wilayah;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\Wilayah\KabupatenRequest;
 use App\Models\WilayahKabupaten;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class KabupatenController extends Controller
@@ -47,24 +47,11 @@ class KabupatenController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(KabupatenRequest $request)
     {
         $this->authorize('create', WilayahKabupaten::class);
 
-        $validated = $request->validate([
-            'provinsi_kode' => 'required|exists:wilayah_provinsi,kode',
-            'kode' => [
-                'required',
-                'string',
-                'size:2',
-                Rule::unique('wilayah_kabupaten')->where(function ($query) use ($request) {
-                    return $query->where('provinsi_kode', $request->provinsi_kode);
-                }),
-            ],
-            'nama' => 'required|string|max:255',
-        ]);
-
-        WilayahKabupaten::create($validated);
+        WilayahKabupaten::create($request->validated());
 
         return redirect()->back()->with('success', 'Kabupaten berhasil ditambahkan.');
     }
@@ -72,18 +59,14 @@ class KabupatenController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $provinsi_kode, string $kode)
+    public function update(KabupatenRequest $request, string $provinsi_kode, string $kode)
     {
         $kabupaten = WilayahKabupaten::where('provinsi_kode', $provinsi_kode)
             ->where('kode', $kode)
             ->firstOrFail();
         $this->authorize('update', $kabupaten);
 
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-        ]);
-
-        $kabupaten->update($validated);
+        $kabupaten->update($request->validated());
 
         return redirect()->back()->with('success', 'Kabupaten berhasil diperbarui.');
     }

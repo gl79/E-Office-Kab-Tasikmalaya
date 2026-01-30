@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Master\Wilayah;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\Wilayah\ProvinsiRequest;
 use App\Models\WilayahProvinsi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,16 +38,11 @@ class ProvinsiController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(ProvinsiRequest $request)
     {
         $this->authorize('create', WilayahProvinsi::class);
 
-        $validated = $request->validate([
-            'kode' => 'required|string|size:2|unique:wilayah_provinsi,kode',
-            'nama' => 'required|string|max:255',
-        ]);
-
-        WilayahProvinsi::create($validated);
+        WilayahProvinsi::create($request->validated());
 
         return redirect()->back()->with('success', 'Provinsi berhasil ditambahkan.');
     }
@@ -54,16 +50,12 @@ class ProvinsiController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $kode)
+    public function update(ProvinsiRequest $request, string $kode)
     {
         $provinsi = WilayahProvinsi::findOrFail($kode);
         $this->authorize('update', $provinsi);
 
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-        ]);
-
-        $provinsi->update($validated);
+        $provinsi->update($request->validated());
 
         return redirect()->back()->with('success', 'Provinsi berhasil diperbarui.');
     }

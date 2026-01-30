@@ -15,12 +15,11 @@ interface ProfileUser {
 }
 
 interface Props {
-    mustVerifyEmail: boolean;
     status?: string;
     user: ProfileUser;
 }
 
-export default function Edit({ mustVerifyEmail, status, user }: Props) {
+export default function Edit({ status, user }: Props) {
     const { data, setData, post, errors, processing, recentlySuccessful } = useForm({
         name: user.name,
         username: user.username,

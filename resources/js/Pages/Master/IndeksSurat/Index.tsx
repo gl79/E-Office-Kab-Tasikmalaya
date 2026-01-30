@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Head, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
 import Button from '@/Components/ui/Button';
@@ -10,6 +10,7 @@ import Modal from '@/Components/ui/Modal';
 import { useToast } from '@/Components/ui/Toast';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
+import { useCRUDModal } from '@/hooks/useCRUDModal';
 
 interface IndeksSurat {
     id: string;
@@ -30,7 +31,7 @@ interface Props extends PageProps {
 
 export default function Index({ auth, indeksSurat, filters }: Props) {
     const { showToast } = useToast();
-    
+
     // Client-side Search & Pagination State
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -41,8 +42,8 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
         let data = indeksSurat;
         if (search) {
             const lowerSearch = search.toLowerCase();
-            data = data.filter(item => 
-                item.kode.toLowerCase().includes(lowerSearch) || 
+            data = data.filter(item =>
+                item.kode.toLowerCase().includes(lowerSearch) ||
                 item.nama.toLowerCase().includes(lowerSearch)
             );
         }
@@ -58,84 +59,85 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
     // Reset page on search
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
         setCurrentPage(1);
-    };
+    }, []);
 
-    const handlePageChange = (page: number) => {
+    const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page);
-    };
-    
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-    const [selectedIndeks, setSelectedIndeks] = useState<IndeksSurat | null>(null);
+    }, []);
 
+    // Form state
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         kode: '',
         nama: '',
         urutan: 0,
     });
 
-    const openCreateModal = () => {
-        reset();
-        clearErrors();
-        setIsCreateModalOpen(true);
-    };
+    // CRUD Modal hook
+    const {
+        isCreateModalOpen,
+        isEditModalOpen,
+        isDeleteModalOpen,
+        selectedItem: selectedIndeks,
+        openCreateModal,
+        openEditModal,
+        openDeleteModal,
+        closeCreateModal,
+        closeEditModal,
+        closeDeleteModal,
+    } = useCRUDModal<IndeksSurat>({
+        onOpenCreate: () => {
+            reset();
+            clearErrors();
+        },
+        onOpenEdit: (indeks) => {
+            setData({
+                kode: indeks.kode,
+                nama: indeks.nama,
+                urutan: indeks.urutan || 0,
+            });
+            clearErrors();
+        },
+    });
 
-    const openEditModal = (indeks: IndeksSurat) => {
-        setSelectedIndeks(indeks);
-        setData({
-            kode: indeks.kode,
-            nama: indeks.nama,
-            urutan: indeks.urutan || 0,
-        });
-        clearErrors();
-        setIsEditModalOpen(true);
-    };
-
-    const openDeleteAlert = (indeks: IndeksSurat) => {
-        setSelectedIndeks(indeks);
-        setIsDeleteAlertOpen(true);
-    };
-
-    const handleCreate = (e: React.FormEvent) => {
+    const handleCreate = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         post(route('master.indeks-surat.store'), {
             onSuccess: () => {
-                setIsCreateModalOpen(false);
+                closeCreateModal();
                 reset();
                 showToast('success', 'Indeks Surat berhasil ditambahkan.');
             },
         });
-    };
+    }, [post, closeCreateModal, reset, showToast]);
 
-    const handleUpdate = (e: React.FormEvent) => {
+    const handleUpdate = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedIndeks) return;
         put(route('master.indeks-surat.update', selectedIndeks.id), {
             onSuccess: () => {
-                setIsEditModalOpen(false);
+                closeEditModal();
                 reset();
                 showToast('success', 'Indeks Surat berhasil diperbarui.');
             },
         });
-    };
+    }, [selectedIndeks, put, closeEditModal, reset, showToast]);
 
-    const handleDelete = () => {
+    const handleDelete = useCallback(() => {
         if (!selectedIndeks) return;
         router.delete(route('master.indeks-surat.destroy', selectedIndeks.id), {
             onSuccess: () => {
-                setIsDeleteAlertOpen(false);
+                closeDeleteModal();
                 showToast('success', 'Indeks Surat berhasil dihapus.');
             },
         });
-    };
+    }, [selectedIndeks, closeDeleteModal, showToast]);
 
     const tableHeaders: TableHeader<IndeksSurat>[] = [
-        { 
-            key: 'no', 
+        {
+            key: 'no',
             label: 'No',
             render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
@@ -151,7 +153,7 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
                     <Button variant="secondary" size="sm" onClick={() => openEditModal(indeks)}>
                         <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => openDeleteAlert(indeks)}>
+                    <Button variant="danger" size="sm" onClick={() => openDeleteModal(indeks)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
@@ -197,7 +199,7 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
                         </div>
 
                         <div className="mt-4">
-                            <Pagination 
+                            <Pagination
                                 currentPage={currentPage}
                                 totalPages={totalPages}
                                 onPageChange={handlePageChange}
@@ -208,7 +210,7 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
             </div>
 
             {/* Create Modal */}
-            <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Tambah Indeks Surat">
+            <Modal isOpen={isCreateModalOpen} onClose={closeCreateModal} title="Tambah Indeks Surat">
                 <form onSubmit={handleCreate} className="space-y-4">
                     <div className="space-y-2">
                         <InputLabel htmlFor="kode" value="Kode" />
@@ -245,14 +247,14 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
                         {errors.urutan && <p className="text-sm text-red-500">{errors.urutan}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Batal</Button>
+                        <Button type="button" variant="secondary" onClick={closeCreateModal}>Batal</Button>
                         <Button type="submit" disabled={processing}>Simpan</Button>
                     </div>
                 </form>
             </Modal>
 
             {/* Edit Modal */}
-            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Indeks Surat">
+            <Modal isOpen={isEditModalOpen} onClose={closeEditModal} title="Edit Indeks Surat">
                 <form onSubmit={handleUpdate} className="space-y-4">
                     <div className="space-y-2">
                         <InputLabel htmlFor="edit-kode" value="Kode" />
@@ -286,18 +288,18 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
                         {errors.urutan && <p className="text-sm text-red-500">{errors.urutan}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>Batal</Button>
+                        <Button type="button" variant="secondary" onClick={closeEditModal}>Batal</Button>
                         <Button type="submit" disabled={processing}>Simpan Perubahan</Button>
                     </div>
                 </form>
             </Modal>
 
             {/* Delete Confirmation Modal */}
-            <Modal isOpen={isDeleteAlertOpen} onClose={() => setIsDeleteAlertOpen(false)} title="Konfirmasi Hapus">
+            <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal} title="Konfirmasi Hapus">
                 <div className="space-y-4">
                     <p>Apakah Anda yakin ingin menghapus indeks surat ini? Data akan dipindahkan ke arsip.</p>
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button variant="secondary" onClick={() => setIsDeleteAlertOpen(false)}>Batal</Button>
+                        <Button variant="secondary" onClick={closeDeleteModal}>Batal</Button>
                         <Button variant="danger" onClick={handleDelete}>Hapus</Button>
                     </div>
                 </div>

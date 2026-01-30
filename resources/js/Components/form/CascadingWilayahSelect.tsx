@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import InputLabel from '@/Components/form/InputLabel';
-import axios from 'axios';
-
-interface Wilayah {
-    kode: string;
-    nama: string;
-}
+import wilayahService, { Provinsi, Kabupaten, Kecamatan } from '@/services/wilayahService';
 
 interface Props {
     value: {
@@ -26,14 +21,13 @@ interface Props {
 }
 
 export default function CascadingWilayahSelect({ value, onChange, level, errors, disabled = false }: Props) {
-    const [provinsiList, setProvinsiList] = useState<Wilayah[]>([]);
-    const [kabupatenList, setKabupatenList] = useState<Wilayah[]>([]);
-    const [kecamatanList, setKecamatanList] = useState<Wilayah[]>([]);
-    const [desaList, setDesaList] = useState<Wilayah[]>([]); // Future use if needed
+    const [provinsiList, setProvinsiList] = useState<Provinsi[]>([]);
+    const [kabupatenList, setKabupatenList] = useState<Kabupaten[]>([]);
+    const [kecamatanList, setKecamatanList] = useState<Kecamatan[]>([]);
 
     // Fetch Provinsi
     useEffect(() => {
-        axios.get(route('master.wilayah.provinsi.all'))
+        wilayahService.getAllProvinsi()
             .then(response => setProvinsiList(response.data))
             .catch(error => console.error('Error fetching provinsi:', error));
     }, []);
@@ -41,7 +35,7 @@ export default function CascadingWilayahSelect({ value, onChange, level, errors,
     // Fetch Kabupaten
     useEffect(() => {
         if (value.provinsi) {
-            axios.get(route('master.wilayah.kabupaten.by-provinsi', value.provinsi))
+            wilayahService.getKabupatenByProvinsi(value.provinsi)
                 .then(response => setKabupatenList(response.data))
                 .catch(error => console.error('Error fetching kabupaten:', error));
         } else {
@@ -52,7 +46,7 @@ export default function CascadingWilayahSelect({ value, onChange, level, errors,
     // Fetch Kecamatan
     useEffect(() => {
         if (value.provinsi && value.kabupaten) {
-            axios.get(route('master.wilayah.kecamatan.by-kabupaten', [value.provinsi, value.kabupaten]))
+            wilayahService.getKecamatanByKabupaten(value.provinsi, value.kabupaten)
                 .then(response => setKecamatanList(response.data))
                 .catch(error => console.error('Error fetching kecamatan:', error));
         } else {

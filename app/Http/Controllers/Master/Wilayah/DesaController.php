@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Master\Wilayah;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\Wilayah\DesaRequest;
 use App\Models\WilayahDesa;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class DesaController extends Controller
@@ -56,39 +56,11 @@ class DesaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(DesaRequest $request)
     {
         $this->authorize('create', WilayahDesa::class);
 
-        $validated = $request->validate([
-            'provinsi_kode' => 'required|exists:wilayah_provinsi,kode',
-            'kabupaten_kode' => [
-                'required',
-                Rule::exists('wilayah_kabupaten', 'kode')->where(function ($query) use ($request) {
-                    return $query->where('provinsi_kode', $request->provinsi_kode);
-                }),
-            ],
-            'kecamatan_kode' => [
-                'required',
-                Rule::exists('wilayah_kecamatan', 'kode')->where(function ($query) use ($request) {
-                    return $query->where('provinsi_kode', $request->provinsi_kode)
-                        ->where('kabupaten_kode', $request->kabupaten_kode);
-                }),
-            ],
-            'kode' => [
-                'required',
-                'string',
-                'size:4',
-                Rule::unique('wilayah_desa')->where(function ($query) use ($request) {
-                    return $query->where('provinsi_kode', $request->provinsi_kode)
-                        ->where('kabupaten_kode', $request->kabupaten_kode)
-                        ->where('kecamatan_kode', $request->kecamatan_kode);
-                }),
-            ],
-            'nama' => 'required|string|max:255',
-        ]);
-
-        WilayahDesa::create($validated);
+        WilayahDesa::create($request->validated());
 
         return redirect()->back()->with('success', 'Desa berhasil ditambahkan.');
     }
@@ -96,7 +68,7 @@ class DesaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $provinsi_kode, string $kabupaten_kode, string $kecamatan_kode, string $kode)
+    public function update(DesaRequest $request, string $provinsi_kode, string $kabupaten_kode, string $kecamatan_kode, string $kode)
     {
         $desa = WilayahDesa::where('provinsi_kode', $provinsi_kode)
             ->where('kabupaten_kode', $kabupaten_kode)
@@ -105,11 +77,7 @@ class DesaController extends Controller
             ->firstOrFail();
         $this->authorize('update', $desa);
 
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-        ]);
-
-        $desa->update($validated);
+        $desa->update($request->validated());
 
         return redirect()->back()->with('success', 'Desa berhasil diperbarui.');
     }

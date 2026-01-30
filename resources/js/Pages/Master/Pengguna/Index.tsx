@@ -1,4 +1,4 @@
-import { useState, useRef, FormEvent, useMemo } from 'react';
+import { useState, useRef, FormEvent, useMemo, useCallback } from 'react';
 import { Head, router, useForm, usePage, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination } from '@/Components/ui';
@@ -55,9 +55,9 @@ export default function Index({ data, filters, roles, modules }: Props) {
     });
 
     // Update role filter to trigger server search
-    const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleRoleChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
         setRoleFilter(e.target.value);
-    };
+    }, []);
 
     const form = useForm({
         name: '',
@@ -92,15 +92,15 @@ export default function Index({ data, filters, roles, modules }: Props) {
         return ordered;
     }, [modules]);
 
-    const openCreate = () => {
+    const openCreate = useCallback(() => {
         form.reset();
         form.clearErrors();
         setEditItem(null);
         setPreviewFoto(null);
         setShowModal(true);
-    };
+    }, [form]);
 
-    const openEdit = (item: User) => {
+    const openEdit = useCallback((item: User) => {
         form.setData({
             name: item.name,
             username: item.username,
@@ -117,26 +117,26 @@ export default function Index({ data, filters, roles, modules }: Props) {
         setEditItem(item);
         setPreviewFoto(item.foto_url || null);
         setShowModal(true);
-    };
+    }, [form]);
 
-    const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFotoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             form.setData('foto', file);
             setPreviewFoto(URL.createObjectURL(file));
         }
-    };
+    }, [form]);
 
-    const handleModuleToggle = (module: string) => {
+    const handleModuleToggle = useCallback((module: string) => {
         const current = form.data.module_access;
         if (current.includes(module)) {
             form.setData('module_access', current.filter(m => m !== module));
         } else {
             form.setData('module_access', [...current, module]);
         }
-    };
+    }, [form]);
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = useCallback((e: FormEvent) => {
         e.preventDefault();
 
         const formData = new FormData();
@@ -175,16 +175,16 @@ export default function Index({ data, filters, roles, modules }: Props) {
                 },
             });
         }
-    };
+    }, [form.data, editItem]);
 
-    const handleDelete = () => {
+    const handleDelete = useCallback(() => {
         if (deleteItem) {
             router.delete(route('master.pengguna.destroy', deleteItem.id), {
                 preserveScroll: true,
                 onSuccess: () => setDeleteItem(null),
             });
         }
-    };
+    }, [deleteItem]);
 
 
 

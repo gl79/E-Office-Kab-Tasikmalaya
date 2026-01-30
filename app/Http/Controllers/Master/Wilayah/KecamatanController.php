@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Master\Wilayah;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\Wilayah\KecamatanRequest;
 use App\Models\WilayahKecamatan;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class KecamatanController extends Controller
@@ -52,31 +52,11 @@ class KecamatanController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(KecamatanRequest $request)
     {
         $this->authorize('create', WilayahKecamatan::class);
 
-        $validated = $request->validate([
-            'provinsi_kode' => 'required|exists:wilayah_provinsi,kode',
-            'kabupaten_kode' => [
-                'required',
-                Rule::exists('wilayah_kabupaten', 'kode')->where(function ($query) use ($request) {
-                    return $query->where('provinsi_kode', $request->provinsi_kode);
-                }),
-            ],
-            'kode' => [
-                'required',
-                'string',
-                'size:2',
-                Rule::unique('wilayah_kecamatan')->where(function ($query) use ($request) {
-                    return $query->where('provinsi_kode', $request->provinsi_kode)
-                        ->where('kabupaten_kode', $request->kabupaten_kode);
-                }),
-            ],
-            'nama' => 'required|string|max:255',
-        ]);
-
-        WilayahKecamatan::create($validated);
+        WilayahKecamatan::create($request->validated());
 
         return redirect()->back()->with('success', 'Kecamatan berhasil ditambahkan.');
     }
@@ -84,7 +64,7 @@ class KecamatanController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $provinsi_kode, string $kabupaten_kode, string $kode)
+    public function update(KecamatanRequest $request, string $provinsi_kode, string $kabupaten_kode, string $kode)
     {
         $kecamatan = WilayahKecamatan::where('provinsi_kode', $provinsi_kode)
             ->where('kabupaten_kode', $kabupaten_kode)
@@ -92,11 +72,7 @@ class KecamatanController extends Controller
             ->firstOrFail();
         $this->authorize('update', $kecamatan);
 
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-        ]);
-
-        $kecamatan->update($validated);
+        $kecamatan->update($request->validated());
 
         return redirect()->back()->with('success', 'Kecamatan berhasil diperbarui.');
     }

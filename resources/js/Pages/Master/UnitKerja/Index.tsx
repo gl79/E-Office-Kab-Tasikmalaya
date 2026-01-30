@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Head, useForm, router } from '@inertiajs/react'; // Link removed, router kept for delete
+import React, { useState, useMemo, useCallback } from 'react';
+import { Head, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
 import Button from '@/Components/ui/Button';
@@ -10,6 +10,7 @@ import Modal from '@/Components/ui/Modal';
 import { useToast } from '@/Components/ui/Toast';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
+import { useCRUDModal } from '@/hooks/useCRUDModal';
 
 interface UnitKerja {
     id: string;
@@ -21,7 +22,7 @@ interface UnitKerja {
 }
 
 interface Props extends PageProps {
-    unitKerja: UnitKerja[]; // Changed to array
+    unitKerja: UnitKerja[];
     filters: {
         search?: string;
     };
@@ -29,7 +30,7 @@ interface Props extends PageProps {
 
 export default function Index({ auth, unitKerja, filters }: Props) {
     const { showToast } = useToast();
-    
+
     // Client-side Search & Pagination State
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -40,8 +41,8 @@ export default function Index({ auth, unitKerja, filters }: Props) {
         let data = unitKerja;
         if (search) {
             const lowerSearch = search.toLowerCase();
-            data = data.filter(item => 
-                item.nama.toLowerCase().includes(lowerSearch) || 
+            data = data.filter(item =>
+                item.nama.toLowerCase().includes(lowerSearch) ||
                 (item.singkatan && item.singkatan.toLowerCase().includes(lowerSearch))
             );
         }
@@ -57,82 +58,83 @@ export default function Index({ auth, unitKerja, filters }: Props) {
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
     // Reset page on search
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
         setCurrentPage(1);
-    };
+    }, []);
 
-    const handlePageChange = (page: number) => {
+    const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page);
-    };
+    }, []);
 
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-    const [selectedUnit, setSelectedUnit] = useState<UnitKerja | null>(null);
-
+    // Form state
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         nama: '',
         singkatan: '',
     });
 
-    const openCreateModal = () => {
-        reset();
-        clearErrors();
-        setIsCreateModalOpen(true);
-    };
+    // CRUD Modal hook
+    const {
+        isCreateModalOpen,
+        isEditModalOpen,
+        isDeleteModalOpen,
+        selectedItem: selectedUnit,
+        openCreateModal: openCreate,
+        openEditModal,
+        openDeleteModal,
+        closeCreateModal,
+        closeEditModal,
+        closeDeleteModal,
+    } = useCRUDModal<UnitKerja>({
+        onOpenCreate: () => {
+            reset();
+            clearErrors();
+        },
+        onOpenEdit: (unit) => {
+            setData({
+                nama: unit.nama,
+                singkatan: unit.singkatan || '',
+            });
+            clearErrors();
+        },
+    });
 
-    const openEditModal = (unit: UnitKerja) => {
-        setSelectedUnit(unit);
-        setData({
-            nama: unit.nama,
-            singkatan: unit.singkatan || '',
-        });
-        clearErrors();
-        setIsEditModalOpen(true);
-    };
-
-    const openDeleteAlert = (unit: UnitKerja) => {
-        setSelectedUnit(unit);
-        setIsDeleteAlertOpen(true);
-    };
-
-    const handleCreate = (e: React.FormEvent) => {
+    const handleCreate = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         post(route('master.unit-kerja.store'), {
             onSuccess: () => {
-                setIsCreateModalOpen(false);
+                closeCreateModal();
                 reset();
                 showToast('success', 'Unit Kerja berhasil ditambahkan.');
             },
         });
-    };
+    }, [post, closeCreateModal, reset, showToast]);
 
-    const handleUpdate = (e: React.FormEvent) => {
+    const handleUpdate = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedUnit) return;
         put(route('master.unit-kerja.update', selectedUnit.id), {
             onSuccess: () => {
-                setIsEditModalOpen(false);
+                closeEditModal();
                 reset();
                 showToast('success', 'Unit Kerja berhasil diperbarui.');
             },
         });
-    };
+    }, [selectedUnit, put, closeEditModal, reset, showToast]);
 
-    const handleDelete = () => {
+    const handleDelete = useCallback(() => {
         if (!selectedUnit) return;
         router.delete(route('master.unit-kerja.destroy', selectedUnit.id), {
             onSuccess: () => {
-                setIsDeleteAlertOpen(false);
+                closeDeleteModal();
                 showToast('success', 'Unit Kerja berhasil dihapus.');
             },
         });
-    };
+    }, [selectedUnit, closeDeleteModal, showToast]);
 
     const tableHeaders: TableHeader<UnitKerja>[] = [
-        { 
-            key: 'no', 
+        {
+            key: 'no',
             label: 'No',
             render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
@@ -147,7 +149,7 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                     <Button variant="secondary" size="sm" onClick={() => openEditModal(unit)}>
                         <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => openDeleteAlert(unit)}>
+                    <Button variant="danger" size="sm" onClick={() => openDeleteModal(unit)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
@@ -176,7 +178,7 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                                 </Button>
                             </div>
                             <div className="flex gap-2">
-                                <Button onClick={openCreateModal}>
+                                <Button onClick={openCreate}>
                                     <Plus className="h-4 w-4 mr-2" />
                                     Tambah
                                 </Button>
@@ -193,7 +195,7 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                         </div>
 
                         <div className="mt-4">
-                            <Pagination 
+                            <Pagination
                                 currentPage={currentPage}
                                 totalPages={totalPages}
                                 onPageChange={handlePageChange}
@@ -204,7 +206,7 @@ export default function Index({ auth, unitKerja, filters }: Props) {
             </div>
 
             {/* Create Modal */}
-            <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Tambah Unit Kerja">
+            <Modal isOpen={isCreateModalOpen} onClose={closeCreateModal} title="Tambah Unit Kerja">
                 <form onSubmit={handleCreate} className="space-y-4">
                     <div className="space-y-2">
                         <InputLabel htmlFor="nama" value="Nama Unit Kerja" />
@@ -229,14 +231,14 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                         {errors.singkatan && <p className="text-sm text-red-500">{errors.singkatan}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Batal</Button>
+                        <Button type="button" variant="secondary" onClick={closeCreateModal}>Batal</Button>
                         <Button type="submit" disabled={processing}>Simpan</Button>
                     </div>
                 </form>
             </Modal>
 
             {/* Edit Modal */}
-            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Unit Kerja">
+            <Modal isOpen={isEditModalOpen} onClose={closeEditModal} title="Edit Unit Kerja">
                 <form onSubmit={handleUpdate} className="space-y-4">
                     <div className="space-y-2">
                         <InputLabel htmlFor="edit-nama" value="Nama Unit Kerja" />
@@ -259,18 +261,18 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                         {errors.singkatan && <p className="text-sm text-red-500">{errors.singkatan}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>Batal</Button>
+                        <Button type="button" variant="secondary" onClick={closeEditModal}>Batal</Button>
                         <Button type="submit" disabled={processing}>Simpan Perubahan</Button>
                     </div>
                 </form>
             </Modal>
 
             {/* Delete Confirmation Modal */}
-            <Modal isOpen={isDeleteAlertOpen} onClose={() => setIsDeleteAlertOpen(false)} title="Konfirmasi Hapus">
+            <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal} title="Konfirmasi Hapus">
                 <div className="space-y-4">
                     <p>Apakah Anda yakin ingin menghapus unit kerja ini? Data akan dipindahkan ke arsip.</p>
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button variant="secondary" onClick={() => setIsDeleteAlertOpen(false)}>Batal</Button>
+                        <Button variant="secondary" onClick={closeDeleteModal}>Batal</Button>
                         <Button variant="danger" onClick={handleDelete}>Hapus</Button>
                     </div>
                 </div>
