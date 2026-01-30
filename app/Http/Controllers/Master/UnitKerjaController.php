@@ -15,6 +15,8 @@ class UnitKerjaController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', UnitKerja::class);
+
         $query = UnitKerja::query();
 
         if ($request->search) {
@@ -37,6 +39,8 @@ class UnitKerjaController extends Controller
      */
     public function store(UnitKerjaRequest $request)
     {
+        $this->authorize('create', UnitKerja::class);
+
         UnitKerja::create($request->validated());
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil ditambahkan.');
@@ -48,6 +52,8 @@ class UnitKerjaController extends Controller
     public function update(UnitKerjaRequest $request, string $id)
     {
         $unitKerja = UnitKerja::findOrFail($id);
+        $this->authorize('update', $unitKerja);
+
         $unitKerja->update($request->validated());
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil diperbarui.');
@@ -59,6 +65,8 @@ class UnitKerjaController extends Controller
     public function destroy(string $id)
     {
         $unitKerja = UnitKerja::findOrFail($id);
+        $this->authorize('delete', $unitKerja);
+
         $unitKerja->delete();
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus.');
@@ -69,6 +77,8 @@ class UnitKerjaController extends Controller
      */
     public function archive(Request $request)
     {
+        $this->authorize('viewAny', UnitKerja::class);
+
         $query = UnitKerja::onlyTrashed();
 
         if ($request->search) {
@@ -92,6 +102,8 @@ class UnitKerjaController extends Controller
     public function restore(string $id)
     {
         $unitKerja = UnitKerja::onlyTrashed()->findOrFail($id);
+        $this->authorize('restore', $unitKerja);
+
         $unitKerja->restore();
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil dipulihkan.');
@@ -103,6 +115,8 @@ class UnitKerjaController extends Controller
     public function forceDelete(string $id)
     {
         $unitKerja = UnitKerja::onlyTrashed()->findOrFail($id);
+        $this->authorize('forceDelete', $unitKerja);
+
         $unitKerja->forceDelete();
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus permanen.');

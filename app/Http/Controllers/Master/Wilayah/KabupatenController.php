@@ -15,6 +15,8 @@ class KabupatenController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', WilayahKabupaten::class);
+
         $query = WilayahKabupaten::query()->with('provinsi');
 
         if ($request->search) {
@@ -45,6 +47,8 @@ class KabupatenController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', WilayahKabupaten::class);
+
         $validated = $request->validate([
             'provinsi_kode' => 'required|exists:wilayah_provinsi,kode',
             'kode' => [
@@ -71,6 +75,7 @@ class KabupatenController extends Controller
         $kabupaten = WilayahKabupaten::where('provinsi_kode', $provinsi_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('update', $kabupaten);
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
@@ -89,6 +94,7 @@ class KabupatenController extends Controller
         $kabupaten = WilayahKabupaten::where('provinsi_kode', $provinsi_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('delete', $kabupaten);
 
         $kabupaten->delete();
 
@@ -100,6 +106,8 @@ class KabupatenController extends Controller
      */
     public function getKabupatenByProvinsi(string $provinsiKode)
     {
+        $this->authorize('viewAny', WilayahKabupaten::class);
+
         return response()->json(
             WilayahKabupaten::where('provinsi_kode', $provinsiKode)
                 ->orderBy('nama')
@@ -122,6 +130,7 @@ class KabupatenController extends Controller
             ->where('provinsi_kode', $provinsi_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('restore', $kabupaten);
 
         $kabupaten->restore();
 
@@ -143,6 +152,7 @@ class KabupatenController extends Controller
             ->where('provinsi_kode', $provinsi_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('forceDelete', $kabupaten);
 
         $kabupaten->forceDelete();
 

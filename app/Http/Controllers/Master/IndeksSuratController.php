@@ -15,6 +15,8 @@ class IndeksSuratController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', IndeksSurat::class);
+
         $query = IndeksSurat::query();
 
         if ($request->search) {
@@ -40,6 +42,8 @@ class IndeksSuratController extends Controller
      */
     public function store(IndeksSuratRequest $request)
     {
+        $this->authorize('create', IndeksSurat::class);
+
         IndeksSurat::create($request->validated());
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil ditambahkan.');
@@ -51,6 +55,8 @@ class IndeksSuratController extends Controller
     public function update(IndeksSuratRequest $request, string $id)
     {
         $indeksSurat = IndeksSurat::findOrFail($id);
+        $this->authorize('update', $indeksSurat);
+
         $indeksSurat->update($request->validated());
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil diperbarui.');
@@ -62,6 +68,8 @@ class IndeksSuratController extends Controller
     public function destroy(string $id)
     {
         $indeksSurat = IndeksSurat::findOrFail($id);
+        $this->authorize('delete', $indeksSurat);
+
         $indeksSurat->delete();
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus.');
@@ -72,6 +80,8 @@ class IndeksSuratController extends Controller
      */
     public function archive(Request $request)
     {
+        $this->authorize('viewAny', IndeksSurat::class);
+
         $query = IndeksSurat::onlyTrashed();
 
         if ($request->search) {
@@ -95,6 +105,8 @@ class IndeksSuratController extends Controller
     public function restore(string $id)
     {
         $indeksSurat = IndeksSurat::onlyTrashed()->findOrFail($id);
+        $this->authorize('restore', $indeksSurat);
+
         $indeksSurat->restore();
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil dipulihkan.');
@@ -106,6 +118,8 @@ class IndeksSuratController extends Controller
     public function forceDelete(string $id)
     {
         $indeksSurat = IndeksSurat::onlyTrashed()->findOrFail($id);
+        $this->authorize('forceDelete', $indeksSurat);
+
         $indeksSurat->forceDelete();
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus permanen.');

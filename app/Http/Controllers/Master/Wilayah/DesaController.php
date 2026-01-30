@@ -15,6 +15,8 @@ class DesaController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', WilayahDesa::class);
+
         $query = WilayahDesa::query()->with(['kecamatan.kabupaten.provinsi']);
 
         if ($request->search) {
@@ -54,6 +56,8 @@ class DesaController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', WilayahDesa::class);
+
         $validated = $request->validate([
             'provinsi_kode' => 'required|exists:wilayah_provinsi,kode',
             'kabupaten_kode' => [
@@ -97,6 +101,7 @@ class DesaController extends Controller
             ->where('kecamatan_kode', $kecamatan_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('update', $desa);
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
@@ -117,6 +122,7 @@ class DesaController extends Controller
             ->where('kecamatan_kode', $kecamatan_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('delete', $desa);
 
         $desa->delete();
 
@@ -140,6 +146,7 @@ class DesaController extends Controller
             ->where('kecamatan_kode', $kecamatan_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('restore', $desa);
 
         $desa->restore();
 
@@ -163,6 +170,7 @@ class DesaController extends Controller
             ->where('kecamatan_kode', $kecamatan_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('forceDelete', $desa);
 
         $desa->forceDelete();
 

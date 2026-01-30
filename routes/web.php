@@ -34,6 +34,7 @@ Route::middleware('auth')->group(function () {
 
     // Password Routes
     Route::put('/password', [App\Http\Controllers\PasswordController::class, 'update'])->name('password.update');
+    Route::get('/password/force', [App\Http\Controllers\PasswordController::class, 'showForce'])->name('password.force');
     Route::put('/password/force', [App\Http\Controllers\PasswordController::class, 'forceUpdate'])->name('password.force_update');
 
     // ================================================================

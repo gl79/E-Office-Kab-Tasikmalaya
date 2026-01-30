@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Models\UnitKerja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -14,6 +15,10 @@ class MasterArchiveController extends Controller
      */
     public function index(Request $request)
     {
+        // Use UnitKerja policy for general master archive access check
+        // All authenticated users can view archives based on viewAny policy
+        $this->authorize('viewAny', UnitKerja::class);
+
         $search = $request->search;
 
         // Query for Unit Kerja

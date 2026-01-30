@@ -6,9 +6,19 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class PasswordController extends Controller
 {
+    /**
+     * Show the force password change form.
+     */
+    public function showForce(): Response
+    {
+        return Inertia::render('Auth/ForcePasswordChange');
+    }
+
     /**
      * Update the user's password.
      */
@@ -41,6 +51,6 @@ class PasswordController extends Controller
             'password_changed_at' => now(),
         ]);
 
-        return back()->with('status', 'password-updated');
+        return redirect()->route('dashboard')->with('status', 'password-updated');
     }
 }

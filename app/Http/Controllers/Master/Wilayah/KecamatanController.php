@@ -15,6 +15,8 @@ class KecamatanController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', WilayahKecamatan::class);
+
         $query = WilayahKecamatan::query()->with(['kabupaten.provinsi']);
 
         if ($request->search) {
@@ -50,6 +52,8 @@ class KecamatanController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', WilayahKecamatan::class);
+
         $validated = $request->validate([
             'provinsi_kode' => 'required|exists:wilayah_provinsi,kode',
             'kabupaten_kode' => [
@@ -84,6 +88,7 @@ class KecamatanController extends Controller
             ->where('kabupaten_kode', $kabupaten_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('update', $kecamatan);
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
@@ -103,6 +108,7 @@ class KecamatanController extends Controller
             ->where('kabupaten_kode', $kabupaten_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('delete', $kecamatan);
 
         $kecamatan->delete();
 
@@ -114,6 +120,8 @@ class KecamatanController extends Controller
      */
     public function getKecamatanByKabupaten(string $provinsiKode, string $kabupatenKode)
     {
+        $this->authorize('viewAny', WilayahKecamatan::class);
+
         return response()->json(
             WilayahKecamatan::where('provinsi_kode', $provinsiKode)
                 ->where('kabupaten_kode', $kabupatenKode)
@@ -138,6 +146,7 @@ class KecamatanController extends Controller
             ->where('kabupaten_kode', $kabupaten_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('restore', $kecamatan);
 
         $kecamatan->restore();
 
@@ -160,6 +169,7 @@ class KecamatanController extends Controller
             ->where('kabupaten_kode', $kabupaten_kode)
             ->where('kode', $kode)
             ->firstOrFail();
+        $this->authorize('forceDelete', $kecamatan);
 
         $kecamatan->forceDelete();
 

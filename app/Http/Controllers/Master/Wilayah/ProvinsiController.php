@@ -14,6 +14,8 @@ class ProvinsiController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', WilayahProvinsi::class);
+
         $query = WilayahProvinsi::query();
 
         if ($request->search) {
@@ -37,6 +39,8 @@ class ProvinsiController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', WilayahProvinsi::class);
+
         $validated = $request->validate([
             'kode' => 'required|string|size:2|unique:wilayah_provinsi,kode',
             'nama' => 'required|string|max:255',
@@ -53,6 +57,7 @@ class ProvinsiController extends Controller
     public function update(Request $request, string $kode)
     {
         $provinsi = WilayahProvinsi::findOrFail($kode);
+        $this->authorize('update', $provinsi);
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
@@ -69,7 +74,9 @@ class ProvinsiController extends Controller
     public function destroy(string $kode)
     {
         $provinsi = WilayahProvinsi::findOrFail($kode);
-        $provinsi->delete(); // Cascade delete handled by database foreign keys
+        $this->authorize('delete', $provinsi);
+
+        $provinsi->delete();
 
         return redirect()->back()->with('success', 'Provinsi berhasil dihapus.');
     }
@@ -79,6 +86,8 @@ class ProvinsiController extends Controller
      */
     public function getAll()
     {
+        $this->authorize('viewAny', WilayahProvinsi::class);
+
         return response()->json(WilayahProvinsi::orderBy('nama')->get());
     }
 
@@ -88,6 +97,8 @@ class ProvinsiController extends Controller
     public function restore(string $kode)
     {
         $provinsi = WilayahProvinsi::onlyTrashed()->findOrFail($kode);
+        $this->authorize('restore', $provinsi);
+
         $provinsi->restore();
 
         return redirect()->back()->with('success', 'Provinsi berhasil dipulihkan.');
@@ -99,6 +110,8 @@ class ProvinsiController extends Controller
     public function forceDelete(string $kode)
     {
         $provinsi = WilayahProvinsi::onlyTrashed()->findOrFail($kode);
+        $this->authorize('forceDelete', $provinsi);
+
         $provinsi->forceDelete();
 
         return redirect()->back()->with('success', 'Provinsi berhasil dihapus permanen.');

@@ -5,10 +5,18 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Auth;
 
 class EnsurePasswordChanged
 {
+    /**
+     * Routes that are allowed even if password hasn't been changed.
+     */
+    protected array $allowedRoutes = [
+        'password.force',
+        'password.force_update',
+        'logout',
+    ];
+
     /**
      * Handle an incoming request.
      *
@@ -18,18 +26,31 @@ class EnsurePasswordChanged
     {
         $user = $request->user();
 
-        if ($user && ! $user->password_changed_at && ! $user->isSuperAdmin()) {
-            // We will handle this via frontend modal, but we can also enforce it here if needed.
-            // For SPA, it's better to pass a prop to the layout or check it in the layout.
-            // However, if we want to STRICTLY block access, we can redirect to a specific page.
-            // Given the requirement is a "Modal", we might just pass this state to Inertia.
-            // But if we want to block API calls until password is changed, we can do it here.
+        // Check if user needs to change password
+        if ($user && !$user->password_changed_at && !$user->isSuperAdmin()) {
+            // Allow access to specific routes
+            if ($this->isAllowedRoute($request)) {
+                return $next($request);
+            }
 
-            // For now, we will rely on the frontend Modal to force the change, 
-            // but we can add a check here to prevent other actions if strictly required.
-            // Let's just allow the request to proceed, but the frontend will block the UI.
+            // Redirect to force password change page
+            return redirect()->route('password.force');
         }
 
         return $next($request);
+    }
+
+    /**
+     * Check if the current route is in the allowed list.
+     */
+    protected function isAllowedRoute(Request $request): bool
+    {
+        $currentRoute = $request->route()?->getName();
+
+        if (!$currentRoute) {
+            return false;
+        }
+
+        return in_array($currentRoute, $this->allowedRoutes);
     }
 }
