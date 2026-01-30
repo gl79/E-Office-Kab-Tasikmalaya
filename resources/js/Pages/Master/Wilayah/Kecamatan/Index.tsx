@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import axios from 'axios';
@@ -9,7 +9,6 @@ import Modal from '@/Components/ui/Modal';
 import Pagination from '@/Components/ui/Pagination';
 import TextInput from '@/Components/form/TextInput';
 import InputLabel from '@/Components/form/InputLabel';
-import { useServerSearch } from '@/hooks/useServerSearch';
 import type { PageProps } from '@/types';
 
 interface WilayahProvinsi {
@@ -39,14 +38,7 @@ interface WilayahKecamatan {
 }
 
 interface Props extends PageProps {
-    data: {
-        data: WilayahKecamatan[];
-        links: any[];
-        current_page: number;
-        last_page: number;
-        total: number;
-        from: number;
-    };
+    kecamatan: WilayahKecamatan[];
     filters: {
         search?: string;
         provinsi_kode?: string;
@@ -54,18 +46,41 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ auth, data, filters }: Props) {
+export default function Index({ auth, kecamatan, filters }: Props) {
     const [provinsiKode, setProvinsiKode] = useState(filters.provinsi_kode || '');
     const [kabupatenKode, setKabupatenKode] = useState(filters.kabupaten_kode || '');
+    const [search, setSearch] = useState(filters.search || '');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     
-    const { search, setSearch } = useServerSearch({
-        url: route('master.wilayah.kecamatan.index'),
-        initialSearch: filters.search,
-        filters: { 
-            provinsi_kode: provinsiKode,
-            kabupaten_kode: kabupatenKode
+    // Client-side filtering
+    const filteredData = useMemo(() => {
+        let data = kecamatan;
+
+        if (provinsiKode) {
+            data = data.filter(item => item.provinsi_kode === provinsiKode);
         }
-    });
+
+        if (kabupatenKode) {
+            data = data.filter(item => item.kabupaten_kode === kabupatenKode);
+        }
+
+        if (search) {
+            const lowerSearch = search.toLowerCase();
+            data = data.filter(item => 
+                item.nama.toLowerCase().includes(lowerSearch) ||
+                item.kode.toLowerCase().includes(lowerSearch)
+            );
+        }
+
+        return data;
+    }, [kecamatan, provinsiKode, kabupatenKode, search]);
+
+    // Client-side pagination
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredData.slice(start, start + itemsPerPage);
+    }, [filteredData, currentPage]);
     
     const [provinsiList, setProvinsiList] = useState<WilayahProvinsi[]>([]);
     const [kabupatenList, setKabupatenList] = useState<WilayahKabupaten[]>([]);
@@ -84,6 +99,11 @@ export default function Index({ auth, data, filters }: Props) {
         kode: '',
         nama: '',
     });
+
+    // Reset page when filter changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [provinsiKode, kabupatenKode, search]);
 
     // Fetch Provinsi List
     useEffect(() => {
@@ -116,18 +136,7 @@ export default function Index({ auth, data, filters }: Props) {
     }, [formData.provinsi_kode]);
 
     const handlePageChange = (page: number) => {
-        const url = data.links.find((l: any) => l.label == page)?.url;
-        if (url) {
-            router.get(url, { 
-                search, 
-                provinsi_kode: provinsiKode,
-                kabupaten_kode: kabupatenKode
-            }, {
-                preserveState: true,
-                preserveScroll: true,
-                only: ['data', 'filters'],
-            });
-        }
+        setCurrentPage(page);
     };
 
     const openCreateModal = () => {
@@ -170,6 +179,8 @@ export default function Index({ auth, data, filters }: Props) {
     const handleUpdate = (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedItem) return;
+        
+        // Fix: Use array for composite key
         put(route('master.wilayah.kecamatan.update', [selectedItem.provinsi_kode, selectedItem.kabupaten_kode, selectedItem.kode]), {
             onSuccess: () => {
                 setIsEditModalOpen(false);
@@ -192,7 +203,7 @@ export default function Index({ auth, data, filters }: Props) {
             key: 'no', 
             label: 'No',
             className: 'w-16',
-            render: (_: unknown, __: unknown, index: number) => (data.from + index).toString()
+            render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
         { 
             key: 'full_kode', 
@@ -237,6 +248,18 @@ export default function Index({ auth, data, filters }: Props) {
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex flex-col lg:flex-row justify-between gap-4 mb-6">
                             <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-3/4">
+                                <div className="w-full sm:w-2/4 relative flex gap-2">
+                                    <TextInput
+                                        type="text"
+                                        placeholder="Cari Kecamatan..."
+                                        value={search}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                        className="w-full"
+                                    />
+                                    <Button variant="secondary" disabled>
+                                        <Search className="h-4 w-4" />
+                                    </Button>
+                                </div>
                                 <div className="w-full sm:w-1/4">
                                     <select
                                         className="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
@@ -266,18 +289,6 @@ export default function Index({ auth, data, filters }: Props) {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="w-full sm:w-2/4 relative flex gap-2">
-                                    <TextInput
-                                        type="text"
-                                        placeholder="Cari Kecamatan..."
-                                        value={search}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                                        className="w-full"
-                                    />
-                                    <Button variant="secondary" disabled>
-                                        <Search className="h-4 w-4" />
-                                    </Button>
-                                </div>
                             </div>
                             <div className="flex gap-2">
                                 <Button onClick={openCreateModal}>
@@ -290,7 +301,7 @@ export default function Index({ auth, data, filters }: Props) {
                         <div className="rounded-md border">
                             <Table<WilayahKecamatan>
                                 headers={tableHeaders}
-                                data={data.data}
+                                data={paginatedData}
                                 keyExtractor={(item) => `${item.provinsi_kode}-${item.kabupaten_kode}-${item.kode}`}
                                 emptyMessage="Tidak ada data kecamatan."
                             />
@@ -298,8 +309,8 @@ export default function Index({ auth, data, filters }: Props) {
 
                         <div className="mt-4">
                             <Pagination
-                                currentPage={data.current_page}
-                                totalPages={data.last_page}
+                                currentPage={currentPage}
+                                totalPages={Math.ceil(filteredData.length / itemsPerPage)}
                                 onPageChange={handlePageChange}
                             />
                         </div>

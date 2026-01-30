@@ -20,7 +20,7 @@ class ProvinsiRequest extends FormRequest
 
         // Untuk update, kode harus unique kecuali record saat ini
         if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
-            $rules['kode'][] = 'unique:wilayah_provinsi,kode,' . $this->route('kode') . ',kode';
+            $rules['kode'][] = 'unique:wilayah_provinsi,kode,' . $this->route('provinsi') . ',kode';
         } else {
             $rules['kode'][] = 'unique:wilayah_provinsi,kode';
         }

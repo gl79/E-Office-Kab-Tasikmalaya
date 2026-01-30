@@ -26,11 +26,10 @@ class ProvinsiController extends Controller
 
         $data = $query->withCount('kabupaten')
             ->orderBy('kode')
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
         return Inertia::render('Master/Wilayah/Provinsi/Index', [
-            'data' => $data,
+            'provinsi' => $data,
             'filters' => $request->only(['search']),
         ]);
     }

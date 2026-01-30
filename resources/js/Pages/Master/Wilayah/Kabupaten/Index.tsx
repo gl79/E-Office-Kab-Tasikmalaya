@@ -144,7 +144,6 @@ export default function Index({ auth, kabupaten, filters }: Props) {
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 reset();
-                showToast('success', 'Kabupaten berhasil ditambahkan.');
             },
         });
     };
@@ -153,24 +152,20 @@ export default function Index({ auth, kabupaten, filters }: Props) {
         e.preventDefault();
         if (!selectedItem) return;
         // Composite ID handling if route requires it, otherwise use ID if available
-        // Assuming route takes 'id' which might be 'provinsi_kode.kode'
-        const id = `${selectedItem.provinsi_kode}.${selectedItem.kode}`;
-        put(route('master.wilayah.kabupaten.update', id), {
+        // Fix composite ID for route
+        put(route('master.wilayah.kabupaten.update', [selectedItem.provinsi_kode, selectedItem.kode]), {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 reset();
-                showToast('success', 'Kabupaten berhasil diperbarui.');
             },
         });
     };
 
     const handleDelete = () => {
         if (!selectedItem) return;
-        const id = `${selectedItem.provinsi_kode}.${selectedItem.kode}`;
         router.delete(route('master.wilayah.kabupaten.destroy', [selectedItem.provinsi_kode, selectedItem.kode]), {
             onSuccess: () => {
                 setIsDeleteAlertOpen(false);
-                showToast('success', 'Kabupaten berhasil dihapus.');
             },
         });
     };

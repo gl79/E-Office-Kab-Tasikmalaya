@@ -35,11 +35,10 @@ class KabupatenController extends Controller
         $data = $query->withCount('kecamatan')
             ->orderBy('provinsi_kode')
             ->orderBy('kode')
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
         return Inertia::render('Master/Wilayah/Kabupaten/Index', [
-            'data' => $data,
+            'kabupaten' => $data,
             'filters' => $request->only(['search', 'provinsi_kode']),
         ]);
     }

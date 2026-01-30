@@ -44,11 +44,10 @@ class DesaController extends Controller
             ->orderBy('kabupaten_kode')
             ->orderBy('kecamatan_kode')
             ->orderBy('kode')
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
         return Inertia::render('Master/Wilayah/Desa/Index', [
-            'data' => $data,
+            'desa' => $data,
             'filters' => $request->only(['search', 'provinsi_kode', 'kabupaten_kode', 'kecamatan_kode']),
         ]);
     }

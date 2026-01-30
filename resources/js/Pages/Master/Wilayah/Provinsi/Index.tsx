@@ -101,7 +101,6 @@ export default function Index({ auth, provinsi, filters }: Props) {
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 reset();
-                showToast('success', 'Provinsi berhasil ditambahkan.');
             },
         });
     };
@@ -113,7 +112,6 @@ export default function Index({ auth, provinsi, filters }: Props) {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 reset();
-                showToast('success', 'Provinsi berhasil diperbarui.');
             },
         });
     };
@@ -123,7 +121,6 @@ export default function Index({ auth, provinsi, filters }: Props) {
         router.delete(route('master.wilayah.provinsi.destroy', selectedItem.kode), {
             onSuccess: () => {
                 setIsDeleteAlertOpen(false);
-                showToast('success', 'Provinsi berhasil dihapus.');
             },
         });
     };
