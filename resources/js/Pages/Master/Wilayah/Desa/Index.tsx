@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
+import { Pencil, Trash2, Plus, Search } from 'lucide-react';
+import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout';
-import { PageProps } from '@/types';
 import Button from '@/Components/ui/Button';
-import TextInput from '@/Components/form/TextInput';
-import InputLabel from '@/Components/form/InputLabel';
 import Table, { TableHeader } from '@/Components/ui/Table';
 import Modal from '@/Components/ui/Modal';
-import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
-import { useServerSearch } from '@/hooks/useServerSearch';
-import axios from 'axios';
+import TextInput from '@/Components/form/TextInput';
+import InputLabel from '@/Components/form/InputLabel';
 import CascadingWilayahSelect from '@/Components/form/CascadingWilayahSelect';
+import { useServerSearch } from '@/hooks/useServerSearch';
+import type { PageProps } from '@/types';
 
 interface WilayahProvinsi {
     kode: string;

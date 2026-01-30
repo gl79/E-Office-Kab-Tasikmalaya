@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
+import { Pencil, Trash2, Plus, Search } from 'lucide-react';
+import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout';
-import { PageProps } from '@/types';
 import Button from '@/Components/ui/Button';
-import TextInput from '@/Components/form/TextInput';
-import InputLabel from '@/Components/form/InputLabel';
 import Table, { TableHeader } from '@/Components/ui/Table';
 import Modal from '@/Components/ui/Modal';
-import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
-import axios from 'axios';
 import { useToast } from '@/Components/ui/Toast';
+import TextInput from '@/Components/form/TextInput';
+import InputLabel from '@/Components/form/InputLabel';
+import type { PageProps } from '@/types';
 
 interface WilayahProvinsi {
     kode: string;

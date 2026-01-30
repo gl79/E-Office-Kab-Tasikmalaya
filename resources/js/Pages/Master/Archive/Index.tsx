@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
 import Button from '@/Components/ui/Button';
 import TextInput from '@/Components/form/TextInput';
 import Table, { TableHeader } from '@/Components/ui/Table';
 import Modal from '@/Components/ui/Modal';
-import { useToast } from '@/Components/ui/Toast';
 import { RefreshCw, Trash2, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
 import { useServerSearch } from '@/hooks/useServerSearch';
@@ -35,7 +34,6 @@ interface Props extends PageProps {
 }
 
 export default function Index({ auth, archives, filters }: Props) {
-    const { showToast } = useToast();
     const { search, setSearch } = useServerSearch({
         url: route('master.archive'),
         initialSearch: filters.search
