@@ -52,19 +52,7 @@ export default function Archive({ data, filters }: Props) {
         }
     };
 
-    // Check if current user can manage users
-    if (!auth.user.can_manage_users) {
-        return (
-            <AppLayout>
-                <Head title="Archive Pengguna" />
-                <div className="text-center py-12">
-                    <div className="text-6xl mb-4">🔒</div>
-                    <h2 className="text-xl font-semibold text-text-primary mb-2">Akses Ditolak</h2>
-                    <p className="text-text-secondary">Anda tidak memiliki akses untuk mengelola pengguna.</p>
-                </div>
-            </AppLayout>
-        );
-    }
+
 
     return (
         <AppLayout>

@@ -3,7 +3,7 @@ import { usePage, router, useForm } from '@inertiajs/react';
 import { Header, Sidebar, Footer } from '@/Components/layout';
 import { MenuItem } from '@/config/menu';
 import { PageProps } from '@/types';
-import { Button, Modal, ToastProvider, useToast, Dropdown } from '@/Components/ui';
+import { Button, Modal, ToastProvider, useToast, Dropdown, LiveClock } from '@/Components/ui';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -108,34 +108,11 @@ function AppLayoutInner({
         router.post(route('logout'));
     };
 
-    // Live Clock
-    const [currentTime, setCurrentTime] = useState(new Date());
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const formattedTime = currentTime.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    }) + ' - ' + currentTime.toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-    }).replace(/\./g, ':');
-
     // User menu untuk header
     const userMenu = (
         <div className="flex items-center gap-4">
-            {/* Live Clock */}
-            <div className="hidden md:block text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-md border border-gray-200">
-                {formattedTime}
-            </div>
+            {/* Live Clock - Isolated component to prevent parent re-renders */}
+            <LiveClock className="hidden md:block text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-md border border-gray-200" />
 
             <Dropdown
                 align="right"

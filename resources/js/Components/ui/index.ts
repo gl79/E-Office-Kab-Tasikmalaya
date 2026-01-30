@@ -4,3 +4,4 @@ export { default as Table } from './Table';
 export { default as Pagination } from './Pagination';
 export { ToastProvider, useToast } from './Toast';
 export { default as Dropdown } from './Dropdown';
+export { default as LiveClock } from './LiveClock';

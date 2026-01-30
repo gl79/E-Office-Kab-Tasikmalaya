@@ -17,7 +17,9 @@ class DesaController extends Controller
     {
         $this->authorize('viewAny', WilayahDesa::class);
 
-        $query = WilayahDesa::query()->with(['kecamatan.kabupaten.provinsi']);
+        $query = WilayahDesa::query()
+            ->select(['provinsi_kode', 'kabupaten_kode', 'kecamatan_kode', 'kode', 'nama', 'created_at'])
+            ->with(['kecamatan:provinsi_kode,kabupaten_kode,kode,nama']);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -126,6 +128,8 @@ class DesaController extends Controller
 
         $desa->delete();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Desa berhasil dihapus.');
     }
 
@@ -150,6 +154,8 @@ class DesaController extends Controller
 
         $desa->restore();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Desa berhasil dipulihkan.');
     }
 
@@ -173,6 +179,8 @@ class DesaController extends Controller
         $this->authorize('forceDelete', $desa);
 
         $desa->forceDelete();
+
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
 
         return redirect()->back()->with('success', 'Desa berhasil dihapus permanen.');
     }

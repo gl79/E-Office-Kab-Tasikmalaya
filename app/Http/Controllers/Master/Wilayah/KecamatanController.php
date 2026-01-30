@@ -17,7 +17,9 @@ class KecamatanController extends Controller
     {
         $this->authorize('viewAny', WilayahKecamatan::class);
 
-        $query = WilayahKecamatan::query()->with(['kabupaten.provinsi']);
+        $query = WilayahKecamatan::query()
+            ->select(['provinsi_kode', 'kabupaten_kode', 'kode', 'nama', 'created_at'])
+            ->with(['kabupaten:provinsi_kode,kode,nama', 'kabupaten.provinsi:kode,nama']);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -112,6 +114,8 @@ class KecamatanController extends Controller
 
         $kecamatan->delete();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Kecamatan berhasil dihapus.');
     }
 
@@ -150,6 +154,8 @@ class KecamatanController extends Controller
 
         $kecamatan->restore();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Kecamatan berhasil dipulihkan.');
     }
 
@@ -172,6 +178,8 @@ class KecamatanController extends Controller
         $this->authorize('forceDelete', $kecamatan);
 
         $kecamatan->forceDelete();
+
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
 
         return redirect()->back()->with('success', 'Kecamatan berhasil dihapus permanen.');
     }

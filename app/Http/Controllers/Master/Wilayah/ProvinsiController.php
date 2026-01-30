@@ -78,6 +78,8 @@ class ProvinsiController extends Controller
 
         $provinsi->delete();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Provinsi berhasil dihapus.');
     }
 
@@ -101,6 +103,8 @@ class ProvinsiController extends Controller
 
         $provinsi->restore();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Provinsi berhasil dipulihkan.');
     }
 
@@ -113,6 +117,8 @@ class ProvinsiController extends Controller
         $this->authorize('forceDelete', $provinsi);
 
         $provinsi->forceDelete();
+
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
 
         return redirect()->back()->with('success', 'Provinsi berhasil dihapus permanen.');
     }

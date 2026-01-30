@@ -17,7 +17,7 @@ class IndeksSuratController extends Controller
     {
         $this->authorize('viewAny', IndeksSurat::class);
 
-        $query = IndeksSurat::query();
+        $query = IndeksSurat::query()->select(['id', 'kode', 'nama', 'urutan', 'created_at', 'updated_at']);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -72,6 +72,8 @@ class IndeksSuratController extends Controller
 
         $indeksSurat->delete();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus.');
     }
 
@@ -82,7 +84,7 @@ class IndeksSuratController extends Controller
     {
         $this->authorize('viewAny', IndeksSurat::class);
 
-        $query = IndeksSurat::onlyTrashed();
+        $query = IndeksSurat::onlyTrashed()->select(['id', 'kode', 'nama', 'deleted_at']);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -109,6 +111,8 @@ class IndeksSuratController extends Controller
 
         $indeksSurat->restore();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Indeks Surat berhasil dipulihkan.');
     }
 
@@ -121,6 +125,8 @@ class IndeksSuratController extends Controller
         $this->authorize('forceDelete', $indeksSurat);
 
         $indeksSurat->forceDelete();
+
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus permanen.');
     }

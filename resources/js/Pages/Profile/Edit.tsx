@@ -1,16 +1,26 @@
 import React from 'react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { Transition } from '@headlessui/react';
+
+interface ProfileUser {
+    id: number;
+    name: string;
+    username: string;
+    email: string | null;
+    nip: string | null;
+    jabatan: string | null;
+    jenis_kelamin: 'L' | 'P' | null;
+    foto_url: string | null;
+}
 
 interface Props {
     mustVerifyEmail: boolean;
     status?: string;
+    user: ProfileUser;
 }
 
-export default function Edit({ mustVerifyEmail, status }: Props) {
-    const user = usePage().props.auth.user;
-
+export default function Edit({ mustVerifyEmail, status, user }: Props) {
     const { data, setData, post, errors, processing, recentlySuccessful } = useForm({
         name: user.name,
         username: user.username,

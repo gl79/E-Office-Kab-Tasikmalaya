@@ -17,7 +17,7 @@ class UnitKerjaController extends Controller
     {
         $this->authorize('viewAny', UnitKerja::class);
 
-        $query = UnitKerja::query();
+        $query = UnitKerja::query()->select(['id', 'nama', 'singkatan', 'created_at', 'updated_at']);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -69,6 +69,8 @@ class UnitKerjaController extends Controller
 
         $unitKerja->delete();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus.');
     }
 
@@ -79,7 +81,7 @@ class UnitKerjaController extends Controller
     {
         $this->authorize('viewAny', UnitKerja::class);
 
-        $query = UnitKerja::onlyTrashed();
+        $query = UnitKerja::onlyTrashed()->select(['id', 'nama', 'singkatan', 'deleted_at']);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -106,6 +108,8 @@ class UnitKerjaController extends Controller
 
         $unitKerja->restore();
 
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+
         return redirect()->back()->with('success', 'Unit Kerja berhasil dipulihkan.');
     }
 
@@ -118,6 +122,8 @@ class UnitKerjaController extends Controller
         $this->authorize('forceDelete', $unitKerja);
 
         $unitKerja->forceDelete();
+
+        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus permanen.');
     }
