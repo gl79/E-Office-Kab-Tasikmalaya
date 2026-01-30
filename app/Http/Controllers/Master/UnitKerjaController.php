@@ -17,20 +17,17 @@ class UnitKerjaController extends Controller
     {
         $this->authorize('viewAny', UnitKerja::class);
 
-        $query = UnitKerja::query()->select(['id', 'nama', 'singkatan', 'created_at', 'updated_at']);
-
-        if ($request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->whereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $request->search . '%'])
-                    ->orWhereRaw('LOWER(singkatan) LIKE LOWER(?)', ['%' . $request->search . '%']);
-            });
-        }
-
-        $unitKerja = $query->latest()->paginate(10)->withQueryString();
+        // Client-side search optimization: Return all data
+        // For larger datasets, we would keep server-side pagination, 
+        // but for Unit Kerja (small), client-side is faster and smoother.
+        $unitKerja = UnitKerja::query()
+            ->select(['id', 'nama', 'singkatan', 'created_at', 'updated_at'])
+            ->latest()
+            ->get();
 
         return Inertia::render('Master/UnitKerja/Index', [
             'unitKerja' => $unitKerja,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search']), // Keep for consistent props, though unused for filtering
         ]);
     }
 

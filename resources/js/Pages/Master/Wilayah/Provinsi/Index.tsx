@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
@@ -9,7 +9,7 @@ import Table, { TableHeader } from '@/Components/ui/Table';
 import Modal from '@/Components/ui/Modal';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
-import { useServerSearch } from '@/hooks/useServerSearch';
+import { useToast } from '@/Components/ui/Toast';
 
 interface WilayahProvinsi {
     kode: string;
@@ -19,24 +19,51 @@ interface WilayahProvinsi {
 }
 
 interface Props extends PageProps {
-    data: {
-        data: WilayahProvinsi[];
-        links: any[];
-        current_page: number;
-        last_page: number;
-        total: number;
-        from: number;
-    };
+    provinsi: WilayahProvinsi[]; // Changed from paginated object to array
     filters: {
         search?: string;
     };
 }
 
-export default function Index({ auth, data, filters }: Props) {
-    const { search, setSearch } = useServerSearch({
-        url: route('master.wilayah.provinsi.index'),
-        initialSearch: filters.search
-    });
+export default function Index({ auth, provinsi, filters }: Props) {
+    const { showToast } = useToast();
+
+    // Client-side Search & Pagination State
+    const [search, setSearch] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    // Filter Data
+    const filteredData = useMemo(() => {
+        let data = provinsi;
+        if (search) {
+            const lowerSearch = search.toLowerCase();
+            data = data.filter(item => 
+                item.nama.toLowerCase().includes(lowerSearch) || 
+                item.kode.toLowerCase().includes(lowerSearch)
+            );
+        }
+        return data;
+    }, [provinsi, search]);
+
+    // Paginate Data
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredData.slice(start, start + itemsPerPage);
+    }, [filteredData, currentPage]);
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    // Reset page on search
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -46,17 +73,6 @@ export default function Index({ auth, data, filters }: Props) {
         kode: '',
         nama: '',
     });
-
-    const handlePageChange = (page: number) => {
-        const url = data.links.find((l: any) => l.label == page)?.url;
-        if (url) {
-            router.get(url, { search }, {
-                preserveState: true,
-                preserveScroll: true,
-                only: ['data', 'filters'],
-            });
-        }
-    };
 
     const openCreateModal = () => {
         reset();
@@ -85,6 +101,7 @@ export default function Index({ auth, data, filters }: Props) {
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 reset();
+                showToast('success', 'Provinsi berhasil ditambahkan.');
             },
         });
     };
@@ -96,6 +113,7 @@ export default function Index({ auth, data, filters }: Props) {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 reset();
+                showToast('success', 'Provinsi berhasil diperbarui.');
             },
         });
     };
@@ -105,6 +123,7 @@ export default function Index({ auth, data, filters }: Props) {
         router.delete(route('master.wilayah.provinsi.destroy', selectedItem.kode), {
             onSuccess: () => {
                 setIsDeleteAlertOpen(false);
+                showToast('success', 'Provinsi berhasil dihapus.');
             },
         });
     };
@@ -114,7 +133,7 @@ export default function Index({ auth, data, filters }: Props) {
             key: 'no', 
             label: 'No',
             className: 'w-16',
-            render: (_: unknown, __: unknown, index: number) => (data.from + index).toString()
+            render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
         { key: 'kode', label: 'Kode', className: 'w-24' },
         { key: 'nama', label: 'Nama Provinsi' },
@@ -153,7 +172,7 @@ export default function Index({ auth, data, filters }: Props) {
                                     type="text"
                                     placeholder="Cari Provinsi..."
                                     value={search}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                    onChange={handleSearchChange}
                                     className="w-full"
                                 />
                                 <Button variant="secondary" disabled>
@@ -171,16 +190,16 @@ export default function Index({ auth, data, filters }: Props) {
                         <div className="rounded-md border">
                             <Table<WilayahProvinsi>
                                 headers={tableHeaders}
-                                data={data.data}
+                                data={paginatedData}
                                 keyExtractor={(item) => item.kode}
-                                emptyMessage="Tidak ada data provinsi."
+                                emptyMessage={search ? "Tidak ada provinsi yang cocok dengan pencarian." : "Tidak ada data provinsi."}
                             />
                         </div>
 
                         <div className="mt-4">
                             <Pagination
-                                currentPage={data.current_page}
-                                totalPages={data.last_page}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
                                 onPageChange={handlePageChange}
                             />
                         </div>

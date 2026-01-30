@@ -17,19 +17,12 @@ class IndeksSuratController extends Controller
     {
         $this->authorize('viewAny', IndeksSurat::class);
 
-        $query = IndeksSurat::query()->select(['id', 'kode', 'nama', 'urutan', 'created_at', 'updated_at']);
-
-        if ($request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->whereRaw('LOWER(kode) LIKE LOWER(?)', ['%' . $request->search . '%'])
-                    ->orWhereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $request->search . '%']);
-            });
-        }
-
-        $indeksSurat = $query->orderBy('urutan', 'asc')
+        // Client-side search optimization: Return all data
+        $indeksSurat = IndeksSurat::query()
+            ->select(['id', 'kode', 'nama', 'urutan', 'created_at', 'updated_at'])
+            ->orderBy('urutan', 'asc')
             ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
         return Inertia::render('Master/IndeksSurat/Index', [
             'indeksSurat' => $indeksSurat,

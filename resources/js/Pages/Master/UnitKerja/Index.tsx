@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import React, { useState, useMemo } from 'react';
+import { Head, useForm, router } from '@inertiajs/react'; // Link removed, router kept for delete
 import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
 import Button from '@/Components/ui/Button';
@@ -10,7 +10,6 @@ import Modal from '@/Components/ui/Modal';
 import { useToast } from '@/Components/ui/Toast';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
-import { useServerSearch } from '@/hooks/useServerSearch';
 
 interface UnitKerja {
     id: string;
@@ -22,14 +21,7 @@ interface UnitKerja {
 }
 
 interface Props extends PageProps {
-    unitKerja: {
-        data: UnitKerja[];
-        links: any[];
-        current_page: number;
-        last_page: number;
-        total: number;
-        from: number;
-    };
+    unitKerja: UnitKerja[]; // Changed to array
     filters: {
         search?: string;
     };
@@ -37,10 +29,42 @@ interface Props extends PageProps {
 
 export default function Index({ auth, unitKerja, filters }: Props) {
     const { showToast } = useToast();
-    const { search, setSearch } = useServerSearch({
-        url: route('master.unit-kerja.index'),
-        initialSearch: filters.search
-    });
+    
+    // Client-side Search & Pagination State
+    const [search, setSearch] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    // Filter Data
+    const filteredData = useMemo(() => {
+        let data = unitKerja;
+        if (search) {
+            const lowerSearch = search.toLowerCase();
+            data = data.filter(item => 
+                item.nama.toLowerCase().includes(lowerSearch) || 
+                (item.singkatan && item.singkatan.toLowerCase().includes(lowerSearch))
+            );
+        }
+        return data;
+    }, [unitKerja, search]);
+
+    // Paginate Data
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredData.slice(start, start + itemsPerPage);
+    }, [filteredData, currentPage]);
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    // Reset page on search
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -51,17 +75,6 @@ export default function Index({ auth, unitKerja, filters }: Props) {
         nama: '',
         singkatan: '',
     });
-
-    const handlePageChange = (page: number) => {
-        const url = unitKerja.links.find((l: any) => l.label == page)?.url;
-        if (url) {
-            router.get(url, { search }, { 
-                preserveState: true,
-                preserveScroll: true,
-                only: ['unitKerja', 'filters'],
-            });
-        }
-    };
 
     const openCreateModal = () => {
         reset();
@@ -90,6 +103,7 @@ export default function Index({ auth, unitKerja, filters }: Props) {
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 reset();
+                showToast('success', 'Unit Kerja berhasil ditambahkan.');
             },
         });
     };
@@ -101,6 +115,7 @@ export default function Index({ auth, unitKerja, filters }: Props) {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 reset();
+                showToast('success', 'Unit Kerja berhasil diperbarui.');
             },
         });
     };
@@ -110,6 +125,7 @@ export default function Index({ auth, unitKerja, filters }: Props) {
         router.delete(route('master.unit-kerja.destroy', selectedUnit.id), {
             onSuccess: () => {
                 setIsDeleteAlertOpen(false);
+                showToast('success', 'Unit Kerja berhasil dihapus.');
             },
         });
     };
@@ -118,7 +134,7 @@ export default function Index({ auth, unitKerja, filters }: Props) {
         { 
             key: 'no', 
             label: 'No',
-            render: (_: unknown, __: unknown, index: number) => (unitKerja.from + index).toString()
+            render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
         { key: 'nama', label: 'Nama Unit Kerja' },
         { key: 'singkatan', label: 'Singkatan' },
@@ -152,7 +168,7 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                                     type="text"
                                     placeholder="Cari Unit Kerja..."
                                     value={search}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                    onChange={handleSearchChange}
                                     className="w-full"
                                 />
                                 <Button variant="secondary" disabled>
@@ -170,16 +186,16 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                         <div className="rounded-md border">
                             <Table<UnitKerja>
                                 headers={tableHeaders}
-                                data={unitKerja.data}
+                                data={paginatedData}
                                 keyExtractor={(unit) => unit.id}
-                                emptyMessage="Tidak ada data unit kerja."
+                                emptyMessage={search ? "Tidak ada unit kerja yang cocok dengan pencarian." : "Tidak ada data unit kerja."}
                             />
                         </div>
 
                         <div className="mt-4">
                             <Pagination 
-                                currentPage={unitKerja.current_page}
-                                totalPages={unitKerja.last_page}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
                                 onPageChange={handlePageChange}
                             />
                         </div>

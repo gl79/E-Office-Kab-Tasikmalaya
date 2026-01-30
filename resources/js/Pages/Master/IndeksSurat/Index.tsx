@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
@@ -10,7 +10,6 @@ import Modal from '@/Components/ui/Modal';
 import { useToast } from '@/Components/ui/Toast';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
-import { useServerSearch } from '@/hooks/useServerSearch';
 
 interface IndeksSurat {
     id: string;
@@ -23,14 +22,7 @@ interface IndeksSurat {
 }
 
 interface Props extends PageProps {
-    indeksSurat: {
-        data: IndeksSurat[];
-        links: any[];
-        current_page: number;
-        last_page: number;
-        total: number;
-        from: number;
-    };
+    indeksSurat: IndeksSurat[];
     filters: {
         search?: string;
     };
@@ -38,10 +30,43 @@ interface Props extends PageProps {
 
 export default function Index({ auth, indeksSurat, filters }: Props) {
     const { showToast } = useToast();
-    const { search, setSearch } = useServerSearch({
-        url: route('master.indeks-surat.index'),
-        initialSearch: filters.search
-    });
+    
+    // Client-side Search & Pagination State
+    const [search, setSearch] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    // Filter Data
+    const filteredData = useMemo(() => {
+        let data = indeksSurat;
+        if (search) {
+            const lowerSearch = search.toLowerCase();
+            data = data.filter(item => 
+                item.kode.toLowerCase().includes(lowerSearch) || 
+                item.nama.toLowerCase().includes(lowerSearch)
+            );
+        }
+        return data;
+    }, [indeksSurat, search]);
+
+    // Paginate Data
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredData.slice(start, start + itemsPerPage);
+    }, [filteredData, currentPage]);
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    // Reset page on search
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -52,17 +77,6 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
         nama: '',
         urutan: 0,
     });
-
-    const handlePageChange = (page: number) => {
-        const url = indeksSurat.links.find((l: any) => l.label == page)?.url;
-        if (url) {
-            router.get(url, { search }, { 
-                preserveState: true,
-                preserveScroll: true,
-                only: ['indeksSurat', 'filters'],
-            });
-        }
-    };
 
     const openCreateModal = () => {
         reset();
@@ -92,6 +106,7 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 reset();
+                showToast('success', 'Indeks Surat berhasil ditambahkan.');
             },
         });
     };
@@ -103,6 +118,7 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 reset();
+                showToast('success', 'Indeks Surat berhasil diperbarui.');
             },
         });
     };
@@ -112,6 +128,7 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
         router.delete(route('master.indeks-surat.destroy', selectedIndeks.id), {
             onSuccess: () => {
                 setIsDeleteAlertOpen(false);
+                showToast('success', 'Indeks Surat berhasil dihapus.');
             },
         });
     };
@@ -120,7 +137,7 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
         { 
             key: 'no', 
             label: 'No',
-            render: (_: unknown, __: unknown, index: number) => (indeksSurat.from + index).toString()
+            render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
         { key: 'kode', label: 'Kode' },
         { key: 'nama', label: 'Nama Indeks' },
@@ -155,7 +172,7 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
                                     type="text"
                                     placeholder="Cari Indeks Surat..."
                                     value={search}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                    onChange={handleSearchChange}
                                     className="w-full"
                                 />
                                 <Button variant="secondary" disabled>
@@ -173,16 +190,16 @@ export default function Index({ auth, indeksSurat, filters }: Props) {
                         <div className="rounded-md border">
                             <Table<IndeksSurat>
                                 headers={tableHeaders}
-                                data={indeksSurat.data}
+                                data={paginatedData}
                                 keyExtractor={(indeks) => indeks.id}
-                                emptyMessage="Tidak ada data indeks surat."
+                                emptyMessage={search ? "Tidak ada indeks surat yang cocok dengan pencarian." : "Tidak ada data indeks surat."}
                             />
                         </div>
 
                         <div className="mt-4">
                             <Pagination 
-                                currentPage={indeksSurat.current_page}
-                                totalPages={indeksSurat.last_page}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
                                 onPageChange={handlePageChange}
                             />
                         </div>
