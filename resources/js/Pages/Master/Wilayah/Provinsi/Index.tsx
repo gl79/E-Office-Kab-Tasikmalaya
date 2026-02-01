@@ -137,7 +137,7 @@ export default function Index({ auth, provinsi, filters }: Props) {
         { 
             key: 'kabupaten_count', 
             label: 'Jumlah Kabupaten',
-            render: (value) => <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{String(value)}</span>
+            render: (value) => <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">{String(value)}</span>
         },
         {
             key: 'actions',
@@ -160,46 +160,55 @@ export default function Index({ auth, provinsi, filters }: Props) {
         <AppLayout>
             <Head title="Wilayah Provinsi" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-                            <div className="flex gap-2 w-full sm:w-1/3">
-                                <TextInput
-                                    type="text"
-                                    placeholder="Cari Provinsi..."
-                                    value={search}
-                                    onChange={handleSearchChange}
-                                    className="w-full"
-                                />
-                                <Button variant="secondary" disabled>
-                                    <Search className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button onClick={openCreateModal}>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Tambah
-                                </Button>
-                            </div>
-                        </div>
+            {/* Page Header */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-text-primary">Wilayah Provinsi</h1>
+                <p className="text-text-secondary text-sm mt-1">Kelola data provinsi</p>
+            </div>
 
-                        <div className="rounded-md border">
-                            <Table<WilayahProvinsi>
-                                headers={tableHeaders}
-                                data={paginatedData}
-                                keyExtractor={(item) => item.kode}
-                                emptyMessage={search ? "Tidak ada provinsi yang cocok dengan pencarian." : "Tidak ada data provinsi."}
+            {/* Main Content */}
+            <div className="bg-surface rounded-lg border border-border-default">
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex flex-col sm:flex-row justify-between gap-4">
+                        <div className="flex gap-2 w-full sm:w-80">
+                            <TextInput
+                                type="text"
+                                placeholder="Cari provinsi..."
+                                value={search}
+                                onChange={handleSearchChange}
+                                className="w-full"
                             />
+                            <Button variant="secondary" disabled>
+                                <Search className="h-4 w-4" />
+                            </Button>
                         </div>
+                        <Button onClick={openCreateModal}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Tambah Provinsi
+                        </Button>
+                    </div>
+                </div>
 
-                        <div className="mt-4">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                            />
-                        </div>
+                {/* Table */}
+                <Table<WilayahProvinsi>
+                    headers={tableHeaders}
+                    data={paginatedData}
+                    keyExtractor={(item) => item.kode}
+                    emptyMessage={search ? "Tidak ada provinsi yang cocok dengan pencarian." : "Tidak ada data provinsi."}
+                />
+
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {filteredData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
                     </div>
                 </div>
             </div>
@@ -217,7 +226,7 @@ export default function Index({ auth, provinsi, filters }: Props) {
                             maxLength={2}
                             className="w-full"
                         />
-                        {errors.kode && <p className="text-sm text-red-500">{errors.kode}</p>}
+                        {errors.kode && <p className="text-sm text-danger">{errors.kode}</p>}
                     </div>
                     <div className="space-y-2">
                         <InputLabel htmlFor="nama" value="Nama Provinsi" />
@@ -228,7 +237,7 @@ export default function Index({ auth, provinsi, filters }: Props) {
                             placeholder="Contoh: JAWA BARAT"
                             className="w-full"
                         />
-                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                        {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Batal</Button>
@@ -246,7 +255,7 @@ export default function Index({ auth, provinsi, filters }: Props) {
                             id="edit-kode"
                             value={formData.kode}
                             disabled
-                            className="w-full bg-gray-100"
+                            className="w-full bg-surface-hover"
                         />
                     </div>
                     <div className="space-y-2">
@@ -257,7 +266,7 @@ export default function Index({ auth, provinsi, filters }: Props) {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
                             className="w-full"
                         />
-                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                        {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>Batal</Button>
@@ -270,14 +279,10 @@ export default function Index({ auth, provinsi, filters }: Props) {
             <Modal isOpen={isDeleteAlertOpen} onClose={() => setIsDeleteAlertOpen(false)} title="Konfirmasi Hapus">
                 <div className="space-y-4">
                     <p>Apakah Anda yakin ingin menghapus provinsi ini?</p>
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                        <div className="flex">
-                            <div className="ml-3">
-                                <p className="text-sm text-yellow-700">
-                                    PERINGATAN: Menghapus provinsi akan menghapus semua Kabupaten, Kecamatan, dan Desa yang ada di bawahnya.
-                                </p>
-                            </div>
-                        </div>
+                    <div className="bg-warning-light border-l-4 border-warning p-4 rounded">
+                        <p className="text-sm text-accent-dark">
+                            <strong>PERINGATAN:</strong> Menghapus provinsi akan menghapus semua Kabupaten, Kecamatan, dan Desa yang ada di bawahnya.
+                        </p>
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button variant="secondary" onClick={() => setIsDeleteAlertOpen(false)}>Batal</Button>

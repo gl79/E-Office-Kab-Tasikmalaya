@@ -19,6 +19,8 @@ interface SidebarProps {
      * Allows filtering or customizing menu without changing config.
      */
     items?: MenuItem[];
+    /** Callback when logout is clicked */
+    onLogoutClick?: () => void;
 }
 
 /**
@@ -27,26 +29,13 @@ interface SidebarProps {
  * Sidebar navigasi untuk aplikasi E-Office.
  * Secara default merender menu dari config/menu.ts.
  * Dapat di-override dengan children atau custom items.
- * 
- * @example
- * // Default: render menu dari config
- * <Sidebar />
- * 
- * @example
- * // Custom children
- * <Sidebar>
- *   <CustomNavigation />
- * </Sidebar>
- * 
- * @example
- * // Filtered menu items
- * <Sidebar items={filteredMenuItems} />
  */
 export default function Sidebar({ 
     className = '', 
     children,
     width = 'w-64',
-    items
+    items,
+    onLogoutClick
 }: SidebarProps) {
     const { auth } = usePage<PageProps>().props;
     const userRole = auth.user?.role;
@@ -71,11 +60,11 @@ export default function Sidebar({
     });
 
     return (
-        <aside 
+        <aside
             className={`
                 ${width}
-                bg-gray-50 
-                border-r border-gray-200 
+                bg-surface
+                border-r border-border-default
                 flex-shrink-0
                 overflow-y-auto
                 ${className}
@@ -89,6 +78,7 @@ export default function Sidebar({
                             <SidebarMenuItem
                                 key={`${item.label}-${index}`}
                                 item={item}
+                                onLogoutClick={onLogoutClick}
                             />
                         ))}
                     </nav>

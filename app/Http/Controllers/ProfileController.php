@@ -48,16 +48,39 @@ class ProfileController extends Controller
             'nip' => 'nullable|string|max:30',
             'jenis_kelamin' => 'nullable|in:L,P',
             'jabatan' => 'nullable|string|max:255',
-            'foto' => 'nullable|image|max:2048', // 2MB Max
+            'current_password' => 'nullable|required_with:new_password|current_password',
+            'new_password' => 'nullable|min:8|confirmed',
+        ], [
+            'current_password.current_password' => 'Password lama tidak sesuai.',
+            'current_password.required_with' => 'Password lama wajib diisi jika ingin mengubah password.',
+            'new_password.min' => 'Password baru minimal 8 karakter.',
+            'new_password.confirmed' => 'Konfirmasi password tidak sesuai.',
         ]);
 
+        // Only validate and update foto if a file was actually uploaded
         if ($request->hasFile('foto')) {
+            $request->validate([
+                'foto' => 'image|max:2048', // 2MB Max
+            ], [
+                'foto.image' => 'File harus berupa gambar.',
+                'foto.max' => 'Ukuran foto maksimal 2MB.',
+            ]);
+
+            // Delete old photo if exists
             if ($user->foto) {
                 Storage::disk('public')->delete($user->foto);
             }
             $path = $request->file('foto')->store('profile-photos', 'public');
-            $validated['foto'] = $path;
+            $user->foto = $path;
         }
+
+        // Update password if provided
+        if ($request->filled('new_password')) {
+            $user->password = bcrypt($request->new_password);
+        }
+
+        // Remove password fields from validated array before fill
+        unset($validated['current_password'], $validated['new_password'], $validated['new_password_confirmation']);
 
         $user->fill($validated);
 
@@ -67,7 +90,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return Redirect::route('profile.edit')->with('success', 'Profile berhasil diperbarui.');
+        return Redirect::route('profile.edit')->with('success', 'Profil berhasil diperbarui.');
     }
 
     /**

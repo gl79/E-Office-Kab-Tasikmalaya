@@ -33,10 +33,32 @@ class UnitKerjaSeeder extends Seeder
                 'nama' => 'Badan Perencanaan Pembangunan Daerah',
                 'singkatan' => 'BAPPEDA',
             ],
+            [
+                'nama' => 'Dinas Sosial',
+                'singkatan' => 'DINSOS',
+            ],
+            [
+                'nama' => 'Dinas Perhubungan',
+                'singkatan' => 'DISHUB',
+            ],
+            [
+                'nama' => 'Dinas Kependudukan dan Pencatatan Sipil',
+                'singkatan' => 'DISDUKCAPIL',
+            ],
+            [
+                'nama' => 'Badan Kepegawaian dan Pengembangan Sumber Daya Manusia',
+                'singkatan' => 'BKPSDM',
+            ],
+            [
+                'nama' => 'Inspektorat Daerah',
+                'singkatan' => 'INSPEKTORAT',
+            ],
         ];
 
         foreach ($units as $unit) {
             UnitKerja::firstOrCreate(['singkatan' => $unit['singkatan']], $unit);
         }
+
+        $this->command->info('10 data Unit Kerja berhasil dibuat.');
     }
 }

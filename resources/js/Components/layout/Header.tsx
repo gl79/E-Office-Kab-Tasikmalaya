@@ -26,8 +26,8 @@ export default function Header({
     return (
         <header
             className={`
-                bg-white 
-                border-b border-gray-200 
+                bg-surface 
+                border-b border-border-default 
                 h-16 
                 flex items-center justify-between 
                 px-4 lg:px-6
@@ -35,11 +35,14 @@ export default function Header({
             `.trim()}
         >
             {/* Logo Area */}
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
                 {logo ?? (
-                    <div className="text-xl font-semibold text-gray-800">
-                        E-Office
-                    </div>
+                    <>
+                        <img src="/images/pemkabtasik.png" alt="Logo Kabupaten Tasikmalaya" className="w-10 h-10 object-contain" />
+                        <div className="text-lg font-semibold text-text-primary">
+                            E-Office Kabupaten Tasikmalaya
+                        </div>
+                    </>
                 )}
             </div>
 

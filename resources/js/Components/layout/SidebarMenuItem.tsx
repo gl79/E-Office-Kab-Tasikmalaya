@@ -22,6 +22,9 @@ import {
     MapPin,
     Home,
     Tent,
+    Settings,
+    LogOut,
+    Activity,
     LucideIcon
 } from 'lucide-react';
 
@@ -30,6 +33,8 @@ interface SidebarMenuItemProps {
     item: MenuItem;
     /** Nesting depth level (for indentation) */
     depth?: number;
+    /** Callback for logout action */
+    onLogoutClick?: () => void;
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -54,6 +59,9 @@ const iconMap: Record<string, LucideIcon> = {
     'map-pin': MapPin,
     'home': Home,
     'tent': Tent,
+    'settings': Settings,
+    'log-out': LogOut,
+    'activity': Activity,
 };
 
 /**
@@ -68,7 +76,8 @@ const iconMap: Record<string, LucideIcon> = {
  */
 export default function SidebarMenuItem({ 
     item, 
-    depth = 0 
+    depth = 0,
+    onLogoutClick
 }: SidebarMenuItemProps) {
     const { url } = usePage();
     const hasChildren = item.children && item.children.length > 0;
@@ -123,13 +132,13 @@ export default function SidebarMenuItem({
         w-full px-3 py-2.5 rounded-lg
         text-sm font-medium
         transition-colors duration-150
-        hover:bg-gray-200/70
+        hover:bg-surface-hover
     `;
 
     // Active state styles
     const activeClasses = isActive 
-        ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' 
-        : 'text-gray-700';
+        ? 'bg-primary-light text-primary hover:bg-primary-light' 
+        : 'text-text-secondary';
 
     // Indentation based on depth
     const paddingLeft = depth > 0 ? `${depth * 12 + 12}px` : '12px';
@@ -150,7 +159,7 @@ export default function SidebarMenuItem({
             <span className="flex items-center gap-3">
                 {/* Icon */}
                 {IconComponent && (
-                    <span className={`w-5 h-5 flex items-center justify-center ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                    <span className={`w-5 h-5 flex items-center justify-center ${isActive ? 'text-primary' : 'text-text-muted'}`}>
                         <IconComponent className="w-4 h-4" />
                     </span>
                 )}
@@ -160,7 +169,7 @@ export default function SidebarMenuItem({
             {/* Expand/Collapse indicator */}
             {hasChildren && (
                 <svg
-                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                    className={`w-4 h-4 text-text-muted transition-transform duration-200 ${
                         isExpanded ? 'rotate-180' : ''
                     }`}
                     fill="none"
@@ -191,6 +200,26 @@ export default function SidebarMenuItem({
                 >
                     {renderContent()}
                 </button>
+            ) : item.isLogout ? (
+                // Logout button - special styling
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onLogoutClick?.();
+                    }}
+                    className={`${baseClasses} text-danger hover:bg-danger-light`}
+                    style={{ paddingLeft }}
+                >
+                    <span className="flex items-center gap-3">
+                        {IconComponent && (
+                            <span className="w-5 h-5 flex items-center justify-center text-danger">
+                                <IconComponent className="w-4 h-4" />
+                            </span>
+                        )}
+                        <span>{item.label}</span>
+                    </span>
+                </button>
             ) : item.href ? (
                 // Leaf item with href - Inertia Link with prefetch
                 <Link
@@ -213,12 +242,13 @@ export default function SidebarMenuItem({
 
             {/* Submenu */}
             {hasChildren && isExpanded && (
-                <div className="mt-1 ml-2 border-l border-gray-200 pl-2">
+                <div className="mt-1 ml-2 border-l border-border-default pl-2">
                     {item.children!.map((child, index) => (
                         <SidebarMenuItem
                             key={`${child.label}-${index}`}
                             item={child}
                             depth={depth + 1}
+                            onLogoutClick={onLogoutClick}
                         />
                     ))}
                 </div>

@@ -38,10 +38,37 @@ class IndeksSuratSeeder extends Seeder
                 'nama' => 'Kesejahteraan Rakyat',
                 'urutan' => 5,
             ],
+            [
+                'kode' => '500',
+                'nama' => 'Perekonomian',
+                'urutan' => 6,
+            ],
+            [
+                'kode' => '600',
+                'nama' => 'Pekerjaan Umum dan Ketenagakerjaan',
+                'urutan' => 7,
+            ],
+            [
+                'kode' => '700',
+                'nama' => 'Pengawasan',
+                'urutan' => 8,
+            ],
+            [
+                'kode' => '800',
+                'nama' => 'Kepegawaian',
+                'urutan' => 9,
+            ],
+            [
+                'kode' => '900',
+                'nama' => 'Keuangan',
+                'urutan' => 10,
+            ],
         ];
 
         foreach ($indexes as $index) {
             IndeksSurat::firstOrCreate(['kode' => $index['kode']], $index);
         }
+
+        $this->command->info('10 data Indeks Surat berhasil dibuat.');
     }
 }

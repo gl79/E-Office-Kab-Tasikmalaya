@@ -30,6 +30,9 @@ class DatabaseSeeder extends Seeder
             WilayahKabupatenSeeder::class,
             WilayahKecamatanSeeder::class,
             WilayahDesaSeeder::class,
+            SuratMasukSeeder::class,
+            SuratKeluarSeeder::class,
+            ActivityLogSeeder::class,
         ]);
     }
 }

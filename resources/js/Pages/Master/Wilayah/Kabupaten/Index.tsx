@@ -27,7 +27,7 @@ interface WilayahKabupaten {
 }
 
 interface Props extends PageProps {
-    kabupaten: WilayahKabupaten[]; // Changed from paginated object to array
+    kabupaten: WilayahKabupaten[];
     filters: {
         search?: string;
         provinsi_kode?: string;
@@ -36,13 +36,13 @@ interface Props extends PageProps {
 
 export default function Index({ auth, kabupaten, filters }: Props) {
     const { showToast } = useToast();
-    
+
     // Client-side Search & Pagination State
     const [search, setSearch] = useState('');
     const [provinsiKode, setProvinsiKode] = useState(filters.provinsi_kode || '');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
-    
+
     // Dropdown Data
     const [provinsiList, setProvinsiList] = useState<WilayahProvinsi[]>([]);
 
@@ -60,12 +60,12 @@ export default function Index({ auth, kabupaten, filters }: Props) {
     // Filter Data
     const filteredData = useMemo(() => {
         let data = kabupaten;
-        
+
         // Filter by Search
         if (search) {
             const lowerSearch = search.toLowerCase();
-            data = data.filter(item => 
-                item.nama.toLowerCase().includes(lowerSearch) || 
+            data = data.filter(item =>
+                item.nama.toLowerCase().includes(lowerSearch) ||
                 item.kode.toLowerCase().includes(lowerSearch)
             );
         }
@@ -114,7 +114,6 @@ export default function Index({ auth, kabupaten, filters }: Props) {
 
     const openCreateModal = () => {
         reset();
-        // Pre-select provinsi if filtered
         if (provinsiKode) {
             setData('provinsi_kode', provinsiKode);
         }
@@ -151,8 +150,6 @@ export default function Index({ auth, kabupaten, filters }: Props) {
     const handleUpdate = (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedItem) return;
-        // Composite ID handling if route requires it, otherwise use ID if available
-        // Fix composite ID for route
         put(route('master.wilayah.kabupaten.update', [selectedItem.provinsi_kode, selectedItem.kode]), {
             onSuccess: () => {
                 setIsEditModalOpen(false);
@@ -171,15 +168,15 @@ export default function Index({ auth, kabupaten, filters }: Props) {
     };
 
     const tableHeaders: TableHeader<WilayahKabupaten>[] = [
-        { 
-            key: 'no', 
+        {
+            key: 'no',
             label: 'No',
             className: 'w-16',
             render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
         { key: 'kode', label: 'Kode', className: 'w-24' },
-        { 
-            key: 'provinsi', 
+        {
+            key: 'provinsi',
             label: 'Provinsi',
             render: (_: unknown, item: WilayahKabupaten) => item.provinsi?.nama ?? '-'
         },
@@ -205,59 +202,69 @@ export default function Index({ auth, kabupaten, filters }: Props) {
         <AppLayout>
             <Head title="Wilayah Kabupaten" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-                            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-2/3">
-                                <div className="w-full sm:w-1/2">
-                                    <TextInput
-                                        type="text"
-                                        placeholder="Cari Kabupaten..."
-                                        value={search}
-                                        onChange={handleSearchChange}
-                                        className="w-full"
-                                    />
-                                </div>
-                                <div className="w-full sm:w-1/2">
-                                    <select
-                                        className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm w-full"
-                                        value={provinsiKode}
-                                        onChange={handleProvinsiFilterChange}
-                                    >
-                                        <option value="">Semua Provinsi</option>
-                                        {provinsiList.map(prov => (
-                                            <option key={prov.kode} value={prov.kode}>
-                                                {prov.nama}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button onClick={openCreateModal}>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Tambah
+            {/* Page Header */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-text-primary">Wilayah Kabupaten</h1>
+                <p className="text-text-secondary text-sm mt-1">Kelola data kabupaten/kota</p>
+            </div>
+
+            {/* Main Content */}
+            <div className="bg-surface rounded-lg border border-border-default">
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex flex-col sm:flex-row justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                            <div className="flex gap-2 w-full sm:w-80">
+                                <TextInput
+                                    type="text"
+                                    placeholder="Cari kabupaten..."
+                                    value={search}
+                                    onChange={handleSearchChange}
+                                    className="w-full"
+                                />
+                                <Button variant="secondary" disabled>
+                                    <Search className="h-4 w-4" />
                                 </Button>
                             </div>
+                            <select
+                                className="border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm w-full sm:w-48"
+                                value={provinsiKode}
+                                onChange={handleProvinsiFilterChange}
+                            >
+                                <option value="">Semua Provinsi</option>
+                                {provinsiList.map(prov => (
+                                    <option key={prov.kode} value={prov.kode}>
+                                        {prov.nama}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
+                        <Button onClick={openCreateModal}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Tambah Kabupaten
+                        </Button>
+                    </div>
+                </div>
 
-                        <div className="rounded-md border">
-                            <Table<WilayahKabupaten>
-                                headers={tableHeaders}
-                                data={paginatedData}
-                                keyExtractor={(item) => `${item.provinsi_kode}.${item.kode}`}
-                                emptyMessage={search || provinsiKode ? "Tidak ada kabupaten yang cocok." : "Tidak ada data kabupaten."}
-                            />
-                        </div>
+                {/* Table */}
+                <Table<WilayahKabupaten>
+                    headers={tableHeaders}
+                    data={paginatedData}
+                    keyExtractor={(item) => `${item.provinsi_kode}.${item.kode}`}
+                    emptyMessage={search || provinsiKode ? "Tidak ada kabupaten yang cocok." : "Tidak ada data kabupaten."}
+                />
 
-                        <div className="mt-4">
-                            <Pagination 
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                            />
-                        </div>
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {filteredData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
                     </div>
                 </div>
             </div>
@@ -269,7 +276,7 @@ export default function Index({ auth, kabupaten, filters }: Props) {
                         <InputLabel htmlFor="provinsi_kode" value="Provinsi" />
                         <select
                             id="provinsi_kode"
-                            className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm w-full"
+                            className="border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm w-full"
                             value={formData.provinsi_kode}
                             onChange={(e) => setData('provinsi_kode', e.target.value)}
                             required
@@ -281,7 +288,7 @@ export default function Index({ auth, kabupaten, filters }: Props) {
                                 </option>
                             ))}
                         </select>
-                        {errors.provinsi_kode && <p className="text-sm text-red-500">{errors.provinsi_kode}</p>}
+                        {errors.provinsi_kode && <p className="text-sm text-danger">{errors.provinsi_kode}</p>}
                     </div>
                     <div className="space-y-2">
                         <InputLabel htmlFor="kode" value="Kode Kabupaten" />
@@ -293,7 +300,7 @@ export default function Index({ auth, kabupaten, filters }: Props) {
                             maxLength={2}
                             className="w-full"
                         />
-                        {errors.kode && <p className="text-sm text-red-500">{errors.kode}</p>}
+                        {errors.kode && <p className="text-sm text-danger">{errors.kode}</p>}
                     </div>
                     <div className="space-y-2">
                         <InputLabel htmlFor="nama" value="Nama Kabupaten" />
@@ -304,7 +311,7 @@ export default function Index({ auth, kabupaten, filters }: Props) {
                             placeholder="Contoh: TASIKMALAYA"
                             className="w-full"
                         />
-                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                        {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Batal</Button>
@@ -320,7 +327,7 @@ export default function Index({ auth, kabupaten, filters }: Props) {
                         <InputLabel htmlFor="edit-provinsi_kode" value="Provinsi" />
                         <select
                             id="edit-provinsi_kode"
-                            className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm w-full bg-gray-100"
+                            className="border-border-default rounded-md shadow-sm w-full bg-surface-hover"
                             value={formData.provinsi_kode}
                             disabled
                         >
@@ -337,7 +344,7 @@ export default function Index({ auth, kabupaten, filters }: Props) {
                             id="edit-kode"
                             value={formData.kode}
                             disabled
-                            className="w-full bg-gray-100"
+                            className="w-full bg-surface-hover"
                         />
                     </div>
                     <div className="space-y-2">
@@ -348,7 +355,7 @@ export default function Index({ auth, kabupaten, filters }: Props) {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
                             className="w-full"
                         />
-                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                        {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>Batal</Button>
@@ -360,15 +367,11 @@ export default function Index({ auth, kabupaten, filters }: Props) {
             {/* Delete Confirmation Modal */}
             <Modal isOpen={isDeleteAlertOpen} onClose={() => setIsDeleteAlertOpen(false)} title="Konfirmasi Hapus">
                 <div className="space-y-4">
-                    <p>Apakah Anda yakin ingin menghapus kabupaten ini?</p>
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                        <div className="flex">
-                            <div className="ml-3">
-                                <p className="text-sm text-yellow-700">
-                                    PERINGATAN: Menghapus kabupaten akan menghapus semua Kecamatan dan Desa yang ada di bawahnya.
-                                </p>
-                            </div>
-                        </div>
+                    <p className="text-text-primary">Apakah Anda yakin ingin menghapus kabupaten ini?</p>
+                    <div className="bg-warning-light border-l-4 border-warning p-4 rounded">
+                        <p className="text-sm text-accent-dark">
+                            <strong>PERINGATAN:</strong> Menghapus kabupaten akan menghapus semua Kecamatan dan Desa yang ada di bawahnya.
+                        </p>
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button variant="secondary" onClick={() => setIsDeleteAlertOpen(false)}>Batal</Button>

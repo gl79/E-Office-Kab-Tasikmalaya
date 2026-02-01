@@ -2,13 +2,19 @@
 
 namespace App\Providers;
 
+use App\Models\ActivityLog;
 use App\Models\IndeksSurat;
+use App\Models\SuratKeluar;
+use App\Models\SuratMasuk;
 use App\Models\UnitKerja;
 use App\Models\WilayahDesa;
 use App\Models\WilayahKabupaten;
 use App\Models\WilayahKecamatan;
 use App\Models\WilayahProvinsi;
+use App\Policies\ActivityLogPolicy;
 use App\Policies\IndeksSuratPolicy;
+use App\Policies\SuratKeluarPolicy;
+use App\Policies\SuratMasukPolicy;
 use App\Policies\UnitKerjaPolicy;
 use App\Policies\WilayahDesaPolicy;
 use App\Policies\WilayahKabupatenPolicy;
@@ -49,5 +55,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(WilayahKabupaten::class, WilayahKabupatenPolicy::class);
         Gate::policy(WilayahKecamatan::class, WilayahKecamatanPolicy::class);
         Gate::policy(WilayahDesa::class, WilayahDesaPolicy::class);
+
+        // Persuratan Policies
+        Gate::policy(SuratMasuk::class, SuratMasukPolicy::class);
+        Gate::policy(SuratKeluar::class, SuratKeluarPolicy::class);
+
+        // Activity Log Policy
+        Gate::policy(ActivityLog::class, ActivityLogPolicy::class);
     }
 }

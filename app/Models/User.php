@@ -127,6 +127,9 @@ class User extends Authenticatable
      */
     public function getRoleLabelAttribute(): string
     {
+        if (empty($this->role)) {
+            return '-';
+        }
         return self::ROLE_LABELS[$this->role] ?? $this->role;
     }
 

@@ -2,7 +2,6 @@
  * Menu Configuration for E-Office Sidebar
  * 
  * Struktur data menu yang akan dirender di sidebar.
- * Bersifat statis dan tidak bergantung pada role/permission.
  */
 
 export interface MenuItem {
@@ -18,6 +17,8 @@ export interface MenuItem {
     excludePaths?: string[];
     /** Roles allowed to view this menu item */
     roles?: string[];
+    /** Whether this is a logout action (requires special handling) */
+    isLogout?: boolean;
 }
 
 /**
@@ -75,7 +76,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Persuratan',
         icon: 'mail',
-        roles: ['superadmin', 'tu'],
+        roles: ['superadmin', 'tu', 'sekpri_bupati', 'sekpri_wakil_bupati'],
         children: [
             {
                 label: 'Surat Masuk',
@@ -90,6 +91,33 @@ export const menuItems: MenuItem[] = [
             {
                 label: 'Archive',
                 href: '/persuratan/archive',
+                icon: 'archive',
+            },
+        ],
+    },
+    {
+        label: 'Penjadwalan',
+        icon: 'calendar',
+        roles: ['superadmin', 'tu', 'sekpri_bupati', 'sekpri_wakil_bupati'],
+        children: [
+            {
+                label: 'Jadwal',
+                href: '/penjadwalan/jadwal',
+                icon: 'calendar-check',
+            },
+            {
+                label: 'Jadwal Tentatif',
+                href: '/penjadwalan/tentatif',
+                icon: 'calendar-clock',
+            },
+            {
+                label: 'Jadwal Definitif',
+                href: '/penjadwalan/definitif',
+                icon: 'calendar-check-2',
+            },
+            {
+                label: 'Archive',
+                href: '/penjadwalan/archive',
                 icon: 'archive',
             },
         ],
@@ -113,30 +141,25 @@ export const menuItems: MenuItem[] = [
         ],
     },
     {
-        label: 'Penjadwalan',
-        icon: 'calendar',
-        roles: ['superadmin', 'sekpri_bupati', 'sekpri_wakil_bupati'],
+        label: 'Pengaturan & Logs',
+        icon: 'settings',
         children: [
             {
-                label: 'Jadwal',
-                href: '/penjadwalan/jadwal',
-                icon: 'calendar-check',
+                label: 'Profil',
+                href: '/profile',
+                icon: 'user',
             },
             {
-                label: 'Jadwal Tentatif',
-                href: '/penjadwalan/tentatif',
-                icon: 'calendar-clock',
-            },
-            {
-                label: 'Jadwal Definitif',
-                href: '/penjadwalan/definitif',
-                icon: 'calendar-check-2',
-            },
-            {
-                label: 'Archive',
-                href: '/penjadwalan/archive',
-                icon: 'archive',
+                label: 'Activity Logs',
+                href: '/pengaturan/activity-logs',
+                icon: 'activity',
+                roles: ['superadmin'],
             },
         ],
+    },
+    {
+        label: 'Keluar',
+        icon: 'log-out',
+        isLogout: true,
     },
 ];

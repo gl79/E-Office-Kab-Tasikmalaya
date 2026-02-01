@@ -1,0 +1,244 @@
+<?php
+
+namespace App\Http\Controllers\Persuratan;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Persuratan\SuratKeluarRequest;
+use App\Models\IndeksSurat;
+use App\Models\SuratKeluar;
+use App\Models\UnitKerja;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
+
+class SuratKeluarController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        $this->authorize('viewAny', SuratKeluar::class);
+
+        // Load all data for client-side filtering
+        $suratKeluar = SuratKeluar::query()
+            ->with(['indeks', 'kodeKlasifikasi', 'unitKerja'])
+            ->latest('tanggal_surat')
+            ->get();
+
+        return Inertia::render('Persuratan/SuratKeluar/Index', [
+            'suratKeluar' => $suratKeluar,
+            'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        $this->authorize('create', SuratKeluar::class);
+
+        return Inertia::render('Persuratan/SuratKeluar/Create', [
+            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama']),
+            'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
+            'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
+        ]);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(SuratKeluarRequest $request)
+    {
+        $this->authorize('create', SuratKeluar::class);
+
+        DB::beginTransaction();
+        try {
+            $data = $request->validated();
+
+            // Handle file upload
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+                $data['file_path'] = $file->storeAs('surat-keluar', $filename, 'public');
+            }
+
+            // Create surat keluar
+            SuratKeluar::create($data);
+
+            DB::commit();
+
+            return redirect()->route('persuratan.surat-keluar.index')
+                ->with('success', 'Surat Keluar berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal menyimpan surat keluar: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        $suratKeluar = SuratKeluar::with([
+            'indeks',
+            'kodeKlasifikasi',
+            'unitKerja',
+            'createdBy',
+            'updatedBy',
+        ])->findOrFail($id);
+
+        $this->authorize('view', $suratKeluar);
+
+        return Inertia::render('Persuratan/SuratKeluar/Show', [
+            'suratKeluar' => $suratKeluar,
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        $suratKeluar = SuratKeluar::findOrFail($id);
+        $this->authorize('update', $suratKeluar);
+
+        return Inertia::render('Persuratan/SuratKeluar/Edit', [
+            'suratKeluar' => $suratKeluar,
+            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama']),
+            'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
+            'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(SuratKeluarRequest $request, string $id)
+    {
+        $suratKeluar = SuratKeluar::findOrFail($id);
+        $this->authorize('update', $suratKeluar);
+
+        DB::beginTransaction();
+        try {
+            $data = $request->validated();
+
+            // Handle file upload
+            if ($request->hasFile('file')) {
+                // Delete old file
+                if ($suratKeluar->file_path) {
+                    Storage::disk('public')->delete($suratKeluar->file_path);
+                }
+
+                $file = $request->file('file');
+                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+                $data['file_path'] = $file->storeAs('surat-keluar', $filename, 'public');
+            }
+
+            // Update surat keluar
+            $suratKeluar->update($data);
+
+            DB::commit();
+
+            return redirect()->route('persuratan.surat-keluar.index')
+                ->with('success', 'Surat Keluar berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal memperbarui surat keluar: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage (soft delete).
+     */
+    public function destroy(string $id)
+    {
+        $suratKeluar = SuratKeluar::findOrFail($id);
+        $this->authorize('delete', $suratKeluar);
+
+        $suratKeluar->delete();
+
+        Cache::tags(['persuratan_archive'])->flush();
+
+        return redirect()->back()->with('success', 'Surat Keluar berhasil dihapus.');
+    }
+
+    /**
+     * Restore the specified resource from storage.
+     */
+    public function restore(string $id)
+    {
+        $suratKeluar = SuratKeluar::onlyTrashed()->findOrFail($id);
+        $this->authorize('restore', $suratKeluar);
+
+        $suratKeluar->restore();
+
+        Cache::tags(['persuratan_archive'])->flush();
+
+        return redirect()->back()->with('success', 'Surat Keluar berhasil dipulihkan.');
+    }
+
+    /**
+     * Permanently remove the specified resource from storage.
+     */
+    public function forceDelete(string $id)
+    {
+        $suratKeluar = SuratKeluar::onlyTrashed()->findOrFail($id);
+        $this->authorize('forceDelete', $suratKeluar);
+
+        // Delete file
+        if ($suratKeluar->file_path) {
+            Storage::disk('public')->delete($suratKeluar->file_path);
+        }
+
+        $suratKeluar->forceDelete();
+
+        Cache::tags(['persuratan_archive'])->flush();
+
+        return redirect()->back()->with('success', 'Surat Keluar berhasil dihapus permanen.');
+    }
+
+    /**
+     * Generate PDF for Cetak Kartu
+     */
+    public function cetakKartu(string $id)
+    {
+        $suratKeluar = SuratKeluar::with([
+            'indeks',
+            'kodeKlasifikasi',
+            'unitKerja',
+        ])->findOrFail($id);
+
+        $this->authorize('view', $suratKeluar);
+
+        return Inertia::render('Persuratan/SuratKeluar/CetakKartu', [
+            'suratKeluar' => $suratKeluar,
+        ]);
+    }
+
+    /**
+     * Download file surat
+     */
+    public function downloadFile(string $id)
+    {
+        $suratKeluar = SuratKeluar::findOrFail($id);
+        $this->authorize('view', $suratKeluar);
+
+        if (!$suratKeluar->file_path) {
+            return redirect()->back()->with('error', 'File surat tidak ditemukan.');
+        }
+
+        return Storage::disk('public')->download(
+            $suratKeluar->file_path,
+            'Surat_Keluar_' . $suratKeluar->nomor_surat . '.' . pathinfo($suratKeluar->file_path, PATHINFO_EXTENSION)
+        );
+    }
+}

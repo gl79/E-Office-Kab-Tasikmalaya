@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination } from '@/Components/ui';
 import { InputLabel, TextInput, InputError } from '@/Components/form';
 import { User, PageProps } from '@/types';
-import { useServerSearch } from '@/hooks/useServerSearch';
+import { Search, Pencil, Trash2 } from 'lucide-react';
 
 interface Props extends PageProps {
     data: {
@@ -44,19 +44,57 @@ export default function Index({ data, filters, roles, modules }: Props) {
     const [deleteItem, setDeleteItem] = useState<User | null>(null);
     const [previewFoto, setPreviewFoto] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    
-    const [roleFilter, setRoleFilter] = useState(filters.role || '');
 
-    // Server-side search
-    const { search, setSearch } = useServerSearch({
-        url: route('master.pengguna.index'),
-        initialSearch: filters.search,
-        filters: { role: roleFilter }
-    });
+    // Client-side search and filter state for true SPA experience
+    const [search, setSearch] = useState('');
+    const [roleFilter, setRoleFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
-    // Update role filter to trigger server search
+    // Client-side filtered data
+    const filteredData = useMemo(() => {
+        let result = data.data;
+
+        // Filter by search
+        if (search) {
+            const searchLower = search.toLowerCase();
+            result = result.filter(item =>
+                item.name.toLowerCase().includes(searchLower) ||
+                item.username.toLowerCase().includes(searchLower) ||
+                (item.nip && item.nip.toLowerCase().includes(searchLower)) ||
+                (item.jabatan && item.jabatan.toLowerCase().includes(searchLower))
+            );
+        }
+
+        // Filter by role
+        if (roleFilter) {
+            result = result.filter(item => item.role === roleFilter);
+        }
+
+        return result;
+    }, [data.data, search, roleFilter]);
+
+    // Client-side pagination
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredData.slice(start, start + itemsPerPage);
+    }, [filteredData, currentPage]);
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    // Reset page on search/filter change
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+    }, []);
+
     const handleRoleChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
         setRoleFilter(e.target.value);
+        setCurrentPage(1);
+    }, []);
+
+    const handlePageChange = useCallback((page: number) => {
+        setCurrentPage(page);
     }, []);
 
     const form = useForm({
@@ -71,9 +109,6 @@ export default function Index({ data, filters, roles, modules }: Props) {
         module_access: [] as string[],
         foto: null as File | null,
     });
-
-    // Data is already filtered from server
-    const filteredData = data.data;
 
     // Ordered modules matching sidebar
     const orderedModules = useMemo(() => {
@@ -192,44 +227,48 @@ export default function Index({ data, filters, roles, modules }: Props) {
         <AppLayout>
             <Head title="Pengguna" />
 
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-text-primary">Pengguna</h1>
-                    <p className="text-text-secondary text-sm mt-1">Kelola data pengguna sistem</p>
-                </div>
-                <div className="flex gap-2">
-                    <Button onClick={openCreate}>Tambah Pengguna</Button>
-                </div>
+            {/* Page Header */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-text-primary">Data Pengguna</h1>
+                <p className="text-text-secondary text-sm mt-1">Kelola data pengguna sistem</p>
             </div>
 
-            {/* Filters - Server side */}
-            <div className="mb-4 flex gap-4">
-                <div className="flex-1 max-w-xs">
-                    <TextInput
-                        type="text"
-                        placeholder="Cari nama, username, NIP..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full"
-                    />
+            {/* Main Content Card */}
+            <div className="bg-surface rounded-lg border border-border-default">
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex justify-between items-center">
+                        <div className="flex gap-4">
+                            <div className="flex gap-2 flex-1 max-w-md">
+                                <TextInput
+                                    type="text"
+                                    placeholder="Cari nama, username, NIP..."
+                                    value={search}
+                                    onChange={handleSearchChange}
+                                    className="w-full"
+                                />
+                                <Button variant="secondary" disabled>
+                                    <Search className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <select
+                                value={roleFilter}
+                                onChange={handleRoleChange}
+                                className="border border-border-default rounded-lg px-3 py-2 focus:border-primary focus:ring-primary"
+                            >
+                                <option value="">Semua Role</option>
+                                {Object.entries(roles).map(([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <Button onClick={openCreate}>Tambah Pengguna</Button>
+                    </div>
                 </div>
-                <select
-                    value={roleFilter}
-                    onChange={handleRoleChange}
-                    className="border border-border-default rounded-lg px-3 py-2"
-                >
-                    <option value="">Semua Role</option>
-                    {Object.entries(roles).map(([key, label]) => (
-                        <option key={key} value={key}>{label}</option>
-                    ))}
-                </select>
-            </div>
 
-            {/* Table */}
-            <div className="bg-surface border border-border-default rounded-lg overflow-hidden">
+                {/* Table */}
                 <table className="min-w-full divide-y divide-border-default">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-surface-hover">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Foto</th>
@@ -240,17 +279,17 @@ export default function Index({ data, filters, roles, modules }: Props) {
                             <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-border-default">
-                        {filteredData.map((item, index) => (
-                            <tr key={item.id} className="hover:bg-gray-50">
+                    <tbody className="bg-surface divide-y divide-border-default">
+                        {paginatedData.map((item, index) => (
+                            <tr key={item.id} className="hover:bg-surface-hover">
                                 <td className="px-4 py-3 text-text-secondary text-sm">
-                                    {data.from + index}
+                                    {(currentPage - 1) * itemsPerPage + index + 1}
                                 </td>
                                 <td className="px-4 py-3">
                                     <img
                                         src={item.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=6366f1&color=fff`}
                                         alt={item.name}
-                                        className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                                        className="h-10 w-10 rounded-full object-cover border border-border-default"
                                     />
                                 </td>
                                 <td className="px-4 py-3">
@@ -266,19 +305,19 @@ export default function Index({ data, filters, roles, modules }: Props) {
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex gap-2">
-                                        <Button size="sm" variant="secondary" onClick={() => openEdit(item)}>
-                                            Edit
+                                        <Button size="sm" variant="secondary" onClick={() => openEdit(item)} title="Edit">
+                                            <Pencil className="h-4 w-4" />
                                         </Button>
                                         {item.id !== auth.user.id && (
-                                            <Button size="sm" variant="danger" onClick={() => setDeleteItem(item)}>
-                                                Hapus
+                                            <Button size="sm" variant="danger" onClick={() => setDeleteItem(item)} title="Hapus">
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         )}
                                     </div>
                                 </td>
                             </tr>
                         ))}
-                        {filteredData.length === 0 && (
+                        {paginatedData.length === 0 && (
                             <tr>
                                 <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
                                     {search || roleFilter ? 'Tidak ada data yang cocok dengan filter' : 'Tidak ada data pengguna'}
@@ -287,15 +326,20 @@ export default function Index({ data, filters, roles, modules }: Props) {
                         )}
                     </tbody>
                 </table>
-            </div>
 
-            {/* Pagination */}
-            <div className="mt-4 flex justify-center">
-                <Pagination
-                    currentPage={data.current_page}
-                    totalPages={data.last_page}
-                    onPageChange={(page: number) => router.get(data.links.find((l: any) => l.label == page)?.url || '', {}, { preserveState: true, preserveScroll: true })}
-                />
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {filteredData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Create/Edit Modal - Fixed stable layout */}
@@ -310,7 +354,7 @@ export default function Index({ data, filters, roles, modules }: Props) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Foto Upload */}
                             <div className="md:col-span-2 flex items-center gap-4 min-h-[88px]">
-                                <div className="flex-shrink-0">
+                                <div className="shrink-0">
                                     <img
                                         src={previewFoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(form.data.name || 'User')}&background=6366f1&color=fff`}
                                         alt="Preview"
@@ -451,7 +495,7 @@ export default function Index({ data, filters, roles, modules }: Props) {
                                     id="role"
                                     value={form.data.role}
                                     onChange={(e) => form.setData('role', e.target.value)}
-                                    className="mt-1 w-full border border-border-default rounded-lg px-3 py-2"
+                                    className="mt-1 w-full border border-border-default rounded-lg px-3 py-2 focus:border-primary focus:ring-primary"
                                     required
                                 >
                                     {Object.entries(roles).map(([key, label]) => (
@@ -466,16 +510,16 @@ export default function Index({ data, filters, roles, modules }: Props) {
                                 <InputLabel value="Akses Modul" />
                                 <p className="text-xs text-text-secondary mb-2">
                                     Pilih modul yang dapat diakses oleh pengguna ini
-                                    <span className="text-amber-600 ml-1">(Fitur dalam pengembangan)</span>
+                                    <span className="text-accent-dark ml-1">(Fitur dalam pengembangan)</span>
                                 </p>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-surface-hover rounded-lg">
                                     {orderedModules.map(([key, label]) => (
                                         <label key={key} className="flex items-center text-sm cursor-pointer">
                                             <input
                                                 type="checkbox"
                                                 checked={form.data.module_access.includes(key)}
                                                 onChange={() => handleModuleToggle(key)}
-                                                className="mr-2 rounded border-gray-300 text-primary focus:ring-primary"
+                                                className="mr-2 rounded border-border-default text-primary focus:ring-primary"
                                             />
                                             <span className="truncate">{label}</span>
                                         </label>

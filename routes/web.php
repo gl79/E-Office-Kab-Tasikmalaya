@@ -5,6 +5,9 @@ use App\Http\Controllers\Master\Wilayah\DesaController;
 use App\Http\Controllers\Master\Wilayah\KabupatenController;
 use App\Http\Controllers\Master\Wilayah\KecamatanController;
 use App\Http\Controllers\Master\Wilayah\ProvinsiController;
+use App\Http\Controllers\Persuratan\SuratMasukController;
+use App\Http\Controllers\Persuratan\SuratKeluarController;
+use App\Http\Controllers\Persuratan\ArchiveController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -23,9 +26,7 @@ Route::get('/', function () {
  */
 Route::middleware('auth')->group(function () {
     // Dashboard
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
@@ -36,6 +37,15 @@ Route::middleware('auth')->group(function () {
     Route::put('/password', [App\Http\Controllers\PasswordController::class, 'update'])->name('password.update');
     Route::get('/password/force', [App\Http\Controllers\PasswordController::class, 'showForce'])->name('password.force');
     Route::put('/password/force', [App\Http\Controllers\PasswordController::class, 'forceUpdate'])->name('password.force_update');
+
+    // ================================================================
+    // PENGATURAN & LOGS (Superadmin only)
+    // ================================================================
+    Route::prefix('pengaturan')->name('pengaturan.')->group(function () {
+        Route::get('/activity-logs', [App\Http\Controllers\ActivityLogController::class, 'index'])
+            ->name('activity-logs.index')
+            ->middleware('role:superadmin');
+    });
 
     // ================================================================
     // DATA MASTER
@@ -101,13 +111,26 @@ Route::middleware('auth')->group(function () {
     // PERSURATAN
     // ================================================================
     Route::prefix('persuratan')->name('persuratan.')->group(function () {
-        Route::get('/surat-masuk', function () {
-            return Inertia::render('Persuratan/SuratMasuk/Index');
-        })->name('surat-masuk.index');
+        // Surat Masuk Routes
+        Route::resource('surat-masuk', SuratMasukController::class);
+        Route::post('surat-masuk/{id}/restore', [SuratMasukController::class, 'restore'])->name('surat-masuk.restore');
+        Route::delete('surat-masuk/{id}/force-delete', [SuratMasukController::class, 'forceDelete'])->name('surat-masuk.force-delete');
+        Route::get('surat-masuk/{id}/cetak-kartu', [SuratMasukController::class, 'cetakKartu'])->name('surat-masuk.cetak-kartu');
+        Route::post('surat-masuk/{id}/cetak-disposisi', [SuratMasukController::class, 'cetakDisposisi'])->name('surat-masuk.cetak-disposisi');
+        Route::get('surat-masuk/{id}/cetak-isi', [SuratMasukController::class, 'cetakIsi'])->name('surat-masuk.cetak-isi');
+        Route::get('surat-masuk/{id}/download', [SuratMasukController::class, 'downloadFile'])->name('surat-masuk.download');
 
-        Route::get('/surat-keluar', function () {
-            return Inertia::render('Persuratan/SuratKeluar/Index');
-        })->name('surat-keluar.index');
+        // Surat Keluar Routes
+        Route::resource('surat-keluar', SuratKeluarController::class);
+        Route::post('surat-keluar/{id}/restore', [SuratKeluarController::class, 'restore'])->name('surat-keluar.restore');
+        Route::delete('surat-keluar/{id}/force-delete', [SuratKeluarController::class, 'forceDelete'])->name('surat-keluar.force-delete');
+        Route::get('surat-keluar/{id}/cetak-kartu', [SuratKeluarController::class, 'cetakKartu'])->name('surat-keluar.cetak-kartu');
+        Route::get('surat-keluar/{id}/download', [SuratKeluarController::class, 'downloadFile'])->name('surat-keluar.download');
+
+        // Archive Routes
+        Route::get('archive', [ArchiveController::class, 'index'])->name('archive.index');
+        Route::post('archive/{type}/{id}/restore', [ArchiveController::class, 'restore'])->name('archive.restore');
+        Route::delete('archive/{type}/{id}/force-delete', [ArchiveController::class, 'forceDelete'])->name('archive.force-delete');
     });
 
     // ================================================================
@@ -139,10 +162,6 @@ Route::middleware('auth')->group(function () {
     });
 
     // Placeholder Routes for other Archives
-    Route::get('/persuratan/archive', function () {
-        return Inertia::render('ComingSoon');
-    })->name('persuratan.archive');
-
     Route::get('/cuti/archive', function () {
         return Inertia::render('ComingSoon');
     })->name('cuti.archive');

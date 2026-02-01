@@ -52,7 +52,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
-    
+
     // Client-side filtering
     const filteredData = useMemo(() => {
         let data = kecamatan;
@@ -67,7 +67,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
 
         if (search) {
             const lowerSearch = search.toLowerCase();
-            data = data.filter(item => 
+            data = data.filter(item =>
                 item.nama.toLowerCase().includes(lowerSearch) ||
                 item.kode.toLowerCase().includes(lowerSearch)
             );
@@ -81,10 +81,10 @@ export default function Index({ auth, kecamatan, filters }: Props) {
         const start = (currentPage - 1) * itemsPerPage;
         return filteredData.slice(start, start + itemsPerPage);
     }, [filteredData, currentPage]);
-    
+
     const [provinsiList, setProvinsiList] = useState<WilayahProvinsi[]>([]);
     const [kabupatenList, setKabupatenList] = useState<WilayahKabupaten[]>([]);
-    
+
     // For Modal
     const [modalKabupatenList, setModalKabupatenList] = useState<WilayahKabupaten[]>([]);
 
@@ -144,7 +144,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
         // Pre-select if filtered
         if (provinsiKode) setData('provinsi_kode', provinsiKode);
         if (kabupatenKode) setData('kabupaten_kode', kabupatenKode);
-        
+
         clearErrors();
         setIsCreateModalOpen(true);
     };
@@ -179,7 +179,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
     const handleUpdate = (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedItem) return;
-        
+
         // Fix: Use array for composite key
         put(route('master.wilayah.kecamatan.update', [selectedItem.provinsi_kode, selectedItem.kabupaten_kode, selectedItem.kode]), {
             onSuccess: () => {
@@ -199,28 +199,28 @@ export default function Index({ auth, kecamatan, filters }: Props) {
     };
 
     const tableHeaders: TableHeader<WilayahKecamatan>[] = [
-        { 
-            key: 'no', 
+        {
+            key: 'no',
             label: 'No',
             className: 'w-16',
             render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
-        { 
-            key: 'full_kode', 
-            label: 'Kode', 
+        {
+            key: 'full_kode',
+            label: 'Kode',
             className: 'w-24',
             render: (_, item) => `${item.provinsi_kode}.${item.kabupaten_kode}.${item.kode}`
         },
         { key: 'nama', label: 'Nama Kecamatan' },
-        { 
-            key: 'kabupaten.nama', 
+        {
+            key: 'kabupaten.nama',
             label: 'Kabupaten',
             render: (_, item) => item.kabupaten?.nama || '-'
         },
-        { 
-            key: 'desa_count', 
+        {
+            key: 'desa_count',
             label: 'Jumlah Desa',
-            render: (value) => <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{String(value)}</span>
+            render: (value) => <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">{String(value)}</span>
         },
         {
             key: 'actions',
@@ -243,77 +243,86 @@ export default function Index({ auth, kecamatan, filters }: Props) {
         <AppLayout>
             <Head title="Wilayah Kecamatan" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div className="flex flex-col lg:flex-row justify-between gap-4 mb-6">
-                            <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-3/4">
-                                <div className="w-full sm:w-2/4 relative flex gap-2">
-                                    <TextInput
-                                        type="text"
-                                        placeholder="Cari Kecamatan..."
-                                        value={search}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                                        className="w-full"
-                                    />
-                                    <Button variant="secondary" disabled>
-                                        <Search className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <div className="w-full sm:w-1/4">
-                                    <select
-                                        className="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        value={provinsiKode}
-                                        onChange={(e) => setProvinsiKode(e.target.value)}
-                                    >
-                                        <option value="">Semua Provinsi</option>
-                                        {provinsiList.map((prov) => (
-                                            <option key={prov.kode} value={prov.kode}>
-                                                {prov.nama}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="w-full sm:w-1/4">
-                                    <select
-                                        className="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        value={kabupatenKode}
-                                        onChange={(e) => setKabupatenKode(e.target.value)}
-                                        disabled={!provinsiKode}
-                                    >
-                                        <option value="">Semua Kabupaten</option>
-                                        {kabupatenList.map((kab) => (
-                                            <option key={kab.kode} value={kab.kode}>
-                                                {kab.nama}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button onClick={openCreateModal}>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Tambah
+            {/* Page Header */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-text-primary">Wilayah Kecamatan</h1>
+                <p className="text-text-secondary text-sm mt-1">Kelola data kecamatan</p>
+            </div>
+
+            <div className="bg-surface rounded-lg border border-border-default">
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex flex-col lg:flex-row justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-3/4">
+                            <div className="flex gap-2 w-full sm:w-2/4">
+                                <TextInput
+                                    type="text"
+                                    placeholder="Cari Kecamatan..."
+                                    value={search}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                                    className="w-full"
+                                />
+                                <Button variant="secondary" disabled>
+                                    <Search className="h-4 w-4" />
                                 </Button>
                             </div>
+                            <div className="w-full sm:w-1/4">
+                                <select
+                                    className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    value={provinsiKode}
+                                    onChange={(e) => setProvinsiKode(e.target.value)}
+                                >
+                                    <option value="">Semua Provinsi</option>
+                                    {provinsiList.map((prov) => (
+                                        <option key={prov.kode} value={prov.kode}>
+                                            {prov.nama}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="w-full sm:w-1/4">
+                                <select
+                                    className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    value={kabupatenKode}
+                                    onChange={(e) => setKabupatenKode(e.target.value)}
+                                    disabled={!provinsiKode}
+                                >
+                                    <option value="">Semua Kabupaten</option>
+                                    {kabupatenList.map((kab) => (
+                                        <option key={kab.kode} value={kab.kode}>
+                                            {kab.nama}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
+                        <div className="flex gap-2">
+                            <Button onClick={openCreateModal}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Tambah
+                            </Button>
+                        </div>
+                    </div>
+                </div>
 
-                        <div className="rounded-md border">
-                            <Table<WilayahKecamatan>
-                                headers={tableHeaders}
-                                data={paginatedData}
-                                keyExtractor={(item) => `${item.provinsi_kode}-${item.kabupaten_kode}-${item.kode}`}
-                                emptyMessage="Tidak ada data kecamatan."
-                            />
-                        </div>
+                <Table<WilayahKecamatan>
+                    headers={tableHeaders}
+                    data={paginatedData}
+                    keyExtractor={(item) => `${item.provinsi_kode}-${item.kabupaten_kode}-${item.kode}`}
+                    emptyMessage="Tidak ada data kecamatan."
+                />
 
-                        <div className="mt-4">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={Math.ceil(filteredData.length / itemsPerPage)}
-                                onPageChange={handlePageChange}
-                            />
-                        </div>
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {filteredData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={Math.ceil(filteredData.length / itemsPerPage)}
+                            onPageChange={handlePageChange}
+                        />
                     </div>
                 </div>
             </div>
@@ -326,7 +335,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                             <InputLabel htmlFor="provinsi_kode" value="Provinsi" />
                             <select
                                 id="provinsi_kode"
-                                className="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
                                 value={formData.provinsi_kode}
                                 onChange={(e) => setData('provinsi_kode', e.target.value)}
                             >
@@ -337,13 +346,13 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                                     </option>
                                 ))}
                             </select>
-                            {errors.provinsi_kode && <p className="text-sm text-red-500">{errors.provinsi_kode}</p>}
+                            {errors.provinsi_kode && <p className="text-sm text-danger">{errors.provinsi_kode}</p>}
                         </div>
                         <div className="space-y-2">
                             <InputLabel htmlFor="kabupaten_kode" value="Kabupaten" />
                             <select
                                 id="kabupaten_kode"
-                                className="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
                                 value={formData.kabupaten_kode}
                                 onChange={(e) => setData('kabupaten_kode', e.target.value)}
                                 disabled={!formData.provinsi_kode}
@@ -355,7 +364,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                                     </option>
                                 ))}
                             </select>
-                            {errors.kabupaten_kode && <p className="text-sm text-red-500">{errors.kabupaten_kode}</p>}
+                            {errors.kabupaten_kode && <p className="text-sm text-danger">{errors.kabupaten_kode}</p>}
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -368,7 +377,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                             maxLength={2}
                             className="w-full"
                         />
-                        {errors.kode && <p className="text-sm text-red-500">{errors.kode}</p>}
+                        {errors.kode && <p className="text-sm text-danger">{errors.kode}</p>}
                     </div>
                     <div className="space-y-2">
                         <InputLabel htmlFor="nama" value="Nama Kecamatan" />
@@ -379,7 +388,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                             placeholder="Contoh: CIPATUJAH"
                             className="w-full"
                         />
-                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                        {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Batal</Button>
@@ -396,7 +405,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                             <InputLabel htmlFor="edit-provinsi" value="Provinsi" />
                             <select
                                 id="edit-provinsi"
-                                className="w-full border-gray-300 bg-gray-100 rounded-md shadow-sm"
+                                className="w-full border-border-default bg-surface-hover rounded-md shadow-sm"
                                 value={formData.provinsi_kode}
                                 disabled
                             >
@@ -411,7 +420,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                             <InputLabel htmlFor="edit-kabupaten" value="Kabupaten" />
                             <select
                                 id="edit-kabupaten"
-                                className="w-full border-gray-300 bg-gray-100 rounded-md shadow-sm"
+                                className="w-full border-border-default bg-surface-hover rounded-md shadow-sm"
                                 value={formData.kabupaten_kode}
                                 disabled
                             >
@@ -429,7 +438,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                             id="edit-kode"
                             value={formData.kode}
                             disabled
-                            className="w-full bg-gray-100"
+                            className="w-full bg-surface-hover"
                         />
                     </div>
                     <div className="space-y-2">
@@ -440,7 +449,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
                             className="w-full"
                         />
-                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                        {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>Batal</Button>
@@ -453,10 +462,10 @@ export default function Index({ auth, kecamatan, filters }: Props) {
             <Modal isOpen={isDeleteAlertOpen} onClose={() => setIsDeleteAlertOpen(false)} title="Konfirmasi Hapus">
                 <div className="space-y-4">
                     <p>Apakah Anda yakin ingin menghapus kecamatan ini?</p>
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <div className="bg-warning-light border-l-4 border-warning p-4">
                         <div className="flex">
                             <div className="ml-3">
-                                <p className="text-sm text-yellow-700">
+                                <p className="text-sm text-accent-dark">
                                     PERINGATAN: Menghapus kecamatan akan menghapus semua Desa yang ada di bawahnya.
                                 </p>
                             </div>

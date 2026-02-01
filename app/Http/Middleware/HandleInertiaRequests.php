@@ -41,6 +41,8 @@ class HandleInertiaRequests extends Middleware
                     'role' => $user->role,
                     'role_label' => $user->role_label,
                     'foto_url' => $user->foto_url,
+                    'nip' => $user->nip,
+                    'jabatan' => $user->jabatan,
                     'password_changed_at' => $user->password_changed_at,
                 ] : null,
             ],
