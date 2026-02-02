@@ -1,5 +1,5 @@
 import { ReactNode, useState, useEffect } from 'react';
-import { usePage, router, useForm } from '@inertiajs/react';
+import { usePage, router, useForm, Link } from '@inertiajs/react';
 import { Header, Sidebar, Footer } from '@/Components/layout';
 import { MenuItem } from '@/config/menu';
 import { PageProps } from '@/types';
@@ -141,10 +141,10 @@ function AppLayoutInner({
             <div className="min-h-screen flex flex-col bg-background">
                 {/* Mobile Header */}
                 <header className="lg:hidden bg-surface border-b border-border-default h-16 flex items-center justify-between px-4 sticky top-0 z-30">
-                    <div className="flex items-center gap-3">
+                    <Link href={route('dashboard')} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <img src="/images/pemkabtasik.png" alt="Logo Kabupaten Tasikmalaya" className="w-8 h-8 object-contain" />
                         <span className="font-bold text-text-primary">E-Office</span>
-                    </div>
+                    </Link>
                     <button 
                         onClick={() => setIsMobileSidebarOpen(true)}
                         className="p-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface-hover"

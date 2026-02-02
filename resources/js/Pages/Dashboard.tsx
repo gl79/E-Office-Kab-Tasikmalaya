@@ -169,7 +169,7 @@ const Dashboard = () => {
                                 </div>
                                 <div className="bg-white/10 rounded-lg px-3 py-2">
                                     <span className="text-primary-light text-xs">NIP</span>
-                                    <p className="text-white font-medium text-sm">{user.nip || '-'}</p>
+                                    <p className="text-white font-medium text-sm break-all">{user.nip || '-'}</p>
                                 </div>
                                 <div className="bg-white/10 rounded-lg px-3 py-2">
                                     <span className="text-primary-light text-xs">Jabatan</span>

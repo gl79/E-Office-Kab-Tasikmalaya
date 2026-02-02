@@ -21,40 +21,34 @@ class PenjadwalanController extends Controller
      */
     public function index(Request $request)
     {
-        // Surat masuk yang BELUM dijadwalkan
-        $belumDijadwalkan = SuratMasuk::query()
-            ->belumDijadwalkan()
-            ->with(['tujuans', 'indeksBerkas'])
-            ->search($request->input('search'))
-            ->latest('tanggal_diterima')
-            ->get()
-            ->map(function ($surat) {
-                return [
-                    'id' => $surat->id,
-                    'nomor_agenda' => $surat->nomor_agenda,
-                    'nomor_surat' => $surat->nomor_surat,
-                    'tanggal_surat' => $surat->tanggal_surat?->format('Y-m-d'),
-                    'tanggal_surat_formatted' => $surat->tanggal_surat_formatted,
-                    'tanggal_diterima' => $surat->tanggal_diterima?->format('Y-m-d'),
-                    'tanggal_diterima_formatted' => $surat->tanggal_diterima_formatted,
-                    'asal_surat' => $surat->asal_surat,
-                    'perihal' => $surat->perihal,
-                    'sifat' => $surat->sifat,
-                    'sifat_label' => $surat->sifat_label,
-                    'file_path' => $surat->file_path,
-                    'file_url' => $surat->file_path ? Storage::url($surat->file_path) : null,
-                    'tujuan_list' => $surat->tujuan_list,
-                ];
-            });
+        $tab = $request->input('tab', 'belum');
+        $search = $request->input('search');
 
-        // Surat masuk yang SUDAH dijadwalkan (with penjadwalan)
-        $sudahDijadwalkan = SuratMasuk::query()
-            ->sudahDijadwalkan()
-            ->with(['tujuans', 'indeksBerkas', 'penjadwalan.creator'])
-            ->search($request->input('search'))
-            ->latest('tanggal_diterima')
-            ->get()
-            ->map(function ($surat) {
+        $query = SuratMasuk::query()
+            ->with(['tujuans', 'indeksBerkas']);
+
+        // Apply Tab Filter
+        if ($tab === 'sudah') {
+            $query->sudahDijadwalkan()->with('penjadwalan.creator');
+        } else {
+            $query->belumDijadwalkan();
+        }
+
+        // Apply Search
+        if ($search) {
+            $query->search($search);
+            // Also search in Agenda if tab is 'sudah'
+            if ($tab === 'sudah') {
+                $query->orWhereHas('penjadwalan', function ($q) use ($search) {
+                    $q->where('nama_kegiatan', 'like', "%{$search}%");
+                });
+            }
+        }
+
+        $suratMasuk = $query->latest('tanggal_diterima')
+            ->paginate(10)
+            ->withQueryString()
+            ->through(function ($surat) {
                 return [
                     'id' => $surat->id,
                     'nomor_agenda' => $surat->nomor_agenda,
@@ -86,10 +80,10 @@ class PenjadwalanController extends Controller
             });
 
         return Inertia::render('Penjadwalan/Jadwal/Index', [
-            'belumDijadwalkan' => $belumDijadwalkan,
-            'sudahDijadwalkan' => $sudahDijadwalkan,
+            'suratMasuk' => $suratMasuk,
+            'activeTab' => $tab,
             'lokasiTypeOptions' => Penjadwalan::LOKASI_TYPE_OPTIONS,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'tab']),
         ]);
     }
 

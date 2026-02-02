@@ -1,5 +1,6 @@
+// HMR Force Update
 import { ReactNode } from 'react';
-import { usePage } from '@inertiajs/react';
+import { usePage, Link } from '@inertiajs/react';
 import { menuItems, MenuItem } from '@/config/menu';
 import SidebarMenuItem from './SidebarMenuItem';
 import { PageProps } from '@/types';
@@ -86,13 +87,13 @@ export default function Sidebar({
             >
                 {/* Sidebar Branding / Header */}
                 <div className="h-16 flex items-center px-6 border-b border-border-default bg-surface sticky top-0 z-10">
-                    <div className="flex items-center gap-3">
+                    <Link href={route('dashboard')} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <img src="/images/pemkabtasik.png" alt="Logo Kabupaten Tasikmalaya" className="w-8 h-8 object-contain" />
                         <div className="text-sm font-bold text-text-primary leading-tight">
                             E-Office<br/>
                             <span className="font-semibold text-text-secondary text-xs">Kab. Tasikmalaya</span>
                         </div>
-                    </div>
+                    </Link>
                     {/* Close button for mobile */}
                     <button 
                         onClick={onClose}

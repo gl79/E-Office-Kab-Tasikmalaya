@@ -112,7 +112,7 @@ export default function Pagination({
 
     return (
         <nav 
-            className={`flex items-center gap-1 ${className}`}
+            className={`flex items-center gap-1 flex-wrap ${className}`}
             aria-label="Pagination"
         >
             {/* First Page */}

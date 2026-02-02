@@ -8,24 +8,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->prefix('penjadwalan')->name('penjadwalan.')->group(function () {
     // Menu Jadwal (dari Surat Masuk)
-    // index was named jadwal.index before, but I updated controller redirect to penjadwalan.index
-    // BUT the resource route name might be better as jadwal.index if it's under penjadwalan.jadwal
-    // Let's stick to the previous naming convention but update the implementation plan's intention slightly
-    // Original: name('jadwal.index') inside prefix 'penjadwalan'. So route is 'penjadwalan.jadwal.index'.
-    // My controller edit: route('penjadwalan.index'). This suggests I wanted to change the route name.
-    // Let's make the route name 'penjadwalan.index' to match the controller update I made.
-    // WAIT, if I change the route name here, I need to update sidebar/frontend too.
-    // The user asked to "buatkan web routes menjadi folder folder sesuai halaman".
-    // "buatkan kalo penamaanya agar serasi".
-    // So 'penjadwalan.index' is cleaner than 'penjadwalan.jadwal.index'.
-
-    // Let's align on:
-    // PenjadwalanController -> /penjadwalan/jadwal -> name('penjadwalan.jadwal.index') ??
-    // actually, let's simplify.
-    // /penjadwalan/jadwal -> name('penjadwalan.index') 
-    // Wait, let's keep it 'penjadwalan.jadwal.index' for less breakage in frontend if possible, 
-    // OR just update frontend. I updated the controller to redirect to 'penjadwalan.index'.
-    // So I will define it as 'index' (which under prefix 'penjadwalan.' becomes 'penjadwalan.index').
 
     Route::get('/jadwal', [PenjadwalanController::class, 'index'])->name('index'); // penjadwalan.index
     Route::get('/jadwal/surat-masuk/{id}', [PenjadwalanController::class, 'getSuratMasuk'])->name('surat-masuk');
