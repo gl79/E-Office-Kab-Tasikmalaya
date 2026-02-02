@@ -3,7 +3,8 @@ import { usePage, router, useForm } from '@inertiajs/react';
 import { Header, Sidebar, Footer } from '@/Components/layout';
 import { MenuItem } from '@/config/menu';
 import { PageProps } from '@/types';
-import { Button, Modal, ToastProvider, useToast } from '@/Components/ui';
+import { Button, Modal, ToastProvider, useToast, Breadcrumb } from '@/Components/ui';
+import { BreadcrumbItem } from '@/Components/ui/Breadcrumb';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -27,7 +28,7 @@ function AppLayoutInner({
     sidebarMenuItems,
     footerContent,
 }: AppLayoutProps) {
-    const { auth, flash } = usePage<PageProps & { flash: { success?: string; error?: string } }>().props;
+    const { auth, flash, url } = usePage<PageProps & { flash: { success?: string; error?: string }, url: string }>().props;
     const user = auth.user;
     const { showToast } = useToast();
 
@@ -77,13 +78,63 @@ function AppLayoutInner({
         router.post(route('logout'));
     };
 
+    // Generate Breadcrumbs
+    const generateBreadcrumbs = (): BreadcrumbItem[] => {
+        // Use window.location.pathname client-side fallback, but Inertia usePage().url gives us the full path
+        // We will stick to usePage().url which includes query params, so we need to split
+        let path = '';
+        if (typeof window !== 'undefined') {
+             path = window.location.pathname;
+        } else {
+             // Fallback for SSR if needed, or if generic url from Inertia props is just path
+             // In Inertia, `url` prop typically starts with /
+             path = url?.split('?')[0] || '';
+        }
+
+        if (path === '/' || path === '/dashboard') return [];
+
+        const segments = path.split('/').filter(Boolean);
+        const crumbs: BreadcrumbItem[] = [];
+        let currentPath = '';
+
+        segments.forEach((segment, index) => {
+            currentPath += `/${segment}`;
+            const isLast = index === segments.length - 1;
+
+            // Custom mappings
+            let label = segment.replace(/-/g, ' ');
+            
+            // Capitalize First Letters
+            label = label.replace(/\b\w/g, (c) => c.toUpperCase());
+            
+            // Specific overrides
+            if (segment.toLowerCase() === 'master') label = 'Master Data';
+            if (segment.toLowerCase() === 'indeks-surat') label = 'Indeks Surat';
+            if (segment.toLowerCase() === 'unit-kerja') label = 'Unit Kerja';
+            if (segment.toLowerCase() === 'sifat-surat') label = 'Sifat Surat';
+            if (segment.toLowerCase() === 'surat-masuk') label = 'Surat Masuk';
+            if (segment.toLowerCase() === 'surat-keluar') label = 'Surat Keluar';
+            
+            // Skip "Dashboard" segment if it exists to avoid redundancy with Home icon
+            if (segment.toLowerCase() === 'dashboard') return;
+
+            crumbs.push({
+                label,
+                href: isLast ? undefined : currentPath,
+                active: isLast,
+            });
+        });
+
+        return crumbs;
+    };
+
+    const breadcrumbs = generateBreadcrumbs();
+
     return (
         <>
             <div className="min-h-screen flex flex-col bg-background">
                 {/* Header - Clean with only logo */}
-                <Header 
-                    logo={headerLogo} 
-                />
+                {/* Header removed as requested - Title moved to Sidebar */}
 
                 {/* Main Container (Sidebar + Content) */}
                 <div className="flex flex-1 overflow-hidden">
@@ -99,6 +150,12 @@ function AppLayoutInner({
 
                     {/* Main Content Area */}
                     <main className="flex-1 overflow-y-auto p-6">
+                        {/* Breadcrumbs */}
+                        {breadcrumbs.length > 0 && (
+                            <div className="mb-6">
+                                <Breadcrumb items={breadcrumbs} />
+                            </div>
+                        )}
                         {children}
                     </main>
                 </div>
@@ -154,7 +211,7 @@ function AppLayoutInner({
                 <div className="p-4">
                     <div className="mb-4 bg-primary-light border-l-4 border-primary p-4">
                         <div className="flex">
-                            <div className="flex-shrink-0">
+                            <div className="shrink-0">
                                 <svg className="h-5 w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                 </svg>

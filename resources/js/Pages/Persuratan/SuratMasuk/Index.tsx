@@ -2,17 +2,13 @@ import { useState, useMemo } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search, Eye, Printer, FileText, Filter, MoreVertical } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
-import Button from '@/Components/ui/Button';
-import Table, { TableHeader } from '@/Components/ui/Table';
-import Dropdown from '@/Components/ui/Dropdown';
-import Modal from '@/Components/ui/Modal';
-import Pagination from '@/Components/ui/Pagination';
+import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
-import ConfirmDialog from '@/Components/ui/ConfirmDialog';
-import TextInput from '@/Components/form/TextInput';
+import { TextInput } from '@/Components/form';
 import FormSelect from '@/Components/form/FormSelect';
 import FormDatePicker from '@/Components/form/FormDatePicker';
-import type { PageProps } from '@/types';
+import ConfirmDialog from '@/Components/ui/ConfirmDialog';
+import { PageProps } from '@/types';
 
 interface SuratMasukTujuan {
     id: string;
@@ -43,7 +39,7 @@ interface Props extends PageProps {
     sifatOptions: Record<string, string>;
 }
 
-export default function Index({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) {
+const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     // Local state for real-time updates
     const [suratMasuk, setSuratMasuk] = useState(initialSuratMasuk);
 
@@ -183,225 +179,219 @@ export default function Index({ suratMasuk: initialSuratMasuk, sifatOptions }: P
         label,
     }));
 
-    const tableHeaders: TableHeader<SuratMasuk>[] = [
-        {
-            key: 'no',
-            label: 'No',
-            className: 'w-12',
-            render: (_: unknown, __: unknown, index: number) =>
-                ((currentPage - 1) * itemsPerPage + index + 1).toString(),
-        },
-        { key: 'nomor_agenda', label: 'No. Agenda' },
-        {
-            key: 'tanggal_diterima',
-            label: 'Tgl Diterima',
-            render: (value: unknown) => formatDate(value as string),
-        },
-        {
-            key: 'nomor_surat',
-            label: 'Nomor / Tgl Surat',
-            render: (_: unknown, item: SuratMasuk) => (
-                <div>
-                    <div className="font-medium">{item.nomor_surat}</div>
-                    <div className="text-sm text-gray-500">{formatDate(item.tanggal_surat)}</div>
-                </div>
-            ),
-        },
-        { key: 'asal_surat', label: 'Asal Surat' },
-        {
-            key: 'sifat',
-            label: 'Sifat',
-            className: 'w-32',
-            render: (value: unknown) => (
-                <div className="flex">
-                    {getSifatBadge(value as string)}
-                </div>
-            ),
-        },
-        {
-            key: 'actions',
-            label: '',
-            className: 'w-10 relative',
-            render: (_: unknown, item: SuratMasuk) => (
-                <div className="flex justify-end">
-                    <Dropdown
-                        align="right"
-                        width="48"
-                        trigger={
-                            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-                                <MoreVertical className="h-5 w-5 text-gray-500" />
-                            </button>
-                        }
-                    >
-                        <div className="py-1">
-                            <Dropdown.Link
-                                as="button"
-                                onClick={() => {
-                                    setDetailSurat(item);
-                                    setDetailModalOpen(true);
-                                }}
-                                className="flex items-center gap-2"
-                            >
-                                <Eye className="h-4 w-4" />
-                                <span>Lihat Detail</span>
-                            </Dropdown.Link>
-                            
-                            <Dropdown.Link
-                                href={route('persuratan.surat-masuk.edit', item.id)}
-                                className="flex items-center gap-2"
-                            >
-                                <Pencil className="h-4 w-4" />
-                                <span>Edit</span>
-                            </Dropdown.Link>
-                            
-                            <Dropdown.Link
-                                as="button"
-                                onClick={() => window.open(route('persuratan.surat-masuk.cetak-kartu', item.id), '_blank')}
-                                className="flex items-center gap-2"
-                            >
-                                <Printer className="h-4 w-4" />
-                                <span>Cetak Kartu</span>
-                            </Dropdown.Link>
-                            
-                            <Dropdown.Link
-                                as="button"
-                                onClick={() => {
-                                    setDisposisiSurat(item);
-                                    setDisposisiModalOpen(true);
-                                }}
-                                className="flex items-center gap-2"
-                            >
-                                <FileText className="h-4 w-4" />
-                                <span>Cetak Disposisi</span>
-                            </Dropdown.Link>
-                            
-                            <div className="border-t border-gray-100 my-1"></div>
-                            
-                            <Dropdown.Link
-                                as="button"
-                                onClick={() => {
-                                    setSelectedSurat(item);
-                                    setDeleteModalOpen(true);
-                                }}
-                                className="flex items-center gap-2 text-red-600 hover:bg-red-50 focus:bg-red-50"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                                <span>Hapus</span>
-                            </Dropdown.Link>
-                        </div>
-                    </Dropdown>
-                </div>
-            ),
-        },
-    ];
-
     return (
-        <AppLayout>
+        <>
             <Head title="Surat Masuk" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        {/* Header */}
-                        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-                            <h1 className="text-2xl font-semibold text-gray-900">Surat Masuk</h1>
+            {/* Page Header */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-text-primary">Surat Masuk</h1>
+                <p className="text-text-secondary text-sm mt-1">Kelola data surat masuk dan disposisi</p>
+            </div>
+
+            {/* Main Content Card */}
+            <div className="bg-surface rounded-lg border border-border-default">
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col sm:flex-row justify-between gap-4">
+                            <div className="flex gap-2 flex-1 max-w-2xl">
+                                <TextInput
+                                    type="text"
+                                    placeholder="Cari nomor agenda, nomor surat, asal surat..."
+                                    value={search}
+                                    onChange={handleSearchChange}
+                                    className="w-full"
+                                />
+                                <Button variant="secondary" onClick={() => setShowFilters(!showFilters)} title="Filter Lanjutan">
+                                    <Filter className={`h-4 w-4 ${showFilters ? 'text-primary' : ''}`} />
+                                </Button>
+                            </div>
                             <Link href={route('persuratan.surat-masuk.create')}>
                                 <Button>
                                     <Plus className="h-4 w-4 mr-2" />
-                                    Tambah Surat Masuk
+                                    Tambah Surat
                                 </Button>
                             </Link>
                         </div>
 
-                        {/* Search & Filter */}
-                        <div className="mb-6 space-y-4">
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <div className="flex gap-2 flex-1">
-                                    <TextInput
-                                        type="text"
-                                        placeholder="Cari nomor agenda, nomor surat, asal surat, perihal..."
-                                        value={search}
-                                        onChange={handleSearchChange}
+                        {/* Expandable Filters */}
+                        {showFilters && (
+                            <div className="p-4 bg-surface-hover rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-4 border border-border-default animate-in fade-in slide-in-from-top-2">
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">
+                                        Tanggal Mulai
+                                    </label>
+                                    <FormDatePicker
+                                        value={startDate}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                            setStartDate(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
                                         className="w-full"
                                     />
-                                    <Button variant="secondary" disabled>
-                                        <Search className="h-4 w-4" />
-                                    </Button>
                                 </div>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => setShowFilters(!showFilters)}
-                                >
-                                    <Filter className="h-4 w-4 mr-2" />
-                                    Filter
-                                </Button>
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">
+                                        Tanggal Akhir
+                                    </label>
+                                    <FormDatePicker
+                                        value={endDate}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                            setEndDate(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">
+                                        Sifat Surat
+                                    </label>
+                                    <FormSelect
+                                        options={sifatSelectOptions}
+                                        value={sifat}
+                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                            setSifat(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        placeholder="Semua Sifat"
+                                        className="w-full"
+                                    />
+                                </div>
                             </div>
+                        )}
+                    </div>
+                </div>
 
-                            {showFilters && (
-                                <div className="p-4 bg-gray-50 rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Tanggal Mulai
-                                        </label>
-                                        <FormDatePicker
-                                            value={startDate}
-                                            onChange={(e) => {
-                                                setStartDate(e.target.value);
-                                                setCurrentPage(1);
-                                            }}
-                                            className="w-full"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Tanggal Akhir
-                                        </label>
-                                        <FormDatePicker
-                                            value={endDate}
-                                            onChange={(e) => {
-                                                setEndDate(e.target.value);
-                                                setCurrentPage(1);
-                                            }}
-                                            className="w-full"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Sifat Surat
-                                        </label>
-                                        <FormSelect
-                                            options={sifatSelectOptions}
-                                            value={sifat}
-                                            onChange={(e) => {
-                                                setSifat(e.target.value);
-                                                setCurrentPage(1);
-                                            }}
-                                            placeholder="Semua Sifat"
-                                            className="w-full"
-                                        />
-                                    </div>
-                                </div>
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-border-default">
+                        <thead className="bg-surface-hover">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">No. Agenda</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tgl Diterima</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor / Tgl Surat</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Asal Surat</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Sifat</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-surface divide-y divide-border-default">
+                            {paginatedData.map((item, index) => (
+                                <tr key={item.id} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
+                                    </td>
+                                    <td className="px-4 py-3 text-text-primary text-sm font-medium">
+                                        {item.nomor_agenda}
+                                    </td>
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {formatDate(item.tanggal_diterima)}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <div className="font-medium text-text-primary">{item.nomor_surat}</div>
+                                        <div className="text-text-secondary text-xs">{formatDate(item.tanggal_surat)}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-text-primary text-sm">
+                                        {item.asal_surat}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {getSifatBadge(item.sifat)}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <Dropdown
+                                            align="right"
+                                            width="48"
+                                            trigger={
+                                                <button className="p-1 hover:bg-surface-active rounded-full transition-colors text-text-secondary">
+                                                    <MoreVertical className="h-5 w-5" />
+                                                </button>
+                                            }
+                                        >
+                                            <div className="py-1">
+                                                <Dropdown.Link
+                                                    as="button"
+                                                    onClick={() => {
+                                                        setDetailSurat(item);
+                                                        setDetailModalOpen(true);
+                                                    }}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    <span>Lihat Detail</span>
+                                                </Dropdown.Link>
+                                                
+                                                <Dropdown.Link
+                                                    href={route('persuratan.surat-masuk.edit', item.id)}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                    <span>Edit</span>
+                                                </Dropdown.Link>
+                                                
+                                                <Dropdown.Link
+                                                    as="button"
+                                                    onClick={() => window.open(route('persuratan.surat-masuk.cetak-kartu', item.id), '_blank')}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <Printer className="h-4 w-4" />
+                                                    <span>Cetak Kartu</span>
+                                                </Dropdown.Link>
+                                                
+                                                <Dropdown.Link
+                                                    as="button"
+                                                    onClick={() => {
+                                                        setDisposisiSurat(item);
+                                                        setDisposisiModalOpen(true);
+                                                    }}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <FileText className="h-4 w-4" />
+                                                    <span>Cetak Disposisi</span>
+                                                </Dropdown.Link>
+                                                
+                                                <div className="border-t border-border-default my-1"></div>
+                                                
+                                                <Dropdown.Link
+                                                    as="button"
+                                                    onClick={() => {
+                                                        setSelectedSurat(item);
+                                                        setDeleteModalOpen(true);
+                                                    }}
+                                                    className="flex items-center gap-2 text-danger hover:bg-danger-subtle focus:bg-danger-subtle"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                    <span>Hapus</span>
+                                                </Dropdown.Link>
+                                            </div>
+                                        </Dropdown>
+                                    </td>
+                                </tr>
+                            ))}
+                            {paginatedData.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                                        {search || startDate || endDate || sifat ? 'Tidak ada surat masuk yang cocok dengan filter.' : 'Tidak ada data surat masuk.'}
+                                    </td>
+                                </tr>
                             )}
-                        </div>
+                        </tbody>
+                    </table>
+                </div>
 
-                        {/* Table */}
-                        <div className="rounded-md border overflow-x-auto">
-                            <Table<SuratMasuk>
-                                headers={tableHeaders}
-                                data={paginatedData}
-                                keyExtractor={(item) => item.id}
-                                emptyMessage={search ? "Tidak ada surat masuk yang cocok dengan pencarian." : "Tidak ada data surat masuk."}
-                            />
-                        </div>
-
-                        {/* Pagination */}
-                        <div className="mt-4">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                            />
-                        </div>
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {filteredData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
                     </div>
                 </div>
             </div>
@@ -412,6 +402,7 @@ export default function Index({ suratMasuk: initialSuratMasuk, sifatOptions }: P
                 onClose={() => setDeleteModalOpen(false)}
                 onConfirm={handleDelete}
                 type="delete"
+                title="Hapus Surat Masuk"
                 message={
                     <p>
                         Apakah Anda yakin ingin menghapus surat dengan nomor agenda{' '}
@@ -433,31 +424,31 @@ export default function Index({ suratMasuk: initialSuratMasuk, sifatOptions }: P
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <p className="text-sm text-gray-500">Nomor Agenda</p>
-                                <p className="font-medium">{detailSurat.nomor_agenda}</p>
+                                <p className="text-sm text-text-secondary">Nomor Agenda</p>
+                                <p className="font-medium text-text-primary">{detailSurat.nomor_agenda}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Tanggal Diterima</p>
-                                <p className="font-medium">{formatDate(detailSurat.tanggal_diterima)}</p>
+                                <p className="text-sm text-text-secondary">Tanggal Diterima</p>
+                                <p className="font-medium text-text-primary">{formatDate(detailSurat.tanggal_diterima)}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Nomor Surat</p>
-                                <p className="font-medium">{detailSurat.nomor_surat}</p>
+                                <p className="text-sm text-text-secondary">Nomor Surat</p>
+                                <p className="font-medium text-text-primary">{detailSurat.nomor_surat}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Tanggal Surat</p>
-                                <p className="font-medium">{formatDate(detailSurat.tanggal_surat)}</p>
+                                <p className="text-sm text-text-secondary">Tanggal Surat</p>
+                                <p className="font-medium text-text-primary">{formatDate(detailSurat.tanggal_surat)}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Asal Surat</p>
-                                <p className="font-medium">{detailSurat.asal_surat}</p>
+                                <p className="text-sm text-text-secondary">Asal Surat</p>
+                                <p className="font-medium text-text-primary">{detailSurat.asal_surat}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Sifat</p>
+                                <p className="text-sm text-text-secondary">Sifat</p>
                                 {getSifatBadge(detailSurat.sifat)}
                             </div>
                             <div className="sm:col-span-2">
-                                <p className="text-sm text-gray-500">Tujuan</p>
+                                <p className="text-sm text-text-secondary">Tujuan</p>
                                 <div className="flex flex-wrap gap-1 mt-1">
                                     {detailSurat.tujuans?.map((t) => (
                                         <Badge key={t.id} variant="primary" size="sm">
@@ -467,27 +458,27 @@ export default function Index({ suratMasuk: initialSuratMasuk, sifatOptions }: P
                                 </div>
                             </div>
                             <div className="sm:col-span-2">
-                                <p className="text-sm text-gray-500">Perihal</p>
-                                <p className="font-medium">{detailSurat.perihal}</p>
+                                <p className="text-sm text-text-secondary">Perihal</p>
+                                <p className="font-medium text-text-primary">{detailSurat.perihal}</p>
                             </div>
                             {detailSurat.isi_ringkas && (
                                 <div className="sm:col-span-2">
-                                    <p className="text-sm text-gray-500">Isi Ringkas</p>
-                                    <p className="font-medium">{detailSurat.isi_ringkas}</p>
+                                    <p className="text-sm text-text-secondary">Isi Ringkas</p>
+                                    <p className="font-medium text-text-primary">{detailSurat.isi_ringkas}</p>
                                 </div>
                             )}
                             <div>
-                                <p className="text-sm text-gray-500">Lampiran</p>
-                                <p className="font-medium">{detailSurat.lampiran || 0} berkas</p>
+                                <p className="text-sm text-text-secondary">Lampiran</p>
+                                <p className="font-medium text-text-primary">{detailSurat.lampiran || 0} berkas</p>
                             </div>
                         </div>
                         {detailSurat.file_path && (
-                            <div className="pt-4 border-t">
+                            <div className="pt-4 border-t border-border-default">
                                 <a
                                     href={route('persuratan.surat-masuk.cetak-isi', detailSurat.id)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-indigo-600 hover:text-indigo-800"
+                                    className="text-primary hover:text-primary-hover font-medium"
                                 >
                                     Lihat File Surat
                                 </a>
@@ -505,19 +496,19 @@ export default function Index({ suratMasuk: initialSuratMasuk, sifatOptions }: P
             >
                 {disposisiSurat && (
                     <div className="space-y-4">
-                        <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="bg-surface-active p-4 rounded-lg border border-border-default">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                                 <div>
-                                    <span className="text-gray-500">Nomor Agenda:</span>
-                                    <span className="ml-2 font-medium">{disposisiSurat.nomor_agenda}</span>
+                                    <span className="text-text-secondary">Nomor Agenda:</span>
+                                    <span className="ml-2 font-medium text-text-primary">{disposisiSurat.nomor_agenda}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Nomor Surat:</span>
-                                    <span className="ml-2 font-medium">{disposisiSurat.nomor_surat}</span>
+                                    <span className="text-text-secondary">Nomor Surat:</span>
+                                    <span className="ml-2 font-medium text-text-primary">{disposisiSurat.nomor_surat}</span>
                                 </div>
                                 <div className="sm:col-span-2">
-                                    <span className="text-gray-500">Perihal:</span>
-                                    <span className="ml-2 font-medium">{disposisiSurat.perihal}</span>
+                                    <span className="text-text-secondary">Perihal:</span>
+                                    <span className="ml-2 font-medium text-text-primary">{disposisiSurat.perihal}</span>
                                 </div>
                             </div>
                         </div>
@@ -531,10 +522,10 @@ export default function Index({ suratMasuk: initialSuratMasuk, sifatOptions }: P
                                     <label
                                         key={index}
                                         className={`
-                                            flex items-center p-3 rounded-lg border cursor-pointer
+                                            flex items-center p-3 rounded-lg border cursor-pointer transition-colors
                                             ${selectedPenandaTangan === index
-                                                ? 'border-indigo-500 bg-indigo-50'
-                                                : 'border-gray-200 hover:bg-gray-50'
+                                                ? 'border-primary bg-primary-light/10 ring-1 ring-primary'
+                                                : 'border-border-default hover:bg-surface-hover'
                                             }
                                         `}
                                     >
@@ -544,11 +535,11 @@ export default function Index({ suratMasuk: initialSuratMasuk, sifatOptions }: P
                                             value={index}
                                             checked={selectedPenandaTangan === index}
                                             onChange={() => setSelectedPenandaTangan(index)}
-                                            className="mr-3"
+                                            className="mr-3 text-primary focus:ring-primary"
                                         />
                                         <div>
-                                            <p className="font-medium">{option.nama}</p>
-                                            <p className="text-sm text-gray-500">{option.jabatan}</p>
+                                            <p className="font-medium text-text-primary">{option.nama}</p>
+                                            <p className="text-sm text-text-secondary">{option.jabatan}</p>
                                         </div>
                                     </label>
                                 ))}
@@ -570,6 +561,10 @@ export default function Index({ suratMasuk: initialSuratMasuk, sifatOptions }: P
                     </div>
                 )}
             </Modal>
-        </AppLayout>
+        </>
     );
-}
+};
+
+Index.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default Index;

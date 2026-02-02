@@ -1,9 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Calendar, Search, MoreVertical, Eye, Pencil, Trash2, CalendarPlus, X, MapPin, Clock } from 'lucide-react';
+import { Calendar, Search, MoreVertical, Pencil, Trash2, CalendarPlus } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
-import Table, { TableHeader } from '@/Components/ui/Table';
 import Dropdown from '@/Components/ui/Dropdown';
 import Modal from '@/Components/ui/Modal';
 import Pagination from '@/Components/ui/Pagination';
@@ -63,7 +62,7 @@ interface Props extends PageProps {
 
 type TabType = 'belum' | 'sudah';
 
-export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasiTypeOptions, filters }: Props) {
+const JadwalIndex = ({ belumDijadwalkan, sudahDijadwalkan, lokasiTypeOptions, filters }: Props) => {
     // Tab state
     const [activeTab, setActiveTab] = useState<TabType>('belum');
 
@@ -294,144 +293,17 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
         label,
     }));
 
-    // Table headers for "Belum Dijadwalkan"
-    const belumHeaders: TableHeader<SuratMasuk>[] = [
-        {
-            key: 'no',
-            label: 'No',
-            className: 'w-12',
-            render: (_: unknown, __: unknown, index: number) =>
-                ((currentPage - 1) * itemsPerPage + index + 1).toString(),
-        },
-        {
-            key: 'tanggal_diterima_formatted',
-            label: 'Tgl Diterima',
-        },
-        {
-            key: 'nomor_surat',
-            label: 'Nomor Surat',
-        },
-        {
-            key: 'asal_surat',
-            label: 'Asal Surat',
-        },
-        {
-            key: 'perihal',
-            label: 'Perihal',
-            render: (value: unknown) => (
-                <span className="line-clamp-2">{value as string}</span>
-            ),
-        },
-        {
-            key: 'actions',
-            label: '',
-            className: 'w-32',
-            render: (_: unknown, item: SuratMasuk) => (
-                <Button
-                    size="sm"
-                    onClick={() => handleJadwalkan(item)}
-                >
-                    <CalendarPlus className="h-4 w-4 mr-1" />
-                    Jadwalkan
-                </Button>
-            ),
-        },
-    ];
-
-    // Table headers for "Sudah Dijadwalkan"
-    const sudahHeaders: TableHeader<SuratMasuk>[] = [
-        {
-            key: 'no',
-            label: 'No',
-            className: 'w-12',
-            render: (_: unknown, __: unknown, index: number) =>
-                ((currentPage - 1) * itemsPerPage + index + 1).toString(),
-        },
-        {
-            key: 'agenda.nama_kegiatan',
-            label: 'Agenda',
-            render: (_: unknown, item: SuratMasuk) => (
-                <div>
-                    <div className="font-medium">{item.agenda?.nama_kegiatan || '-'}</div>
-                    <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {item.agenda?.tanggal_agenda_formatted}
-                    </div>
-                </div>
-            ),
-        },
-        {
-            key: 'nomor_surat',
-            label: 'Nomor Surat',
-        },
-        {
-            key: 'asal_surat',
-            label: 'Asal Surat',
-        },
-        {
-            key: 'agenda.status',
-            label: 'Status',
-            render: (_: unknown, item: SuratMasuk) =>
-                item.agenda ? getStatusBadge(item.agenda.status) : '-',
-        },
-        {
-            key: 'actions',
-            label: '',
-            className: 'w-10',
-            render: (_: unknown, item: SuratMasuk) => (
-                <div className="flex justify-end">
-                    <Dropdown
-                        align="right"
-                        width="48"
-                        trigger={
-                            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-                                <MoreVertical className="h-5 w-5 text-gray-500" />
-                            </button>
-                        }
-                    >
-                        <div className="py-1">
-                            <Dropdown.Link
-                                as="button"
-                                onClick={() => handleEditJadwal(item)}
-                                className="flex items-center gap-2"
-                            >
-                                <Pencil className="h-4 w-4" />
-                                <span>Edit Jadwal</span>
-                            </Dropdown.Link>
-
-                            <div className="border-t border-gray-100 my-1"></div>
-
-                            <Dropdown.Link
-                                as="button"
-                                onClick={() => {
-                                    if (item.agenda) {
-                                        setSelectedAgenda(item.agenda);
-                                        setDeleteModalOpen(true);
-                                    }
-                                }}
-                                className="flex items-center gap-2 text-red-600 hover:bg-red-50 focus:bg-red-50"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                                <span>Hapus</span>
-                            </Dropdown.Link>
-                        </div>
-                    </Dropdown>
-                </div>
-            ),
-        },
-    ];
-
     return (
-        <AppLayout>
+        <>
             <Head title="Jadwal" />
 
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-text-primary">Penjadwalan</h1>
-                <p className="text-text-secondary mt-1">Kelola jadwal dari surat masuk</p>
+                <h1 className="text-2xl font-semibold text-text-primary">Penjadwalan</h1>
+                <p className="text-text-secondary text-sm mt-1">Kelola jadwal dari surat masuk</p>
             </div>
 
-            {/* Tabs */}
-            <div className="bg-surface border border-border-default rounded-lg">
+            <div className="bg-surface rounded-lg border border-border-default">
+                {/* Tabs */}
                 <div className="border-b border-border-default">
                     <nav className="flex -mb-px">
                         <button
@@ -463,52 +335,165 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                     </nav>
                 </div>
 
-                <div className="p-6">
-                    {/* Search */}
-                    <div className="mb-6">
-                        <div className="flex gap-2 max-w-md">
-                            <TextInput
-                                type="text"
-                                placeholder="Cari nomor surat, asal surat, perihal..."
-                                value={search}
-                                onChange={handleSearchChange}
-                                className="w-full"
-                            />
-                            <Button variant="secondary" disabled>
-                                <Search className="h-4 w-4" />
-                            </Button>
-                        </div>
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex gap-2 max-w-md">
+                        <TextInput
+                            type="text"
+                            placeholder="Cari nomor surat, asal surat, perihal..."
+                            value={search}
+                            onChange={handleSearchChange}
+                            className="w-full"
+                        />
+                        <Button variant="secondary" disabled>
+                            <Search className="h-4 w-4" />
+                        </Button>
                     </div>
+                </div>
 
-                    {/* Table */}
-                    <div className="rounded-md border overflow-x-auto">
-                        {activeTab === 'belum' ? (
-                            <Table<SuratMasuk>
-                                headers={belumHeaders}
-                                data={paginatedData}
-                                keyExtractor={(item) => item.id}
-                                emptyMessage="Tidak ada surat masuk yang belum dijadwalkan."
-                            />
-                        ) : (
-                            <Table<SuratMasuk>
-                                headers={sudahHeaders}
-                                data={paginatedData}
-                                keyExtractor={(item) => item.id}
-                                emptyMessage="Tidak ada jadwal."
-                            />
-                        )}
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-border-default">
+                        <thead className="bg-surface-hover">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
+                                {activeTab === 'belum' ? (
+                                    <>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tgl Diterima</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor Surat</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Asal Surat</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Perihal</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-32">Aksi</th>
+                                    </>
+                                ) : (
+                                    <>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Agenda</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor Surat</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Asal Surat</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Status</th>
+                                        <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-10"></th>
+                                    </>
+                                )}
+                            </tr>
+                        </thead>
+                        <tbody className="bg-surface divide-y divide-border-default">
+                            {paginatedData.map((item, index) => (
+                                <tr key={item.id} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
+                                    </td>
+                                    {activeTab === 'belum' ? (
+                                        <>
+                                            <td className="px-4 py-3 text-text-secondary text-sm">
+                                                {item.tanggal_diterima_formatted}
+                                            </td>
+                                            <td className="px-4 py-3 text-text-primary text-sm font-medium">
+                                                {item.nomor_surat}
+                                            </td>
+                                            <td className="px-4 py-3 text-text-primary text-sm">
+                                                {item.asal_surat}
+                                            </td>
+                                            <td className="px-4 py-3 text-text-secondary text-sm">
+                                                <div className="line-clamp-2" title={item.perihal}>
+                                                    {item.perihal}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleJadwalkan(item)}
+                                                >
+                                                    <CalendarPlus className="h-4 w-4 mr-1" />
+                                                    Jadwalkan
+                                                </Button>
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td className="px-4 py-3 text-text-primary text-sm">
+                                                <div className="font-medium">{item.agenda?.nama_kegiatan || '-'}</div>
+                                                <div className="text-sm text-text-secondary flex items-center gap-1 mt-1">
+                                                    <Calendar className="h-3 w-3" />
+                                                    {item.agenda?.tanggal_agenda_formatted}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-text-primary text-sm">
+                                                {item.nomor_surat}
+                                            </td>
+                                            <td className="px-4 py-3 text-text-primary text-sm">
+                                                {item.asal_surat}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {item.agenda ? getStatusBadge(item.agenda.status) : '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <Dropdown
+                                                    align="right"
+                                                    width="48"
+                                                    trigger={
+                                                        <button className="p-1 hover:bg-surface-active rounded-full transition-colors text-text-secondary">
+                                                            <MoreVertical className="h-5 w-5" />
+                                                        </button>
+                                                    }
+                                                >
+                                                    <div className="py-1">
+                                                        <Dropdown.Link
+                                                            as="button"
+                                                            onClick={() => handleEditJadwal(item)}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                            <span>Edit Jadwal</span>
+                                                        </Dropdown.Link>
+
+                                                        <div className="border-t border-border-default my-1"></div>
+
+                                                        <Dropdown.Link
+                                                            as="button"
+                                                            onClick={() => {
+                                                                if (item.agenda) {
+                                                                    setSelectedAgenda(item.agenda);
+                                                                    setDeleteModalOpen(true);
+                                                                }
+                                                            }}
+                                                            className="flex items-center gap-2 text-danger hover:bg-danger-subtle focus:bg-danger-subtle"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                            <span>Hapus</span>
+                                                        </Dropdown.Link>
+                                                    </div>
+                                                </Dropdown>
+                                            </td>
+                                        </>
+                                    )}
+                                </tr>
+                            ))}
+                            {paginatedData.length === 0 && (
+                                <tr>
+                                    <td colSpan={activeTab === 'belum' ? 6 : 6} className="px-4 py-8 text-center text-text-secondary">
+                                        {activeTab === 'belum' 
+                                            ? (search ? 'Tidak ada surat masuk yang cocok dengan pencarian.' : 'Tidak ada surat masuk yang belum dijadwalkan.')
+                                            : (search ? 'Tidak ada jadwal yang cocok dengan pencarian.' : 'Tidak ada jadwal.')
+                                        }
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {currentData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
                     </div>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="mt-4">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={setCurrentPage}
-                            />
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -522,24 +507,24 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                 {selectedSurat && (
                     <form onSubmit={handleSubmit}>
                         {/* Informasi Surat */}
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                            <h4 className="text-sm font-medium text-gray-700 mb-3">Informasi Surat</h4>
+                        <div className="mb-6 p-4 bg-surface-hover rounded-lg border border-border-default">
+                            <h4 className="text-sm font-medium text-text-primary mb-3">Informasi Surat</h4>
                             <div className="grid grid-cols-2 gap-3 text-sm">
                                 <div>
-                                    <span className="text-gray-500">Nomor Surat:</span>
-                                    <span className="ml-2 font-medium">{selectedSurat.nomor_surat}</span>
+                                    <span className="text-text-secondary">Nomor Surat:</span>
+                                    <span className="ml-2 font-medium text-text-primary">{selectedSurat.nomor_surat}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Tanggal:</span>
-                                    <span className="ml-2 font-medium">{selectedSurat.tanggal_surat_formatted}</span>
+                                    <span className="text-text-secondary">Tanggal:</span>
+                                    <span className="ml-2 font-medium text-text-primary">{selectedSurat.tanggal_surat_formatted}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Asal:</span>
-                                    <span className="ml-2 font-medium">{selectedSurat.asal_surat}</span>
+                                    <span className="text-text-secondary">Asal:</span>
+                                    <span className="ml-2 font-medium text-text-primary">{selectedSurat.asal_surat}</span>
                                 </div>
                                 <div className="col-span-2">
-                                    <span className="text-gray-500">Perihal:</span>
-                                    <span className="ml-2 font-medium">{selectedSurat.perihal}</span>
+                                    <span className="text-text-secondary">Perihal:</span>
+                                    <span className="ml-2 font-medium text-text-primary">{selectedSurat.perihal}</span>
                                 </div>
                             </div>
                         </div>
@@ -564,7 +549,6 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                                 <div>
                                     <InputLabel htmlFor="tanggal_agenda" value="Tanggal *" />
                                     <FormDatePicker
-                                        id="tanggal_agenda"
                                         value={data.tanggal_agenda}
                                         onChange={(e) => setData('tanggal_agenda', e.target.value)}
                                         className="w-full mt-1"
@@ -608,7 +592,7 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                                             }
                                         }}
                                     />
-                                    <span className="ml-2 text-sm text-gray-600">
+                                    <span className="ml-2 text-sm text-text-secondary">
                                         Sampai Selesai (tanpa jam pasti)
                                     </span>
                                 </label>
@@ -619,7 +603,6 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                                 <div>
                                     <InputLabel htmlFor="lokasi_type" value="Tipe Lokasi *" />
                                     <FormSelect
-                                        id="lokasi_type"
                                         options={lokasiTypeSelectOptions}
                                         value={data.lokasi_type}
                                         onChange={(e) => setData('lokasi_type', e.target.value)}
@@ -648,7 +631,7 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                                         <InputLabel htmlFor="select-provinsi" value="Provinsi" />
                                         <select
                                             id="select-provinsi"
-                                            className="w-full mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            className="w-full mt-1 border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
                                             value={selectedProvinsi}
                                             onChange={(e) => {
                                                 setSelectedProvinsi(e.target.value);
@@ -667,7 +650,7 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                                         <InputLabel htmlFor="select-kabupaten" value="Kabupaten" />
                                         <select
                                             id="select-kabupaten"
-                                            className="w-full mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm disabled:bg-gray-100"
+                                            className="w-full mt-1 border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:bg-surface-hover"
                                             value={selectedKabupaten}
                                             onChange={(e) => {
                                                 setSelectedKabupaten(e.target.value);
@@ -692,7 +675,7 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                                         <InputLabel htmlFor="select-kecamatan" value="Kecamatan" />
                                         <select
                                             id="select-kecamatan"
-                                            className="w-full mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm disabled:bg-gray-100"
+                                            className="w-full mt-1 border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:bg-surface-hover"
                                             value={selectedKecamatan}
                                             onChange={(e) => {
                                                 setSelectedKecamatan(e.target.value);
@@ -710,7 +693,7 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                                         <InputLabel htmlFor="select-desa" value="Desa" />
                                         <select
                                             id="select-desa"
-                                            className="w-full mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm disabled:bg-gray-100"
+                                            className="w-full mt-1 border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:bg-surface-hover"
                                             value={selectedDesa}
                                             onChange={(e) => setSelectedDesa(e.target.value)}
                                             disabled={!selectedKecamatan}
@@ -740,7 +723,7 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                         </div>
 
                         {/* Actions */}
-                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-border-default">
                             <Button
                                 type="button"
                                 variant="secondary"
@@ -762,6 +745,7 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                 onClose={() => setDeleteModalOpen(false)}
                 onConfirm={handleDelete}
                 type="delete"
+                title="Hapus Jadwal"
                 message={
                     <p>
                         Apakah Anda yakin ingin menghapus jadwal{' '}
@@ -771,6 +755,10 @@ export default function JadwalIndex({ belumDijadwalkan, sudahDijadwalkan, lokasi
                 }
                 isLoading={isDeleting}
             />
-        </AppLayout>
+        </>
     );
-}
+};
+
+JadwalIndex.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default JadwalIndex;

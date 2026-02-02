@@ -2,13 +2,9 @@ import { useState, useMemo, useCallback } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
-import Button from '@/Components/ui/Button';
-import Table, { TableHeader } from '@/Components/ui/Table';
-import Modal from '@/Components/ui/Modal';
-import Pagination from '@/Components/ui/Pagination';
+import { Button, Modal, Pagination } from '@/Components/ui';
 import { useToast } from '@/Components/ui/Toast';
-import TextInput from '@/Components/form/TextInput';
-import InputLabel from '@/Components/form/InputLabel';
+import { TextInput, InputLabel } from '@/Components/form';
 import { useCRUDModal } from '@/hooks/useCRUDModal';
 import type { PageProps } from '@/types';
 
@@ -28,7 +24,7 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ auth, unitKerja, filters }: Props) {
+const Index = ({ auth, unitKerja, filters }: Props) => {
     const { showToast } = useToast();
 
     // Client-side Search & Pagination State
@@ -132,40 +128,23 @@ export default function Index({ auth, unitKerja, filters }: Props) {
         });
     }, [selectedUnit, closeDeleteModal, showToast]);
 
-    const tableHeaders: TableHeader<UnitKerja>[] = [
-        {
-            key: 'no',
-            label: 'No',
-            render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
-        },
-        { key: 'nama', label: 'Nama Unit Kerja' },
-        { key: 'singkatan', label: 'Singkatan' },
-        {
-            key: 'actions',
-            label: 'Aksi',
-            className: 'text-right',
-            render: (_: unknown, unit: UnitKerja) => (
-                <div className="flex justify-end gap-2">
-                    <Button variant="secondary" size="sm" onClick={() => openEditModal(unit)}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="danger" size="sm" onClick={() => openDeleteModal(unit)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            ),
-        },
-    ];
-
     return (
-        <AppLayout>
+        <>
             <Head title="Unit Kerja" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-                            <div className="flex gap-2 w-full sm:w-1/3">
+            {/* Page Header */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-text-primary">Data Unit Kerja</h1>
+                <p className="text-text-secondary text-sm mt-1">Kelola data unit kerja / OPD</p>
+            </div>
+
+            {/* Main Content Card */}
+            <div className="bg-surface rounded-lg border border-border-default">
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex justify-between items-center">
+                        <div className="flex gap-4">
+                            <div className="flex gap-2 flex-1 max-w-md">
                                 <TextInput
                                     type="text"
                                     placeholder="Cari Unit Kerja..."
@@ -177,30 +156,79 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                                     <Search className="h-4 w-4" />
                                 </Button>
                             </div>
-                            <div className="flex gap-2">
-                                <Button onClick={openCreate}>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Tambah
-                                </Button>
-                            </div>
                         </div>
+                        <Button onClick={openCreate}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Tambah Unit
+                        </Button>
+                    </div>
+                </div>
 
-                        <div className="rounded-md border">
-                            <Table<UnitKerja>
-                                headers={tableHeaders}
-                                data={paginatedData}
-                                keyExtractor={(unit) => unit.id}
-                                emptyMessage={search ? "Tidak ada unit kerja yang cocok dengan pencarian." : "Tidak ada data unit kerja."}
-                            />
-                        </div>
+                {/* Table */}
+                <table className="min-w-full divide-y divide-border-default">
+                    <thead className="bg-surface-hover">
+                        <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nama Unit Kerja</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Singkatan</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-surface divide-y divide-border-default">
+                        {paginatedData.map((unit, index) => (
+                            <tr key={unit.id} className="hover:bg-surface-hover">
+                                <td className="px-4 py-3 text-text-secondary text-sm">
+                                    {(currentPage - 1) * itemsPerPage + index + 1}
+                                </td>
+                                <td className="px-4 py-3 font-medium text-text-primary">
+                                    {unit.nama}
+                                </td>
+                                <td className="px-4 py-3 text-text-secondary">
+                                    {unit.singkatan || '-'}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <Button 
+                                            variant="secondary" 
+                                            size="sm" 
+                                            onClick={() => openEditModal(unit)}
+                                            title="Edit"
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button 
+                                            variant="danger" 
+                                            size="sm" 
+                                            onClick={() => openDeleteModal(unit)}
+                                            title="Hapus"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {paginatedData.length === 0 && (
+                            <tr>
+                                <td colSpan={4} className="px-4 py-8 text-center text-text-secondary">
+                                    {search ? 'Tidak ada unit kerja yang cocok dengan pencarian' : 'Tidak ada data unit kerja'}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
 
-                        <div className="mt-4">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                            />
-                        </div>
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {filteredData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
                     </div>
                 </div>
             </div>
@@ -277,6 +305,10 @@ export default function Index({ auth, unitKerja, filters }: Props) {
                     </div>
                 </div>
             </Modal>
-        </AppLayout>
+        </>
     );
-}
+};
+
+Index.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default Index;

@@ -81,17 +81,17 @@ export default function Table<T extends Record<string, unknown>>({
     };
 
     return (
-        <div className={`bg-surface rounded-xl shadow-sm border border-border-light overflow-hidden ${className}`}>
+        <div className={`bg-surface rounded-xl shadow-sm overflow-hidden ${className}`}>
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-surface-hover/50 text-xs text-text-secondary uppercase tracking-wider border-b border-border-default">
+                    <thead className="bg-gray-50/50 text-xs text-text-secondary uppercase tracking-wider border-b border-border-light">
                         <tr>
                             {headers.map((header) => (
                                 <th 
                                     key={header.key}
                                     scope="col"
                                     className={`
-                                        px-6 py-4 font-semibold
+                                        px-6 py-3 font-semibold
                                         ${header.className || ''}
                                     `}
                                 >
@@ -100,7 +100,7 @@ export default function Table<T extends Record<string, unknown>>({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-border-light">
+                    <tbody className="divide-y divide-border-light/60">
                         {data.length === 0 ? (
                             <tr>
                                 <td 
@@ -108,7 +108,7 @@ export default function Table<T extends Record<string, unknown>>({
                                     className="px-6 py-12 text-center"
                                 >
                                     <div className="flex flex-col items-center justify-center text-text-muted">
-                                        <svg className="w-12 h-12 mb-3 text-border-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-12 h-12 mb-3 text-border-dark/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                         </svg>
                                         <p className="text-base font-medium">{emptyMessage}</p>
@@ -122,6 +122,7 @@ export default function Table<T extends Record<string, unknown>>({
                                     className="
                                         transition-colors duration-150
                                         hover:bg-surface-hover
+                                        even:bg-gray-50/30
                                         group
                                     "
                                 >

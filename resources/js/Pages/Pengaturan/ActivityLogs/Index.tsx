@@ -48,7 +48,7 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ logs, users, actionTypes }: Props) {
+const Index = ({ logs, users, actionTypes }: Props) => {
     const { auth } = usePage<PageProps>().props;
     
     // Client-side filtering for SPA experience
@@ -155,7 +155,7 @@ export default function Index({ logs, users, actionTypes }: Props) {
     };
 
     return (
-        <AppLayout>
+        <>
             <Head title="Activity Logs" />
 
             {/* Header */}
@@ -386,6 +386,10 @@ export default function Index({ logs, users, actionTypes }: Props) {
                     </div>
                 )}
             </Modal>
-        </AppLayout>
+        </>
     );
-}
+};
+
+Index.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default Index;

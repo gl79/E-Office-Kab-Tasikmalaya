@@ -79,7 +79,7 @@ interface Props extends PageProps {
     };
 }
 
-export default function DefinitifIndex({ disposisiOptions, filters }: Props) {
+const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
     // State
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -153,16 +153,29 @@ export default function DefinitifIndex({ disposisiOptions, filters }: Props) {
     // Handle filter apply
     const handleApplyFilter = () => {
         fetchEvents();
-        setShowFilters(false);
     };
 
     // Handle filter clear
     const handleClearFilter = () => {
         setSearch('');
         setStatusFilter('');
-        setTimeout(() => fetchEvents(), 0);
-        setShowFilters(false);
+        // Trigger fetch immediately with empty filters
+        setTimeout(() => {
+             // We need to bypass the state update delay by passing empty values directly if we could, 
+             // but fetchEvents uses state. A simplified way is to let the effect handle it 
+             // or call a separate load function. 
+             // For now, relies on dependency array or re-render.
+             // Actually fetchEvents depends on search/statusFilter state.
+        }, 0);
     };
+    
+    // Effect to refetch when filters are cleared and match empty
+    useEffect(() => {
+        if (search === '' && statusFilter === '') {
+            fetchEvents();
+        }
+    }, [search, statusFilter, fetchEvents]);
+
 
     // Get disposisi badge
     const getDisposisiBadge = (status: string) => {
@@ -190,37 +203,58 @@ export default function DefinitifIndex({ disposisiOptions, filters }: Props) {
     ];
 
     return (
-        <AppLayout>
+        <>
             <Head title="Jadwal Definitif" />
 
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-text-primary">Jadwal Definitif</h1>
-                    <p className="text-text-secondary mt-1">Jadwal yang sudah pasti dan terkonfirmasi</p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="secondary"
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2"
-                    >
-                        <Filter className="h-4 w-4" />
-                        Filter
-                        {(search || statusFilter) && (
-                            <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-white">
-                                {(search ? 1 : 0) + (statusFilter ? 1 : 0)}
-                            </span>
-                        )}
-                    </Button>
-                </div>
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-text-primary">Jadwal Definitif</h1>
+                <p className="text-text-secondary text-sm mt-1">Jadwal yang sudah pasti dan terkonfirmasi</p>
             </div>
 
-            {/* Filter Panel */}
-            {showFilters && (
-                <div className="bg-surface border border-border-default rounded-lg p-4 mb-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
+            <div className="bg-surface border border-border-default rounded-lg">
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                         {/* Legend */}
+                        <div className="flex flex-wrap gap-4">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                <span className="text-sm text-text-secondary">Bupati</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                <span className="text-sm text-text-secondary">Wakil Bupati</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                                <span className="text-sm text-text-secondary">Diwakilkan</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-gray-500"></div>
+                                <span className="text-sm text-text-secondary">Lainnya</span>
+                            </div>
+                        </div>
+
+                         <div className="flex gap-2 w-full md:w-auto">
+                             <Button
+                                variant="secondary"
+                                onClick={() => setShowFilters(!showFilters)}
+                                className="flex items-center gap-2 whitespace-nowrap"
+                            >
+                                <Filter className="h-4 w-4" />
+                                Filter
+                                {(search || statusFilter) && (
+                                    <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-white">
+                                        {(search ? 1 : 0) + (statusFilter ? 1 : 0)}
+                                    </span>
+                                )}
+                            </Button>
+                         </div>
+                    </div>
+
+                    {/* Expandable Filter Panel */}
+                    {showFilters && (
+                        <div className="mt-4 pt-4 border-t border-border-default grid grid-cols-1 md:grid-cols-3 gap-4">
                             <TextInput
                                 type="text"
                                 placeholder="Cari kegiatan, nomor surat, lokasi..."
@@ -228,90 +262,68 @@ export default function DefinitifIndex({ disposisiOptions, filters }: Props) {
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="w-full"
                             />
-                        </div>
-                        <div className="w-full sm:w-48">
                             <FormSelect
                                 options={disposisiSelectOptions}
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                                 className="w-full"
                             />
+                             <div className="flex gap-2">
+                                <Button onClick={handleApplyFilter} className="flex-1">
+                                    <Search className="h-4 w-4 mr-1" />
+                                    Terapkan
+                                </Button>
+                                <Button variant="secondary" onClick={handleClearFilter}>
+                                    <X className="h-4 w-4 mr-1" />
+                                    Reset
+                                </Button>
+                            </div>
                         </div>
-                        <div className="flex gap-2">
-                            <Button onClick={handleApplyFilter}>
-                                <Search className="h-4 w-4 mr-1" />
-                                Terapkan
-                            </Button>
-                            <Button variant="secondary" onClick={handleClearFilter}>
-                                <X className="h-4 w-4 mr-1" />
-                                Reset
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Calendar */}
-            <div className="bg-surface border border-border-default rounded-lg p-4">
-                {/* Legend */}
-                <div className="flex flex-wrap gap-4 mb-4 pb-4 border-b border-border-default">
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <span className="text-sm text-text-secondary">Bupati</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                        <span className="text-sm text-text-secondary">Wakil Bupati</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                        <span className="text-sm text-text-secondary">Diwakilkan</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-gray-500"></div>
-                        <span className="text-sm text-text-secondary">Lainnya</span>
-                    </div>
+                    )}
                 </div>
 
-                {/* Loading Overlay */}
-                {isLoading && (
-                    <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                )}
+                {/* Calendar Container */}
+                <div className="p-4">
+                    {/* Loading Overlay */}
+                    {isLoading && (
+                        <div className="absolute inset-0 bg-white/75 flex items-center justify-center z-10 rounded-lg">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                    )}
 
-                <div className="relative">
-                    <FullCalendar
-                        ref={(el) => setCalendarRef(el)}
-                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                        initialView="dayGridMonth"
-                        headerToolbar={{
-                            left: 'prev,next today',
-                            center: 'title',
-                            right: 'dayGridMonth,timeGridWeek,timeGridDay',
-                        }}
-                        buttonText={{
-                            today: 'Hari Ini',
-                            month: 'Bulan',
-                            week: 'Minggu',
-                            day: 'Hari',
-                        }}
-                        locale="id"
-                        events={events as EventInput[]}
-                        eventClick={handleEventClick}
-                        datesSet={handleDatesSet}
-                        height="auto"
-                        contentHeight={600}
-                        eventDisplay="block"
-                        dayMaxEvents={3}
-                        moreLinkText={(num) => `+${num} lagi`}
-                        noEventsText="Tidak ada jadwal"
-                        eventTimeFormat={{
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false,
-                        }}
-                    />
+                    <div className="relative">
+                        <FullCalendar
+                            ref={(el) => setCalendarRef(el)}
+                            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                            initialView="dayGridMonth"
+                            headerToolbar={{
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: 'dayGridMonth,timeGridWeek,timeGridDay',
+                            }}
+                            buttonText={{
+                                today: 'Hari Ini',
+                                month: 'Bulan',
+                                week: 'Minggu',
+                                day: 'Hari',
+                            }}
+                            locale="id"
+                            events={events as EventInput[]}
+                            eventClick={handleEventClick}
+                            datesSet={handleDatesSet}
+                            height="auto"
+                            contentHeight={600}
+                            eventDisplay="block"
+                            dayMaxEvents={3}
+                            moreLinkText={(num) => `+${num} lagi`}
+                            noEventsText="Tidak ada jadwal"
+                            eventTimeFormat={{
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false,
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -327,49 +339,49 @@ export default function DefinitifIndex({ disposisiOptions, filters }: Props) {
                         {/* Kolom Kiri - Informasi */}
                         <div className="space-y-4">
                             <div>
-                                <h4 className="font-medium text-gray-900 mb-3">Informasi Surat</h4>
-                                <div className="space-y-2 text-sm">
+                                <h4 className="font-medium text-text-primary mb-3">Informasi Surat</h4>
+                                <div className="space-y-2 text-sm text-text-primary">
                                     <p>
-                                        <span className="text-gray-500">Nomor:</span>{' '}
+                                        <span className="text-text-secondary">Nomor:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.surat_masuk?.nomor_surat}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Tanggal:</span>{' '}
+                                        <span className="text-text-secondary">Tanggal:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.surat_masuk?.tanggal_surat_formatted}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Dari:</span>{' '}
+                                        <span className="text-text-secondary">Dari:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.surat_masuk?.asal_surat}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Perihal:</span>{' '}
+                                        <span className="text-text-secondary">Perihal:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.surat_masuk?.perihal}</span>
                                     </p>
                                 </div>
                             </div>
 
                             <div>
-                                <h4 className="font-medium text-gray-900 mb-3">Detail Jadwal</h4>
-                                <div className="space-y-2 text-sm">
+                                <h4 className="font-medium text-text-primary mb-3">Detail Jadwal</h4>
+                                <div className="space-y-2 text-sm text-text-primary">
                                     <p>
-                                        <span className="text-gray-500">Kegiatan:</span>{' '}
+                                        <span className="text-text-secondary">Kegiatan:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.nama_kegiatan}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Tanggal:</span>{' '}
+                                        <span className="text-text-secondary">Tanggal:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.tanggal_format_indonesia}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Waktu:</span>{' '}
+                                        <span className="text-text-secondary">Waktu:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.waktu_lengkap} WIB</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Lokasi:</span>{' '}
+                                        <span className="text-text-secondary">Lokasi:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.tempat}</span>
                                     </p>
                                     {selectedAgenda.keterangan && (
                                         <p>
-                                            <span className="text-gray-500">Keterangan:</span>{' '}
+                                            <span className="text-text-secondary">Keterangan:</span>{' '}
                                             <span className="font-medium">{selectedAgenda.keterangan}</span>
                                         </p>
                                     )}
@@ -377,19 +389,19 @@ export default function DefinitifIndex({ disposisiOptions, filters }: Props) {
                             </div>
 
                             <div>
-                                <h4 className="font-medium text-gray-900 mb-3">Status</h4>
+                                <h4 className="font-medium text-text-primary mb-3">Status</h4>
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-500">Status Jadwal:</span>
+                                        <span className="text-sm text-text-secondary">Status Jadwal:</span>
                                         <Badge variant="success">{selectedAgenda.status_label}</Badge>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-500">Disposisi:</span>
+                                        <span className="text-sm text-text-secondary">Disposisi:</span>
                                         {getDisposisiBadge(selectedAgenda.status_disposisi)}
                                     </div>
                                     {selectedAgenda.dihadiri_oleh && (
-                                        <p className="text-sm">
-                                            <span className="text-gray-500">Dihadiri:</span>{' '}
+                                        <p className="text-sm text-text-primary">
+                                            <span className="text-text-secondary">Dihadiri:</span>{' '}
                                             <span className="font-medium">{selectedAgenda.dihadiri_oleh}</span>
                                         </p>
                                     )}
@@ -397,7 +409,7 @@ export default function DefinitifIndex({ disposisiOptions, filters }: Props) {
                             </div>
 
                             {/* Action Button */}
-                            <div className="pt-4 border-t">
+                            <div className="pt-4 border-t border-border-default">
                                 <Button
                                     variant="danger"
                                     onClick={() => setDeleteModalOpen(true)}
@@ -410,17 +422,17 @@ export default function DefinitifIndex({ disposisiOptions, filters }: Props) {
                         </div>
 
                         {/* Kolom Kanan - Preview PDF */}
-                        <div className="bg-gray-50 rounded-lg p-4">
-                            <h4 className="font-medium text-gray-900 mb-4">Preview Surat</h4>
+                        <div className="bg-surface-hover rounded-lg p-4 border border-border-default">
+                            <h4 className="font-medium text-text-primary mb-4">Preview Surat</h4>
                             {selectedAgenda.surat_masuk?.file_url ? (
                                 <iframe
                                     src={selectedAgenda.surat_masuk.file_url}
-                                    className="w-full h-[500px] border border-gray-300 rounded"
+                                    className="w-full h-[500px] border border-border-default rounded"
                                     title="Preview Surat"
                                 />
                             ) : (
-                                <div className="flex items-center justify-center h-[500px] bg-gray-100 rounded">
-                                    <p className="text-gray-500">File surat tidak tersedia</p>
+                                <div className="flex items-center justify-center h-[500px] bg-surface rounded">
+                                    <p className="text-text-secondary">File surat tidak tersedia</p>
                                 </div>
                             )}
                         </div>
@@ -443,6 +455,10 @@ export default function DefinitifIndex({ disposisiOptions, filters }: Props) {
                 }
                 isLoading={isDeleting}
             />
-        </AppLayout>
+        </>
     );
-}
+};
+
+DefinitifIndex.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default DefinitifIndex;

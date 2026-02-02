@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
-import Table, { TableHeader } from '@/Components/ui/Table';
 import Dropdown from '@/Components/ui/Dropdown';
 import Modal from '@/Components/ui/Modal';
 import Pagination from '@/Components/ui/Pagination';
@@ -79,12 +78,12 @@ interface Props extends PageProps {
 
 type TabType = 'menunggu' | 'sudah';
 
-export default function TentatifIndex({
+const TentatifIndex = ({
     menungguPeninjauan,
     sudahDitinjau,
     disposisiOptions,
     filters,
-}: Props) {
+}: Props) => {
     // Tab state
     const [activeTab, setActiveTab] = useState<TabType>('menunggu');
 
@@ -267,160 +266,17 @@ export default function TentatifIndex({
         label,
     }));
 
-    // Table headers for "Menunggu Peninjauan"
-    const tableHeaders: TableHeader<Agenda>[] = [
-        {
-            key: 'no',
-            label: 'No',
-            className: 'w-12',
-            render: (_: unknown, __: unknown, index: number) =>
-                ((currentPage - 1) * itemsPerPage + index + 1).toString(),
-        },
-        {
-            key: 'tanggal',
-            label: 'Tanggal/Waktu',
-            render: (_: unknown, item: Agenda) => (
-                <div>
-                    <div className="font-medium">{item.hari}</div>
-                    <div className="text-sm text-gray-500">{item.tanggal_agenda_formatted}</div>
-                    <div className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                        <Clock className="h-3 w-3" />
-                        {item.waktu_lengkap}
-                    </div>
-                </div>
-            ),
-        },
-        {
-            key: 'nama_kegiatan',
-            label: 'Kegiatan',
-            render: (_: unknown, item: Agenda) => (
-                <div>
-                    <div className="font-medium line-clamp-2">{item.nama_kegiatan}</div>
-                    <div className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                        <MapPin className="h-3 w-3" />
-                        <span className="line-clamp-1">{item.tempat}</span>
-                    </div>
-                </div>
-            ),
-        },
-        {
-            key: 'surat_masuk',
-            label: 'Surat Undangan',
-            render: (_: unknown, item: Agenda) => (
-                <div className="text-sm">
-                    <div className="font-medium">{item.surat_masuk?.nomor_surat || '-'}</div>
-                    <div className="text-gray-500 line-clamp-1">{item.surat_masuk?.asal_surat || '-'}</div>
-                </div>
-            ),
-        },
-        {
-            key: 'status_disposisi',
-            label: 'Disposisi',
-            render: (_: unknown, item: Agenda) => (
-                <div>
-                    {getDisposisiBadge(item.status_disposisi)}
-                    {item.dihadiri_oleh && (
-                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {item.dihadiri_oleh}
-                        </div>
-                    )}
-                </div>
-            ),
-        },
-        {
-            key: 'actions',
-            label: '',
-            className: 'w-48',
-            render: (_: unknown, item: Agenda) => (
-                <div className="flex items-center justify-end gap-2">
-                    {/* Atur Kehadiran button - shown for Menunggu Peninjauan tab */}
-                    {activeTab === 'menunggu' && item.can_edit_kehadiran && (
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => handleEditKehadiran(item)}
-                        >
-                            <Pencil className="h-4 w-4 mr-1" />
-                            Atur Kehadiran
-                        </Button>
-                    )}
-                    
-                    {/* Jadikan Definitif button - shown for Sudah Ditinjau tab */}
-                    {activeTab === 'sudah' && item.status_disposisi !== 'menunggu' && (
-                        <Button
-                            size="sm"
-                            variant="success"
-                            onClick={() => {
-                                setSelectedAgenda(item);
-                                setDefinitifModalOpen(true);
-                            }}
-                        >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Jadikan Definitif
-                        </Button>
-                    )}
-                    
-                    {/* Dropdown for other actions */}
-                    <Dropdown
-                        align="right"
-                        width="48"
-                        trigger={
-                            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-                                <MoreVertical className="h-5 w-5 text-gray-500" />
-                            </button>
-                        }
-                    >
-                        <div className="py-1">
-                            <Dropdown.Link
-                                as="button"
-                                onClick={() => handleViewDetail(item)}
-                                className="flex items-center gap-2"
-                            >
-                                <FileText className="h-4 w-4" />
-                                <span>Lihat Detail</span>
-                            </Dropdown.Link>
-
-                            <Dropdown.Link
-                                as="button"
-                                onClick={() => handleExportWhatsApp(item)}
-                                className="flex items-center gap-2"
-                            >
-                                <MessageCircle className="h-4 w-4" />
-                                <span>Export WhatsApp</span>
-                            </Dropdown.Link>
-
-                            <div className="border-t border-gray-100 my-1"></div>
-
-                            <Dropdown.Link
-                                as="button"
-                                onClick={() => {
-                                    setSelectedAgenda(item);
-                                    setDeleteModalOpen(true);
-                                }}
-                                className="flex items-center gap-2 text-red-600 hover:bg-red-50 focus:bg-red-50"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                                <span>Hapus</span>
-                            </Dropdown.Link>
-                        </div>
-                    </Dropdown>
-                </div>
-            ),
-        },
-    ];
-
     return (
-        <AppLayout>
+        <>
             <Head title="Jadwal Tentatif" />
 
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-text-primary">Jadwal Tentatif</h1>
-                <p className="text-text-secondary mt-1">Kelola jadwal yang masih dalam tahap konfirmasi</p>
+                <h1 className="text-2xl font-semibold text-text-primary">Jadwal Tentatif</h1>
+                <p className="text-text-secondary text-sm mt-1">Kelola jadwal yang masih dalam tahap konfirmasi</p>
             </div>
 
-            {/* Tabs */}
-            <div className="bg-surface border border-border-default rounded-lg">
+            <div className="bg-surface rounded-lg border border-border-default">
+                {/* Tabs */}
                 <div className="border-b border-border-default">
                     <nav className="flex -mb-px">
                         <button
@@ -445,54 +301,181 @@ export default function TentatifIndex({
                             }`}
                         >
                             Sudah Ditinjau
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">
+                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-success-subtle text-success">
                                 {sudahData.length}
                             </span>
                         </button>
                     </nav>
                 </div>
 
-                <div className="p-6">
-                    {/* Search */}
-                    <div className="mb-6">
-                        <div className="flex gap-2 max-w-md">
-                            <TextInput
-                                type="text"
-                                placeholder="Cari kegiatan, nomor surat, lokasi..."
-                                value={search}
-                                onChange={handleSearchChange}
-                                className="w-full"
-                            />
-                            <Button variant="secondary" disabled>
-                                <Search className="h-4 w-4" />
-                            </Button>
-                        </div>
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex gap-2 max-w-md">
+                        <TextInput
+                            type="text"
+                            placeholder="Cari kegiatan, nomor surat, lokasi..."
+                            value={search}
+                            onChange={handleSearchChange}
+                            className="w-full"
+                        />
+                        <Button variant="secondary" disabled>
+                            <Search className="h-4 w-4" />
+                        </Button>
                     </div>
+                </div>
 
-                    {/* Table */}
-                    <div className="rounded-md border overflow-x-auto">
-                        <Table<Agenda>
-                            headers={tableHeaders}
-                            data={paginatedData}
-                            keyExtractor={(item) => item.id}
-                            emptyMessage={
-                                activeTab === 'menunggu'
-                                    ? 'Tidak ada jadwal yang menunggu peninjauan.'
-                                    : 'Tidak ada jadwal yang sudah ditinjau.'
-                            }
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-border-default">
+                        <thead className="bg-surface-hover">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tanggal/Waktu</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Kegiatan</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Surat Undangan</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Disposisi</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-48">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-surface divide-y divide-border-default">
+                            {paginatedData.map((item, index) => (
+                                <tr key={item.id} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="font-medium text-text-primary text-sm">{item.hari}</div>
+                                        <div className="text-sm text-text-secondary">{item.tanggal_agenda_formatted}</div>
+                                        <div className="text-xs text-text-secondary flex items-center gap-1 mt-1">
+                                            <Clock className="h-3 w-3" />
+                                            {item.waktu_lengkap}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <div className="font-medium text-text-primary line-clamp-2">{item.nama_kegiatan}</div>
+                                        <div className="text-xs text-text-secondary flex items-center gap-1 mt-1">
+                                            <MapPin className="h-3 w-3" />
+                                            <span className="line-clamp-1">{item.tempat}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <div className="font-medium text-text-primary">{item.surat_masuk?.nomor_surat || '-'}</div>
+                                        <div className="text-text-secondary line-clamp-1">{item.surat_masuk?.asal_surat || '-'}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <div className="flex flex-col gap-1 items-start">
+                                            {getDisposisiBadge(item.status_disposisi)}
+                                            {item.dihadiri_oleh && (
+                                                <div className="text-xs text-text-secondary flex items-center gap-1">
+                                                    <User className="h-3 w-3" />
+                                                    {item.dihadiri_oleh}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {/* Atur Kehadiran button - shown for Menunggu Peninjauan tab */}
+                                            {activeTab === 'menunggu' && item.can_edit_kehadiran && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="secondary"
+                                                    onClick={() => handleEditKehadiran(item)}
+                                                >
+                                                    <Pencil className="h-4 w-4 mr-1" />
+                                                    Atur Kehadiran
+                                                </Button>
+                                            )}
+                                            
+                                            {/* Jadikan Definitif button - shown for Sudah Ditinjau tab */}
+                                            {activeTab === 'sudah' && item.status_disposisi !== 'menunggu' && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="success"
+                                                    onClick={() => {
+                                                        setSelectedAgenda(item);
+                                                        setDefinitifModalOpen(true);
+                                                    }}
+                                                >
+                                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                                    Definitif
+                                                </Button>
+                                            )}
+                                            
+                                            {/* Dropdown for other actions */}
+                                            <Dropdown
+                                                align="right"
+                                                width="48"
+                                                trigger={
+                                                    <button className="p-1 hover:bg-surface-active rounded-full transition-colors text-text-secondary">
+                                                        <MoreVertical className="h-5 w-5" />
+                                                    </button>
+                                                }
+                                            >
+                                                <div className="py-1">
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => handleViewDetail(item)}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <FileText className="h-4 w-4" />
+                                                        <span>Lihat Detail</span>
+                                                    </Dropdown.Link>
+
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => handleExportWhatsApp(item)}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <MessageCircle className="h-4 w-4" />
+                                                        <span>Export WhatsApp</span>
+                                                    </Dropdown.Link>
+
+                                                    <div className="border-t border-border-default my-1"></div>
+
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => {
+                                                            setSelectedAgenda(item);
+                                                            setDeleteModalOpen(true);
+                                                        }}
+                                                        className="flex items-center gap-2 text-danger hover:bg-danger-subtle focus:bg-danger-subtle"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span>Hapus</span>
+                                                    </Dropdown.Link>
+                                                </div>
+                                            </Dropdown>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {paginatedData.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
+                                        {activeTab === 'menunggu' 
+                                            ? (search ? 'Tidak ada data yang cocok.' : 'Tidak ada jadwal yang menunggu peninjauan.')
+                                            : (search ? 'Tidak ada data yang cocok.' : 'Tidak ada jadwal yang sudah ditinjau.')
+                                        }
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {currentData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
                         />
                     </div>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="mt-4">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={setCurrentPage}
-                            />
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -506,26 +489,26 @@ export default function TentatifIndex({
                 {selectedAgenda && (
                     <form onSubmit={handleSubmitKehadiran}>
                         {/* Informasi Jadwal */}
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                            <h4 className="text-sm font-medium text-gray-700 mb-3">Informasi Jadwal</h4>
+                        <div className="mb-6 p-4 bg-surface-hover rounded-lg border border-border-default">
+                            <h4 className="text-sm font-medium text-text-primary mb-3">Informasi Jadwal</h4>
                             <div className="space-y-2 text-sm">
                                 <div>
-                                    <span className="text-gray-500">Kegiatan:</span>
-                                    <span className="ml-2 font-medium">{selectedAgenda.nama_kegiatan}</span>
+                                    <span className="text-text-secondary">Kegiatan:</span>
+                                    <span className="ml-2 font-medium text-text-primary">{selectedAgenda.nama_kegiatan}</span>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div>
-                                        <span className="text-gray-500">Tanggal:</span>
-                                        <span className="ml-2 font-medium">{selectedAgenda.tanggal_format_indonesia}</span>
+                                        <span className="text-text-secondary">Tanggal:</span>
+                                        <span className="ml-2 font-medium text-text-primary">{selectedAgenda.tanggal_format_indonesia}</span>
                                     </div>
                                     <div>
-                                        <span className="text-gray-500">Waktu:</span>
-                                        <span className="ml-2 font-medium">{selectedAgenda.waktu_lengkap}</span>
+                                        <span className="text-text-secondary">Waktu:</span>
+                                        <span className="ml-2 font-medium text-text-primary">{selectedAgenda.waktu_lengkap}</span>
                                     </div>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Tempat:</span>
-                                    <span className="ml-2 font-medium">{selectedAgenda.tempat}</span>
+                                    <span className="text-text-secondary">Tempat:</span>
+                                    <span className="ml-2 font-medium text-text-primary">{selectedAgenda.tempat}</span>
                                 </div>
                             </div>
                         </div>
@@ -574,7 +557,7 @@ export default function TentatifIndex({
                         </div>
 
                         {/* Actions */}
-                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-border-default">
                             <Button
                                 type="button"
                                 variant="secondary"
@@ -604,8 +587,8 @@ export default function TentatifIndex({
                         </div>
                     ) : (
                         <>
-                            <div className="bg-gray-50 rounded-lg p-4">
-                                <pre className="whitespace-pre-wrap text-sm font-mono">
+                            <div className="bg-surface-hover rounded-lg p-4 border border-border-default">
+                                <pre className="whitespace-pre-wrap text-sm font-mono text-text-primary">
                                     {whatsAppTemplate}
                                 </pre>
                             </div>
@@ -641,49 +624,49 @@ export default function TentatifIndex({
                         {/* Kolom Kiri - Informasi */}
                         <div className="space-y-4">
                             <div>
-                                <h4 className="font-medium text-gray-900 mb-3">Informasi Surat</h4>
-                                <div className="space-y-2 text-sm">
+                                <h4 className="font-medium text-text-primary mb-3">Informasi Surat</h4>
+                                <div className="space-y-2 text-sm text-text-primary">
                                     <p>
-                                        <span className="text-gray-500">Nomor:</span>{' '}
+                                        <span className="text-text-secondary">Nomor:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.surat_masuk?.nomor_surat}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Tanggal:</span>{' '}
+                                        <span className="text-text-secondary">Tanggal:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.surat_masuk?.tanggal_surat_formatted}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Dari:</span>{' '}
+                                        <span className="text-text-secondary">Dari:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.surat_masuk?.asal_surat}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Perihal:</span>{' '}
+                                        <span className="text-text-secondary">Perihal:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.surat_masuk?.perihal}</span>
                                     </p>
                                 </div>
                             </div>
 
                             <div>
-                                <h4 className="font-medium text-gray-900 mb-3">Detail Jadwal</h4>
-                                <div className="space-y-2 text-sm">
+                                <h4 className="font-medium text-text-primary mb-3">Detail Jadwal</h4>
+                                <div className="space-y-2 text-sm text-text-primary">
                                     <p>
-                                        <span className="text-gray-500">Kegiatan:</span>{' '}
+                                        <span className="text-text-secondary">Kegiatan:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.nama_kegiatan}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Tanggal:</span>{' '}
+                                        <span className="text-text-secondary">Tanggal:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.tanggal_format_indonesia}</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Waktu:</span>{' '}
+                                        <span className="text-text-secondary">Waktu:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.waktu_lengkap} WIB</span>
                                     </p>
                                     <p>
-                                        <span className="text-gray-500">Lokasi:</span>{' '}
+                                        <span className="text-text-secondary">Lokasi:</span>{' '}
                                         <span className="font-medium">{selectedAgenda.tempat}</span>
                                     </p>
                                     {selectedAgenda.keterangan && (
                                         <p>
-                                            <span className="text-gray-500">Keterangan:</span>{' '}
+                                            <span className="text-text-secondary">Keterangan:</span>{' '}
                                             <span className="font-medium">{selectedAgenda.keterangan}</span>
                                         </p>
                                     )}
@@ -691,19 +674,19 @@ export default function TentatifIndex({
                             </div>
 
                             <div>
-                                <h4 className="font-medium text-gray-900 mb-3">Status</h4>
+                                <h4 className="font-medium text-text-primary mb-3">Status</h4>
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-500">Status Jadwal:</span>
+                                        <span className="text-sm text-text-secondary">Status Jadwal:</span>
                                         <Badge variant="warning">{selectedAgenda.status_label}</Badge>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-500">Disposisi:</span>
+                                        <span className="text-sm text-text-secondary">Disposisi:</span>
                                         {getDisposisiBadge(selectedAgenda.status_disposisi)}
                                     </div>
                                     {selectedAgenda.dihadiri_oleh && (
-                                        <p className="text-sm">
-                                            <span className="text-gray-500">Dihadiri:</span>{' '}
+                                        <p className="text-sm text-text-primary">
+                                            <span className="text-text-secondary">Dihadiri:</span>{' '}
                                             <span className="font-medium">{selectedAgenda.dihadiri_oleh}</span>
                                         </p>
                                     )}
@@ -712,17 +695,17 @@ export default function TentatifIndex({
                         </div>
 
                         {/* Kolom Kanan - Preview PDF */}
-                        <div className="bg-gray-50 rounded-lg p-4">
-                            <h4 className="font-medium text-gray-900 mb-4">Preview Surat</h4>
+                        <div className="bg-surface-hover rounded-lg p-4 border border-border-default">
+                            <h4 className="font-medium text-text-primary mb-4">Preview Surat</h4>
                             {selectedAgenda.surat_masuk?.file_url ? (
                                 <iframe
                                     src={selectedAgenda.surat_masuk.file_url}
-                                    className="w-full h-[500px] border border-gray-300 rounded"
+                                    className="w-full h-[500px] border border-border-default rounded"
                                     title="Preview Surat"
                                 />
                             ) : (
-                                <div className="flex items-center justify-center h-[500px] bg-gray-100 rounded">
-                                    <p className="text-gray-500">File surat tidak tersedia</p>
+                                <div className="flex items-center justify-center h-[500px] bg-surface rounded">
+                                    <p className="text-text-secondary">File surat tidak tersedia</p>
                                 </div>
                             )}
                         </div>
@@ -754,6 +737,7 @@ export default function TentatifIndex({
                 onClose={() => setDeleteModalOpen(false)}
                 onConfirm={handleDelete}
                 type="delete"
+                title="Hapus Jadwal"
                 message={
                     <p>
                         Apakah Anda yakin ingin menghapus jadwal{' '}
@@ -763,6 +747,10 @@ export default function TentatifIndex({
                 }
                 isLoading={isDeleting}
             />
-        </AppLayout>
+        </>
     );
-}
+};
+
+TentatifIndex.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default TentatifIndex;

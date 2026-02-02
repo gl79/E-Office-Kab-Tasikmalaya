@@ -5,3 +5,4 @@ export { default as Pagination } from './Pagination';
 export { ToastProvider, useToast } from './Toast';
 export { default as Dropdown } from './Dropdown';
 export { default as LiveClock } from './LiveClock';
+export { default as Breadcrumb } from './Breadcrumb';

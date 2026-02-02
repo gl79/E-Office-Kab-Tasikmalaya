@@ -53,7 +53,7 @@ interface DashboardPageProps extends PageProps {
  * Landing page setelah login.
  * Menampilkan info user dan statistik data berdasarkan role.
  */
-export default function Dashboard() {
+const Dashboard = () => {
     const { auth, stats } = usePage<DashboardPageProps>().props;
     const user = auth.user;
 
@@ -146,7 +146,7 @@ export default function Dashboard() {
     const sekpriCards = getSekpriCards();
 
     return (
-        <AppLayout>
+        <>
             <Head title="Dashboard" />
 
             {/* Welcome Section with User Photo */}
@@ -407,6 +407,10 @@ export default function Dashboard() {
                     </div>
                 </div>
             )}
-        </AppLayout>
+        </>
     );
-}
+};
+
+Dashboard.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default Dashboard;

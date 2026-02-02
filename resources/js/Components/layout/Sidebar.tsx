@@ -65,13 +65,24 @@ export default function Sidebar({
                 ${width}
                 bg-surface
                 border-r border-border-default
-                flex-shrink-0
+                shrink-0
                 overflow-y-auto
                 ${className}
             `.trim()}
         >
+            {/* Sidebar Branding / Header */}
+            <div className="h-16 flex items-center px-6 border-b border-border-default bg-surface sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                    <img src="/images/pemkabtasik.png" alt="Logo Kabupaten Tasikmalaya" className="w-8 h-8 object-contain" />
+                    <div className="text-sm font-bold text-text-primary leading-tight">
+                        E-Office<br/>
+                        <span className="font-semibold text-text-secondary text-xs">Kab. Tasikmalaya</span>
+                    </div>
+                </div>
+            </div>
+
             {/* Sidebar Content Container */}
-            <div className="h-full py-4 px-3">
+            <div className="flex-1 py-4 px-3">
                 {children ?? (
                     <nav className="space-y-1">
                         {menuToRender.map((item, index) => (

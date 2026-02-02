@@ -2,13 +2,11 @@ import { useState, useMemo } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { RotateCcw, Trash2, Search } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
-import Button from '@/Components/ui/Button';
-import Table, { TableHeader } from '@/Components/ui/Table';
+import { Button, Pagination } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
 import FormSelect from '@/Components/form/FormSelect';
-import TextInput from '@/Components/form/TextInput';
-import Pagination from '@/Components/ui/Pagination';
+import { TextInput } from '@/Components/form';
 import type { PageProps } from '@/types';
 
 interface ArchiveItem {
@@ -29,7 +27,7 @@ interface Props extends PageProps {
     archives: ArchiveItem[];
 }
 
-export default function Index({ archives: initialArchives }: Props) {
+const Index = ({ archives: initialArchives }: Props) => {
     // Local state for real-time updates
     const [archives, setArchives] = useState(initialArchives);
 
@@ -47,7 +45,7 @@ export default function Index({ archives: initialArchives }: Props) {
     const [isProcessing, setIsProcessing] = useState(false);
 
     const typeOptions = [
-        { value: 'all', label: 'Semua' },
+        { value: 'all', label: 'Semua Jenis' },
         { value: 'masuk', label: 'Surat Masuk' },
         { value: 'keluar', label: 'Surat Keluar' },
     ];
@@ -146,7 +144,6 @@ export default function Index({ archives: initialArchives }: Props) {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                // Clear all items from local state for real-time update
                 setArchives([]);
             },
             onFinish: () => {
@@ -162,7 +159,6 @@ export default function Index({ archives: initialArchives }: Props) {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                // Clear all items from local state for real-time update
                 setArchives([]);
             },
             onFinish: () => {
@@ -192,155 +188,166 @@ export default function Index({ archives: initialArchives }: Props) {
         });
     };
 
-    const tableHeaders: TableHeader<ArchiveItem>[] = [
-        {
-            key: 'no',
-            label: 'No',
-            className: 'w-12',
-            render: (_: unknown, __: unknown, index: number) =>
-                ((currentPage - 1) * itemsPerPage + index + 1).toString(),
-        },
-        {
-            key: 'jenis',
-            label: 'Jenis',
-            render: (value: unknown) => (
-                <Badge variant={value === 'Surat Masuk' ? 'info' : 'warning'}>
-                    {value as string}
-                </Badge>
-            ),
-        },
-        { key: 'nomor_agenda', label: 'No. Agenda' },
-        {
-            key: 'tanggal_surat',
-            label: 'Tgl Surat',
-            render: (value: unknown) => formatDate(value as string),
-        },
-        { key: 'nomor_surat', label: 'Nomor Surat' },
-        {
-            key: 'perihal',
-            label: 'Perihal',
-            render: (value: unknown) => (
-                <div className="max-w-xs truncate" title={value as string}>
-                    {value as string}
-                </div>
-            ),
-        },
-        {
-            key: 'deleted_at',
-            label: 'Tgl Dihapus',
-            render: (value: unknown) => formatDateTime(value as string),
-        },
-        {
-            key: 'deleted_by',
-            label: 'Dihapus Oleh',
-            render: (_: unknown, item: ArchiveItem) => item.deleted_by?.name || '-',
-        },
-        {
-            key: 'actions',
-            label: 'Aksi',
-            className: 'text-right',
-            render: (_: unknown, item: ArchiveItem) => (
-                <div className="flex justify-end gap-1">
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                            setSelectedItem(item);
-                            setRestoreModalOpen(true);
-                        }}
-                        title="Pulihkan"
-                    >
-                        <RotateCcw className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => {
-                            setSelectedItem(item);
-                            setDeleteModalOpen(true);
-                        }}
-                        title="Hapus Permanen"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            ),
-        },
-    ];
-
     return (
-        <AppLayout>
+        <>
             <Head title="Arsip Persuratan" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-                            <h1 className="text-2xl font-semibold text-gray-900">Arsip Persuratan</h1>
-                            {archives.length > 0 && (
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => setRestoreAllModalOpen(true)}
-                                    >
-                                        <RotateCcw className="h-4 w-4 mr-2" />
-                                        Pulihkan Semua
-                                    </Button>
-                                    <Button
-                                        variant="danger"
-                                        size="sm"
-                                        onClick={() => setDeleteAllModalOpen(true)}
-                                    >
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Hapus Semua
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
+            {/* Page Header */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-text-primary">Arsip Persuratan</h1>
+                <p className="text-text-secondary text-sm mt-1">Kelola data surat yang telah dihapus</p>
+            </div>
 
-                        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-                            <div className="flex gap-2 flex-1">
-                                <TextInput
-                                    type="text"
-                                    placeholder="Cari nomor surat, perihal..."
-                                    value={search}
-                                    onChange={handleSearchChange}
+            {/* Main Content Card */}
+            <div className="bg-surface rounded-lg border border-border-default">
+                {/* Toolbar */}
+                <div className="p-4 border-b border-border-default">
+                    <div className="flex flex-col sm:flex-row justify-between gap-4">
+                        <div className="flex gap-2 flex-1 max-w-2xl">
+                            <TextInput
+                                type="text"
+                                placeholder="Cari nomor surat, perihal..."
+                                value={search}
+                                onChange={handleSearchChange}
+                                className="w-full"
+                            />
+                            <div className="w-full sm:w-48">
+                                <FormSelect
+                                    options={typeOptions}
+                                    value={type}
+                                    onChange={handleTypeChange}
+                                    placeholder="Jenis Surat"
                                     className="w-full"
                                 />
-                                <Button variant="secondary" disabled>
-                                    <Search className="h-4 w-4" />
+                            </div>
+                        </div>
+
+                        {/* Bulk Actions */}
+                        {archives.length > 0 && (
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setRestoreAllModalOpen(true)}
+                                >
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Pulihkan Semua
+                                </Button>
+                                <Button
+                                    variant="danger"
+                                    onClick={() => setDeleteAllModalOpen(true)}
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Hapus Semua
                                 </Button>
                             </div>
-                            <FormSelect
-                                options={typeOptions}
-                                value={type}
-                                onChange={handleTypeChange}
-                                placeholder="Filter Jenis"
-                                className="w-full sm:w-48"
-                            />
-                        </div>
+                        )}
+                    </div>
+                </div>
 
-                        <div className="rounded-md border overflow-x-auto">
-                            <Table<ArchiveItem>
-                                headers={tableHeaders}
-                                data={paginatedData}
-                                keyExtractor={(item) => `${item.type}-${item.id}`}
-                                emptyMessage={search ? "Tidak ada data yang cocok dengan pencarian." : "Tidak ada data di arsip."}
-                            />
-                        </div>
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-border-default">
+                        <thead className="bg-surface-hover">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Jenis</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">No. Agenda</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tgl Surat</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor Surat</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Perihal</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus Pada</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus Oleh</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-24">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-surface divide-y divide-border-default">
+                            {paginatedData.map((item, index) => (
+                                <tr key={`${item.type}-${item.id}`} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <Badge variant={item.jenis === 'Surat Masuk' ? 'info' : 'warning'}>
+                                            {item.jenis}
+                                        </Badge>
+                                    </td>
+                                    <td className="px-4 py-3 text-text-primary text-sm font-medium">
+                                        {item.nomor_agenda}
+                                    </td>
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {formatDate(item.tanggal_surat)}
+                                    </td>
+                                    <td className="px-4 py-3 text-text-primary text-sm">
+                                        {item.nomor_surat}
+                                    </td>
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        <div className="max-w-xs truncate" title={item.perihal}>
+                                            {item.perihal}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {formatDateTime(item.deleted_at)}
+                                    </td>
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {item.deleted_by?.name || '-'}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedItem(item);
+                                                    setRestoreModalOpen(true);
+                                                }}
+                                                title="Pulihkan"
+                                                className="p-1 h-8 w-8"
+                                            >
+                                                <RotateCcw className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedItem(item);
+                                                    setDeleteModalOpen(true);
+                                                }}
+                                                title="Hapus Permanen"
+                                                className="p-1 h-8 w-8"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {paginatedData.length === 0 && (
+                                <tr>
+                                    <td colSpan={9} className="px-4 py-8 text-center text-text-secondary">
+                                        {search ? "Tidak ada data yang cocok dengan pencarian." : "Tidak ada data di arsip."}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
 
-                        <div className="mt-4">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                            />
-                        </div>
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {filteredData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
                     </div>
                 </div>
             </div>
 
+            {/* Confirm Dialogs */}
             <ConfirmDialog
                 isOpen={restoreModalOpen}
                 onClose={() => setRestoreModalOpen(false)}
@@ -413,7 +420,10 @@ export default function Index({ archives: initialArchives }: Props) {
                 confirmText="Ya, Hapus Semua"
                 isLoading={isProcessing}
             />
-        </AppLayout>
+        </>
     );
-}
+};
 
+Index.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default Index;

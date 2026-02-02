@@ -224,7 +224,9 @@ export default function SidebarMenuItem({
                 // Leaf item with href - Inertia Link with prefetch
                 <Link
                     href={item.href}
-                    prefetch="hover"
+                    prefetch
+                    preserveState
+                    preserveScroll
                     className={`${baseClasses} ${activeClasses}`}
                     style={{ paddingLeft }}
                 >

@@ -20,7 +20,7 @@ interface Props {
     user: ProfileUser;
 }
 
-export default function Edit({ status, user }: Props) {
+const Edit = ({ status, user }: Props) => {
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -75,7 +75,7 @@ export default function Edit({ status, user }: Props) {
     const inputClasses = "border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm mt-1 block w-full";
 
     return (
-        <AppLayout>
+        <>
             <Head title="Profil" />
             
             <div className="mb-6">
@@ -323,6 +323,10 @@ export default function Edit({ status, user }: Props) {
                     </div>
                 </div>
             </div>
-        </AppLayout>
+        </>
     );
-}
+};
+
+Edit.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default Edit;

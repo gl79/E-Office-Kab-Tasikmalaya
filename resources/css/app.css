@@ -100,3 +100,19 @@
 .animate-slide-in {
     animation: slideIn 0.3s ease-out forwards;
 }
+
+/* NProgress Customization */
+#nprogress .bar {
+    background: var(--color-primary) !important;
+    height: 3px !important;
+}
+
+#nprogress .peg {
+    box-shadow:
+        0 0 10px var(--color-primary),
+        0 0 5px var(--color-primary) !important;
+}
+
+#nprogress .spinner {
+    display: none !important;
+}

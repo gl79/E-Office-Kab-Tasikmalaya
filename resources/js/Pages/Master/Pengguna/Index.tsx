@@ -37,7 +37,7 @@ const MODULE_ORDER = [
     'penjadwalan.definitif',
 ];
 
-export default function Index({ data, filters, roles, modules }: Props) {
+const Index = ({ data, filters, roles, modules }: Props) => {
     const { auth } = usePage<PageProps>().props;
     const [showModal, setShowModal] = useState(false);
     const [editItem, setEditItem] = useState<User | null>(null);
@@ -224,7 +224,7 @@ export default function Index({ data, filters, roles, modules }: Props) {
 
 
     return (
-        <AppLayout>
+        <>
             <Head title="Pengguna" />
 
             {/* Page Header */}
@@ -561,6 +561,10 @@ export default function Index({ data, filters, roles, modules }: Props) {
                     </Button>
                 </div>
             </Modal>
-        </AppLayout>
+        </>
     );
-}
+};
+
+Index.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default Index;

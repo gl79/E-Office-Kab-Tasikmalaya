@@ -5,9 +5,9 @@ import { Head } from '@inertiajs/react';
  * Cuti Index Page
  * Placeholder - akan dikembangkan di tahap selanjutnya
  */
-export default function CutiIndex() {
+const CutiIndex = () => {
     return (
-        <AppLayout>
+        <>
             <Head title="Cuti" />
 
             <div className="mb-6">
@@ -35,6 +35,10 @@ export default function CutiIndex() {
                     Coming Soon
                 </span>
             </div>
-        </AppLayout>
+        </>
     );
-}
+};
+
+CutiIndex.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default CutiIndex;

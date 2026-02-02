@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
-import Table, { TableHeader } from '@/Components/ui/Table';
 import Dropdown from '@/Components/ui/Dropdown';
 import Pagination from '@/Components/ui/Pagination';
 import Badge from '@/Components/ui/Badge';
@@ -55,7 +54,7 @@ interface Props extends PageProps {
     };
 }
 
-export default function ArchiveIndex({ archived: initialArchived, filters }: Props) {
+const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
     // Local state for real-time updates
     const [archived, setArchived] = useState(initialArchived);
 
@@ -195,114 +194,19 @@ export default function ArchiveIndex({ archived: initialArchived, filters }: Pro
         return <Badge variant={variants[status] || 'default'}>{labels[status] || status}</Badge>;
     };
 
-    // Table headers
-    const tableHeaders: TableHeader<ArchivedAgenda>[] = [
-        {
-            key: 'no',
-            label: 'No',
-            className: 'w-12',
-            render: (_: unknown, __: unknown, index: number) =>
-                ((currentPage - 1) * itemsPerPage + index + 1).toString(),
-        },
-        {
-            key: 'nama_kegiatan',
-            label: 'Kegiatan',
-            render: (_: unknown, item: ArchivedAgenda) => (
-                <div>
-                    <div className="font-medium line-clamp-2">{item.nama_kegiatan}</div>
-                    <div className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                        <Calendar className="h-3 w-3" />
-                        {item.tanggal_agenda_formatted}
-                        <span className="mx-1">|</span>
-                        <Clock className="h-3 w-3" />
-                        {item.waktu_lengkap}
-                    </div>
-                </div>
-            ),
-        },
-        {
-            key: 'surat_masuk',
-            label: 'Surat Undangan',
-            render: (_: unknown, item: ArchivedAgenda) => (
-                <div className="text-sm">
-                    <div className="font-medium">{item.surat_masuk?.nomor_surat || '-'}</div>
-                    <div className="text-gray-500 line-clamp-1">{item.surat_masuk?.asal_surat || '-'}</div>
-                </div>
-            ),
-        },
-        {
-            key: 'status',
-            label: 'Status',
-            render: (_: unknown, item: ArchivedAgenda) => (
-                <div className="space-y-1">
-                    {getStatusBadge(item.status)}
-                    <div className="mt-1">
-                        {getDisposisiBadge(item.status_disposisi)}
-                    </div>
-                </div>
-            ),
-        },
-        {
-            key: 'deleted_at',
-            label: 'Dihapus',
-            render: (_: unknown, item: ArchivedAgenda) => (
-                <div className="text-sm">
-                    <div className="text-gray-700">{item.deleted_at_formatted}</div>
-                    {item.deleted_by && (
-                        <div className="text-gray-500 flex items-center gap-1 mt-1">
-                            <User className="h-3 w-3" />
-                            {item.deleted_by.name}
-                        </div>
-                    )}
-                </div>
-            ),
-        },
-        {
-            key: 'actions',
-            label: 'Aksi',
-            className: 'text-right',
-            render: (_: unknown, item: ArchivedAgenda) => (
-                <div className="flex justify-end gap-1">
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                            setSelectedAgenda(item);
-                            setRestoreModalOpen(true);
-                        }}
-                        title="Pulihkan"
-                    >
-                        <RotateCcw className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => {
-                            setSelectedAgenda(item);
-                            setDeleteModalOpen(true);
-                        }}
-                        title="Hapus Permanen"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            ),
-        },
-    ];
-
     return (
-        <AppLayout>
+        <>
             <Head title="Arsip Jadwal" />
 
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-text-primary">Arsip Jadwal</h1>
-                <p className="text-text-secondary mt-1">Daftar jadwal yang telah dihapus</p>
+                <h1 className="text-2xl font-semibold text-text-primary">Arsip Jadwal</h1>
+                <p className="text-text-secondary text-sm mt-1">Daftar jadwal yang telah dihapus</p>
             </div>
 
             <div className="bg-surface border border-border-default rounded-lg">
-                <div className="p-6">
+                <div className="p-4 border-b border-border-default">
                     {/* Search and Bulk Actions */}
-                    <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between">
                         <div className="flex gap-2 max-w-md flex-1">
                             <TextInput
                                 type="text"
@@ -336,41 +240,136 @@ export default function ArchiveIndex({ archived: initialArchived, filters }: Pro
                             </div>
                         )}
                     </div>
+                </div>
 
-                    {/* Info Box */}
-                    {archived.length > 0 && (
-                        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-                            <Archive className="h-5 w-5 text-amber-600 mt-0.5" />
+                {/* Info Box */}
+                {archived.length > 0 && (
+                    <div className="p-4 bg-surface-hover border-b border-border-default">
+                        <div className="flex items-start gap-3">
+                            <Archive className="h-5 w-5 text-warning mt-0.5" />
                             <div>
-                                <h4 className="font-medium text-amber-800">Tentang Arsip</h4>
-                                <p className="text-sm text-amber-700 mt-1">
+                                <h4 className="text-sm font-medium text-text-primary">Tentang Arsip</h4>
+                                <p className="text-sm text-text-secondary mt-1">
                                     Jadwal yang dihapus akan dipindahkan ke arsip dan dapat dipulihkan.
                                     Menghapus secara permanen akan menghilangkan data dari sistem selamanya.
                                 </p>
                             </div>
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {/* Table */}
-                    <div className="rounded-md border overflow-x-auto">
-                        <Table<ArchivedAgenda>
-                            headers={tableHeaders}
-                            data={paginatedData}
-                            keyExtractor={(item) => item.id}
-                            emptyMessage="Tidak ada jadwal di arsip."
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-border-default">
+                        <thead className="bg-surface-hover">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Kegiatan</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Surat Undangan</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Status</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-32">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-surface divide-y divide-border-default">
+                            {paginatedData.map((item, index) => (
+                                <tr key={item.id} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <div className="font-medium text-text-primary line-clamp-2">{item.nama_kegiatan}</div>
+                                        <div className="text-xs text-text-secondary flex items-center gap-1 mt-1">
+                                            <Calendar className="h-3 w-3" />
+                                            {item.tanggal_agenda_formatted}
+                                            <span className="mx-1">|</span>
+                                            <Clock className="h-3 w-3" />
+                                            {item.waktu_lengkap}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <div className="font-medium text-text-primary">{item.surat_masuk?.nomor_surat || '-'}</div>
+                                        <div className="text-text-secondary line-clamp-1">{item.surat_masuk?.asal_surat || '-'}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <div className="flex flex-col gap-1 items-start">
+                                            {getStatusBadge(item.status)}
+                                            {getDisposisiBadge(item.status_disposisi)}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <div className="text-text-primary">{item.deleted_at_formatted}</div>
+                                        {item.deleted_by && (
+                                            <div className="text-text-secondary flex items-center gap-1 mt-1 text-xs">
+                                                <User className="h-3 w-3" />
+                                                {item.deleted_by.name}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex justify-end gap-1">
+                                            {/* Dropdown for cleaner look on mobile, or just buttons for desktop */}
+                                            <Dropdown
+                                                align="right"
+                                                width="48"
+                                                trigger={
+                                                    <button className="p-1 hover:bg-surface-active rounded-full transition-colors text-text-secondary">
+                                                        <MoreVertical className="h-5 w-5" />
+                                                    </button>
+                                                }
+                                            >
+                                                <div className="py-1">
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => {
+                                                            setSelectedAgenda(item);
+                                                            setRestoreModalOpen(true);
+                                                        }}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <RotateCcw className="h-4 w-4" />
+                                                        <span>Pulihkan</span>
+                                                    </Dropdown.Link>
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => {
+                                                            setSelectedAgenda(item);
+                                                            setDeleteModalOpen(true);
+                                                        }}
+                                                        className="flex items-center gap-2 text-danger hover:bg-danger-subtle"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span>Hapus Permanen</span>
+                                                    </Dropdown.Link>
+                                                </div>
+                                            </Dropdown>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {paginatedData.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
+                                        {search ? 'Tidak ada data yang cocok dengan pencarian.' : 'Tidak ada jadwal di arsip.'}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="p-4 border-t border-border-default">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-sm text-text-secondary">
+                            Menampilkan {paginatedData.length} dari {filteredData.length} data
+                        </p>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
                         />
                     </div>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="mt-4">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={setCurrentPage}
-                            />
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -405,11 +404,9 @@ export default function ArchiveIndex({ archived: initialArchived, filters }: Pro
                             Apakah Anda yakin ingin menghapus permanen jadwal{' '}
                             <strong>{selectedAgenda?.nama_kegiatan}</strong>?
                         </p>
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-sm text-red-700 font-medium">
-                                Perhatian: Data yang dihapus permanen tidak dapat dipulihkan!
-                            </p>
-                        </div>
+                         <p className="text-sm text-danger font-medium p-2 bg-danger-subtle rounded border border-danger-border">
+                             Perhatian: Data yang dihapus permanen tidak dapat dipulihkan!
+                         </p>
                     </div>
                 }
                 confirmText="Ya, Hapus Permanen"
@@ -445,17 +442,18 @@ export default function ArchiveIndex({ archived: initialArchived, filters }: Pro
                         <p className="mb-3">
                             Apakah Anda yakin ingin menghapus permanen <strong>{archived.length}</strong> jadwal?
                         </p>
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-sm text-red-700 font-medium">
-                                Perhatian: Data yang dihapus permanen tidak dapat dipulihkan!
-                            </p>
-                        </div>
+                         <p className="text-sm text-danger font-medium p-2 bg-danger-subtle rounded border border-danger-border">
+                             Perhatian: Data yang dihapus permanen tidak dapat dipulihkan!
+                         </p>
                     </div>
                 }
                 confirmText="Ya, Hapus Semua"
                 isLoading={isProcessing}
             />
-        </AppLayout>
+        </>
     );
-}
+};
 
+ArchiveIndex.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+
+export default ArchiveIndex;
