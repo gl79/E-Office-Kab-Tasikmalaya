@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Jadwal;
+namespace App\Http\Controllers\Penjadwalan;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Jadwal\StorePenjadwalanRequest;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
-class JadwalController extends Controller
+class PenjadwalanController extends Controller
 {
     /**
      * Display a listing of surat masuk for scheduling.
@@ -146,7 +146,7 @@ class JadwalController extends Controller
 
             DB::commit();
 
-            return redirect()->route('penjadwalan.jadwal.index')
+            return redirect()->route('penjadwalan.index')
                 ->with('success', 'Jadwal berhasil dibuat.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -182,7 +182,7 @@ class JadwalController extends Controller
 
             DB::commit();
 
-            return redirect()->route('penjadwalan.jadwal.index')
+            return redirect()->route('penjadwalan.index')
                 ->with('success', 'Jadwal berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();

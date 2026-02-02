@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Jadwal;
+namespace App\Http\Controllers\Penjadwalan;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Jadwal\UpdateKehadiranRequest;
@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
-class JadwalTentatifController extends Controller
+class PenjadwalanTentatifController extends Controller
 {
     /**
      * Display a listing of tentatif penjadwalan.

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Jadwal;
+namespace App\Http\Controllers\Penjadwalan;
 
 use App\Http\Controllers\Controller;
 use App\Models\Penjadwalan;
@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
-class JadwalArchiveController extends Controller
+class PenjadwalanArchiveController extends Controller
 {
     /**
      * Display a listing of archived (soft deleted) penjadwalan.

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Jadwal;
+namespace App\Http\Controllers\Penjadwalan;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PenjadwalanResource;
@@ -8,7 +8,7 @@ use App\Models\Penjadwalan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class JadwalDefinitifController extends Controller
+class PenjadwalanDefinitifController extends Controller
 {
     /**
      * Display calendar view for definitif penjadwalan.

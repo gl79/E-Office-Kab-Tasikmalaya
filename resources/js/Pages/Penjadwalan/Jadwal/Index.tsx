@@ -250,14 +250,14 @@ const JadwalIndex = ({ belumDijadwalkan, sudahDijadwalkan, lokasiTypeOptions, fi
         e.preventDefault();
 
         if (isEditMode && selectedAgenda) {
-            put(route('penjadwalan.jadwal.update', selectedAgenda.id), {
+            put(route('penjadwalan.update', selectedAgenda.id), {
                 onSuccess: () => {
                     setShowFormModal(false);
                     reset();
                 },
             });
         } else {
-            post(route('penjadwalan.jadwal.store'), {
+            post(route('penjadwalan.store'), {
                 onSuccess: () => {
                     setShowFormModal(false);
                     reset();
@@ -269,7 +269,7 @@ const JadwalIndex = ({ belumDijadwalkan, sudahDijadwalkan, lokasiTypeOptions, fi
     const handleDelete = () => {
         if (!selectedAgenda) return;
         setIsDeleting(true);
-        router.delete(route('penjadwalan.jadwal.destroy', selectedAgenda.id), {
+        router.delete(route('penjadwalan.destroy', selectedAgenda.id), {
             preserveState: true,
             preserveScroll: true,
             onFinish: () => {

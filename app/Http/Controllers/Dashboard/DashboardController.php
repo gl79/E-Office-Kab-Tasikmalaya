@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Dashboard;
 
+use App\Http\Controllers\Controller;
 use App\Models\IndeksSurat;
 use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
