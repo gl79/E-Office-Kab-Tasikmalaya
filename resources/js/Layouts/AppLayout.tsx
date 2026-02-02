@@ -34,6 +34,12 @@ function AppLayoutInner({
 
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+    // Close mobile sidebar on route change
+    useEffect(() => {
+        setIsMobileSidebarOpen(false);
+    }, [url]);
 
     // Password Change Form
     const { data: passwordData, setData: setPasswordData, put: putPassword, processing: passwordProcessing, errors: passwordErrors, reset: resetPassword } = useForm({
@@ -133,23 +139,38 @@ function AppLayoutInner({
     return (
         <>
             <div className="min-h-screen flex flex-col bg-background">
-                {/* Header - Clean with only logo */}
-                {/* Header removed as requested - Title moved to Sidebar */}
+                {/* Mobile Header */}
+                <header className="lg:hidden bg-surface border-b border-border-default h-16 flex items-center justify-between px-4 sticky top-0 z-30">
+                    <div className="flex items-center gap-3">
+                        <img src="/images/pemkabtasik.png" alt="Logo Kabupaten Tasikmalaya" className="w-8 h-8 object-contain" />
+                        <span className="font-bold text-text-primary">E-Office</span>
+                    </div>
+                    <button 
+                        onClick={() => setIsMobileSidebarOpen(true)}
+                        className="p-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface-hover"
+                    >
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </header>
 
                 {/* Main Container (Sidebar + Content) */}
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex flex-1 overflow-hidden relative">
                     {/* Sidebar */}
                     {showSidebar && (
                         <Sidebar 
                             items={sidebarMenuItems}
                             onLogoutClick={() => setShowLogoutModal(true)}
+                            isOpen={isMobileSidebarOpen}
+                            onClose={() => setIsMobileSidebarOpen(false)}
                         >
                             {sidebarContent}
                         </Sidebar>
                     )}
 
                     {/* Main Content Area */}
-                    <main className="flex-1 overflow-y-auto p-6">
+                    <main className="flex-1 overflow-y-auto p-4 lg:p-6 w-full">
                         {/* Breadcrumbs */}
                         {breadcrumbs.length > 0 && (
                             <div className="mb-6">

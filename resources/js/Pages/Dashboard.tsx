@@ -162,7 +162,7 @@ const Dashboard = () => {
                             <h1 className="text-2xl font-bold">
                                 {getGreeting()}, {user.name}!
                             </h1>
-                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <div className="bg-white/10 rounded-lg px-3 py-2">
                                     <span className="text-primary-light text-xs">Nama Lengkap</span>
                                     <p className="text-white font-medium text-sm">{user.name}</p>
@@ -191,7 +191,7 @@ const Dashboard = () => {
                     {/* Persuratan Statistics Section - Admin/TU - FIRST */}
                     <div className="mb-8">
                         <h2 className="text-lg font-semibold text-gray-800 mb-4">Persuratan</h2>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {persuratanStats.map((stat, index) => {
                                 const Icon = stat.icon;
                                 // Check if it's a coming soon card
@@ -241,7 +241,7 @@ const Dashboard = () => {
                     {/* Penjadwalan Coming Soon Section */}
                     <div className="mb-8">
                         <h2 className="text-lg font-semibold text-gray-800 mb-4">Penjadwalan</h2>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {penjadwalanCards.map((card) => {
                                 const Icon = card.icon;
                                 return (
@@ -269,7 +269,7 @@ const Dashboard = () => {
                     {/* Cuti Coming Soon Section */}
                     <div className="mb-8">
                         <h2 className="text-lg font-semibold text-gray-800 mb-4">Cuti</h2>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {cutiCards.map((card) => {
                                 const Icon = card.icon;
                                 return (
@@ -297,7 +297,7 @@ const Dashboard = () => {
                     {/* Wilayah Statistics Section - Admin/TU - SECOND */}
                     <div className="mb-8">
                         <h2 className="text-lg font-semibold text-gray-800 mb-4">Data Wilayah</h2>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {wilayahStats.map((stat) => {
                                 const Icon = stat.icon;
                                 return (
@@ -325,7 +325,7 @@ const Dashboard = () => {
                     {/* Master Data Statistics Section - Admin/TU - THIRD */}
                     <div className="mb-8">
                         <h2 className="text-lg font-semibold text-gray-800 mb-4">Data Master</h2>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {masterStats.map((stat) => {
                                 const Icon = stat.icon;
                                 return (
@@ -377,7 +377,7 @@ const Dashboard = () => {
                 /* Coming Soon cards for Sekpri roles */
                 <div className="mb-8">
                     <h2 className="text-lg font-semibold text-gray-800 mb-4">Menu Cepat</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {sekpriCards.map((card) => {
                             const Icon = card.icon;
                             return (
