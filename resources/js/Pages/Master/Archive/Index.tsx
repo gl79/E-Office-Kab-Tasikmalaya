@@ -6,9 +6,10 @@ import Button from '@/Components/ui/Button';
 import TextInput from '@/Components/form/TextInput';
 import Table, { TableHeader } from '@/Components/ui/Table';
 import Modal from '@/Components/ui/Modal';
-import { RefreshCw, Trash2, Search } from 'lucide-react';
+import { RefreshCw, Trash2, Search, RotateCcw } from 'lucide-react';
 import Pagination from '@/Components/ui/Pagination';
 import FormSelect from '@/Components/form/FormSelect';
+import ConfirmDialog from '@/Components/ui/ConfirmDialog';
 
 interface ArchiveItem {
     id: string;
@@ -33,7 +34,10 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ auth, archives, filters }: Props) {
+export default function Index({ auth, archives: initialArchives, filters }: Props) {
+    // Local state for real-time updates
+    const [archives, setArchives] = useState(initialArchives.data);
+    
     // Client-side search and pagination for SPA experience
     const [search, setSearch] = useState('');
     const [type, setType] = useState('all');
@@ -42,7 +46,10 @@ export default function Index({ auth, archives, filters }: Props) {
 
     const [isRestoreAlertOpen, setIsRestoreAlertOpen] = useState(false);
     const [isForceDeleteAlertOpen, setIsForceDeleteAlertOpen] = useState(false);
+    const [restoreAllModalOpen, setRestoreAllModalOpen] = useState(false);
+    const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ArchiveItem | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const typeOptions = [
         { value: 'all', label: 'Semua' },
@@ -55,7 +62,7 @@ export default function Index({ auth, archives, filters }: Props) {
 
     // Client-side filtered data
     const filteredData = useMemo(() => {
-        let data = archives.data;
+        let data = archives;
 
         if (search) {
             const searchLower = search.toLowerCase();
@@ -70,7 +77,7 @@ export default function Index({ auth, archives, filters }: Props) {
         }
 
         return data;
-    }, [archives.data, search, type]);
+    }, [archives, search, type]);
 
     // Client-side pagination
     const paginatedData = useMemo(() => {
@@ -107,18 +114,70 @@ export default function Index({ auth, archives, filters }: Props) {
 
     const handleRestore = () => {
         if (!selectedItem) return;
-        router.post(route(`master.${selectedItem.resource_name}.restore`, selectedItem.id), {}, {
+        const itemToRestore = selectedItem;
+        setIsProcessing(true);
+        router.post(route(`master.${itemToRestore.resource_name}.restore`, itemToRestore.id), {}, {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
+                setArchives(prev => prev.filter(item => 
+                    !(item.type === itemToRestore.type && item.id === itemToRestore.id)
+                ));
                 setIsRestoreAlertOpen(false);
+            },
+            onFinish: () => {
+                setIsProcessing(false);
+                setSelectedItem(null);
             },
         });
     };
 
     const handleForceDelete = () => {
         if (!selectedItem) return;
-        router.delete(route(`master.${selectedItem.resource_name}.force-delete`, selectedItem.id), {
+        const itemToDelete = selectedItem;
+        setIsProcessing(true);
+        router.delete(route(`master.${itemToDelete.resource_name}.force-delete`, itemToDelete.id), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
+                setArchives(prev => prev.filter(item => 
+                    !(item.type === itemToDelete.type && item.id === itemToDelete.id)
+                ));
                 setIsForceDeleteAlertOpen(false);
+            },
+            onFinish: () => {
+                setIsProcessing(false);
+                setSelectedItem(null);
+            },
+        });
+    };
+
+    const handleRestoreAll = () => {
+        setIsProcessing(true);
+        router.post(route('master.archive.restore-all'), {}, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setArchives([]);
+            },
+            onFinish: () => {
+                setIsProcessing(false);
+                setRestoreAllModalOpen(false);
+            },
+        });
+    };
+
+    const handleForceDeleteAll = () => {
+        setIsProcessing(true);
+        router.delete(route('master.archive.force-delete-all'), {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setArchives([]);
+            },
+            onFinish: () => {
+                setIsProcessing(false);
+                setDeleteAllModalOpen(false);
             },
         });
     };
@@ -161,27 +220,49 @@ export default function Index({ auth, archives, filters }: Props) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-                            <div className="flex flex-col sm:flex-row gap-4 w-full">
-                                <div className="flex gap-2 flex-1">
-                                    <TextInput
-                                        type="text"
-                                        placeholder="Cari Arsip..."
-                                        value={search}
-                                        onChange={handleSearchChange}
-                                        className="w-full"
-                                    />
-                                    <Button variant="secondary" disabled>
-                                        <Search className="h-4 w-4" />
+                            <h1 className="text-2xl font-semibold text-gray-900">Arsip Data Master</h1>
+                            {archives.length > 0 && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => setRestoreAllModalOpen(true)}
+                                    >
+                                        <RotateCcw className="h-4 w-4 mr-2" />
+                                        Pulihkan Semua
+                                    </Button>
+                                    <Button
+                                        variant="danger"
+                                        size="sm"
+                                        onClick={() => setDeleteAllModalOpen(true)}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Hapus Semua
                                     </Button>
                                 </div>
-                                <FormSelect
-                                    options={typeOptions}
-                                    value={type}
-                                    onChange={handleTypeChange}
-                                    placeholder="Filter Jenis"
-                                    className="w-full sm:w-48"
+                            )}
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                            <div className="flex gap-2 flex-1">
+                                <TextInput
+                                    type="text"
+                                    placeholder="Cari Arsip..."
+                                    value={search}
+                                    onChange={handleSearchChange}
+                                    className="w-full"
                                 />
+                                <Button variant="secondary" disabled>
+                                    <Search className="h-4 w-4" />
+                                </Button>
                             </div>
+                            <FormSelect
+                                options={typeOptions}
+                                value={type}
+                                onChange={handleTypeChange}
+                                placeholder="Filter Jenis"
+                                className="w-full sm:w-48"
+                            />
                         </div>
 
                         <div className="rounded-md border">
@@ -210,7 +291,9 @@ export default function Index({ auth, archives, filters }: Props) {
                     <p>Data akan dikembalikan ke daftar aktif.</p>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button variant="secondary" onClick={() => setIsRestoreAlertOpen(false)}>Batal</Button>
-                        <Button onClick={handleRestore} className="bg-secondary hover:bg-secondary-hover text-text-inverse">Pulihkan</Button>
+                        <Button onClick={handleRestore} className="bg-secondary hover:bg-secondary-hover text-text-inverse" disabled={isProcessing}>
+                            {isProcessing ? 'Memproses...' : 'Pulihkan'}
+                        </Button>
                     </div>
                 </div>
             </Modal>
@@ -221,10 +304,52 @@ export default function Index({ auth, archives, filters }: Props) {
                     <p>Tindakan ini tidak dapat dibatalkan. Data akan hilang selamanya.</p>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button variant="secondary" onClick={() => setIsForceDeleteAlertOpen(false)}>Batal</Button>
-                        <Button variant="danger" onClick={handleForceDelete}>Hapus Permanen</Button>
+                        <Button variant="danger" onClick={handleForceDelete} disabled={isProcessing}>
+                            {isProcessing ? 'Memproses...' : 'Hapus Permanen'}
+                        </Button>
                     </div>
                 </div>
             </Modal>
+
+            {/* Restore All Confirmation */}
+            <ConfirmDialog
+                isOpen={restoreAllModalOpen}
+                onClose={() => setRestoreAllModalOpen(false)}
+                onConfirm={handleRestoreAll}
+                type="warning"
+                title="Pulihkan Semua Data"
+                message={
+                    <p>
+                        Apakah Anda yakin ingin memulihkan <strong>{archives.length}</strong> data?
+                        Semua data akan dikembalikan ke menu utama.
+                    </p>
+                }
+                confirmText="Ya, Pulihkan Semua"
+                isLoading={isProcessing}
+            />
+
+            {/* Force Delete All Confirmation */}
+            <ConfirmDialog
+                isOpen={deleteAllModalOpen}
+                onClose={() => setDeleteAllModalOpen(false)}
+                onConfirm={handleForceDeleteAll}
+                type="delete"
+                title="Hapus Semua Permanen"
+                message={
+                    <div>
+                        <p className="text-red-600 font-medium mb-2">
+                            Peringatan: Aksi ini tidak dapat dibatalkan!
+                        </p>
+                        <p className="mb-3">
+                            Apakah Anda yakin ingin menghapus permanen <strong>{archives.length}</strong> data?
+                            Semua data akan hilang selamanya.
+                        </p>
+                    </div>
+                }
+                confirmText="Ya, Hapus Semua"
+                isLoading={isProcessing}
+            />
         </AppLayout>
     );
 }
+

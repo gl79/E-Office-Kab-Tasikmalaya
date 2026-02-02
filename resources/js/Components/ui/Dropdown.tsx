@@ -11,6 +11,7 @@ interface DropdownProps {
 
 const Dropdown = ({ trigger, children, align = 'right', width = '48', contentClasses = 'py-1 bg-white' }: DropdownProps) => {
     const [open, setOpen] = useState(false);
+    const [openUpward, setOpenUpward] = useState(false);
     const triggerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -32,17 +33,32 @@ const Dropdown = ({ trigger, children, align = 'right', width = '48', contentCla
         };
     }, []);
 
-    let alignmentClasses = 'origin-top';
+    // Calculate position when opening
+    useEffect(() => {
+        if (open && triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const spaceBelow = viewportHeight - rect.bottom;
+            const dropdownHeight = 200; // Estimated dropdown height
+            
+            // Open upward if not enough space below
+            setOpenUpward(spaceBelow < dropdownHeight && rect.top > dropdownHeight);
+        }
+    }, [open]);
+
+    let alignmentClasses = openUpward ? 'origin-bottom' : 'origin-top';
     if (align === 'left') {
-        alignmentClasses = 'origin-top-left left-0';
+        alignmentClasses = openUpward ? 'origin-bottom-left left-0' : 'origin-top-left left-0';
     } else if (align === 'right') {
-        alignmentClasses = 'origin-top-right right-0';
+        alignmentClasses = openUpward ? 'origin-bottom-right right-0' : 'origin-top-right right-0';
     }
 
     let widthClasses = '';
     if (width === '48') {
         widthClasses = 'w-48';
     }
+
+    const positionClasses = openUpward ? 'bottom-full mb-2' : 'mt-2';
 
     return (
         <div className="relative">
@@ -53,7 +69,7 @@ const Dropdown = ({ trigger, children, align = 'right', width = '48', contentCla
             {open && (
                 <div
                     ref={dropdownRef}
-                    className={`absolute z-50 mt-2 rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
+                    className={`absolute z-50 ${positionClasses} rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
                 >
                     <div className={`rounded-md ring-1 ring-black ring-opacity-5 ${contentClasses}`}>
                         {children}

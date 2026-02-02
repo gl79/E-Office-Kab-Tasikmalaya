@@ -8,6 +8,10 @@ use App\Http\Controllers\Master\Wilayah\ProvinsiController;
 use App\Http\Controllers\Persuratan\SuratMasukController;
 use App\Http\Controllers\Persuratan\SuratKeluarController;
 use App\Http\Controllers\Persuratan\ArchiveController;
+use App\Http\Controllers\Jadwal\JadwalController;
+use App\Http\Controllers\Jadwal\JadwalTentatifController;
+use App\Http\Controllers\Jadwal\JadwalDefinitifController;
+use App\Http\Controllers\Jadwal\JadwalArchiveController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -66,6 +70,8 @@ Route::middleware('auth')->group(function () {
 
         // Unified Archive
         Route::get('/archive', [\App\Http\Controllers\Master\MasterArchiveController::class, 'index'])->name('archive');
+        Route::post('/archive/restore-all', [\App\Http\Controllers\Master\MasterArchiveController::class, 'restoreAll'])->name('archive.restore-all');
+        Route::delete('/archive/force-delete-all', [\App\Http\Controllers\Master\MasterArchiveController::class, 'forceDeleteAll'])->name('archive.force-delete-all');
 
         Route::resource('unit-kerja', \App\Http\Controllers\Master\UnitKerjaController::class)->except(['create', 'show', 'edit']);
         Route::post('unit-kerja/{id}/restore', [\App\Http\Controllers\Master\UnitKerjaController::class, 'restore'])->name('unit-kerja.restore');
@@ -104,6 +110,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('desa/{provinsi_kode}/{kabupaten_kode}/{kecamatan_kode}/{kode}', [DesaController::class, 'destroy'])->name('desa.destroy');
             Route::post('desa/{id}/restore', [DesaController::class, 'restore'])->name('desa.restore');
             Route::delete('desa/{id}/force-delete', [DesaController::class, 'forceDelete'])->name('desa.force-delete');
+            Route::get('desa/by-kecamatan/{provinsiKode}/{kabupatenKode}/{kecamatanKode}', [DesaController::class, 'getDesaByKecamatan'])->name('desa.by-kecamatan');
         });
     });
 
@@ -131,6 +138,8 @@ Route::middleware('auth')->group(function () {
         Route::get('archive', [ArchiveController::class, 'index'])->name('archive.index');
         Route::post('archive/{type}/{id}/restore', [ArchiveController::class, 'restore'])->name('archive.restore');
         Route::delete('archive/{type}/{id}/force-delete', [ArchiveController::class, 'forceDelete'])->name('archive.force-delete');
+        Route::post('archive/restore-all', [ArchiveController::class, 'restoreAll'])->name('archive.restore-all');
+        Route::delete('archive/force-delete-all', [ArchiveController::class, 'forceDeleteAll'])->name('archive.force-delete-all');
     });
 
     // ================================================================
@@ -144,21 +153,33 @@ Route::middleware('auth')->group(function () {
     // PENJADWALAN
     // ================================================================
     Route::prefix('penjadwalan')->name('penjadwalan.')->group(function () {
-        Route::get('/jadwal', function () {
-            return Inertia::render('Penjadwalan/Jadwal/Index');
-        })->name('jadwal.index');
+        // Menu Jadwal (dari Surat Masuk)
+        Route::get('/jadwal', [JadwalController::class, 'index'])->name('jadwal.index');
+        Route::get('/jadwal/surat-masuk/{id}', [JadwalController::class, 'getSuratMasuk'])->name('jadwal.surat-masuk');
+        Route::post('/jadwal', [JadwalController::class, 'store'])->name('jadwal.store');
+        Route::get('/jadwal/{id}', [JadwalController::class, 'show'])->name('jadwal.show');
+        Route::put('/jadwal/{id}', [JadwalController::class, 'update'])->name('jadwal.update');
+        Route::delete('/jadwal/{id}', [JadwalController::class, 'destroy'])->name('jadwal.destroy');
 
-        Route::get('/tentatif', function () {
-            return Inertia::render('Penjadwalan/Tentatif/Index');
-        })->name('tentatif.index');
+        // Menu Tentatif
+        Route::get('/tentatif', [JadwalTentatifController::class, 'index'])->name('tentatif.index');
+        Route::put('/tentatif/{id}/kehadiran', [JadwalTentatifController::class, 'updateKehadiran'])->name('tentatif.update-kehadiran');
+        Route::post('/tentatif/{id}/definitif', [JadwalTentatifController::class, 'jadikanDefinitif'])->name('tentatif.definitif');
+        Route::get('/tentatif/{id}/export-wa', [JadwalTentatifController::class, 'exportWhatsApp'])->name('tentatif.export-wa');
+        Route::delete('/tentatif/{id}', [JadwalTentatifController::class, 'destroy'])->name('tentatif.destroy');
 
-        Route::get('/definitif', function () {
-            return Inertia::render('Penjadwalan/Definitif/Index');
-        })->name('definitif.index');
+        // Menu Definitif (Calendar View)
+        Route::get('/definitif', [JadwalDefinitifController::class, 'index'])->name('definitif.index');
+        Route::get('/definitif/calendar-data', [JadwalDefinitifController::class, 'calendarData'])->name('definitif.calendar-data');
+        Route::get('/definitif/{id}', [JadwalDefinitifController::class, 'show'])->name('definitif.show');
+        Route::delete('/definitif/{id}', [JadwalDefinitifController::class, 'destroy'])->name('definitif.destroy');
 
-        Route::get('/archive', function () {
-            return Inertia::render('ComingSoon');
-        })->name('archive');
+        // Menu Archive (Soft Delete)
+        Route::get('/archive', [JadwalArchiveController::class, 'index'])->name('archive.index');
+        Route::post('/archive/{id}/restore', [JadwalArchiveController::class, 'restore'])->name('archive.restore');
+        Route::delete('/archive/{id}/force-delete', [JadwalArchiveController::class, 'forceDelete'])->name('archive.force-delete');
+        Route::post('/archive/restore-all', [JadwalArchiveController::class, 'restoreAll'])->name('archive.restore-all');
+        Route::delete('/archive/force-delete-all', [JadwalArchiveController::class, 'forceDeleteAll'])->name('archive.force-delete-all');
     });
 
     // Placeholder Routes for other Archives

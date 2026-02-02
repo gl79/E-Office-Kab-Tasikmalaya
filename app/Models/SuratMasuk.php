@@ -8,8 +8,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $tanggal_diterima
+ * @property Carbon|null $tanggal_surat
+ * @property Carbon|null $tanggal_diteruskan
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class SuratMasuk extends Model
 {
     use HasFactory, HasUlids, SoftDeletes, HasAuditTrail;
@@ -38,9 +48,9 @@ class SuratMasuk extends Model
     ];
 
     protected $casts = [
-        'tanggal_diterima' => 'date',
-        'tanggal_surat' => 'date',
-        'tanggal_diteruskan' => 'date',
+        'tanggal_diterima' => 'datetime',
+        'tanggal_surat' => 'datetime',
+        'tanggal_diteruskan' => 'datetime',
         'lampiran' => 'integer',
     ];
 
@@ -137,6 +147,22 @@ class SuratMasuk extends Model
         return $this->belongsTo(User::class, 'deleted_by');
     }
 
+    /**
+     * Relasi ke penjadwalan (one to one)
+     */
+    public function penjadwalan(): HasOne
+    {
+        return $this->hasOne(Penjadwalan::class, 'surat_masuk_id');
+    }
+
+    /**
+     * Cek apakah surat sudah dijadwalkan
+     */
+    public function hasPenjadwalan(): bool
+    {
+        return $this->penjadwalan()->exists();
+    }
+
     // ==================== SCOPES ====================
 
     /**
@@ -147,9 +173,9 @@ class SuratMasuk extends Model
         if ($search) {
             return $query->where(function ($q) use ($search) {
                 $q->where('nomor_agenda', 'like', "%{$search}%")
-                  ->orWhere('nomor_surat', 'like', "%{$search}%")
-                  ->orWhere('asal_surat', 'like', "%{$search}%")
-                  ->orWhere('perihal', 'like', "%{$search}%");
+                    ->orWhere('nomor_surat', 'like', "%{$search}%")
+                    ->orWhere('asal_surat', 'like', "%{$search}%")
+                    ->orWhere('perihal', 'like', "%{$search}%");
             });
         }
         return $query;
@@ -178,6 +204,22 @@ class SuratMasuk extends Model
             return $query->where('sifat', $sifat);
         }
         return $query;
+    }
+
+    /**
+     * Scope untuk filter surat yang belum dijadwalkan
+     */
+    public function scopeBelumDijadwalkan($query)
+    {
+        return $query->whereDoesntHave('penjadwalan');
+    }
+
+    /**
+     * Scope untuk filter surat yang sudah dijadwalkan
+     */
+    public function scopeSudahDijadwalkan($query)
+    {
+        return $query->whereHas('penjadwalan');
     }
 
     // ==================== ACCESSORS ====================

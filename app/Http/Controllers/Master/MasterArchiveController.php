@@ -3,8 +3,14 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Models\IndeksSurat;
 use App\Models\UnitKerja;
+use App\Models\WilayahDesa;
+use App\Models\WilayahKabupaten;
+use App\Models\WilayahKecamatan;
+use App\Models\WilayahProvinsi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -24,7 +30,7 @@ class MasterArchiveController extends Controller
 
         $cacheKey = 'master_archive_index_' . md5($search . '_' . $page);
 
-        $archives = \Illuminate\Support\Facades\Cache::tags(['master_archive'])->remember($cacheKey, 300, function () use ($search) {
+        $archives = Cache::tags(['master_archive'])->remember($cacheKey, 300, function () use ($search) {
             // Query for Unit Kerja
             $unitKerja = DB::table('unit_kerja')
                 ->select(
@@ -120,5 +126,84 @@ class MasterArchiveController extends Controller
             'archives' => $archives,
             'filters' => $request->only(['search']),
         ]);
+    }
+
+    /**
+     * Restore all archived data master resources.
+     */
+    public function restoreAll()
+    {
+        DB::beginTransaction();
+        try {
+            $counts = [
+                'unit_kerja' => UnitKerja::onlyTrashed()->count(),
+                'indeks_surat' => IndeksSurat::onlyTrashed()->count(),
+                'provinsi' => WilayahProvinsi::onlyTrashed()->count(),
+                'kabupaten' => WilayahKabupaten::onlyTrashed()->count(),
+                'kecamatan' => WilayahKecamatan::onlyTrashed()->count(),
+                'desa' => WilayahDesa::onlyTrashed()->count(),
+            ];
+
+            // Restore all
+            UnitKerja::onlyTrashed()->update(['deleted_by' => null]);
+            UnitKerja::onlyTrashed()->restore();
+
+            IndeksSurat::onlyTrashed()->update(['deleted_by' => null]);
+            IndeksSurat::onlyTrashed()->restore();
+
+            WilayahProvinsi::onlyTrashed()->restore();
+            WilayahKabupaten::onlyTrashed()->restore();
+            WilayahKecamatan::onlyTrashed()->restore();
+            WilayahDesa::onlyTrashed()->restore();
+
+            DB::commit();
+            Cache::tags(['master_archive'])->flush();
+
+            $total = array_sum($counts);
+            return redirect()->back()
+                ->with('success', "{$total} data berhasil dipulihkan.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Gagal memulihkan semua data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Permanently delete all archived data master resources.
+     */
+    public function forceDeleteAll()
+    {
+        DB::beginTransaction();
+        try {
+            $counts = [
+                'unit_kerja' => UnitKerja::onlyTrashed()->count(),
+                'indeks_surat' => IndeksSurat::onlyTrashed()->count(),
+                'provinsi' => WilayahProvinsi::onlyTrashed()->count(),
+                'kabupaten' => WilayahKabupaten::onlyTrashed()->count(),
+                'kecamatan' => WilayahKecamatan::onlyTrashed()->count(),
+                'desa' => WilayahDesa::onlyTrashed()->count(),
+            ];
+
+            // Delete all permanently (order matters for foreign keys: desa -> kecamatan -> kabupaten -> provinsi)
+            WilayahDesa::onlyTrashed()->forceDelete();
+            WilayahKecamatan::onlyTrashed()->forceDelete();
+            WilayahKabupaten::onlyTrashed()->forceDelete();
+            WilayahProvinsi::onlyTrashed()->forceDelete();
+
+            IndeksSurat::onlyTrashed()->forceDelete();
+            UnitKerja::onlyTrashed()->forceDelete();
+
+            DB::commit();
+            Cache::tags(['master_archive'])->flush();
+
+            $total = array_sum($counts);
+            return redirect()->back()
+                ->with('success', "{$total} data berhasil dihapus permanen.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Gagal menghapus semua data: ' . $e->getMessage());
+        }
     }
 }

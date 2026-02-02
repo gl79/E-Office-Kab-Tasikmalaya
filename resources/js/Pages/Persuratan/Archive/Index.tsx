@@ -41,6 +41,8 @@ export default function Index({ archives: initialArchives }: Props) {
 
     const [restoreModalOpen, setRestoreModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [restoreAllModalOpen, setRestoreAllModalOpen] = useState(false);
+    const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ArchiveItem | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -134,6 +136,38 @@ export default function Index({ archives: initialArchives }: Props) {
                 setIsProcessing(false);
                 setDeleteModalOpen(false);
                 setSelectedItem(null);
+            },
+        });
+    };
+
+    const handleRestoreAll = () => {
+        setIsProcessing(true);
+        router.post(route('persuratan.archive.restore-all'), {}, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                // Clear all items from local state for real-time update
+                setArchives([]);
+            },
+            onFinish: () => {
+                setIsProcessing(false);
+                setRestoreAllModalOpen(false);
+            },
+        });
+    };
+
+    const handleForceDeleteAll = () => {
+        setIsProcessing(true);
+        router.delete(route('persuratan.archive.force-delete-all'), {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                // Clear all items from local state for real-time update
+                setArchives([]);
+            },
+            onFinish: () => {
+                setIsProcessing(false);
+                setDeleteAllModalOpen(false);
             },
         });
     };
@@ -243,6 +277,26 @@ export default function Index({ archives: initialArchives }: Props) {
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
                             <h1 className="text-2xl font-semibold text-gray-900">Arsip Persuratan</h1>
+                            {archives.length > 0 && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => setRestoreAllModalOpen(true)}
+                                    >
+                                        <RotateCcw className="h-4 w-4 mr-2" />
+                                        Pulihkan Semua
+                                    </Button>
+                                    <Button
+                                        variant="danger"
+                                        size="sm"
+                                        onClick={() => setDeleteAllModalOpen(true)}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Hapus Semua
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         <div className="mb-6 flex flex-col sm:flex-row gap-4">
@@ -322,6 +376,44 @@ export default function Index({ archives: initialArchives }: Props) {
                 confirmText="Hapus Permanen"
                 isLoading={isProcessing}
             />
+
+            <ConfirmDialog
+                isOpen={restoreAllModalOpen}
+                onClose={() => setRestoreAllModalOpen(false)}
+                onConfirm={handleRestoreAll}
+                type="warning"
+                title="Pulihkan Semua Surat"
+                message={
+                    <p>
+                        Apakah Anda yakin ingin memulihkan <strong>{archives.length}</strong> surat?
+                        Semua surat akan dikembalikan ke menu utama.
+                    </p>
+                }
+                confirmText="Ya, Pulihkan Semua"
+                isLoading={isProcessing}
+            />
+
+            <ConfirmDialog
+                isOpen={deleteAllModalOpen}
+                onClose={() => setDeleteAllModalOpen(false)}
+                onConfirm={handleForceDeleteAll}
+                type="delete"
+                title="Hapus Semua Permanen"
+                message={
+                    <div>
+                        <p className="text-red-600 font-medium mb-2">
+                            Peringatan: Aksi ini tidak dapat dibatalkan!
+                        </p>
+                        <p className="mb-3">
+                            Apakah Anda yakin ingin menghapus permanen <strong>{archives.length}</strong> surat?
+                            Semua data dan file terkait akan dihapus selamanya.
+                        </p>
+                    </div>
+                }
+                confirmText="Ya, Hapus Semua"
+                isLoading={isProcessing}
+            />
         </AppLayout>
     );
 }
+

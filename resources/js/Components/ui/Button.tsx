@@ -1,6 +1,6 @@
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
@@ -56,6 +56,14 @@ export default function Button({
             text-white
             shadow-md shadow-danger/20
             hover:shadow-lg hover:shadow-danger/30 hover:to-danger
+            active:opacity-90 active:scale-[0.98]
+            border border-transparent
+        `,
+        success: `
+            bg-gradient-to-br from-success to-success-dark
+            text-white
+            shadow-md shadow-success/20
+            hover:shadow-lg hover:shadow-success/30 hover:to-success
             active:opacity-90 active:scale-[0.98]
             border border-transparent
         `,

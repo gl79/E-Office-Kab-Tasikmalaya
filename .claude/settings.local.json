@@ -5,7 +5,8 @@
       "Bash(php artisan route:clear:*)",
       "Bash(php artisan:*)",
       "Bash(npx tsc:*)",
-      "Read(//c/Users/Gery Liam/Downloads/**)"
+      "Read(//c/Users/Gery Liam/Downloads/**)",
+      "Bash(npm install:*)"
     ]
   }
 }

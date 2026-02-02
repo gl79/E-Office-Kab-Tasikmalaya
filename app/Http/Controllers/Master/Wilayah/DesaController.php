@@ -127,6 +127,20 @@ class DesaController extends Controller
     }
 
     /**
+     * Get desa by kecamatan for dropdown.
+     */
+    public function getDesaByKecamatan(string $provinsiKode, string $kabupatenKode, string $kecamatanKode)
+    {
+        return response()->json(
+            WilayahDesa::where('provinsi_kode', $provinsiKode)
+                ->where('kabupaten_kode', $kabupatenKode)
+                ->where('kecamatan_kode', $kecamatanKode)
+                ->orderBy('nama')
+                ->get()
+        );
+    }
+
+    /**
      * Remove the specified resource from storage permanently.
      */
     public function forceDelete(string $id)
