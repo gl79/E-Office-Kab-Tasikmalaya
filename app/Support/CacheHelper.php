@@ -31,6 +31,10 @@ class CacheHelper
         'dashboard' => [
             'dashboard_stats',
         ],
+        'cuti' => [
+            'cuti_index_',
+            'cuti_archive_',
+        ],
     ];
 
     /**

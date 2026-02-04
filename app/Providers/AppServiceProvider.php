@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\ActivityLog;
+use App\Models\Cuti;
 use App\Models\IndeksSurat;
 use App\Models\Penjadwalan;
 use App\Models\SuratKeluar;
@@ -13,6 +14,7 @@ use App\Models\WilayahKabupaten;
 use App\Models\WilayahKecamatan;
 use App\Models\WilayahProvinsi;
 use App\Policies\ActivityLogPolicy;
+use App\Policies\CutiPolicy;
 use App\Policies\IndeksSuratPolicy;
 use App\Policies\PenjadwalanPolicy;
 use App\Policies\SuratKeluarPolicy;
@@ -66,5 +68,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Penjadwalan Policy
         Gate::policy(Penjadwalan::class, PenjadwalanPolicy::class);
+
+        // Cuti Policy
+        Gate::policy(Cuti::class, CutiPolicy::class);
     }
 }

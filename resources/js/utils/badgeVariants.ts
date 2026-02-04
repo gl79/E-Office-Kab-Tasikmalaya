@@ -1,3 +1,4 @@
+import type { CutiStatus } from '@/types/cuti';
 import type { DisposisiStatus, SifatSurat, PenjadwalanStatus } from '@/types/penjadwalan';
 
 /**
@@ -69,4 +70,26 @@ export function getPenjadwalanStatusVariant(status: string): BadgeVariant {
 
 export function getPenjadwalanStatusLabel(status: string): string {
     return penjadwalanStatusBadgeConfig[status as PenjadwalanStatus]?.label ?? status;
+}
+
+// ============================================
+// CUTI STATUS BADGE CONFIG
+// ============================================
+
+export const cutiStatusBadgeConfig: Record<CutiStatus, {
+    variant: BadgeVariant;
+    label: string;
+}> = {
+    pending: { variant: 'warning', label: 'Pending' },
+    approved: { variant: 'success', label: 'Approved' },
+    rejected: { variant: 'danger', label: 'Rejected' },
+    cancelled: { variant: 'default', label: 'Cancelled' },
+};
+
+export function getCutiStatusVariant(status: string): BadgeVariant {
+    return cutiStatusBadgeConfig[status as CutiStatus]?.variant ?? 'default';
+}
+
+export function getCutiStatusLabel(status: string): string {
+    return cutiStatusBadgeConfig[status as CutiStatus]?.label ?? status;
 }
