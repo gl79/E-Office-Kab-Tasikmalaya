@@ -75,14 +75,14 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
 
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className="bg-surface overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex items-center gap-4 mb-6">
                             <Link href={route('persuratan.surat-keluar.index')}>
                                 <Button variant="secondary" size="sm">
                                     <ArrowLeft className="h-4 w-4" />
                                 </Button>
                             </Link>
-                            <h1 className="text-2xl font-semibold text-gray-900">
+                            <h1 className="text-2xl font-semibold text-text-primary">
                                 Tambah Surat Keluar
                             </h1>
                         </div>

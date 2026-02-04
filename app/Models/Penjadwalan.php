@@ -12,10 +12,33 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property string|null $surat_masuk_id
+ * @property string|null $nama_kegiatan
+ * @property string|null $lokasi_type
+ * @property string|null $kode_wilayah
+ * @property string|null $tempat
+ * @property string|null $status
+ * @property string|null $status_disposisi
+ * @property string|null $dihadiri_oleh
+ * @property string|null $keterangan
+ * @property string|null $waktu_mulai
+ * @property string|null $waktu_selesai
+ * @property bool $sampai_selesai
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property string|null $deleted_by
  * @property Carbon|null $tanggal_agenda
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ *
+ * @property-read string $waktu_lengkap
+ * @property-read string $tanggal_format_indonesia
+ * @property-read string $tanggal_formatted
+ * @property-read string $status_label
+ * @property-read string $status_disposisi_label
+ * @property-read string $lokasi_type_label
+ * @property-read string $hari
  */
 class Penjadwalan extends Model
 {

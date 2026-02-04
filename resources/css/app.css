@@ -116,3 +116,72 @@
 #nprogress .spinner {
     display: none !important;
 }
+
+/* ================================================
+   FULLCALENDAR EVENT COLORS
+   Using design tokens for consistency
+   ================================================ */
+.fc-event.event-bupati {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+}
+
+.fc-event.event-wakil_bupati {
+    background-color: var(--color-secondary) !important;
+    border-color: var(--color-secondary) !important;
+}
+
+.fc-event.event-diwakilkan {
+    background-color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+}
+
+.fc-event.event-menunggu {
+    background-color: var(--color-border-dark) !important;
+    border-color: var(--color-border-dark) !important;
+}
+
+/* ================================================
+   NAVIGATION LOADING INDICATOR
+   Shows a subtle progress bar at top during page navigation
+   ================================================ */
+@keyframes navLoadingProgress {
+    0% {
+        transform: translateX(-100%);
+    }
+    50% {
+        transform: translateX(0%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+body.navigation-loading::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--color-primary),
+        var(--color-primary),
+        transparent
+    );
+    z-index: 9999;
+    animation: navLoadingProgress 1s ease-in-out infinite;
+}
+
+/* Subtle opacity reduction on main content during navigation */
+body.navigation-loading main {
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+}
+
+body:not(.navigation-loading) main {
+    opacity: 1;
+    transition: opacity 0.15s ease;
+}

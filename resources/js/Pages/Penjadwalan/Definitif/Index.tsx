@@ -1,75 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { EventInput } from '@fullcalendar/core';
-import {
-    Calendar,
-    Search,
-    ChevronLeft,
-    ChevronRight,
-    Trash2,
-    Clock,
-    MapPin,
-    User,
-    FileText,
-    X,
-    Filter
-} from 'lucide-react';
+import { Search, Trash2, X, Filter } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
-import Button from '@/Components/ui/Button';
-import Modal from '@/Components/ui/Modal';
-import Badge from '@/Components/ui/Badge';
-import ConfirmDialog from '@/Components/ui/ConfirmDialog';
-import TextInput from '@/Components/form/TextInput';
-import FormSelect from '@/Components/form/FormSelect';
+import { Button, Modal, Badge, ConfirmDialog } from '@/Components/ui';
+import { TextInput, FormSelect } from '@/Components/form';
+import { useMemoryCache } from '@/hooks/useMemoryCache';
+import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
 import type { PageProps } from '@/types';
-
-interface SuratMasuk {
-    id: string;
-    nomor_surat: string;
-    tanggal_surat_formatted: string;
-    asal_surat: string;
-    perihal: string;
-    file_url: string | null;
-}
-
-interface Agenda {
-    id: string;
-    surat_masuk: SuratMasuk;
-    nama_kegiatan: string;
-    tanggal_agenda: string;
-    tanggal_agenda_formatted: string;
-    tanggal_format_indonesia: string;
-    hari: string;
-    waktu_mulai: string;
-    waktu_selesai: string | null;
-    waktu_lengkap: string;
-    lokasi_type: string;
-    lokasi_type_label: string;
-    tempat: string;
-    status: string;
-    status_label: string;
-    status_disposisi: string;
-    status_disposisi_label: string;
-    dihadiri_oleh: string | null;
-    keterangan: string | null;
-}
-
-interface CalendarEvent {
-    id: string;
-    title: string;
-    start: string;
-    end?: string;
-    allDay: boolean;
-    backgroundColor: string;
-    borderColor: string;
-    extendedProps: {
-        agenda: Agenda;
-    };
-}
+import type { Agenda, CalendarEvent } from '@/types/penjadwalan';
 
 interface Props extends PageProps {
     disposisiOptions: Record<string, string>;
@@ -79,10 +22,17 @@ interface Props extends PageProps {
     };
 }
 
+const CACHE_TTL_MS = 60_000;
+
 const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
+    const { auth } = usePage<PageProps>().props;
+    const cacheKey = `penjadwalan_definitif_${auth.user.id}`;
+    const { read, write } = useMemoryCache<CalendarEvent[]>(cacheKey, CACHE_TTL_MS);
+    const cachedEvents = read();
+
     // State
-    const [events, setEvents] = useState<CalendarEvent[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [events, setEvents] = useState<CalendarEvent[]>(() => cachedEvents ?? []);
+    const [isLoading, setIsLoading] = useState(events.length === 0);
     const [search, setSearch] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status_disposisi || '');
     const [showFilters, setShowFilters] = useState(false);
@@ -93,12 +43,13 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    // Calendar ref
-    const [calendarRef, setCalendarRef] = useState<FullCalendar | null>(null);
 
     // Fetch events
     const fetchEvents = useCallback(async (start?: string, end?: string) => {
-        setIsLoading(true);
+        const shouldShowLoading = events.length === 0;
+        if (shouldShowLoading) {
+            setIsLoading(true);
+        }
         try {
             const params = new URLSearchParams();
             if (start) params.append('start', start);
@@ -109,12 +60,13 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
             const response = await fetch(`${route('penjadwalan.definitif.calendar-data')}?${params.toString()}`);
             const data = await response.json();
             setEvents(data);
+            write(data);
         } catch (error) {
             console.error('Failed to fetch calendar events:', error);
         } finally {
             setIsLoading(false);
         }
-    }, [search, statusFilter]);
+    }, [search, statusFilter, events.length, cacheKey]);
 
     // Initial load
     useEffect(() => {
@@ -155,44 +107,23 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
         fetchEvents();
     };
 
-    // Handle filter clear
+    // Handle filter clear - useEffect will trigger refetch when both are empty
     const handleClearFilter = () => {
         setSearch('');
         setStatusFilter('');
-        // Trigger fetch immediately with empty filters
-        setTimeout(() => {
-             // We need to bypass the state update delay by passing empty values directly if we could, 
-             // but fetchEvents uses state. A simplified way is to let the effect handle it 
-             // or call a separate load function. 
-             // For now, relies on dependency array or re-render.
-             // Actually fetchEvents depends on search/statusFilter state.
-        }, 0);
     };
-    
-    // Effect to refetch when filters are cleared and match empty
+
+    // Refetch when filters are cleared
     useEffect(() => {
         if (search === '' && statusFilter === '') {
             fetchEvents();
         }
     }, [search, statusFilter, fetchEvents]);
 
-
-    // Get disposisi badge
-    const getDisposisiBadge = (status: string) => {
-        const variants: Record<string, 'default' | 'warning' | 'success' | 'info'> = {
-            menunggu: 'warning',
-            bupati: 'info',
-            wakil_bupati: 'success',
-            diwakilkan: 'success',
-        };
-        const labels: Record<string, string> = {
-            menunggu: 'Menunggu',
-            bupati: 'Bupati',
-            wakil_bupati: 'Wakil Bupati',
-            diwakilkan: 'Diwakilkan',
-        };
-        return <Badge variant={variants[status] || 'default'}>{labels[status] || status}</Badge>;
-    };
+    // Get disposisi badge using shared utility
+    const renderDisposisiBadge = (status: string) => (
+        <Badge variant={getDisposisiVariant(status)}>{getDisposisiLabel(status)}</Badge>
+    );
 
     const disposisiSelectOptions = [
         { value: '', label: 'Semua Status' },
@@ -218,19 +149,19 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
                          {/* Legend */}
                         <div className="flex flex-wrap gap-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-primary"></div>
                                 <span className="text-sm text-text-secondary">Bupati</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-secondary"></div>
                                 <span className="text-sm text-text-secondary">Wakil Bupati</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-warning"></div>
                                 <span className="text-sm text-text-secondary">Diwakilkan</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-gray-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-border-dark"></div>
                                 <span className="text-sm text-text-secondary">Lainnya</span>
                             </div>
                         </div>
@@ -244,7 +175,7 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
                                 <Filter className="h-4 w-4" />
                                 Filter
                                 {(search || statusFilter) && (
-                                    <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-white">
+                                    <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-text-inverse">
                                         {(search ? 1 : 0) + (statusFilter ? 1 : 0)}
                                     </span>
                                 )}
@@ -286,14 +217,13 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
                 <div className="p-4">
                     {/* Loading Overlay */}
                     {isLoading && (
-                        <div className="absolute inset-0 bg-white/75 flex items-center justify-center z-10 rounded-lg">
+                        <div className="absolute inset-0 bg-surface/75 flex items-center justify-center z-10 rounded-lg">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                         </div>
                     )}
 
                     <div className="relative">
                         <FullCalendar
-                            ref={(el) => setCalendarRef(el)}
                             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                             initialView="dayGridMonth"
                             headerToolbar={{
@@ -397,7 +327,7 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-text-secondary">Disposisi:</span>
-                                        {getDisposisiBadge(selectedAgenda.status_disposisi)}
+                                        {renderDisposisiBadge(selectedAgenda.status_disposisi)}
                                     </div>
                                     {selectedAgenda.dihadiri_oleh && (
                                         <p className="text-sm text-text-primary">

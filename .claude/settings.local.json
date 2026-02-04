@@ -6,7 +6,11 @@
       "Bash(php artisan:*)",
       "Bash(npx tsc:*)",
       "Read(//c/Users/Gery Liam/Downloads/**)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(cat:*)"
     ]
   }
 }

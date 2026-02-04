@@ -1,82 +1,26 @@
-import { useState, useMemo } from 'react';
-import { Head, router, useForm } from '@inertiajs/react';
-import {
-    Calendar,
-    Search,
-    MoreVertical,
-    Pencil,
-    Trash2,
-    CheckCircle,
-    MessageCircle,
-    Copy,
-    Clock,
-    MapPin,
-    User,
-    FileText
-} from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Search, Copy } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
-import Button from '@/Components/ui/Button';
-import Dropdown from '@/Components/ui/Dropdown';
-import Modal from '@/Components/ui/Modal';
-import Pagination from '@/Components/ui/Pagination';
-import Badge from '@/Components/ui/Badge';
-import ConfirmDialog from '@/Components/ui/ConfirmDialog';
-import TextInput from '@/Components/form/TextInput';
-import InputLabel from '@/Components/form/InputLabel';
-import InputError from '@/Components/form/InputError';
-import FormSelect from '@/Components/form/FormSelect';
-import FormTextarea from '@/Components/form/FormTextarea';
+import { Button, Modal, Pagination, Badge, ConfirmDialog } from '@/Components/ui';
+import { TextInput } from '@/Components/form';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
+import { useDeferredDataMutable } from '@/hooks'; // Ensure index export exists or use explicit path
+import TentatifTabNav from './Components/TentatifTabNav';
+import TentatifTable from './Components/TentatifTable';
+import TentatifEditModal from './Components/TentatifEditModal';
+import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
 import type { PageProps } from '@/types';
-
-interface SuratMasuk {
-    id: string;
-    nomor_agenda: string;
-    nomor_surat: string;
-    tanggal_surat: string;
-    tanggal_surat_formatted: string;
-    asal_surat: string;
-    perihal: string;
-    file_url: string | null;
-}
-
-interface Agenda {
-    id: string;
-    surat_masuk: SuratMasuk;
-    nama_kegiatan: string;
-    tanggal_agenda: string;
-    tanggal_agenda_formatted: string;
-    tanggal_format_indonesia: string;
-    hari: string;
-    waktu_mulai: string;
-    waktu_selesai: string | null;
-    waktu_lengkap: string;
-    lokasi_type: string;
-    lokasi_type_label: string;
-    tempat: string;
-    status: string;
-    status_label: string;
-    status_disposisi: string;
-    status_disposisi_label: string;
-    dihadiri_oleh: string | null;
-    keterangan: string | null;
-    can_edit_kehadiran: boolean;
-    created_by: {
-        id: number;
-        name: string;
-    } | null;
-    [key: string]: unknown;
-}
+import type { Agenda } from '@/types/penjadwalan';
 
 interface Props extends PageProps {
-    menungguPeninjauan: { data: Agenda[] };
-    sudahDitinjau: { data: Agenda[] };
+    menungguPeninjauan?: { data: Agenda[] };
+    sudahDitinjau?: { data: Agenda[] };
     disposisiOptions: Record<string, string>;
     filters: {
         search?: string;
     };
 }
-
-type TabType = 'menunggu' | 'sudah';
 
 const TentatifIndex = ({
     menungguPeninjauan,
@@ -84,8 +28,28 @@ const TentatifIndex = ({
     disposisiOptions,
     filters,
 }: Props) => {
+    const { auth } = usePage<PageProps>().props;
+
+    // Cache keys
+    const menungguCacheKey = `penjadwalan_tentatif_menunggu_${auth.user.id}`;
+    const sudahCacheKey = `penjadwalan_tentatif_sudah_${auth.user.id}`;
+
+    // Deferred Data
+    const {
+        data: menungguDataRaw,
+        isLoading: isMenungguLoading
+    } = useDeferredDataMutable<{ data: Agenda[] }>(menungguCacheKey, menungguPeninjauan);
+
+    const {
+        data: sudahDataRaw,
+        isLoading: isSudahLoading
+    } = useDeferredDataMutable<{ data: Agenda[] }>(sudahCacheKey, sudahDitinjau);
+
+    const menungguData = menungguDataRaw?.data || [];
+    const sudahData = sudahDataRaw?.data || [];
+
     // Tab state
-    const [activeTab, setActiveTab] = useState<TabType>('menunggu');
+    const [activeTab, setActiveTab] = useState<'menunggu' | 'sudah'>('menunggu');
 
     // Search state
     const [search, setSearch] = useState(filters.search || '');
@@ -110,63 +74,50 @@ const TentatifIndex = ({
     const [isUpdatingDefinitif, setIsUpdatingDefinitif] = useState(false);
 
     // Form for editing kehadiran
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const form = useForm({
         dihadiri_oleh: '',
         status_disposisi: 'menunggu',
         keterangan: '',
     });
 
-    // Extract data arrays
-    const menungguData = menungguPeninjauan?.data || [];
-    const sudahData = sudahDitinjau?.data || [];
+    const currentData = activeTab === 'menunggu' ? menungguData : sudahData;
+    const isLoading = activeTab === 'menunggu' ? isMenungguLoading : isSudahLoading;
 
     // Filter data client-side
-    const filteredMenunggu = useMemo(() => {
-        if (!search) return menungguData;
+    const filteredData = useMemo(() => {
+        if (!search) return currentData;
         const lowerSearch = search.toLowerCase();
-        return menungguData.filter((item) =>
-            item.nama_kegiatan?.toLowerCase().includes(lowerSearch) ||
-            item.surat_masuk?.nomor_surat?.toLowerCase().includes(lowerSearch) ||
-            item.surat_masuk?.asal_surat?.toLowerCase().includes(lowerSearch) ||
-            item.tempat?.toLowerCase().includes(lowerSearch)
-        );
-    }, [menungguData, search]);
-
-    const filteredSudah = useMemo(() => {
-        if (!search) return sudahData;
-        const lowerSearch = search.toLowerCase();
-        return sudahData.filter((item) =>
+        return currentData.filter((item) =>
             item.nama_kegiatan?.toLowerCase().includes(lowerSearch) ||
             item.surat_masuk?.nomor_surat?.toLowerCase().includes(lowerSearch) ||
             item.surat_masuk?.asal_surat?.toLowerCase().includes(lowerSearch) ||
             item.tempat?.toLowerCase().includes(lowerSearch) ||
-            item.dihadiri_oleh?.toLowerCase().includes(lowerSearch)
+            (activeTab === 'sudah' && item.dihadiri_oleh?.toLowerCase().includes(lowerSearch))
         );
-    }, [sudahData, search]);
-
-    const currentData = activeTab === 'menunggu' ? filteredMenunggu : filteredSudah;
+    }, [currentData, search, activeTab]);
 
     // Pagination
     const paginatedData = useMemo(() => {
         const start = (currentPage - 1) * itemsPerPage;
-        return currentData.slice(start, start + itemsPerPage);
-    }, [currentData, currentPage]);
+        return filteredData.slice(start, start + itemsPerPage);
+    }, [filteredData, currentPage]);
 
-    const totalPages = Math.ceil(currentData.length / itemsPerPage);
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
         setCurrentPage(1);
     };
 
-    const handleTabChange = (tab: TabType) => {
+    const handleTabChange = (tab: 'menunggu' | 'sudah') => {
         setActiveTab(tab);
+        setSearch('');
         setCurrentPage(1);
     };
 
     const handleEditKehadiran = (agenda: Agenda) => {
         setSelectedAgenda(agenda);
-        setData({
+        form.setData({
             dihadiri_oleh: agenda.dihadiri_oleh || '',
             status_disposisi: agenda.status_disposisi || 'menunggu',
             keterangan: agenda.keterangan || '',
@@ -178,10 +129,10 @@ const TentatifIndex = ({
         e.preventDefault();
         if (!selectedAgenda) return;
 
-        put(route('penjadwalan.tentatif.update-kehadiran', selectedAgenda.id), {
+        form.put(route('penjadwalan.tentatif.update-kehadiran', selectedAgenda.id), {
             onSuccess: () => {
                 setShowEditModal(false);
-                reset();
+                form.reset();
             },
         });
     };
@@ -240,31 +191,22 @@ const TentatifIndex = ({
         });
     };
 
-    const handleViewDetail = (agenda: Agenda) => {
-        setSelectedAgenda(agenda);
-        setShowDetailModal(true);
-    };
+    const renderDisposisiBadge = (status: string) => (
+        <Badge variant={getDisposisiVariant(status)}>{getDisposisiLabel(status)}</Badge>
+    );
 
-    const getDisposisiBadge = (status: string) => {
-        const variants: Record<string, 'default' | 'warning' | 'success' | 'info'> = {
-            menunggu: 'warning',
-            bupati: 'info',
-            wakil_bupati: 'success',
-            diwakilkan: 'success',
-        };
-        const labels: Record<string, string> = {
-            menunggu: 'Menunggu',
-            bupati: 'Bupati',
-            wakil_bupati: 'Wakil Bupati',
-            diwakilkan: 'Diwakilkan',
-        };
-        return <Badge variant={variants[status] || 'default'}>{labels[status] || status}</Badge>;
-    };
+    const disposisiSelectOptions = useMemo(() => {
+        if (!disposisiOptions) return [];
+        return Object.entries(disposisiOptions).map(([value, label]) => ({
+            value,
+            label,
+        }));
+    }, [disposisiOptions]);
 
-    const disposisiSelectOptions = Object.entries(disposisiOptions).map(([value, label]) => ({
-        value,
-        label,
-    }));
+    const formWithSubmit = {
+        ...form,
+        submitHandler: handleSubmitKehadiran
+    };
 
     return (
         <>
@@ -277,36 +219,12 @@ const TentatifIndex = ({
 
             <div className="bg-surface rounded-lg border border-border-default">
                 {/* Tabs */}
-                <div className="border-b border-border-default">
-                    <nav className="flex -mb-px">
-                        <button
-                            onClick={() => handleTabChange('menunggu')}
-                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                                activeTab === 'menunggu'
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-dark'
-                            }`}
-                        >
-                            Menunggu Peninjauan
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700">
-                                {menungguData.length}
-                            </span>
-                        </button>
-                        <button
-                            onClick={() => handleTabChange('sudah')}
-                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                                activeTab === 'sudah'
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-dark'
-                            }`}
-                        >
-                            Sudah Ditinjau
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-success-subtle text-success">
-                                {sudahData.length}
-                            </span>
-                        </button>
-                    </nav>
-                </div>
+                <TentatifTabNav
+                    activeTab={activeTab}
+                    onTabChange={handleTabChange}
+                    countMenunggu={menungguData.length}
+                    countSudah={sudahData.length}
+                />
 
                 {/* Toolbar */}
                 <div className="p-4 border-b border-border-default">
@@ -325,253 +243,59 @@ const TentatifIndex = ({
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-border-default">
-                        <thead className="bg-surface-hover">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tanggal/Waktu</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Kegiatan</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Surat Undangan</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Disposisi</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-48">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-surface divide-y divide-border-default">
-                            {paginatedData.map((item, index) => (
-                                <tr key={item.id} className="hover:bg-surface-hover">
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {(currentPage - 1) * itemsPerPage + index + 1}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="font-medium text-text-primary text-sm">{item.hari}</div>
-                                        <div className="text-sm text-text-secondary">{item.tanggal_agenda_formatted}</div>
-                                        <div className="text-xs text-text-secondary flex items-center gap-1 mt-1">
-                                            <Clock className="h-3 w-3" />
-                                            {item.waktu_lengkap}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm">
-                                        <div className="font-medium text-text-primary line-clamp-2">{item.nama_kegiatan}</div>
-                                        <div className="text-xs text-text-secondary flex items-center gap-1 mt-1">
-                                            <MapPin className="h-3 w-3" />
-                                            <span className="line-clamp-1">{item.tempat}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm">
-                                        <div className="font-medium text-text-primary">{item.surat_masuk?.nomor_surat || '-'}</div>
-                                        <div className="text-text-secondary line-clamp-1">{item.surat_masuk?.asal_surat || '-'}</div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm">
-                                        <div className="flex flex-col gap-1 items-start">
-                                            {getDisposisiBadge(item.status_disposisi)}
-                                            {item.dihadiri_oleh && (
-                                                <div className="text-xs text-text-secondary flex items-center gap-1">
-                                                    <User className="h-3 w-3" />
-                                                    {item.dihadiri_oleh}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center justify-end gap-2">
-                                            {/* Atur Kehadiran button - shown for Menunggu Peninjauan tab */}
-                                            {activeTab === 'menunggu' && item.can_edit_kehadiran && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="secondary"
-                                                    onClick={() => handleEditKehadiran(item)}
-                                                >
-                                                    <Pencil className="h-4 w-4 mr-1" />
-                                                    Atur Kehadiran
-                                                </Button>
-                                            )}
-                                            
-                                            {/* Jadikan Definitif button - shown for Sudah Ditinjau tab */}
-                                            {activeTab === 'sudah' && item.status_disposisi !== 'menunggu' && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="success"
-                                                    onClick={() => {
-                                                        setSelectedAgenda(item);
-                                                        setDefinitifModalOpen(true);
-                                                    }}
-                                                >
-                                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                                    Definitif
-                                                </Button>
-                                            )}
-                                            
-                                            {/* Dropdown for other actions */}
-                                            <Dropdown
-                                                align="right"
-                                                width="48"
-                                                trigger={
-                                                    <button className="p-1 hover:bg-surface-active rounded-full transition-colors text-text-secondary">
-                                                        <MoreVertical className="h-5 w-5" />
-                                                    </button>
-                                                }
-                                            >
-                                                <div className="py-1">
-                                                    <Dropdown.Link
-                                                        as="button"
-                                                        onClick={() => handleViewDetail(item)}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <FileText className="h-4 w-4" />
-                                                        <span>Lihat Detail</span>
-                                                    </Dropdown.Link>
-
-                                                    <Dropdown.Link
-                                                        as="button"
-                                                        onClick={() => handleExportWhatsApp(item)}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <MessageCircle className="h-4 w-4" />
-                                                        <span>Export WhatsApp</span>
-                                                    </Dropdown.Link>
-
-                                                    <div className="border-t border-border-default my-1"></div>
-
-                                                    <Dropdown.Link
-                                                        as="button"
-                                                        onClick={() => {
-                                                            setSelectedAgenda(item);
-                                                            setDeleteModalOpen(true);
-                                                        }}
-                                                        className="flex items-center gap-2 text-danger hover:bg-danger-subtle focus:bg-danger-subtle"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                        <span>Hapus</span>
-                                                    </Dropdown.Link>
-                                                </div>
-                                            </Dropdown>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {paginatedData.length === 0 && (
-                                <tr>
-                                    <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
-                                        {activeTab === 'menunggu' 
-                                            ? (search ? 'Tidak ada data yang cocok.' : 'Tidak ada jadwal yang menunggu peninjauan.')
-                                            : (search ? 'Tidak ada data yang cocok.' : 'Tidak ada jadwal yang sudah ditinjau.')
-                                        }
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                {isLoading ? (
+                    <div className="p-4">
+                        <TableShimmer columns={6} />
+                    </div>
+                ) : (
+                    <TentatifTable
+                        data={paginatedData}
+                        activeTab={activeTab}
+                        onEditKehadiran={handleEditKehadiran}
+                        onJadikanDefinitif={(agenda) => {
+                            setSelectedAgenda(agenda);
+                            setDefinitifModalOpen(true);
+                        }}
+                        onViewDetail={(agenda) => {
+                            setSelectedAgenda(agenda);
+                            setShowDetailModal(true);
+                        }}
+                        onExportWhatsApp={handleExportWhatsApp}
+                        onDelete={(agenda) => {
+                            setSelectedAgenda(agenda);
+                            setDeleteModalOpen(true);
+                        }}
+                        currentPage={currentPage}
+                        itemsPerPage={itemsPerPage}
+                        search={search}
+                    />
+                )}
 
                 {/* Pagination */}
-                <div className="p-4 border-t border-border-default">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p className="text-sm text-text-secondary">
-                            Menampilkan {paginatedData.length} dari {currentData.length} data
-                        </p>
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={setCurrentPage}
-                        />
+                {!isLoading && (
+                    <div className="p-4 border-t border-border-default">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <p className="text-sm text-text-secondary">
+                                Menampilkan {paginatedData.length} dari {filteredData.length} data
+                            </p>
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* Edit Kehadiran Modal */}
-            <Modal
+            <TentatifEditModal
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
-                title="Edit Kehadiran"
-                size="md"
-            >
-                {selectedAgenda && (
-                    <form onSubmit={handleSubmitKehadiran}>
-                        {/* Informasi Jadwal */}
-                        <div className="mb-6 p-4 bg-surface-hover rounded-lg border border-border-default">
-                            <h4 className="text-sm font-medium text-text-primary mb-3">Informasi Jadwal</h4>
-                            <div className="space-y-2 text-sm">
-                                <div>
-                                    <span className="text-text-secondary">Kegiatan:</span>
-                                    <span className="ml-2 font-medium text-text-primary">{selectedAgenda.nama_kegiatan}</span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <div>
-                                        <span className="text-text-secondary">Tanggal:</span>
-                                        <span className="ml-2 font-medium text-text-primary">{selectedAgenda.tanggal_format_indonesia}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-text-secondary">Waktu:</span>
-                                        <span className="ml-2 font-medium text-text-primary">{selectedAgenda.waktu_lengkap}</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <span className="text-text-secondary">Tempat:</span>
-                                    <span className="ml-2 font-medium text-text-primary">{selectedAgenda.tempat}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Form Fields */}
-                        <div className="space-y-4">
-                            {/* Status Disposisi */}
-                            <div>
-                                <InputLabel htmlFor="status_disposisi" value="Status Disposisi *" />
-                                <FormSelect
-                                    id="status_disposisi"
-                                    options={disposisiSelectOptions}
-                                    value={data.status_disposisi}
-                                    onChange={(e) => setData('status_disposisi', e.target.value)}
-                                    className="w-full mt-1"
-                                />
-                                <InputError message={errors.status_disposisi} className="mt-1" />
-                            </div>
-
-                            {/* Dihadiri Oleh */}
-                            <div>
-                                <InputLabel htmlFor="dihadiri_oleh" value="Dihadiri Oleh" />
-                                <TextInput
-                                    id="dihadiri_oleh"
-                                    value={data.dihadiri_oleh}
-                                    onChange={(e) => setData('dihadiri_oleh', e.target.value)}
-                                    className="w-full mt-1"
-                                    placeholder="Nama yang menghadiri"
-                                />
-                                <InputError message={errors.dihadiri_oleh} className="mt-1" />
-                            </div>
-
-                            {/* Keterangan */}
-                            <div>
-                                <InputLabel htmlFor="keterangan" value="Keterangan" />
-                                <FormTextarea
-                                    id="keterangan"
-                                    value={data.keterangan}
-                                    onChange={(e) => setData('keterangan', e.target.value)}
-                                    className="w-full mt-1"
-                                    rows={3}
-                                    placeholder="Keterangan tambahan (opsional)"
-                                />
-                                <InputError message={errors.keterangan} className="mt-1" />
-                            </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-border-default">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={() => setShowEditModal(false)}
-                            >
-                                Batal
-                            </Button>
-                            <Button type="submit" disabled={processing}>
-                                {processing ? 'Menyimpan...' : 'Simpan'}
-                            </Button>
-                        </div>
-                    </form>
-                )}
-            </Modal>
+                selectedAgenda={selectedAgenda}
+                form={formWithSubmit}
+                disposisiSelectOptions={disposisiSelectOptions}
+            />
 
             {/* WhatsApp Export Modal */}
             <Modal
@@ -682,7 +406,7 @@ const TentatifIndex = ({
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-text-secondary">Disposisi:</span>
-                                        {getDisposisiBadge(selectedAgenda.status_disposisi)}
+                                        {renderDisposisiBadge(selectedAgenda.status_disposisi)}
                                     </div>
                                     {selectedAgenda.dihadiri_oleh && (
                                         <p className="text-sm text-text-primary">

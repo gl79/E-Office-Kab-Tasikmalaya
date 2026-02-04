@@ -23,13 +23,13 @@ class DashboardController extends Controller
      */
     public function index(): Response
     {
-        // Cache dashboard stats for 5 minutes to reduce database queries
-        $stats = Cache::remember('dashboard_stats', 300, function () {
-            return $this->calculateStats();
-        });
-
         return Inertia::render('Dashboard', [
-            'stats' => $stats,
+            'stats' => Inertia::defer(function () {
+                // Cache dashboard stats for 5 minutes to reduce database queries
+                return Cache::remember('dashboard_stats', 60, function () {
+                    return $this->calculateStats();
+                });
+            }),
         ]);
     }
 

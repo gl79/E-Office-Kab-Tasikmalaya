@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Master\Wilayah;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\Wilayah\KecamatanRequest;
 use App\Models\WilayahKecamatan;
+use App\Support\CacheHelper;
+use App\Support\WilayahHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -36,14 +38,14 @@ class KecamatanController extends Controller
             $query->where('kabupaten_kode', $request->kabupaten_kode);
         }
 
-        $data = $query->withCount('desa')
-            ->orderBy('provinsi_kode')
-            ->orderBy('kabupaten_kode')
-            ->orderBy('kode')
-            ->get();
-
         return Inertia::render('Master/Wilayah/Kecamatan/Index', [
-            'kecamatan' => $data,
+            'kecamatan' => Inertia::defer(fn() => CacheHelper::tags(['wilayah'])->remember('kecamatan_list_' . request('provinsi_kode', 'all') . '_' . request('kabupaten_kode', 'all'), 60, function () use ($query) {
+                return $query->withCount('desa')
+                    ->orderBy('provinsi_kode')
+                    ->orderBy('kabupaten_kode')
+                    ->orderBy('kode')
+                    ->get();
+            })),
             'filters' => $request->only(['search', 'provinsi_kode', 'kabupaten_kode']),
         ]);
     }
@@ -56,6 +58,10 @@ class KecamatanController extends Controller
         $this->authorize('create', WilayahKecamatan::class);
 
         WilayahKecamatan::create($request->validated());
+
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Kecamatan berhasil ditambahkan.');
     }
@@ -73,6 +79,10 @@ class KecamatanController extends Controller
 
         $kecamatan->update($request->validated());
 
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
+
         return redirect()->back()->with('success', 'Kecamatan berhasil diperbarui.');
     }
 
@@ -89,7 +99,9 @@ class KecamatanController extends Controller
 
         $kecamatan->delete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Kecamatan berhasil dihapus.');
     }
@@ -129,7 +141,9 @@ class KecamatanController extends Controller
 
         $kecamatan->restore();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Kecamatan berhasil dipulihkan.');
     }
@@ -154,8 +168,11 @@ class KecamatanController extends Controller
 
         $kecamatan->forceDelete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Kecamatan berhasil dihapus permanen.');
     }
 }
+

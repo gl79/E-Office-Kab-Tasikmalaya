@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import axios from 'axios';
@@ -10,6 +11,7 @@ import Pagination from '@/Components/ui/Pagination';
 import TextInput from '@/Components/form/TextInput';
 import InputLabel from '@/Components/form/InputLabel';
 import type { PageProps } from '@/types';
+import { useDeferredDataMutable } from '@/hooks';
 
 interface WilayahProvinsi {
     kode: string;
@@ -34,11 +36,10 @@ interface WilayahKecamatan {
         };
     };
     desa_count?: number;
-    [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    kecamatan: WilayahKecamatan[];
+    kecamatan?: WilayahKecamatan[];
     filters: {
         search?: string;
         provinsi_kode?: string;
@@ -46,7 +47,15 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ auth, kecamatan, filters }: Props) {
+const CACHE_TTL_MS = 60_000;
+
+export default function Index({ auth, kecamatan: initialKecamatan, filters }: Props) {
+    const { data: kecamatan, isLoading, hasCached } = useDeferredDataMutable<WilayahKecamatan[]>(
+        `master_wilayah_kecamatan_${auth.user.id}`,
+        initialKecamatan,
+        CACHE_TTL_MS
+    );
+
     const [provinsiKode, setProvinsiKode] = useState(filters.provinsi_kode || '');
     const [kabupatenKode, setKabupatenKode] = useState(filters.kabupaten_kode || '');
     const [search, setSearch] = useState(filters.search || '');
@@ -55,6 +64,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
 
     // Client-side filtering
     const filteredData = useMemo(() => {
+        if (!kecamatan) return [];
         let data = kecamatan;
 
         if (provinsiKode) {
@@ -268,7 +278,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                             </div>
                             <div className="w-full sm:w-1/4">
                                 <select
-                                    className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    className="w-full h-10 border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
                                     value={provinsiKode}
                                     onChange={(e) => setProvinsiKode(e.target.value)}
                                 >
@@ -282,7 +292,7 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                             </div>
                             <div className="w-full sm:w-1/4">
                                 <select
-                                    className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    className="w-full h-10 border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
                                     value={kabupatenKode}
                                     onChange={(e) => setKabupatenKode(e.target.value)}
                                     disabled={!provinsiKode}
@@ -305,12 +315,21 @@ export default function Index({ auth, kecamatan, filters }: Props) {
                     </div>
                 </div>
 
-                <Table<WilayahKecamatan>
-                    headers={tableHeaders}
-                    data={paginatedData}
-                    keyExtractor={(item) => `${item.provinsi_kode}-${item.kabupaten_kode}-${item.kode}`}
-                    emptyMessage="Tidak ada data kecamatan."
-                />
+
+
+                {/* Table */}
+                {isLoading && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={5} />
+                    </div>
+                ) : (
+                    <Table<WilayahKecamatan>
+                        headers={tableHeaders}
+                        data={paginatedData}
+                        keyExtractor={(item) => `${item.provinsi_kode}-${item.kabupaten_kode}-${item.kode}`}
+                        emptyMessage="Tidak ada data kecamatan."
+                    />
+                )}
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-border-default">

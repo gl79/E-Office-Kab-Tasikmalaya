@@ -44,10 +44,10 @@ export function ToastProvider({ children }: ToastProviderProps) {
     };
 
     const typeStyles: Record<ToastType, string> = {
-        success: 'bg-secondary text-white',
-        error: 'bg-danger text-white',
-        info: 'bg-primary text-white',
-        warning: 'bg-accent text-white',
+        success: 'bg-secondary text-text-inverse',
+        error: 'bg-danger text-text-inverse',
+        info: 'bg-primary text-text-inverse',
+        warning: 'bg-accent text-text-inverse',
     };
 
     const typeIcons: Record<ToastType, JSX.Element> = {

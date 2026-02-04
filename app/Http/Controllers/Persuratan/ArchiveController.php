@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Persuratan;
 use App\Http\Controllers\Controller;
 use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
+use App\Support\CacheHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -18,35 +18,40 @@ class ArchiveController extends Controller
      */
     public function index(Request $request)
     {
-        // Get all trashed surat masuk for client-side filtering
-        $suratMasuk = SuratMasuk::onlyTrashed()
-            ->with(['deletedBy'])
-            ->latest('deleted_at')
-            ->get()
-            ->map(function ($item) {
-                $item->jenis = 'Surat Masuk';
-                $item->type = 'masuk';
-                return $item;
-            });
+        $this->authorize('viewAny', SuratMasuk::class);
+        $this->authorize('viewAny', SuratKeluar::class);
 
-        // Get all trashed surat keluar for client-side filtering
-        $suratKeluar = SuratKeluar::onlyTrashed()
-            ->with(['deletedBy'])
-            ->latest('deleted_at')
-            ->get()
-            ->map(function ($item) {
-                $item->jenis = 'Surat Keluar';
-                $item->type = 'keluar';
-                $item->nomor_agenda = '-';
-                $item->asal_surat = $item->kepada;
-                return $item;
-            });
-
-        // Merge and sort by deleted_at
-        $archives = $suratMasuk->merge($suratKeluar)->sortByDesc('deleted_at')->values();
+        $cacheKey = 'persuratan_archive_index_' . md5(json_encode($request->query()));
 
         return Inertia::render('Persuratan/Archive/Index', [
-            'archives' => $archives,
+            'archives' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_archive'])->remember($cacheKey, 60, function () {
+                // Get all trashed surat masuk for client-side filtering
+                $suratMasuk = SuratMasuk::onlyTrashed()
+                    ->with(['deletedBy'])
+                    ->latest('deleted_at')
+                    ->get()
+                    ->map(function ($item) {
+                        $item->jenis = 'Surat Masuk';
+                        $item->type = 'masuk';
+                        return $item;
+                    });
+
+                // Get all trashed surat keluar for client-side filtering
+                $suratKeluar = SuratKeluar::onlyTrashed()
+                    ->with(['deletedBy'])
+                    ->latest('deleted_at')
+                    ->get()
+                    ->map(function ($item) {
+                        $item->jenis = 'Surat Keluar';
+                        $item->type = 'keluar';
+                        $item->nomor_agenda = '-';
+                        $item->asal_surat = $item->kepada;
+                        return $item;
+                    });
+
+                // Merge and sort by deleted_at
+                return $suratMasuk->merge($suratKeluar)->sortByDesc('deleted_at')->values();
+            })),
         ]);
     }
 
@@ -69,7 +74,7 @@ class ArchiveController extends Controller
             return redirect()->back()->with('error', 'Tipe surat tidak valid.');
         }
 
-        Cache::tags(['persuratan_archive'])->flush();
+        CacheHelper::flush(['persuratan_archive']);
 
         return redirect()->back()->with('success', $message);
     }
@@ -105,7 +110,7 @@ class ArchiveController extends Controller
             return redirect()->back()->with('error', 'Tipe surat tidak valid.');
         }
 
-        Cache::tags(['persuratan_archive'])->flush();
+        CacheHelper::flush(['persuratan_archive']);
 
         return redirect()->back()->with('success', $message);
     }
@@ -127,7 +132,7 @@ class ArchiveController extends Controller
             SuratKeluar::onlyTrashed()->restore();
 
             DB::commit();
-            Cache::tags(['persuratan_archive'])->flush();
+            CacheHelper::flush(['persuratan_archive']);
 
             $total = $countMasuk + $countKeluar;
             return redirect()->back()
@@ -169,7 +174,7 @@ class ArchiveController extends Controller
             SuratKeluar::onlyTrashed()->forceDelete();
 
             DB::commit();
-            Cache::tags(['persuratan_archive'])->flush();
+            CacheHelper::flush(['persuratan_archive']);
 
             $total = $countMasuk + $countKeluar;
             return redirect()->back()
@@ -181,3 +186,4 @@ class ArchiveController extends Controller
         }
     }
 }
+

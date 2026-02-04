@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import axios from 'axios';
@@ -10,6 +11,7 @@ import Pagination from '@/Components/ui/Pagination';
 import TextInput from '@/Components/form/TextInput';
 import InputLabel from '@/Components/form/InputLabel';
 import CascadingWilayahSelect from '@/Components/form/CascadingWilayahSelect';
+import { useDeferredDataMutable } from '@/hooks';
 import type { PageProps } from '@/types';
 
 interface WilayahProvinsi {
@@ -45,11 +47,10 @@ interface WilayahDesa {
             };
         };
     };
-    [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    desa: WilayahDesa[];
+    desa?: WilayahDesa[];
     filters: {
         search?: string;
         provinsi_kode?: string;
@@ -58,7 +59,15 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ auth, desa, filters }: Props) {
+const CACHE_TTL_MS = 60_000;
+
+export default function Index({ auth, desa: initialDesa, filters }: Props) {
+    const { data: desa, isLoading, hasCached } = useDeferredDataMutable<WilayahDesa[]>(
+        `master_wilayah_desa_${auth.user.id}`,
+        initialDesa,
+        CACHE_TTL_MS
+    );
+
     const [provinsiKode, setProvinsiKode] = useState(filters.provinsi_kode || '');
     const [kabupatenKode, setKabupatenKode] = useState(filters.kabupaten_kode || '');
     const [kecamatanKode, setKecamatanKode] = useState(filters.kecamatan_kode || '');
@@ -68,6 +77,7 @@ export default function Index({ auth, desa, filters }: Props) {
 
     // Client-side filtering
     const filteredData = useMemo(() => {
+        if (!desa) return [];
         let data = desa;
 
         if (provinsiKode) {
@@ -293,7 +303,7 @@ export default function Index({ auth, desa, filters }: Props) {
                             </div>
                             <div className="w-full sm:w-1/4">
                                 <select
-                                    className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    className="w-full h-10 border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
                                     value={provinsiKode}
                                     onChange={(e) => setProvinsiKode(e.target.value)}
                                 >
@@ -307,7 +317,7 @@ export default function Index({ auth, desa, filters }: Props) {
                             </div>
                             <div className="w-full sm:w-1/4">
                                 <select
-                                    className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    className="w-full h-10 border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
                                     value={kabupatenKode}
                                     onChange={(e) => setKabupatenKode(e.target.value)}
                                     disabled={!provinsiKode}
@@ -322,7 +332,7 @@ export default function Index({ auth, desa, filters }: Props) {
                             </div>
                             <div className="w-full sm:w-1/4">
                                 <select
-                                    className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    className="w-full h-10 border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm"
                                     value={kecamatanKode}
                                     onChange={(e) => setKecamatanKode(e.target.value)}
                                     disabled={!kabupatenKode}
@@ -345,12 +355,21 @@ export default function Index({ auth, desa, filters }: Props) {
                     </div>
                 </div>
 
-                <Table<WilayahDesa>
-                    headers={tableHeaders}
-                    data={paginatedData}
-                    keyExtractor={(item) => `${item.provinsi_kode}-${item.kabupaten_kode}-${item.kecamatan_kode}-${item.kode}`}
-                    emptyMessage="Tidak ada data desa."
-                />
+
+
+                {/* Table */}
+                {isLoading && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={5} />
+                    </div>
+                ) : (
+                    <Table<WilayahDesa>
+                        headers={tableHeaders}
+                        data={paginatedData}
+                        keyExtractor={(item) => `${item.provinsi_kode}-${item.kabupaten_kode}-${item.kecamatan_kode}-${item.kode}`}
+                        emptyMessage="Tidak ada data desa."
+                    />
+                )}
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-border-default">

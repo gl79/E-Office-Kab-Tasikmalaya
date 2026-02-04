@@ -27,10 +27,10 @@ export default function FormWizard({ steps, currentStep, children }: FormWizardP
                                         w-10 h-10 rounded-full flex items-center justify-center
                                         font-semibold text-sm transition-colors
                                         ${index < currentStep
-                                            ? 'bg-green-500 text-white'
+                                            ? 'bg-success text-text-inverse'
                                             : index === currentStep
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-gray-200 text-gray-500'
+                                                ? 'bg-primary text-text-inverse'
+                                                : 'bg-border-light text-text-muted'
                                         }
                                     `}
                                 >
@@ -43,12 +43,12 @@ export default function FormWizard({ steps, currentStep, children }: FormWizardP
                                 <div className="mt-2 text-center">
                                     <p className={`
                                         text-sm font-medium
-                                        ${index === currentStep ? 'text-indigo-600' : 'text-gray-500'}
+                                        ${index === currentStep ? 'text-primary' : 'text-text-secondary'}
                                     `}>
                                         {step.title}
                                     </p>
                                     {step.description && (
-                                        <p className="text-xs text-gray-400 mt-0.5">
+                                        <p className="text-xs text-text-muted mt-0.5">
                                             {step.description}
                                         </p>
                                     )}
@@ -60,7 +60,7 @@ export default function FormWizard({ steps, currentStep, children }: FormWizardP
                                 <div
                                     className={`
                                         w-24 h-1 mx-4 rounded
-                                        ${index < currentStep ? 'bg-green-500' : 'bg-gray-200'}
+                                        ${index < currentStep ? 'bg-success' : 'bg-border-light'}
                                     `}
                                 />
                             )}

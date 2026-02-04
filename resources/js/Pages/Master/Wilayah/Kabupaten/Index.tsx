@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import axios from 'axios';
@@ -11,6 +12,7 @@ import { useToast } from '@/Components/ui/Toast';
 import TextInput from '@/Components/form/TextInput';
 import InputLabel from '@/Components/form/InputLabel';
 import type { PageProps } from '@/types';
+import { useDeferredDataMutable } from '@/hooks';
 
 interface WilayahProvinsi {
     kode: string;
@@ -23,19 +25,25 @@ interface WilayahKabupaten {
     nama: string;
     provinsi?: WilayahProvinsi;
     kecamatan_count?: number;
-    [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    kabupaten: WilayahKabupaten[];
+    kabupaten?: WilayahKabupaten[];
     filters: {
         search?: string;
         provinsi_kode?: string;
     };
 }
 
-export default function Index({ auth, kabupaten, filters }: Props) {
+const CACHE_TTL_MS = 60_000;
+
+export default function Index({ auth, kabupaten: initialKabupaten, filters }: Props) {
     const { showToast } = useToast();
+    const { data: kabupaten, isLoading, hasCached } = useDeferredDataMutable<WilayahKabupaten[]>(
+        `master_wilayah_kabupaten_${auth.user.id}`,
+        initialKabupaten,
+        CACHE_TTL_MS
+    );
 
     // Client-side Search & Pagination State
     const [search, setSearch] = useState('');
@@ -59,6 +67,7 @@ export default function Index({ auth, kabupaten, filters }: Props) {
 
     // Filter Data
     const filteredData = useMemo(() => {
+        if (!kabupaten) return [];
         let data = kabupaten;
 
         // Filter by Search
@@ -246,13 +255,21 @@ export default function Index({ auth, kabupaten, filters }: Props) {
                     </div>
                 </div>
 
+
+
                 {/* Table */}
-                <Table<WilayahKabupaten>
-                    headers={tableHeaders}
-                    data={paginatedData}
-                    keyExtractor={(item) => `${item.provinsi_kode}.${item.kode}`}
-                    emptyMessage={search || provinsiKode ? "Tidak ada kabupaten yang cocok." : "Tidak ada data kabupaten."}
-                />
+                {isLoading && !hasCached ? (
+                     <div className="p-4">
+                        <TableShimmer columns={5} />
+                    </div>
+                ) : (
+                    <Table<WilayahKabupaten>
+                        headers={tableHeaders}
+                        data={paginatedData}
+                        keyExtractor={(item) => `${item.provinsi_kode}.${item.kode}`}
+                        emptyMessage={search || provinsiKode ? "Tidak ada kabupaten yang cocok." : "Tidak ada data kabupaten."}
+                    />
+                )}
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-border-default">

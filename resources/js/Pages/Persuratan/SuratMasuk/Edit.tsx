@@ -146,7 +146,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
 
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div className="bg-surface overflow-hidden shadow-sm sm:rounded-lg p-6">
                         {/* Header */}
                         <div className="flex items-center gap-4 mb-6">
                             <Link href={route('persuratan.surat-masuk.index')}>
@@ -154,14 +154,14 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                     <ArrowLeft className="h-4 w-4" />
                                 </Button>
                             </Link>
-                            <h1 className="text-2xl font-semibold text-gray-900">
+                            <h1 className="text-2xl font-semibold text-text-primary">
                                 Edit Surat Masuk
                             </h1>
                         </div>
 
                         <form onSubmit={handleSubmit}>
                             {stepError && (
-                                <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg">
+                                <div className="mb-4 p-4 bg-danger-light border border-danger-light text-danger rounded-lg">
                                     {stepError}
                                 </div>
                             )}
@@ -360,7 +360,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     currentFile={suratMasuk.file_path}
                                                     error={errors.file}
                                                 />
-                                                <p className="text-sm text-gray-500 mt-1">
+                                                <p className="text-sm text-text-secondary mt-1">
                                                     Kosongkan jika tidak ingin mengubah file
                                                 </p>
                                             </div>

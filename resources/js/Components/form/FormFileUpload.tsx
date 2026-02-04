@@ -80,9 +80,9 @@ export default function FormFileUpload({
 
     const getFileIcon = () => {
         if (fileName?.endsWith('.pdf')) {
-            return <FileText className="w-8 h-8 text-red-500" />;
+            return <FileText className="w-8 h-8 text-danger" />;
         }
-        return <File className="w-8 h-8 text-blue-500" />;
+        return <File className="w-8 h-8 text-primary" />;
     };
 
     return (

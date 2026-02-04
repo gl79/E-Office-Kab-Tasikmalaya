@@ -25,13 +25,13 @@ export default function Footer({
     return (
         <footer 
             className={`
-                bg-white 
-                border-t border-gray-200 
+                bg-surface 
+                border-t border-border-default 
                 py-4 px-6
                 ${className}
             `.trim()}
         >
-            <div className="text-center text-sm text-gray-500">
+            <div className="text-center text-sm text-text-secondary">
                 {children ?? (
                     <>
                         &copy; {currentYear} E-Office Kabupaten Tasikmalaya. All rights reserved.

@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Penjadwalan;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Jadwal\StorePenjadwalanRequest;
 use App\Http\Requests\Jadwal\UpdatePenjadwalanRequest;
-use App\Http\Resources\PenjadwalanResource;
+use App\Http\Resources\Penjadwalan\PenjadwalanResource;
+use App\Http\Resources\Penjadwalan\SuratMasukJadwalResource;
 use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
+use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -21,69 +23,32 @@ class PenjadwalanController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Penjadwalan::class);
+
         $tab = $request->input('tab', 'belum');
-        $search = $request->input('search');
 
-        $query = SuratMasuk::query()
-            ->with(['tujuans', 'indeksBerkas']);
+        // Build query based on tab - search handled client-side for realtime filtering
+        $belumQuery = SuratMasuk::query()
+            ->with(['tujuans', 'indeksBerkas'])
+            ->belumDijadwalkan();
 
-        // Apply Tab Filter
-        if ($tab === 'sudah') {
-            $query->sudahDijadwalkan()->with('penjadwalan.creator');
-        } else {
-            $query->belumDijadwalkan();
-        }
-
-        // Apply Search
-        if ($search) {
-            $query->search($search);
-            // Also search in Agenda if tab is 'sudah'
-            if ($tab === 'sudah') {
-                $query->orWhereHas('penjadwalan', function ($q) use ($search) {
-                    $q->where('nama_kegiatan', 'like', "%{$search}%");
-                });
-            }
-        }
-
-        $suratMasuk = $query->latest('tanggal_diterima')
-            ->paginate(10)
-            ->withQueryString()
-            ->through(function ($surat) {
-                return [
-                    'id' => $surat->id,
-                    'nomor_agenda' => $surat->nomor_agenda,
-                    'nomor_surat' => $surat->nomor_surat,
-                    'tanggal_surat' => $surat->tanggal_surat?->format('Y-m-d'),
-                    'tanggal_surat_formatted' => $surat->tanggal_surat_formatted,
-                    'tanggal_diterima' => $surat->tanggal_diterima?->format('Y-m-d'),
-                    'tanggal_diterima_formatted' => $surat->tanggal_diterima_formatted,
-                    'asal_surat' => $surat->asal_surat,
-                    'perihal' => $surat->perihal,
-                    'sifat' => $surat->sifat,
-                    'sifat_label' => $surat->sifat_label,
-                    'file_path' => $surat->file_path,
-                    'file_url' => $surat->file_path ? Storage::url($surat->file_path) : null,
-                    'tujuan_list' => $surat->tujuan_list,
-                    'agenda' => $surat->penjadwalan ? [
-                        'id' => $surat->penjadwalan->id,
-                        'nama_kegiatan' => $surat->penjadwalan->nama_kegiatan,
-                        'tanggal_agenda' => $surat->penjadwalan->tanggal_agenda?->format('Y-m-d'),
-                        'tanggal_agenda_formatted' => $surat->penjadwalan->tanggal_formatted,
-                        'waktu_lengkap' => $surat->penjadwalan->waktu_lengkap,
-                        'tempat' => $surat->penjadwalan->tempat,
-                        'status' => $surat->penjadwalan->status,
-                        'status_label' => $surat->penjadwalan->status_label,
-                        'status_disposisi' => $surat->penjadwalan->status_disposisi,
-                        'status_disposisi_label' => $surat->penjadwalan->status_disposisi_label,
-                    ] : null,
-                ];
-            });
+        $sudahQuery = SuratMasuk::query()
+            ->with(['tujuans', 'indeksBerkas', 'penjadwalan.creator'])
+            ->sudahDijadwalkan();
 
         return Inertia::render('Penjadwalan/Jadwal/Index', [
-            'suratMasuk' => $suratMasuk,
+            'belumDijadwalkan' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember(
+                'jadwal_belum_dijadwalkan',
+                60,
+                fn() => SuratMasukJadwalResource::collection($belumQuery->latest('tanggal_diterima')->get())
+            )),
+            'sudahDijadwalkan' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember(
+                'jadwal_sudah_dijadwalkan',
+                60,
+                fn() => SuratMasukJadwalResource::collection($sudahQuery->latest('tanggal_diterima')->get())
+            )),
             'activeTab' => $tab,
             'lokasiTypeOptions' => Penjadwalan::LOKASI_TYPE_OPTIONS,
-            'filters' => $request->only(['search', 'tab']),
         ]);
     }
 
@@ -94,6 +59,7 @@ class PenjadwalanController extends Controller
     {
         $suratMasuk = SuratMasuk::with(['tujuans', 'indeksBerkas', 'penjadwalan'])
             ->findOrFail($id);
+        $this->authorize('view', $suratMasuk);
 
         return response()->json([
             'id' => $suratMasuk->id,
@@ -120,6 +86,8 @@ class PenjadwalanController extends Controller
      */
     public function store(StorePenjadwalanRequest $request)
     {
+        $this->authorize('create', Penjadwalan::class);
+
         DB::beginTransaction();
         try {
             $data = $request->validated();
@@ -140,6 +108,8 @@ class PenjadwalanController extends Controller
 
             DB::commit();
 
+            CacheHelper::flush(['penjadwalan']);
+
             return redirect()->route('penjadwalan.index')
                 ->with('success', 'Jadwal berhasil dibuat.');
         } catch (\Exception $e) {
@@ -157,6 +127,7 @@ class PenjadwalanController extends Controller
     {
         $penjadwalan = Penjadwalan::with(['suratMasuk', 'creator', 'updater'])
             ->findOrFail($id);
+        $this->authorize('view', $penjadwalan);
 
         return response()->json(new PenjadwalanResource($penjadwalan));
     }
@@ -167,6 +138,7 @@ class PenjadwalanController extends Controller
     public function update(UpdatePenjadwalanRequest $request, string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
+        $this->authorize('update', $penjadwalan);
 
         DB::beginTransaction();
         try {
@@ -175,6 +147,8 @@ class PenjadwalanController extends Controller
             $penjadwalan->update($data);
 
             DB::commit();
+
+            CacheHelper::flush(['penjadwalan']);
 
             return redirect()->route('penjadwalan.index')
                 ->with('success', 'Jadwal berhasil diperbarui.');
@@ -192,10 +166,14 @@ class PenjadwalanController extends Controller
     public function destroy(string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
+        $this->authorize('delete', $penjadwalan);
 
         $penjadwalan->delete();
+
+        CacheHelper::flush(['penjadwalan']);
 
         return redirect()->back()
             ->with('success', 'Jadwal berhasil dihapus.');
     }
 }
+

@@ -1,12 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Head, router, usePage, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal } from '@/Components/ui';
 import { TextInput } from '@/Components/form';
 import { User, PageProps } from '@/types';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
+import { useDeferredDataMutable } from '@/hooks';
 
 interface Props extends PageProps {
-    data: {
+    data?: {
         data: User[];
         links: any;
         from: number;
@@ -16,23 +18,32 @@ interface Props extends PageProps {
     };
 }
 
+const CACHE_TTL_MS = 60_000;
+
 export default function Archive({ data, filters }: Props) {
     const { auth } = usePage<PageProps>().props;
+    const { data: activeData, isLoading, hasCached } = useDeferredDataMutable<Props['data']>(
+        `master_pengguna_archive_${auth.user.id}`,
+        data,
+        CACHE_TTL_MS
+    );
     const [restoreItem, setRestoreItem] = useState<User | null>(null);
     const [forceDeleteItem, setForceDeleteItem] = useState<User | null>(null);
-    
+
     // Client-side search for true SPA
     const [localSearch, setLocalSearch] = useState('');
+    const dataRows = activeData?.data ?? [];
+    const links = activeData?.links ?? [];
 
     // Client-side filtered data
     const filteredData = useMemo(() => {
-        if (!localSearch) return data.data;
+        if (!localSearch) return dataRows;
         const searchLower = localSearch.toLowerCase();
-        return data.data.filter(item => 
+        return dataRows.filter(item => 
             item.name.toLowerCase().includes(searchLower) ||
             item.username.toLowerCase().includes(searchLower)
         );
-    }, [data.data, localSearch]);
+    }, [dataRows, localSearch]);
 
     const handleRestore = () => {
         if (restoreItem) {
@@ -84,71 +95,77 @@ export default function Archive({ data, filters }: Props) {
 
             {/* Table */}
             <div className="bg-surface border border-border-default rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-border-default">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Foto</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nama</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Username</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Role</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-border-default">
-                        {filteredData.map((item, index) => (
-                            <tr key={item.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-text-secondary text-sm">
-                                    {index + 1}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <img
-                                        src={item.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=6366f1&color=fff`}
-                                        alt={item.name}
-                                        className="h-10 w-10 rounded-full object-cover border border-gray-200 opacity-75"
-                                    />
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="font-medium text-text-primary">{item.name}</div>
-                                    <div className="text-xs text-text-secondary">{item.jabatan || '-'}</div>
-                                </td>
-                                <td className="px-4 py-3 text-text-primary">{item.username}</td>
-                                <td className="px-4 py-3">
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                        {item.role_label || item.role}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 text-text-secondary text-sm">
-                                    {item.deleted_at ? new Date(item.deleted_at).toLocaleDateString('id-ID') : '-'}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex gap-2">
-                                        <Button size="sm" variant="secondary" onClick={() => setRestoreItem(item)}>
-                                            Restore
-                                        </Button>
-                                        <Button size="sm" variant="danger" onClick={() => setForceDeleteItem(item)}>
-                                            Hapus Permanen
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {filteredData.length === 0 && (
+                {isLoading && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={7} />
+                    </div>
+                ) : (
+                    <table className="min-w-full divide-y divide-border-default">
+                        <thead className="bg-surface-hover">
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
-                                    {localSearch ? 'Tidak ada data yang cocok dengan filter' : 'Tidak ada data archive'}
-                                </td>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Foto</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nama</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Username</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Role</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Aksi</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-surface divide-y divide-border-default">
+                            {filteredData.map((item, index) => (
+                                <tr key={item.id} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {index + 1}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <img
+                                            src={item.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=6366f1&color=fff`}
+                                            alt={item.name}
+                                            className="h-10 w-10 rounded-full object-cover border border-border-default opacity-75"
+                                        />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="font-medium text-text-primary">{item.name}</div>
+                                        <div className="text-xs text-text-secondary">{item.jabatan || '-'}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-text-primary">{item.username}</td>
+                                    <td className="px-4 py-3">
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-hover text-text-secondary">
+                                            {item.role_label || item.role}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {item.deleted_at ? new Date(item.deleted_at).toLocaleDateString('id-ID') : '-'}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex gap-2">
+                                            <Button size="sm" variant="secondary" onClick={() => setRestoreItem(item)}>
+                                                Restore
+                                            </Button>
+                                            <Button size="sm" variant="danger" onClick={() => setForceDeleteItem(item)}>
+                                                Hapus Permanen
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {filteredData.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                                        {localSearch ? 'Tidak ada data yang cocok dengan filter' : 'Tidak ada data archive'}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {/* Pagination */}
-            {!localSearch && data.links && (
+            {!localSearch && links.length > 0 && (
                 <div className="mt-4 flex justify-center gap-1">
-                    {data.links.map((link: any, index: number) => (
+                    {links.map((link: any, index: number) => (
                         <button
                             key={index}
                             type="button"
@@ -156,8 +173,8 @@ export default function Archive({ data, filters }: Props) {
                             onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
                             className={`px-3 py-1.5 text-sm rounded-lg border ${
                                 link.active 
-                                    ? 'bg-primary text-white border-primary' 
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                    ? 'bg-primary text-text-inverse border-primary' 
+                                    : 'bg-surface text-text-secondary border-border-default hover:bg-surface-hover'
                             } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
                             dangerouslySetInnerHTML={{ __html: link.label }}
                         />
@@ -195,7 +212,7 @@ export default function Archive({ data, filters }: Props) {
             >
                 <p className="text-text-secondary">
                     Apakah Anda yakin ingin menghapus permanen pengguna <strong>{forceDeleteItem?.name}</strong>?
-                    <span className="block mt-2 text-red-600 font-medium">Tindakan ini tidak dapat dibatalkan!</span>
+                    <span className="block mt-2 text-danger font-medium">Tindakan ini tidak dapat dibatalkan!</span>
                 </p>
                 <div className="mt-6 flex justify-end gap-3">
                     <Button variant="secondary" onClick={() => setForceDeleteItem(null)}>

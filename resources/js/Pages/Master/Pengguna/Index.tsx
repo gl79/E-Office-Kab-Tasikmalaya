@@ -1,19 +1,15 @@
-import { useState, useRef, FormEvent, useMemo, useCallback } from 'react';
+import { useState, useRef, FormEvent, useMemo, useCallback, useEffect } from 'react';
 import { Head, router, useForm, usePage, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination } from '@/Components/ui';
 import { InputLabel, TextInput, InputError } from '@/Components/form';
 import { User, PageProps } from '@/types';
 import { Search, Pencil, Trash2 } from 'lucide-react';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
+import { useDeferredDataMutable } from '@/hooks';
 
 interface Props extends PageProps {
-    data: {
-        data: User[];
-        links: any;
-        current_page: number;
-        last_page: number;
-        from: number;
-    };
+    data?: User[];
     filters: {
         search?: string;
         role?: string;
@@ -37,8 +33,15 @@ const MODULE_ORDER = [
     'penjadwalan.definitif',
 ];
 
+const CACHE_TTL_MS = 60_000;
+
 const Index = ({ data, filters, roles, modules }: Props) => {
     const { auth } = usePage<PageProps>().props;
+    const { data: users, isLoading, hasCached } = useDeferredDataMutable<User[]>(
+        `master_pengguna_${auth.user.id}`,
+        data,
+        CACHE_TTL_MS
+    );
     const [showModal, setShowModal] = useState(false);
     const [editItem, setEditItem] = useState<User | null>(null);
     const [deleteItem, setDeleteItem] = useState<User | null>(null);
@@ -53,7 +56,8 @@ const Index = ({ data, filters, roles, modules }: Props) => {
 
     // Client-side filtered data
     const filteredData = useMemo(() => {
-        let result = data.data;
+        if (!users) return [];
+        let result = users;
 
         // Filter by search
         if (search) {
@@ -72,7 +76,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
         }
 
         return result;
-    }, [data.data, search, roleFilter]);
+    }, [users, search, roleFilter]);
 
     // Client-side pagination
     const paginatedData = useMemo(() => {
@@ -267,6 +271,11 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                 </div>
 
                 {/* Table */}
+                {isLoading && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={7} />
+                    </div>
+                ) : (
                 <table className="min-w-full divide-y divide-border-default">
                     <thead className="bg-surface-hover">
                         <tr>
@@ -326,6 +335,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                         )}
                     </tbody>
                 </table>
+                )}
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-border-default">

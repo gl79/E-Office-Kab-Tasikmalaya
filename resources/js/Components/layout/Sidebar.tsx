@@ -67,7 +67,7 @@ export default function Sidebar({
             {/* Mobile Backdrop */}
             {isOpen && (
                 <div 
-                    className="fixed inset-0 bg-gray-900/50 z-40 lg:hidden"
+                    className="fixed inset-0 bg-text-primary/50 z-40 lg:hidden"
                     onClick={onClose}
                     aria-hidden="true"
                 />

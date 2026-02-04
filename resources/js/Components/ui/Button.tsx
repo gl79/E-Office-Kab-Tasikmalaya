@@ -38,7 +38,7 @@ export default function Button({
     const variantStyles: Record<ButtonVariant, string> = {
         primary: `
             bg-gradient-to-br from-primary to-primary-dark
-            text-white
+            text-text-inverse
             shadow-md shadow-primary/20
             hover:shadow-lg hover:shadow-primary/30 hover:to-primary
             active:opacity-90 active:scale-[0.98]
@@ -53,7 +53,7 @@ export default function Button({
         `,
         danger: `
             bg-gradient-to-br from-danger to-danger-dark
-            text-white
+            text-text-inverse
             shadow-md shadow-danger/20
             hover:shadow-lg hover:shadow-danger/30 hover:to-danger
             active:opacity-90 active:scale-[0.98]
@@ -61,7 +61,7 @@ export default function Button({
         `,
         success: `
             bg-gradient-to-br from-success to-success-dark
-            text-white
+            text-text-inverse
             shadow-md shadow-success/20
             hover:shadow-lg hover:shadow-success/30 hover:to-success
             active:opacity-90 active:scale-[0.98]

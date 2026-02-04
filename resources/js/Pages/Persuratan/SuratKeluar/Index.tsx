@@ -1,13 +1,16 @@
-import { useState, useMemo } from 'react';
-import { Head, router, Link } from '@inertiajs/react';
+import { useState, useMemo, useEffect } from 'react';
+import { Head, router, Link, usePage } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search, Eye, Printer, Filter, MoreVertical } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { TextInput } from '@/Components/form';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import { PageProps } from '@/types';
+import { useMemoryCache } from '@/hooks/useMemoryCache';
+import { formatDateShort } from '@/utils';
 
 interface SuratKeluar {
     id: string;
@@ -24,17 +27,32 @@ interface SuratKeluar {
     indeks?: { kode: string; nama: string } | null;
     kode_klasifikasi?: { kode: string; nama: string } | null;
     unit_kerja?: { nama: string; singkatan: string } | null;
-    [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    suratKeluar: SuratKeluar[];
+    suratKeluar?: SuratKeluar[];
     sifat1Options: Record<string, string>;
 }
 
+const CACHE_TTL_MS = 60_000;
+
 const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
+    const { auth } = usePage<PageProps>().props;
+    const cacheKey = `persuratan_surat_keluar_${auth.user.id}`;
+    const { read, write } = useMemoryCache<SuratKeluar[]>(cacheKey, CACHE_TTL_MS);
+    const cachedSuratKeluar = read();
+    const hasCached = cachedSuratKeluar !== null;
+
     // Local state for real-time updates
-    const [suratKeluar, setSuratKeluar] = useState(initialSuratKeluar);
+    const [suratKeluar, setSuratKeluar] = useState<SuratKeluar[]>(() => initialSuratKeluar ?? cachedSuratKeluar ?? []);
+
+    // Sync state when prop updates (deferred loading)
+    useEffect(() => {
+        if (initialSuratKeluar !== undefined) {
+            setSuratKeluar(initialSuratKeluar);
+            write(initialSuratKeluar);
+        }
+    }, [initialSuratKeluar, write]);
 
     // Client-side Search & Pagination
     const [search, setSearch] = useState('');
@@ -53,6 +71,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
 
     // Filter data client-side
     const filteredData = useMemo(() => {
+        if (!suratKeluar) return [];
         let data = suratKeluar;
 
         // Search filter
@@ -104,22 +123,17 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
             preserveScroll: true,
             onSuccess: () => {
                 // Remove item from local state for real-time update
-                setSuratKeluar(prev => prev.filter(item => item.id !== itemToDelete.id));
+                setSuratKeluar(prev => {
+                    const next = prev.filter(item => item.id !== itemToDelete.id);
+                    write(next);
+                    return next;
+                });
             },
             onFinish: () => {
                 setIsDeleting(false);
                 setDeleteModalOpen(false);
                 setSelectedSurat(null);
             },
-        });
-    };
-
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
         });
     };
 
@@ -194,6 +208,11 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                 </div>
 
                 {/* Table */}
+                {!initialSuratKeluar && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={7} />
+                    </div>
+                ) : (
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-border-default">
                         <thead className="bg-surface-hover">
@@ -217,7 +236,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                         {item.no_urut}
                                     </td>
                                     <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {formatDate(item.tanggal_surat)}
+                                        {formatDateShort(item.tanggal_surat)}
                                     </td>
                                     <td className="px-4 py-3 text-text-primary text-sm">
                                         {item.nomor_surat}
@@ -235,7 +254,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                             align="right"
                                             width="48"
                                             trigger={
-                                                <button className="p-1 hover:bg-surface-active rounded-full transition-colors text-text-secondary">
+                                                <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
                                                     <MoreVertical className="h-5 w-5" />
                                                 </button>
                                             }
@@ -278,7 +297,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                                         setSelectedSurat(item);
                                                         setDeleteModalOpen(true);
                                                     }}
-                                                    className="flex items-center gap-2 text-danger hover:bg-danger-subtle focus:bg-danger-subtle"
+                                                    className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                     <span>Hapus</span>
@@ -298,8 +317,10 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                         </tbody>
                     </table>
                 </div>
+                )}
 
                 {/* Pagination */}
+                {(initialSuratKeluar || hasCached) && (
                 <div className="p-4 border-t border-border-default">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <p className="text-sm text-text-secondary">
@@ -312,6 +333,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                         />
                     </div>
                 </div>
+                )}
             </div>
 
             <ConfirmDialog
@@ -344,7 +366,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">Tanggal Surat</p>
-                                <p className="font-medium text-text-primary">{formatDate(detailSurat.tanggal_surat)}</p>
+                                <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_surat)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">No Urut/Agenda</p>

@@ -9,7 +9,7 @@ interface DropdownProps {
     contentClasses?: string;
 }
 
-const Dropdown = ({ trigger, children, align = 'right', width = '48', contentClasses = 'py-1 bg-white' }: DropdownProps) => {
+const Dropdown = ({ trigger, children, align = 'right', width = '48', contentClasses = 'py-1 bg-surface' }: DropdownProps) => {
     const [open, setOpen] = useState(false);
     const [openUpward, setOpenUpward] = useState(false);
     const triggerRef = useRef<HTMLDivElement>(null);
@@ -71,7 +71,7 @@ const Dropdown = ({ trigger, children, align = 'right', width = '48', contentCla
                     ref={dropdownRef}
                     className={`absolute z-50 ${positionClasses} rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
                 >
-                    <div className={`rounded-md ring-1 ring-black ring-opacity-5 ${contentClasses}`}>
+                    <div className={`rounded-md ring-1 ring-border-dark/30 ${contentClasses}`}>
                         {children}
                     </div>
                 </div>
@@ -89,7 +89,7 @@ interface DropdownLinkProps {
 }
 
 const DropdownLink = ({ href, children, onClick, as = 'a', className = '' }: DropdownLinkProps) => {
-    const baseClasses = `block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out ${className}`;
+    const baseClasses = `block w-full px-4 py-2 text-left text-sm leading-5 text-text-primary hover:bg-surface-hover focus:outline-none focus:bg-surface-hover transition duration-150 ease-in-out ${className}`;
 
     if (as === 'button') {
         return (

@@ -7,8 +7,8 @@ use App\Http\Requests\Persuratan\SuratKeluarRequest;
 use App\Models\IndeksSurat;
 use App\Models\SuratKeluar;
 use App\Models\UnitKerja;
+use App\Support\CacheHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -22,14 +22,13 @@ class SuratKeluarController extends Controller
     {
         $this->authorize('viewAny', SuratKeluar::class);
 
-        // Load all data for client-side filtering
-        $suratKeluar = SuratKeluar::query()
-            ->with(['indeks', 'kodeKlasifikasi', 'unitKerja'])
-            ->latest('tanggal_surat')
-            ->get();
-
         return Inertia::render('Persuratan/SuratKeluar/Index', [
-            'suratKeluar' => $suratKeluar,
+            'suratKeluar' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_keluar_list', 60, function () {
+                return SuratKeluar::query()
+                    ->with(['indeks', 'kodeKlasifikasi', 'unitKerja'])
+                    ->latest('tanggal_surat')
+                    ->get();
+            })),
             'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
         ]);
     }
@@ -68,6 +67,8 @@ class SuratKeluarController extends Controller
 
             // Create surat keluar
             SuratKeluar::create($data);
+
+            CacheHelper::flush(['persuratan_list']);
 
             DB::commit();
 
@@ -144,6 +145,8 @@ class SuratKeluarController extends Controller
             // Update surat keluar
             $suratKeluar->update($data);
 
+            CacheHelper::flush(['persuratan_list']);
+
             DB::commit();
 
             return redirect()->route('persuratan.surat-keluar.index')
@@ -166,7 +169,8 @@ class SuratKeluarController extends Controller
 
         $suratKeluar->delete();
 
-        Cache::tags(['persuratan_archive'])->flush();
+        CacheHelper::flush(['persuratan_archive']);
+        CacheHelper::flush(['persuratan_list']);
 
         return redirect()->back()->with('success', 'Surat Keluar berhasil dihapus.');
     }
@@ -181,7 +185,8 @@ class SuratKeluarController extends Controller
 
         $suratKeluar->restore();
 
-        Cache::tags(['persuratan_archive'])->flush();
+        CacheHelper::flush(['persuratan_archive']);
+        CacheHelper::flush(['persuratan_list']);
 
         return redirect()->back()->with('success', 'Surat Keluar berhasil dipulihkan.');
     }
@@ -201,7 +206,8 @@ class SuratKeluarController extends Controller
 
         $suratKeluar->forceDelete();
 
-        Cache::tags(['persuratan_archive'])->flush();
+        CacheHelper::flush(['persuratan_archive']);
+        CacheHelper::flush(['persuratan_list']);
 
         return redirect()->back()->with('success', 'Surat Keluar berhasil dihapus permanen.');
     }
@@ -236,9 +242,10 @@ class SuratKeluarController extends Controller
             return redirect()->back()->with('error', 'File surat tidak ditemukan.');
         }
 
-        return Storage::disk('public')->download(
-            $suratKeluar->file_path,
+        return response()->download(
+            storage_path('app/public/' . $suratKeluar->file_path),
             'Surat_Keluar_' . $suratKeluar->nomor_surat . '.' . pathinfo($suratKeluar->file_path, PATHINFO_EXTENSION)
         );
     }
 }
+

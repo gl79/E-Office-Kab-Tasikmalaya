@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Penjadwalan;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Jadwal\UpdateKehadiranRequest;
-use App\Http\Resources\PenjadwalanResource;
+use App\Http\Resources\Penjadwalan\PenjadwalanResource;
 use App\Models\Penjadwalan;
+use App\Support\CacheHelper;
+use App\Support\WilayahHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -18,25 +20,29 @@ class PenjadwalanTentatifController extends Controller
      */
     public function index(Request $request)
     {
-        // Penjadwalan yang menunggu peninjauan (status_disposisi = 'menunggu')
-        $menungguPeninjauan = Penjadwalan::query()
-            ->menungguPeninjauan()
-            ->with(['suratMasuk', 'creator'])
-            ->search($request->input('search'))
-            ->latest('tanggal_agenda')
-            ->get();
+        $this->authorize('viewAny', Penjadwalan::class);
 
-        // Penjadwalan yang sudah ditinjau (status_disposisi IN ['bupati', 'wakil_bupati', 'diwakilkan'])
-        $sudahDitinjau = Penjadwalan::query()
-            ->sudahDitinjau()
-            ->with(['suratMasuk', 'creator'])
-            ->search($request->input('search'))
-            ->latest('tanggal_agenda')
-            ->get();
+        $search = $request->input('search');
 
         return Inertia::render('Penjadwalan/Tentatif/Index', [
-            'menungguPeninjauan' => PenjadwalanResource::collection($menungguPeninjauan),
-            'sudahDitinjau' => PenjadwalanResource::collection($sudahDitinjau),
+            'menungguPeninjauan' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember("tentatif_menunggu_{$search}", 60, function () use ($search) {
+                $query = Penjadwalan::query()
+                    ->menungguPeninjauan()
+                    ->with(['suratMasuk', 'creator'])
+                    ->search($search)
+                    ->latest('tanggal_agenda')
+                    ->get();
+                return PenjadwalanResource::collection($query);
+            })),
+            'sudahDitinjau' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember("tentatif_sudah_{$search}", 60, function () use ($search) {
+                $query = Penjadwalan::query()
+                    ->sudahDitinjau()
+                    ->with(['suratMasuk', 'creator'])
+                    ->search($search)
+                    ->latest('tanggal_agenda')
+                    ->get();
+                return PenjadwalanResource::collection($query);
+            })),
             'disposisiOptions' => Penjadwalan::DISPOSISI_OPTIONS,
             'filters' => $request->only(['search']),
         ]);
@@ -48,6 +54,7 @@ class PenjadwalanTentatifController extends Controller
     public function updateKehadiran(UpdateKehadiranRequest $request, string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
+        $this->authorize('update', $penjadwalan);
 
         DB::beginTransaction();
         try {
@@ -60,6 +67,8 @@ class PenjadwalanTentatifController extends Controller
             ]);
 
             DB::commit();
+
+            CacheHelper::flush(['penjadwalan']);
 
             return redirect()->back()
                 ->with('success', 'Kehadiran berhasil diperbarui.');
@@ -76,6 +85,7 @@ class PenjadwalanTentatifController extends Controller
     public function jadikanDefinitif(string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
+        $this->authorize('update', $penjadwalan);
 
         // Validasi: hanya penjadwalan yang sudah ditinjau yang bisa jadi definitif
         if ($penjadwalan->status_disposisi === Penjadwalan::DISPOSISI_MENUNGGU) {
@@ -90,6 +100,8 @@ class PenjadwalanTentatifController extends Controller
             ]);
 
             DB::commit();
+
+            CacheHelper::flush(['penjadwalan']);
 
             return redirect()->back()
                 ->with('success', 'Jadwal berhasil dijadikan definitif.');
@@ -106,6 +118,7 @@ class PenjadwalanTentatifController extends Controller
     public function exportWhatsApp(string $id)
     {
         $penjadwalan = Penjadwalan::with(['suratMasuk'])->findOrFail($id);
+        $this->authorize('view', $penjadwalan);
 
         $template = $this->generateWhatsAppTemplate($penjadwalan);
 
@@ -125,17 +138,17 @@ class PenjadwalanTentatifController extends Controller
         $kegiatan = $penjadwalan->nama_kegiatan;
         $tempat = $penjadwalan->tempat;
 
-        // Build wilayah info if dalam daerah
+        // Build wilayah info if dalam daerah (using cached helper to avoid N+1)
         $wilayahInfo = '';
         if ($penjadwalan->lokasi_type === Penjadwalan::LOKASI_DALAM_DAERAH && $penjadwalan->kode_wilayah) {
-            $wilayahInfo = $this->getWilayahText($penjadwalan->kode_wilayah);
+            $wilayahInfo = WilayahHelper::getWilayahText($penjadwalan->kode_wilayah);
         }
 
         $kehadiran = $penjadwalan->dihadiri_oleh ?: 'Menunggu Konfirmasi';
         $statusDisposisi = $penjadwalan->status_disposisi_label;
         $keterangan = $penjadwalan->keterangan;
 
-        $template = "📅 RENCANA KEGIATAN BUPATI\n\n";
+        $template = "RENCANA KEGIATAN BUPATI\n\n";
         $template .= "Hari/Tanggal : {$hari}, {$tanggal}\n";
         $template .= "Waktu        : {$waktu} WIB\n";
         $template .= "Kegiatan     : {$kegiatan}\n";
@@ -160,54 +173,19 @@ class PenjadwalanTentatifController extends Controller
     }
 
     /**
-     * Get wilayah text from kode_wilayah
-     * Format: xx.xx.xx.xxxx (provinsi.kabupaten.kecamatan.desa)
-     */
-    private function getWilayahText(string $kodeWilayah): string
-    {
-        // Parse kode wilayah
-        $parts = explode('.', $kodeWilayah);
-
-        if (count($parts) < 4) {
-            return '';
-        }
-
-        $provinsiKode = $parts[0];
-        $kabupatenKode = $parts[1];
-        $kecamatanKode = $parts[2];
-        $desaKode = $parts[3];
-
-        // Get names from database
-        $provinsi = \App\Models\WilayahProvinsi::where('kode', $provinsiKode)->first();
-        $kabupaten = \App\Models\WilayahKabupaten::where('provinsi_kode', $provinsiKode)
-            ->where('kode', $kabupatenKode)->first();
-        $kecamatan = \App\Models\WilayahKecamatan::where('provinsi_kode', $provinsiKode)
-            ->where('kabupaten_kode', $kabupatenKode)
-            ->where('kode', $kecamatanKode)->first();
-        $desa = \App\Models\WilayahDesa::where('provinsi_kode', $provinsiKode)
-            ->where('kabupaten_kode', $kabupatenKode)
-            ->where('kecamatan_kode', $kecamatanKode)
-            ->where('kode', $desaKode)->first();
-
-        $names = [];
-        if ($desa) $names[] = $desa->nama;
-        if ($kecamatan) $names[] = 'Kec. ' . $kecamatan->nama;
-        if ($kabupaten) $names[] = $kabupaten->nama;
-        if ($provinsi) $names[] = $provinsi->nama;
-
-        return implode(', ', $names);
-    }
-
-    /**
      * Delete penjadwalan (soft delete)
      */
     public function destroy(string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
+        $this->authorize('delete', $penjadwalan);
 
         $penjadwalan->delete();
+
+        CacheHelper::flush(['penjadwalan']);
 
         return redirect()->back()
             ->with('success', 'Jadwal berhasil dihapus.');
     }
 }
+

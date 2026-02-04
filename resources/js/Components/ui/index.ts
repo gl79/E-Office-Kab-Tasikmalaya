@@ -6,3 +6,6 @@ export { ToastProvider, useToast } from './Toast';
 export { default as Dropdown } from './Dropdown';
 export { default as LiveClock } from './LiveClock';
 export { default as Breadcrumb } from './Breadcrumb';
+export { default as Badge } from './Badge';
+export { default as TabNavigation } from './TabNavigation';
+export { default as ConfirmDialog } from './ConfirmDialog';

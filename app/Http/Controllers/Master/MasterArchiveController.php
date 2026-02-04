@@ -9,6 +9,7 @@ use App\Models\WilayahDesa;
 use App\Models\WilayahKabupaten;
 use App\Models\WilayahKecamatan;
 use App\Models\WilayahProvinsi;
+use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -30,100 +31,98 @@ class MasterArchiveController extends Controller
 
         $cacheKey = 'master_archive_index_' . md5($search . '_' . $page);
 
-        $archives = Cache::tags(['master_archive'])->remember($cacheKey, 300, function () use ($search) {
-            // Query for Unit Kerja
-            $unitKerja = DB::table('unit_kerja')
-                ->select(
-                    'id',
-                    'nama',
-                    'deleted_at',
-                    DB::raw("'Unit Kerja' as type"),
-                    DB::raw("'unit-kerja' as resource_name")
-                )
-                ->whereNotNull('deleted_at');
-
-            // Query for Indeks Surat
-            $indeksSurat = DB::table('indeks_surat')
-                ->select(
-                    'id',
-                    'nama',
-                    'deleted_at',
-                    DB::raw("'Indeks Surat' as type"),
-                    DB::raw("'indeks-surat' as resource_name")
-                )
-                ->whereNotNull('deleted_at');
-
-            // Query for Wilayah Provinsi
-            $provinsi = DB::table('wilayah_provinsi')
-                ->select(
-                    'kode as id',
-                    'nama',
-                    'deleted_at',
-                    DB::raw("'Provinsi' as type"),
-                    DB::raw("'wilayah.provinsi' as resource_name")
-                )
-                ->whereNotNull('deleted_at');
-
-            // Query for Wilayah Kabupaten
-            $kabupaten = DB::table('wilayah_kabupaten')
-                ->select(
-                    DB::raw("CONCAT(provinsi_kode, '.', kode) as id"),
-                    'nama',
-                    'deleted_at',
-                    DB::raw("'Kabupaten' as type"),
-                    DB::raw("'wilayah.kabupaten' as resource_name")
-                )
-                ->whereNotNull('deleted_at');
-
-            // Query for Wilayah Kecamatan
-            $kecamatan = DB::table('wilayah_kecamatan')
-                ->select(
-                    DB::raw("CONCAT(provinsi_kode, '.', kabupaten_kode, '.', kode) as id"),
-                    'nama',
-                    'deleted_at',
-                    DB::raw("'Kecamatan' as type"),
-                    DB::raw("'wilayah.kecamatan' as resource_name")
-                )
-                ->whereNotNull('deleted_at');
-
-            // Query for Wilayah Desa
-            $desa = DB::table('wilayah_desa')
-                ->select(
-                    DB::raw("CONCAT(provinsi_kode, '.', kabupaten_kode, '.', kecamatan_kode, '.', kode) as id"),
-                    'nama',
-                    'deleted_at',
-                    DB::raw("'Desa' as type"),
-                    DB::raw("'wilayah.desa' as resource_name")
-                )
-                ->whereNotNull('deleted_at');
-
-            // Combine queries
-            $query = $unitKerja
-                ->union($indeksSurat)
-                ->union($provinsi)
-                ->union($kabupaten)
-                ->union($kecamatan)
-                ->union($desa);
-
-            // Apply search if exists
-            if ($search) {
-                // Search logic for combined query
-                $query = DB::table(DB::raw("({$query->toSql()}) as combined_table"))
-                    ->mergeBindings($query) // Add bindings from subqueries
-                    ->where(function ($q) use ($search) {
-                        $q->whereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $search . '%'])
-                            ->orWhereRaw('LOWER(type) LIKE LOWER(?)', ['%' . $search . '%']);
-                    });
-            }
-
-            // Order and Paginate
-            return $query->orderBy('deleted_at', 'desc')
-                ->paginate(10)
-                ->withQueryString();
-        });
-
         return Inertia::render('Master/Archive/Index', [
-            'archives' => $archives,
+            'archives' => Inertia::defer(fn() => CacheHelper::tags(['master_archive'])->remember($cacheKey, 60, function () use ($search) {
+                // Query for Unit Kerja
+                $unitKerja = DB::table('unit_kerja')
+                    ->select(
+                        'id',
+                        'nama',
+                        'deleted_at',
+                        DB::raw("'Unit Kerja' as type"),
+                        DB::raw("'unit-kerja' as resource_name")
+                    )
+                    ->whereNotNull('deleted_at');
+
+                // Query for Indeks Surat
+                $indeksSurat = DB::table('indeks_surat')
+                    ->select(
+                        'id',
+                        'nama',
+                        'deleted_at',
+                        DB::raw("'Indeks Surat' as type"),
+                        DB::raw("'indeks-surat' as resource_name")
+                    )
+                    ->whereNotNull('deleted_at');
+
+                // Query for Wilayah Provinsi
+                $provinsi = DB::table('wilayah_provinsi')
+                    ->select(
+                        'kode as id',
+                        'nama',
+                        'deleted_at',
+                        DB::raw("'Provinsi' as type"),
+                        DB::raw("'wilayah.provinsi' as resource_name")
+                    )
+                    ->whereNotNull('deleted_at');
+
+                // Query for Wilayah Kabupaten
+                $kabupaten = DB::table('wilayah_kabupaten')
+                    ->select(
+                        DB::raw("CONCAT(provinsi_kode, '.', kode) as id"),
+                        'nama',
+                        'deleted_at',
+                        DB::raw("'Kabupaten' as type"),
+                        DB::raw("'wilayah.kabupaten' as resource_name")
+                    )
+                    ->whereNotNull('deleted_at');
+
+                // Query for Wilayah Kecamatan
+                $kecamatan = DB::table('wilayah_kecamatan')
+                    ->select(
+                        DB::raw("CONCAT(provinsi_kode, '.', kabupaten_kode, '.', kode) as id"),
+                        'nama',
+                        'deleted_at',
+                        DB::raw("'Kecamatan' as type"),
+                        DB::raw("'wilayah.kecamatan' as resource_name")
+                    )
+                    ->whereNotNull('deleted_at');
+
+                // Query for Wilayah Desa
+                $desa = DB::table('wilayah_desa')
+                    ->select(
+                        DB::raw("CONCAT(provinsi_kode, '.', kabupaten_kode, '.', kecamatan_kode, '.', kode) as id"),
+                        'nama',
+                        'deleted_at',
+                        DB::raw("'Desa' as type"),
+                        DB::raw("'wilayah.desa' as resource_name")
+                    )
+                    ->whereNotNull('deleted_at');
+
+                // Combine queries
+                $query = $unitKerja
+                    ->union($indeksSurat)
+                    ->union($provinsi)
+                    ->union($kabupaten)
+                    ->union($kecamatan)
+                    ->union($desa);
+
+                // Apply search if exists
+                if ($search) {
+                    // Search logic for combined query
+                    $query = DB::table(DB::raw("({$query->toSql()}) as combined_table"))
+                        ->mergeBindings($query) // Add bindings from subqueries
+                        ->where(function ($q) use ($search) {
+                            $q->whereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $search . '%'])
+                                ->orWhereRaw('LOWER(type) LIKE LOWER(?)', ['%' . $search . '%']);
+                        });
+                }
+
+                // Order and Paginate
+                return $query->orderBy('deleted_at', 'desc')
+                    ->paginate(10)
+                    ->withQueryString();
+            })),
             'filters' => $request->only(['search']),
         ]);
     }
@@ -157,7 +156,7 @@ class MasterArchiveController extends Controller
             WilayahDesa::onlyTrashed()->restore();
 
             DB::commit();
-            Cache::tags(['master_archive'])->flush();
+            CacheHelper::flush(['master_archive']);
 
             $total = array_sum($counts);
             return redirect()->back()
@@ -195,7 +194,7 @@ class MasterArchiveController extends Controller
             UnitKerja::onlyTrashed()->forceDelete();
 
             DB::commit();
-            Cache::tags(['master_archive'])->flush();
+            CacheHelper::flush(['master_archive']);
 
             $total = array_sum($counts);
             return redirect()->back()
@@ -207,3 +206,4 @@ class MasterArchiveController extends Controller
         }
     }
 }
+

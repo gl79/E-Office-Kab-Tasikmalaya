@@ -1,11 +1,12 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination } from '@/Components/ui';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { useToast } from '@/Components/ui/Toast';
 import { TextInput, InputLabel } from '@/Components/form';
-import { useCRUDModal } from '@/hooks/useCRUDModal';
+import { useCRUDModal, useDeferredDataMutable } from '@/hooks';
 import type { PageProps } from '@/types';
 
 interface UnitKerja {
@@ -14,18 +15,24 @@ interface UnitKerja {
     singkatan: string;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    unitKerja: UnitKerja[];
+    unitKerja?: UnitKerja[];
     filters: {
         search?: string;
     };
 }
 
-const Index = ({ auth, unitKerja, filters }: Props) => {
+const CACHE_TTL_MS = 60_000;
+
+const Index = ({ auth, unitKerja: initialUnitKerja, filters }: Props) => {
     const { showToast } = useToast();
+    const { data: unitKerja, isLoading, hasCached } = useDeferredDataMutable<UnitKerja[]>(
+        `master_unit_kerja_${auth.user.id}`,
+        initialUnitKerja,
+        CACHE_TTL_MS
+    );
 
     // Client-side Search & Pagination State
     const [search, setSearch] = useState('');
@@ -34,6 +41,7 @@ const Index = ({ auth, unitKerja, filters }: Props) => {
 
     // Filter Data
     const filteredData = useMemo(() => {
+        if (!unitKerja) return [];
         let data = unitKerja;
         if (search) {
             const lowerSearch = search.toLowerCase();
@@ -165,6 +173,11 @@ const Index = ({ auth, unitKerja, filters }: Props) => {
                 </div>
 
                 {/* Table */}
+                {isLoading && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={4} />
+                    </div>
+                ) : (
                 <table className="min-w-full divide-y divide-border-default">
                     <thead className="bg-surface-hover">
                         <tr>
@@ -217,6 +230,7 @@ const Index = ({ auth, unitKerja, filters }: Props) => {
                         )}
                     </tbody>
                 </table>
+                )}
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-border-default">
@@ -245,7 +259,7 @@ const Index = ({ auth, unitKerja, filters }: Props) => {
                             placeholder="Contoh: Dinas Pekerjaan Umum"
                             className="w-full"
                         />
-                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                        {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
                     <div className="space-y-2">
                         <InputLabel htmlFor="singkatan" value="Singkatan" />
@@ -256,7 +270,7 @@ const Index = ({ auth, unitKerja, filters }: Props) => {
                             placeholder="Contoh: DPU"
                             className="w-full"
                         />
-                        {errors.singkatan && <p className="text-sm text-red-500">{errors.singkatan}</p>}
+                        {errors.singkatan && <p className="text-sm text-danger">{errors.singkatan}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={closeCreateModal}>Batal</Button>
@@ -276,7 +290,7 @@ const Index = ({ auth, unitKerja, filters }: Props) => {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
                             className="w-full"
                         />
-                        {errors.nama && <p className="text-sm text-red-500">{errors.nama}</p>}
+                        {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
                     <div className="space-y-2">
                         <InputLabel htmlFor="edit-singkatan" value="Singkatan" />
@@ -286,7 +300,7 @@ const Index = ({ auth, unitKerja, filters }: Props) => {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('singkatan', e.target.value)}
                             className="w-full"
                         />
-                        {errors.singkatan && <p className="text-sm text-red-500">{errors.singkatan}</p>}
+                        {errors.singkatan && <p className="text-sm text-danger">{errors.singkatan}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={closeEditModal}>Batal</Button>

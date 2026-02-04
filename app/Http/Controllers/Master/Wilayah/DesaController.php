@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Master\Wilayah;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\Wilayah\DesaRequest;
 use App\Models\WilayahDesa;
+use App\Support\CacheHelper;
+use App\Support\WilayahHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -40,14 +42,14 @@ class DesaController extends Controller
             $query->where('kecamatan_kode', $request->kecamatan_kode);
         }
 
-        $data = $query->orderBy('provinsi_kode')
-            ->orderBy('kabupaten_kode')
-            ->orderBy('kecamatan_kode')
-            ->orderBy('kode')
-            ->get();
-
         return Inertia::render('Master/Wilayah/Desa/Index', [
-            'desa' => $data,
+            'desa' => Inertia::defer(fn() => CacheHelper::tags(['wilayah'])->remember('desa_list_' . request('kecamatan_kode', 'all'), 60, function () use ($query) {
+                return $query->orderBy('provinsi_kode')
+                    ->orderBy('kabupaten_kode')
+                    ->orderBy('kecamatan_kode')
+                    ->orderBy('kode')
+                    ->get();
+            })),
             'filters' => $request->only(['search', 'provinsi_kode', 'kabupaten_kode', 'kecamatan_kode']),
         ]);
     }
@@ -60,6 +62,10 @@ class DesaController extends Controller
         $this->authorize('create', WilayahDesa::class);
 
         WilayahDesa::create($request->validated());
+
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Desa berhasil ditambahkan.');
     }
@@ -78,6 +84,10 @@ class DesaController extends Controller
 
         $desa->update($request->validated());
 
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
+
         return redirect()->back()->with('success', 'Desa berhasil diperbarui.');
     }
 
@@ -95,7 +105,9 @@ class DesaController extends Controller
 
         $desa->delete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Desa berhasil dihapus.');
     }
@@ -121,7 +133,9 @@ class DesaController extends Controller
 
         $desa->restore();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Desa berhasil dipulihkan.');
     }
@@ -161,8 +175,11 @@ class DesaController extends Controller
 
         $desa->forceDelete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Desa berhasil dihapus permanen.');
     }
 }
+

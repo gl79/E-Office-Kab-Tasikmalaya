@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\UnitKerjaRequest;
 use App\Models\UnitKerja;
+use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -20,13 +21,13 @@ class UnitKerjaController extends Controller
         // Client-side search optimization: Return all data
         // For larger datasets, we would keep server-side pagination, 
         // but for Unit Kerja (small), client-side is faster and smoother.
-        $unitKerja = UnitKerja::query()
-            ->select(['id', 'nama', 'singkatan', 'created_at', 'updated_at'])
-            ->latest()
-            ->get();
-
         return Inertia::render('Master/UnitKerja/Index', [
-            'unitKerja' => $unitKerja,
+            'unitKerja' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember('unit_kerja_list', 60, function () {
+                return UnitKerja::query()
+                    ->select(['id', 'nama', 'singkatan', 'created_at', 'updated_at'])
+                    ->latest()
+                    ->get();
+            })),
             'filters' => $request->only(['search']), // Keep for consistent props, though unused for filtering
         ]);
     }
@@ -39,6 +40,9 @@ class UnitKerjaController extends Controller
         $this->authorize('create', UnitKerja::class);
 
         UnitKerja::create($request->validated());
+
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil ditambahkan.');
     }
@@ -53,6 +57,9 @@ class UnitKerjaController extends Controller
 
         $unitKerja->update($request->validated());
 
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
+
         return redirect()->back()->with('success', 'Unit Kerja berhasil diperbarui.');
     }
 
@@ -66,7 +73,8 @@ class UnitKerjaController extends Controller
 
         $unitKerja->delete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus.');
     }
@@ -105,7 +113,8 @@ class UnitKerjaController extends Controller
 
         $unitKerja->restore();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil dipulihkan.');
     }
@@ -120,8 +129,10 @@ class UnitKerjaController extends Controller
 
         $unitKerja->forceDelete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus permanen.');
     }
 }
+

@@ -1,7 +1,7 @@
 import '../css/app.css';
 import './bootstrap';
 
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { ToastProvider } from '@/Components/ui/Toast';
@@ -24,7 +24,5 @@ createInertiaApp({
             </ToastProvider>
         );
     },
-    progress: {
-        color: '#2563eb',
-    },
+    progress: false, // Disable progress bar - we use custom navigation indicator
 });

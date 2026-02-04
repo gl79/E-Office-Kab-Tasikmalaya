@@ -43,7 +43,7 @@ export default function TimeSelect({
             value={value}
             onChange={onChange}
             disabled={disabled}
-            className={`border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm disabled:bg-gray-100 ${className}`}
+            className={`border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:bg-surface-hover ${className}`}
         >
             <option value="">{placeholder}</option>
             {timeOptions.map((option) => (

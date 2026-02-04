@@ -137,7 +137,7 @@ export default function Login({
                     variant="primary"
                     type="submit"
                     disabled={processing}
-                    className="w-full justify-center py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl transition-colors"
+                    className="w-full justify-center py-3 bg-primary hover:bg-primary-hover text-text-inverse font-semibold rounded-xl transition-colors"
                 >
                     {processing ? (
                         <span className="flex items-center gap-2">
@@ -177,5 +177,4 @@ export default function Login({
         </GuestLayout>
     );
 }
-
 

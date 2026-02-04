@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Master\Wilayah;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\Wilayah\ProvinsiRequest;
 use App\Models\WilayahProvinsi;
+use App\Support\CacheHelper;
+use App\Support\WilayahHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -24,12 +26,12 @@ class ProvinsiController extends Controller
                 ->orWhereRaw('LOWER(kode) LIKE LOWER(?)', ['%' . $request->search . '%']);
         }
 
-        $data = $query->withCount('kabupaten')
-            ->orderBy('kode')
-            ->get();
-
         return Inertia::render('Master/Wilayah/Provinsi/Index', [
-            'provinsi' => $data,
+            'provinsi' => Inertia::defer(fn() => CacheHelper::tags(['wilayah'])->remember('provinsi_list', 60, function () use ($query) {
+                return $query->withCount('kabupaten')
+                    ->orderBy('kode')
+                    ->get();
+            })),
             'filters' => $request->only(['search']),
         ]);
     }
@@ -42,6 +44,10 @@ class ProvinsiController extends Controller
         $this->authorize('create', WilayahProvinsi::class);
 
         WilayahProvinsi::create($request->validated());
+
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Provinsi berhasil ditambahkan.');
     }
@@ -56,6 +62,10 @@ class ProvinsiController extends Controller
 
         $provinsi->update($request->validated());
 
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
+
         return redirect()->back()->with('success', 'Provinsi berhasil diperbarui.');
     }
 
@@ -69,7 +79,9 @@ class ProvinsiController extends Controller
 
         $provinsi->delete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Provinsi berhasil dihapus.');
     }
@@ -94,7 +106,9 @@ class ProvinsiController extends Controller
 
         $provinsi->restore();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Provinsi berhasil dipulihkan.');
     }
@@ -109,8 +123,11 @@ class ProvinsiController extends Controller
 
         $provinsi->forceDelete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['wilayah']);
+        CacheHelper::flush(['master_archive']);
+        WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Provinsi berhasil dihapus permanen.');
     }
 }
+

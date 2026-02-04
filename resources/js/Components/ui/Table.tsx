@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-export interface TableHeader<T = Record<string, unknown>> {
+export interface TableHeader<T = object> {
     /** Key to access data from row object */
     key: string;
     /** Display label for header */
@@ -11,7 +11,7 @@ export interface TableHeader<T = Record<string, unknown>> {
     render?: (value: unknown, item: T, index: number) => ReactNode;
 }
 
-interface TableProps<T extends Record<string, unknown>> {
+interface TableProps<T extends object> {
     /** Table headers configuration */
     headers: TableHeader<T>[];
     /** Data array to display */
@@ -45,7 +45,7 @@ interface TableProps<T extends Record<string, unknown>> {
  *     keyExtractor={(user) => user.id}
  * />
  */
-export default function Table<T extends Record<string, unknown>>({
+export default function Table<T extends object>({
     headers,
     data,
     keyExtractor,
@@ -84,7 +84,7 @@ export default function Table<T extends Record<string, unknown>>({
         <div className={`bg-surface rounded-xl shadow-sm overflow-hidden ${className}`}>
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50/50 text-xs text-text-secondary uppercase tracking-wider border-b border-border-light">
+                    <thead className="bg-surface-hover text-xs text-text-secondary uppercase tracking-wider border-b border-border-light">
                         <tr>
                             {headers.map((header) => (
                                 <th 
@@ -122,7 +122,7 @@ export default function Table<T extends Record<string, unknown>>({
                                     className="
                                         transition-colors duration-150
                                         hover:bg-surface-hover
-                                        even:bg-gray-50/30
+                                        even:bg-surface-hover
                                         group
                                     "
                                 >

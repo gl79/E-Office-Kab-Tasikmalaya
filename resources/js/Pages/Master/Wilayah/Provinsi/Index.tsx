@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -10,23 +11,30 @@ import { useToast } from '@/Components/ui/Toast';
 import TextInput from '@/Components/form/TextInput';
 import InputLabel from '@/Components/form/InputLabel';
 import type { PageProps } from '@/types';
+import { useDeferredDataMutable } from '@/hooks';
 
 interface WilayahProvinsi {
     kode: string;
     nama: string;
     kabupaten_count?: number;
-    [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    provinsi: WilayahProvinsi[]; // Changed from paginated object to array
+    provinsi?: WilayahProvinsi[]; // Changed from paginated object to array
     filters: {
         search?: string;
     };
 }
 
-export default function Index({ auth, provinsi, filters }: Props) {
+const CACHE_TTL_MS = 60_000;
+
+export default function Index({ auth, provinsi: initialProvinsi, filters }: Props) {
     const { showToast } = useToast();
+    const { data: provinsi, isLoading, hasCached } = useDeferredDataMutable<WilayahProvinsi[]>(
+        `master_wilayah_provinsi_${auth.user.id}`,
+        initialProvinsi,
+        CACHE_TTL_MS
+    );
 
     // Client-side Search & Pagination State
     const [search, setSearch] = useState('');
@@ -35,6 +43,7 @@ export default function Index({ auth, provinsi, filters }: Props) {
 
     // Filter Data
     const filteredData = useMemo(() => {
+        if (!provinsi) return [];
         let data = provinsi;
         if (search) {
             const lowerSearch = search.toLowerCase();
@@ -54,16 +63,11 @@ export default function Index({ auth, provinsi, filters }: Props) {
 
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
-    // Reset page on search
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearch(e.target.value);
-        setCurrentPage(1);
-    };
-
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
 
+    // Modal States
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -74,10 +78,37 @@ export default function Index({ auth, provinsi, filters }: Props) {
         nama: '',
     });
 
-    const openCreateModal = () => {
-        reset();
-        clearErrors();
-        setIsCreateModalOpen(true);
+    const handleCreate = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('master.wilayah.provinsi.store'), {
+            onSuccess: () => {
+                setIsCreateModalOpen(false);
+                reset();
+                showToast('success', 'Provinsi berhasil ditambahkan');
+            },
+        });
+    };
+
+    const handleUpdate = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedItem) return;
+        put(route('master.wilayah.provinsi.update', selectedItem.kode), {
+            onSuccess: () => {
+                setIsEditModalOpen(false);
+                reset();
+                showToast('success', 'Provinsi berhasil diperbarui');
+            },
+        });
+    };
+
+    const handleDelete = () => {
+        if (!selectedItem) return;
+        router.delete(route('master.wilayah.provinsi.destroy', selectedItem.kode), {
+            onSuccess: () => {
+                setIsDeleteAlertOpen(false);
+                showToast('success', 'Provinsi berhasil dihapus');
+            },
+        });
     };
 
     const openEditModal = (item: WilayahProvinsi) => {
@@ -90,65 +121,25 @@ export default function Index({ auth, provinsi, filters }: Props) {
         setIsEditModalOpen(true);
     };
 
-    const openDeleteAlert = (item: WilayahProvinsi) => {
-        setSelectedItem(item);
-        setIsDeleteAlertOpen(true);
-    };
-
-    const handleCreate = (e: React.FormEvent) => {
-        e.preventDefault();
-        post(route('master.wilayah.provinsi.store'), {
-            onSuccess: () => {
-                setIsCreateModalOpen(false);
-                reset();
-            },
-        });
-    };
-
-    const handleUpdate = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedItem) return;
-        put(route('master.wilayah.provinsi.update', selectedItem.kode), {
-            onSuccess: () => {
-                setIsEditModalOpen(false);
-                reset();
-            },
-        });
-    };
-
-    const handleDelete = () => {
-        if (!selectedItem) return;
-        router.delete(route('master.wilayah.provinsi.destroy', selectedItem.kode), {
-            onSuccess: () => {
-                setIsDeleteAlertOpen(false);
-            },
-        });
-    };
-
     const tableHeaders: TableHeader<WilayahProvinsi>[] = [
-        { 
-            key: 'no', 
+        {
+            key: 'no',
             label: 'No',
             className: 'w-16',
-            render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
+            render: (_, __, index) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
         { key: 'kode', label: 'Kode', className: 'w-24' },
         { key: 'nama', label: 'Nama Provinsi' },
-        { 
-            key: 'kabupaten_count', 
-            label: 'Jumlah Kabupaten',
-            render: (value) => <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">{String(value)}</span>
-        },
         {
             key: 'actions',
             label: 'Aksi',
             className: 'text-right',
-            render: (_: unknown, item: WilayahProvinsi) => (
+            render: (_, item) => (
                 <div className="flex justify-end gap-2">
                     <Button variant="secondary" size="sm" onClick={() => openEditModal(item)}>
                         <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => openDeleteAlert(item)}>
+                    <Button variant="danger" size="sm" onClick={() => { setSelectedItem(item); setIsDeleteAlertOpen(true); }}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
@@ -160,13 +151,11 @@ export default function Index({ auth, provinsi, filters }: Props) {
         <AppLayout>
             <Head title="Wilayah Provinsi" />
 
-            {/* Page Header */}
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-text-primary">Wilayah Provinsi</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data provinsi</p>
             </div>
 
-            {/* Main Content */}
             <div className="bg-surface rounded-lg border border-border-default">
                 {/* Toolbar */}
                 <div className="p-4 border-b border-border-default">
@@ -176,14 +165,14 @@ export default function Index({ auth, provinsi, filters }: Props) {
                                 type="text"
                                 placeholder="Cari provinsi..."
                                 value={search}
-                                onChange={handleSearchChange}
+                                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                                 className="w-full"
                             />
                             <Button variant="secondary" disabled>
                                 <Search className="h-4 w-4" />
                             </Button>
                         </div>
-                        <Button onClick={openCreateModal}>
+                        <Button onClick={() => setIsCreateModalOpen(true)}>
                             <Plus className="h-4 w-4 mr-2" />
                             Tambah Provinsi
                         </Button>
@@ -191,12 +180,18 @@ export default function Index({ auth, provinsi, filters }: Props) {
                 </div>
 
                 {/* Table */}
-                <Table<WilayahProvinsi>
-                    headers={tableHeaders}
-                    data={paginatedData}
-                    keyExtractor={(item) => item.kode}
-                    emptyMessage={search ? "Tidak ada provinsi yang cocok dengan pencarian." : "Tidak ada data provinsi."}
-                />
+                {isLoading && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={5} />
+                    </div>
+                ) : (
+                    <Table<WilayahProvinsi>
+                        headers={tableHeaders}
+                        data={paginatedData}
+                        keyExtractor={(item) => item.kode}
+                        emptyMessage={search ? "Tidak ada provinsi yang cocok dengan pencarian." : "Tidak ada data provinsi."}
+                    />
+                )}
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-border-default">

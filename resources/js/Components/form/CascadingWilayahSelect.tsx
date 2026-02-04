@@ -79,7 +79,7 @@ export default function CascadingWilayahSelect({ value, onChange, level, errors,
                 <InputLabel htmlFor="select-provinsi" value="Provinsi" />
                 <select
                     id="select-provinsi"
-                    className="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm disabled:bg-gray-100"
+                    className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:bg-surface-hover"
                     value={value.provinsi || ''}
                     onChange={(e) => handleChange('provinsi', e.target.value)}
                     disabled={disabled}
@@ -89,7 +89,7 @@ export default function CascadingWilayahSelect({ value, onChange, level, errors,
                         <option key={item.kode} value={item.kode}>{item.nama}</option>
                     ))}
                 </select>
-                {errors?.provinsi && <p className="text-sm text-red-500">{errors.provinsi}</p>}
+                {errors?.provinsi && <p className="text-sm text-danger">{errors.provinsi}</p>}
             </div>
 
             {/* Kabupaten */}
@@ -98,7 +98,7 @@ export default function CascadingWilayahSelect({ value, onChange, level, errors,
                     <InputLabel htmlFor="select-kabupaten" value="Kabupaten" />
                     <select
                         id="select-kabupaten"
-                        className="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm disabled:bg-gray-100"
+                        className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:bg-surface-hover"
                         value={value.kabupaten || ''}
                         onChange={(e) => handleChange('kabupaten', e.target.value)}
                         disabled={disabled || !value.provinsi}
@@ -108,7 +108,7 @@ export default function CascadingWilayahSelect({ value, onChange, level, errors,
                             <option key={item.kode} value={item.kode}>{item.nama}</option>
                         ))}
                     </select>
-                    {errors?.kabupaten && <p className="text-sm text-red-500">{errors.kabupaten}</p>}
+                    {errors?.kabupaten && <p className="text-sm text-danger">{errors.kabupaten}</p>}
                 </div>
             )}
 
@@ -118,7 +118,7 @@ export default function CascadingWilayahSelect({ value, onChange, level, errors,
                     <InputLabel htmlFor="select-kecamatan" value="Kecamatan" />
                     <select
                         id="select-kecamatan"
-                        className="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm disabled:bg-gray-100"
+                        className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:bg-surface-hover"
                         value={value.kecamatan || ''}
                         onChange={(e) => handleChange('kecamatan', e.target.value)}
                         disabled={disabled || !value.kabupaten}
@@ -128,7 +128,7 @@ export default function CascadingWilayahSelect({ value, onChange, level, errors,
                             <option key={item.kode} value={item.kode}>{item.nama}</option>
                         ))}
                     </select>
-                    {errors?.kecamatan && <p className="text-sm text-red-500">{errors.kecamatan}</p>}
+                    {errors?.kecamatan && <p className="text-sm text-danger">{errors.kecamatan}</p>}
                 </div>
             )}
         </div>

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\ActivityLog;
 use App\Models\IndeksSurat;
+use App\Models\Penjadwalan;
 use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
 use App\Models\UnitKerja;
@@ -13,6 +14,7 @@ use App\Models\WilayahKecamatan;
 use App\Models\WilayahProvinsi;
 use App\Policies\ActivityLogPolicy;
 use App\Policies\IndeksSuratPolicy;
+use App\Policies\PenjadwalanPolicy;
 use App\Policies\SuratKeluarPolicy;
 use App\Policies\SuratMasukPolicy;
 use App\Policies\UnitKerjaPolicy;
@@ -39,7 +41,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Vite::prefetch(concurrency: 3);
 
         $this->registerPolicies();
     }
@@ -62,5 +63,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Activity Log Policy
         Gate::policy(ActivityLog::class, ActivityLogPolicy::class);
+
+        // Penjadwalan Policy
+        Gate::policy(Penjadwalan::class, PenjadwalanPolicy::class);
     }
 }

@@ -4,10 +4,21 @@ Aplikasi E-Office untuk pemerintahan Kabupaten Tasikmalaya.
 
 ## Tech Stack
 
-- **Backend**: Laravel 12
-- **Frontend**: Inertia.js + React 18
-- **Database**: PostgreSQL
-- **Cache/Queue**: Redis
+### Backend
+- **Framework**: Laravel 12.x
+- **Language**: PHP 8.4+
+- **Database**: PostgreSQL (with Compoships for complex relationships)
+- **Cache/Queue**: Redis (using Predis)
+
+### Frontend
+- **Framework**: Inertia.js 2.x
+- **Library**: React 18.x with TypeScript
+- **Styling**: Tailwind CSS 4.0
+- **Build Tool**: Vite 7.x
+- **UI Components**:
+  - Headless UI
+  - Lucide React (Icons)
+  - FullCalendar (Scheduling)
 
 ## Requirements
 
@@ -18,45 +29,38 @@ Aplikasi E-Office untuk pemerintahan Kabupaten Tasikmalaya.
 
 ## Installation
 
-1. Client Repository:
-
+1. **Clone Repository (Client)**:
    ```bash
    git clone <repository_url>
    cd e-office-kab-tasikmalaya
    ```
 
-2. Install Dependencies:
-
+2. **Install Dependencies**:
    ```bash
    composer install
    npm install
    ```
 
-3. Environment Setup:
-
+3. **Environment Setup**:
    ```bash
    cp .env.example .env
    php artisan key:generate
    ```
+   Configure your `DB_*` and `REDIS_*` settings in `.env`.
 
-   Configure your database and redis settings in `.env`.
-
-4. Database Migration:
-
+4. **Database & Migration**:
    ```bash
    php artisan migrate --seed
    ```
 
-5. Build Frontend:
-
+5. **Build Assets**:
    ```bash
    npm run build
    ```
 
 ## Development
 
-Start the development server:
-
+Start the development server (runs Laravel, Queue, and Vite concurrently):
 ```bash
 npm run dev
 ```

@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { useState, useMemo, useEffect } from 'react';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     Search,
     MoreVertical,
@@ -11,52 +12,47 @@ import {
     Archive
 } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
-import Button from '@/Components/ui/Button';
-import Dropdown from '@/Components/ui/Dropdown';
-import Pagination from '@/Components/ui/Pagination';
-import Badge from '@/Components/ui/Badge';
-import ConfirmDialog from '@/Components/ui/ConfirmDialog';
-import TextInput from '@/Components/form/TextInput';
+import { Button, Dropdown, Pagination, Badge, ConfirmDialog } from '@/Components/ui';
+import { TextInput } from '@/Components/form';
+import { useMemoryCache } from '@/hooks/useMemoryCache';
+import { getDisposisiVariant, getDisposisiLabel, getPenjadwalanStatusVariant, getPenjadwalanStatusLabel } from '@/utils/badgeVariants';
 import type { PageProps } from '@/types';
+import type { AgendaBase, SuratMasukBase } from '@/types/penjadwalan';
 
-interface SuratMasuk {
-    id: string;
-    nomor_surat: string;
-    asal_surat: string;
-    perihal: string;
-}
-
-interface ArchivedAgenda {
-    id: string;
-    nama_kegiatan: string;
-    tanggal_agenda: string;
-    tanggal_agenda_formatted: string;
-    waktu_lengkap: string;
-    tempat: string;
-    status: string;
-    status_label: string;
-    status_disposisi: string;
-    status_disposisi_label: string;
-    surat_masuk: SuratMasuk | null;
-    deleted_by: {
-        id: number;
-        name: string;
-    } | null;
+interface ArchivedAgenda extends Pick<AgendaBase, 'id' | 'nama_kegiatan' | 'tanggal_agenda' | 'tanggal_agenda_formatted' | 'waktu_lengkap' | 'tempat' | 'status' | 'status_label' | 'status_disposisi' | 'status_disposisi_label'> {
+    surat_masuk: Pick<SuratMasukBase, 'id' | 'nomor_surat' | 'asal_surat' | 'perihal'> | null;
+    deleted_by: { id: number; name: string } | null;
     deleted_at: string;
     deleted_at_formatted: string;
-    [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    archived: ArchivedAgenda[];
+    archived?: ArchivedAgenda[];
     filters: {
         search?: string;
     };
 }
 
+const CACHE_TTL_MS = 60_000;
+
 const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
+    const { auth } = usePage<PageProps>().props;
+    const cacheKey = `penjadwalan_archive_${auth.user.id}`;
+    const { read, write } = useMemoryCache<ArchivedAgenda[]>(cacheKey, CACHE_TTL_MS);
+    const cachedArchived = read();
+    const hasCached = cachedArchived !== null;
+    const activeArchived = initialArchived ?? cachedArchived ?? [];
+
     // Local state for real-time updates
-    const [archived, setArchived] = useState(initialArchived);
+    const [archived, setArchived] = useState<ArchivedAgenda[]>(activeArchived);
+
+    // Sync state when prop updates (deferred loading)
+    useEffect(() => {
+        if (initialArchived !== undefined) {
+            setArchived(initialArchived);
+            write(initialArchived);
+        }
+    }, [initialArchived, write]);
 
     // Search state
     const [search, setSearch] = useState(filters.search || '');
@@ -106,7 +102,11 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
             preserveScroll: true,
             onSuccess: () => {
                 // Remove item from local state for real-time update
-                setArchived(prev => prev.filter(item => item.id !== itemToRestore.id));
+                setArchived(prev => {
+                    const next = prev.filter(item => item.id !== itemToRestore.id);
+                    write(next);
+                    return next;
+                });
             },
             onFinish: () => {
                 setIsProcessing(false);
@@ -126,7 +126,11 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
             preserveScroll: true,
             onSuccess: () => {
                 // Remove item from local state for real-time update
-                setArchived(prev => prev.filter(item => item.id !== itemToDelete.id));
+                setArchived(prev => {
+                    const next = prev.filter(item => item.id !== itemToDelete.id);
+                    write(next);
+                    return next;
+                });
             },
             onFinish: () => {
                 setIsProcessing(false);
@@ -144,7 +148,10 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
             preserveScroll: true,
             onSuccess: () => {
                 // Clear all items from local state for real-time update
-                setArchived([]);
+                setArchived(() => {
+                    write([]);
+                    return [];
+                });
             },
             onFinish: () => {
                 setIsProcessing(false);
@@ -161,7 +168,10 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
             preserveScroll: true,
             onSuccess: () => {
                 // Clear all items from local state for real-time update
-                setArchived([]);
+                setArchived(() => {
+                    write([]);
+                    return [];
+                });
             },
             onFinish: () => {
                 setIsProcessing(false);
@@ -170,29 +180,13 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
         });
     };
 
-    const getStatusBadge = (status: string) => {
-        const variants: Record<string, 'default' | 'warning' | 'success'> = {
-            tentatif: 'warning',
-            definitif: 'success',
-        };
-        return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
-    };
+    const renderStatusBadge = (status: string) => (
+        <Badge variant={getPenjadwalanStatusVariant(status)}>{getPenjadwalanStatusLabel(status)}</Badge>
+    );
 
-    const getDisposisiBadge = (status: string) => {
-        const variants: Record<string, 'default' | 'warning' | 'success' | 'info'> = {
-            menunggu: 'warning',
-            bupati: 'info',
-            wakil_bupati: 'success',
-            diwakilkan: 'success',
-        };
-        const labels: Record<string, string> = {
-            menunggu: 'Menunggu',
-            bupati: 'Bupati',
-            wakil_bupati: 'Wakil Bupati',
-            diwakilkan: 'Diwakilkan',
-        };
-        return <Badge variant={variants[status] || 'default'}>{labels[status] || status}</Badge>;
-    };
+    const renderDisposisiBadge = (status: string) => (
+        <Badge variant={getDisposisiVariant(status)}>{getDisposisiLabel(status)}</Badge>
+    );
 
     return (
         <>
@@ -259,6 +253,11 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
                 )}
 
                 {/* Table */}
+                {!initialArchived && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={6} />
+                    </div>
+                ) : (
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-border-default">
                         <thead className="bg-surface-hover">
@@ -293,8 +292,8 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
                                     </td>
                                     <td className="px-4 py-3 text-sm">
                                         <div className="flex flex-col gap-1 items-start">
-                                            {getStatusBadge(item.status)}
-                                            {getDisposisiBadge(item.status_disposisi)}
+                                            {renderStatusBadge(item.status)}
+                                            {renderDisposisiBadge(item.status_disposisi)}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-sm">
@@ -313,7 +312,7 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
                                                 align="right"
                                                 width="48"
                                                 trigger={
-                                                    <button className="p-1 hover:bg-surface-active rounded-full transition-colors text-text-secondary">
+                                                    <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
                                                         <MoreVertical className="h-5 w-5" />
                                                     </button>
                                                 }
@@ -336,7 +335,7 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
                                                             setSelectedAgenda(item);
                                                             setDeleteModalOpen(true);
                                                         }}
-                                                        className="flex items-center gap-2 text-danger hover:bg-danger-subtle"
+                                                        className="flex items-center gap-2 text-danger hover:bg-danger-light"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                         <span>Hapus Permanen</span>
@@ -357,8 +356,10 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
                         </tbody>
                     </table>
                 </div>
+                )}
 
                 {/* Pagination */}
+                {(initialArchived || hasCached) && (
                 <div className="p-4 border-t border-border-default">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <p className="text-sm text-text-secondary">
@@ -371,6 +372,7 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
                         />
                     </div>
                 </div>
+                )}
             </div>
 
             {/* Restore Confirmation */}
@@ -404,7 +406,7 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
                             Apakah Anda yakin ingin menghapus permanen jadwal{' '}
                             <strong>{selectedAgenda?.nama_kegiatan}</strong>?
                         </p>
-                         <p className="text-sm text-danger font-medium p-2 bg-danger-subtle rounded border border-danger-border">
+                         <p className="text-sm text-danger font-medium p-2 bg-danger-light rounded border border-danger-light">
                              Perhatian: Data yang dihapus permanen tidak dapat dipulihkan!
                          </p>
                     </div>
@@ -442,7 +444,7 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
                         <p className="mb-3">
                             Apakah Anda yakin ingin menghapus permanen <strong>{archived.length}</strong> jadwal?
                         </p>
-                         <p className="text-sm text-danger font-medium p-2 bg-danger-subtle rounded border border-danger-border">
+                         <p className="text-sm text-danger font-medium p-2 bg-danger-light rounded border border-danger-light">
                              Perhatian: Data yang dihapus permanen tidak dapat dipulihkan!
                          </p>
                     </div>

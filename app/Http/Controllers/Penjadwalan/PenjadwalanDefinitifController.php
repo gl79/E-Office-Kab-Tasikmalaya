@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Penjadwalan;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\PenjadwalanResource;
+use App\Http\Resources\Penjadwalan\PenjadwalanResource;
 use App\Models\Penjadwalan;
+use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,6 +16,8 @@ class PenjadwalanDefinitifController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Penjadwalan::class);
+
         return Inertia::render('Penjadwalan/Definitif/Index', [
             'disposisiOptions' => Penjadwalan::DISPOSISI_OPTIONS,
             'filters' => $request->only(['search', 'status_disposisi']),
@@ -26,51 +29,53 @@ class PenjadwalanDefinitifController extends Controller
      */
     public function calendarData(Request $request)
     {
-        $query = Penjadwalan::query()
-            ->definitif()
-            ->with(['suratMasuk', 'creator']);
+        $cacheKey = "calendar_data_" . md5(json_encode($request->all()));
 
-        // Filter by date range (for calendar pagination)
-        if ($request->has('start') && $request->has('end')) {
-            $query->whereBetween('tanggal_agenda', [
-                $request->input('start'),
-                $request->input('end'),
-            ]);
-        }
+        $events = CacheHelper::tags(['penjadwalan'])->remember($cacheKey, 60, function () use ($request) {
+            $query = Penjadwalan::query()
+                ->definitif()
+                ->with(['suratMasuk', 'creator']);
 
-        // Filter by status_disposisi
-        if ($request->has('status_disposisi') && $request->input('status_disposisi')) {
-            $query->where('status_disposisi', $request->input('status_disposisi'));
-        }
+            // Filter by date range (for calendar pagination)
+            if ($request->has('start') && $request->has('end')) {
+                $query->whereBetween('tanggal_agenda', [
+                    $request->input('start'),
+                    $request->input('end'),
+                ]);
+            }
 
-        // Search
-        if ($request->has('search') && $request->input('search')) {
-            $query->search($request->input('search'));
-        }
+            // Filter by status_disposisi
+            if ($request->has('status_disposisi') && $request->input('status_disposisi')) {
+                $query->where('status_disposisi', $request->input('status_disposisi'));
+            }
 
-        $penjadwalan = $query->get();
+            // Search
+            if ($request->has('search') && $request->input('search')) {
+                $query->search($request->input('search'));
+            }
 
-        // Transform to FullCalendar event format
-        $events = $penjadwalan->map(function ($item) {
-            // Determine event color based on status_disposisi
-            $backgroundColor = $this->getEventColor($item->status_disposisi);
+            $penjadwalan = $query->get();
 
-            return [
-                'id' => $item->id,
-                'title' => $item->nama_kegiatan,
-                'start' => $item->tanggal_agenda->format('Y-m-d') . 'T' . $item->waktu_mulai,
-                'end' => $item->sampai_selesai
-                    ? null
-                    : ($item->waktu_selesai
-                        ? $item->tanggal_agenda->format('Y-m-d') . 'T' . $item->waktu_selesai
-                        : null),
-                'allDay' => false,
-                'backgroundColor' => $backgroundColor,
-                'borderColor' => $backgroundColor,
-                'extendedProps' => [
-                    'agenda' => new PenjadwalanResource($item),
-                ],
-            ];
+            // Transform to FullCalendar event format
+            // Note: Colors are handled by frontend using CSS variables for consistency
+            return $penjadwalan->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'title' => $item->nama_kegiatan,
+                    'start' => $item->tanggal_agenda->format('Y-m-d') . 'T' . $item->waktu_mulai,
+                    'end' => $item->sampai_selesai
+                        ? null
+                        : ($item->waktu_selesai
+                            ? $item->tanggal_agenda->format('Y-m-d') . 'T' . $item->waktu_selesai
+                            : null),
+                    'allDay' => false,
+                    'classNames' => ['event-' . $item->status_disposisi],
+                    'extendedProps' => [
+                        'agenda' => new PenjadwalanResource($item),
+                        'status_disposisi' => $item->status_disposisi,
+                    ],
+                ];
+            });
         });
 
         return response()->json($events);
@@ -83,6 +88,7 @@ class PenjadwalanDefinitifController extends Controller
     {
         $penjadwalan = Penjadwalan::with(['suratMasuk', 'creator', 'updater'])
             ->findOrFail($id);
+        $this->authorize('view', $penjadwalan);
 
         return response()->json(new PenjadwalanResource($penjadwalan));
     }
@@ -93,23 +99,14 @@ class PenjadwalanDefinitifController extends Controller
     public function destroy(string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
+        $this->authorize('delete', $penjadwalan);
 
         $penjadwalan->delete();
+
+        CacheHelper::flush(['penjadwalan']);
 
         return redirect()->back()
             ->with('success', 'Jadwal berhasil dihapus.');
     }
-
-    /**
-     * Get event color based on status_disposisi
-     */
-    private function getEventColor(string $statusDisposisi): string
-    {
-        return match ($statusDisposisi) {
-            Penjadwalan::DISPOSISI_BUPATI => '#3B82F6',        // Blue
-            Penjadwalan::DISPOSISI_WAKIL_BUPATI => '#10B981', // Green
-            Penjadwalan::DISPOSISI_DIWAKILKAN => '#F59E0B',   // Amber
-            default => '#6B7280',                              // Gray
-        };
-    }
 }
+

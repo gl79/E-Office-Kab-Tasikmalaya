@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\CacheHelper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -45,7 +46,9 @@ class PenggunaController extends Controller
             ->orderBy('name');
 
         return Inertia::render('Master/Pengguna/Index', [
-            'data' => $query->paginate(10)->withQueryString(),
+            'data' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember('pengguna_list_' . request('page', 1) . '_' . md5(json_encode(request()->query())), 60, function () use ($query) {
+                return $query->get();
+            })),
             'filters' => $request->only(['search', 'role']),
             'roles' => User::ROLE_LABELS,
             'modules' => User::MODULES,
@@ -79,6 +82,9 @@ class PenggunaController extends Controller
         }
 
         User::create($validated);
+
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return back()->with('success', 'Pengguna berhasil ditambahkan.');
     }
@@ -120,6 +126,9 @@ class PenggunaController extends Controller
 
         $pengguna->update($validated);
 
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
+
         return back()->with('success', 'Pengguna berhasil diperbarui.');
     }
 
@@ -139,6 +148,9 @@ class PenggunaController extends Controller
 
         $pengguna->delete();
 
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
+
         return back()->with('success', 'Pengguna berhasil dihapus.');
     }
 
@@ -157,8 +169,12 @@ class PenggunaController extends Controller
             )
             ->orderBy('deleted_at', 'desc');
 
+        $cacheKey = 'pengguna_archive_' . md5(json_encode($request->query()));
+
         return Inertia::render('Master/Pengguna/Archive', [
-            'data' => $query->paginate(10)->withQueryString(),
+            'data' => Inertia::defer(fn() => CacheHelper::tags(['master_archive'])->remember($cacheKey, 60, function () use ($query) {
+                return $query->paginate(10)->withQueryString();
+            })),
             'filters' => $request->only(['search']),
         ]);
     }
@@ -172,6 +188,9 @@ class PenggunaController extends Controller
 
         $user = User::onlyTrashed()->findOrFail($id);
         $user->restore();
+
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return back()->with('success', 'Pengguna berhasil dipulihkan.');
     }
@@ -192,6 +211,10 @@ class PenggunaController extends Controller
 
         $user->forceDelete();
 
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
+
         return back()->with('success', 'Pengguna berhasil dihapus permanen.');
     }
 }
+

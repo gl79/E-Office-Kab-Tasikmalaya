@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { useState, useMemo, useEffect } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { RotateCcw, Trash2, Search } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Pagination } from '@/Components/ui';
@@ -7,7 +7,10 @@ import Badge from '@/Components/ui/Badge';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
 import FormSelect from '@/Components/form/FormSelect';
 import { TextInput } from '@/Components/form';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
 import type { PageProps } from '@/types';
+import { useDeferredDataMutable } from '@/hooks';
+import { formatDateShort, formatDateTime } from '@/utils';
 
 interface ArchiveItem {
     id: string;
@@ -20,16 +23,21 @@ interface ArchiveItem {
     perihal: string;
     deleted_at: string;
     deleted_by?: { name: string } | null;
-    [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    archives: ArchiveItem[];
+    archives?: ArchiveItem[];
 }
 
+const CACHE_TTL_MS = 60_000;
+
 const Index = ({ archives: initialArchives }: Props) => {
-    // Local state for real-time updates
-    const [archives, setArchives] = useState(initialArchives);
+    const { auth } = usePage<PageProps>().props;
+    const { data: archives, setData: setArchives, updateAndCache, isLoading, hasCached } = useDeferredDataMutable<ArchiveItem[]>(
+        `persuratan_archive_${auth.user.id}`,
+        initialArchives,
+        CACHE_TTL_MS
+    );
 
     // Client-side Search & Pagination
     const [search, setSearch] = useState('');
@@ -52,7 +60,7 @@ const Index = ({ archives: initialArchives }: Props) => {
 
     // Filter data client-side
     const filteredData = useMemo(() => {
-        let data = archives;
+        let data = archives || [];
 
         // Search filter
         if (search) {
@@ -104,10 +112,11 @@ const Index = ({ archives: initialArchives }: Props) => {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                // Remove item from local state for real-time update
-                setArchives(prev => prev.filter(item =>
-                    !(item.type === itemToRestore.type && item.id === itemToRestore.id)
-                ));
+                updateAndCache(prev =>
+                    prev.filter(item =>
+                        !(item.type === itemToRestore.type && item.id === itemToRestore.id)
+                    )
+                );
             },
             onFinish: () => {
                 setIsProcessing(false);
@@ -125,10 +134,11 @@ const Index = ({ archives: initialArchives }: Props) => {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                // Remove item from local state for real-time update
-                setArchives(prev => prev.filter(item =>
-                    !(item.type === itemToDelete.type && item.id === itemToDelete.id)
-                ));
+                updateAndCache(prev =>
+                    prev.filter(item =>
+                        !(item.type === itemToDelete.type && item.id === itemToDelete.id)
+                    )
+                );
             },
             onFinish: () => {
                 setIsProcessing(false);
@@ -144,7 +154,7 @@ const Index = ({ archives: initialArchives }: Props) => {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                setArchives([]);
+                updateAndCache(() => []);
             },
             onFinish: () => {
                 setIsProcessing(false);
@@ -159,32 +169,12 @@ const Index = ({ archives: initialArchives }: Props) => {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                setArchives([]);
+                updateAndCache(() => []);
             },
             onFinish: () => {
                 setIsProcessing(false);
                 setDeleteAllModalOpen(false);
             },
-        });
-    };
-
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        });
-    };
-
-    const formatDateTime = (dateString: string) => {
-        if (!dateString) return '-';
-        return new Date(dateString).toLocaleString('id-ID', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
         });
     };
 
@@ -223,7 +213,7 @@ const Index = ({ archives: initialArchives }: Props) => {
                         </div>
 
                         {/* Bulk Actions */}
-                        {archives.length > 0 && (
+                        {(archives?.length ?? 0) > 0 && (
                             <div className="flex gap-2">
                                 <Button
                                     variant="secondary"
@@ -245,92 +235,98 @@ const Index = ({ archives: initialArchives }: Props) => {
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-border-default">
-                        <thead className="bg-surface-hover">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Jenis</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">No. Agenda</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tgl Surat</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor Surat</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Perihal</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus Pada</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus Oleh</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-24">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-surface divide-y divide-border-default">
-                            {paginatedData.map((item, index) => (
-                                <tr key={`${item.type}-${item.id}`} className="hover:bg-surface-hover">
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {(currentPage - 1) * itemsPerPage + index + 1}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <Badge variant={item.jenis === 'Surat Masuk' ? 'info' : 'warning'}>
-                                            {item.jenis}
-                                        </Badge>
-                                    </td>
-                                    <td className="px-4 py-3 text-text-primary text-sm font-medium">
-                                        {item.nomor_agenda}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {formatDate(item.tanggal_surat)}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-primary text-sm">
-                                        {item.nomor_surat}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        <div className="max-w-xs truncate" title={item.perihal}>
-                                            {item.perihal}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {formatDateTime(item.deleted_at)}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {item.deleted_by?.name || '-'}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setSelectedItem(item);
-                                                    setRestoreModalOpen(true);
-                                                }}
-                                                title="Pulihkan"
-                                                className="p-1 h-8 w-8"
-                                            >
-                                                <RotateCcw className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="danger"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setSelectedItem(item);
-                                                    setDeleteModalOpen(true);
-                                                }}
-                                                title="Hapus Permanen"
-                                                className="p-1 h-8 w-8"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {paginatedData.length === 0 && (
+                {isLoading && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={9} />
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border-default">
+                            <thead className="bg-surface-hover">
                                 <tr>
-                                    <td colSpan={9} className="px-4 py-8 text-center text-text-secondary">
-                                        {search ? "Tidak ada data yang cocok dengan pencarian." : "Tidak ada data di arsip."}
-                                    </td>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Jenis</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">No. Agenda</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tgl Surat</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor Surat</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Perihal</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus Pada</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus Oleh</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-24">Aksi</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="bg-surface divide-y divide-border-default">
+                                {paginatedData.map((item, index) => (
+                                    <tr key={`${item.type}-${item.id}`} className="hover:bg-surface-hover">
+                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                            {(currentPage - 1) * itemsPerPage + index + 1}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <Badge variant={item.jenis === 'Surat Masuk' ? 'info' : 'warning'}>
+                                                {item.jenis}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-4 py-3 text-text-primary text-sm font-medium">
+                                            {item.nomor_agenda}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                            {formatDateShort(item.tanggal_surat)}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-primary text-sm">
+                                            {item.nomor_surat}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                            <div className="max-w-xs truncate" title={item.perihal}>
+                                                {item.perihal}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                            {formatDateTime(item.deleted_at)}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                            {item.deleted_by?.name || '-'}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <div className="flex justify-end gap-1">
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setSelectedItem(item);
+                                                        setRestoreModalOpen(true);
+                                                    }}
+                                                    title="Pulihkan"
+                                                    className="p-1 h-8 w-8"
+                                                >
+                                                    <RotateCcw className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setSelectedItem(item);
+                                                        setDeleteModalOpen(true);
+                                                    }}
+                                                    title="Hapus Permanen"
+                                                    className="p-1 h-8 w-8"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {paginatedData.length === 0 && (
+                                    <tr>
+                                        <td colSpan={9} className="px-4 py-8 text-center text-text-secondary">
+                                            {search ? "Tidak ada data yang cocok dengan pencarian." : "Tidak ada data di arsip."}
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-border-default">
@@ -370,7 +366,7 @@ const Index = ({ archives: initialArchives }: Props) => {
                 title="Hapus Permanen"
                 message={
                     <div>
-                        <p className="text-red-600 font-medium mb-2">
+                        <p className="text-danger font-medium mb-2">
                             Peringatan: Aksi ini tidak dapat dibatalkan!
                         </p>
                         <p>
@@ -392,7 +388,7 @@ const Index = ({ archives: initialArchives }: Props) => {
                 title="Pulihkan Semua Surat"
                 message={
                     <p>
-                        Apakah Anda yakin ingin memulihkan <strong>{archives.length}</strong> surat?
+                        Apakah Anda yakin ingin memulihkan <strong>{archives?.length ?? 0}</strong> surat?
                         Semua surat akan dikembalikan ke menu utama.
                     </p>
                 }
@@ -408,11 +404,11 @@ const Index = ({ archives: initialArchives }: Props) => {
                 title="Hapus Semua Permanen"
                 message={
                     <div>
-                        <p className="text-red-600 font-medium mb-2">
+                        <p className="text-danger font-medium mb-2">
                             Peringatan: Aksi ini tidak dapat dibatalkan!
                         </p>
                         <p className="mb-3">
-                            Apakah Anda yakin ingin menghapus permanen <strong>{archives.length}</strong> surat?
+                            Apakah Anda yakin ingin menghapus permanen <strong>{archives?.length ?? 0}</strong> surat?
                             Semua data dan file terkait akan dihapus selamanya.
                         </p>
                     </div>

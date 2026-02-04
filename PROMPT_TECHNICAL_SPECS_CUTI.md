@@ -17,7 +17,7 @@ Frontend: Inertia.js + ReactJS
 Database: PostgreSQL
 Cache:    Redis
 CSS:      Tailwind CSS v4
-Pattern:  Single Page Application (SPA)
+Pattern:  Single Page Application (SPA) + Shimer + Deferred Props
 Design:   Mobile Responsive
 Approach: Reusable Components
 ```

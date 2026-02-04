@@ -21,6 +21,6 @@ class CutiController extends Controller
      */
     public function archive()
     {
-        return Inertia::render('ComingSoon');
+        return Inertia::render('Cuti/Archive/Index');
     }
 }

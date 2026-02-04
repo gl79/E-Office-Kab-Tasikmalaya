@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\IndeksSuratRequest;
 use App\Models\IndeksSurat;
+use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -18,14 +19,14 @@ class IndeksSuratController extends Controller
         $this->authorize('viewAny', IndeksSurat::class);
 
         // Client-side search optimization: Return all data
-        $indeksSurat = IndeksSurat::query()
-            ->select(['id', 'kode', 'nama', 'urutan', 'created_at', 'updated_at'])
-            ->orderBy('urutan', 'asc')
-            ->latest()
-            ->get();
-
         return Inertia::render('Master/IndeksSurat/Index', [
-            'indeksSurat' => $indeksSurat,
+            'indeksSurat' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember('indeks_surat_list', 60, function () {
+                return IndeksSurat::query()
+                    ->select(['id', 'kode', 'nama', 'urutan', 'created_at', 'updated_at'])
+                    ->orderBy('urutan', 'asc')
+                    ->latest()
+                    ->get();
+            })),
             'filters' => $request->only(['search']),
         ]);
     }
@@ -38,6 +39,9 @@ class IndeksSuratController extends Controller
         $this->authorize('create', IndeksSurat::class);
 
         IndeksSurat::create($request->validated());
+
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil ditambahkan.');
     }
@@ -52,6 +56,9 @@ class IndeksSuratController extends Controller
 
         $indeksSurat->update($request->validated());
 
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
+
         return redirect()->back()->with('success', 'Indeks Surat berhasil diperbarui.');
     }
 
@@ -65,7 +72,8 @@ class IndeksSuratController extends Controller
 
         $indeksSurat->delete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus.');
     }
@@ -104,7 +112,8 @@ class IndeksSuratController extends Controller
 
         $indeksSurat->restore();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil dipulihkan.');
     }
@@ -119,8 +128,10 @@ class IndeksSuratController extends Controller
 
         $indeksSurat->forceDelete();
 
-        \Illuminate\Support\Facades\Cache::tags(['master_archive'])->flush();
+        CacheHelper::flush(['master_list']);
+        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus permanen.');
     }
 }
+

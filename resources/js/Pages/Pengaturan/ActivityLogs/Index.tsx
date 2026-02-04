@@ -1,8 +1,10 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination } from '@/Components/ui';
 import { TextInput } from '@/Components/form';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
+import { useDeferredDataMutable } from '@/hooks';
 import { PageProps } from '@/types';
 import { Activity, User, Monitor, Globe, Clock, Eye, Filter, X } from 'lucide-react';
 
@@ -36,8 +38,8 @@ interface ActionType {
 }
 
 interface Props extends PageProps {
-    logs: ActivityLogItem[];
-    users: { id: string; name: string; username: string }[];
+    logs?: ActivityLogItem[];
+    users?: { id: string; name: string; username: string }[];
     actionTypes: ActionType[];
     filters: {
         search?: string;
@@ -48,8 +50,17 @@ interface Props extends PageProps {
     };
 }
 
+const CACHE_TTL_MS = 60_000;
+
 const Index = ({ logs, users, actionTypes }: Props) => {
     const { auth } = usePage<PageProps>().props;
+    const { data: cachedData, isLoading, hasCached } = useDeferredDataMutable<{ logs?: ActivityLogItem[]; users?: { id: string; name: string; username: string }[] }>(
+        `pengaturan_activity_logs_${auth.user.id}`,
+        logs !== undefined || users !== undefined ? { logs, users } : undefined,
+        CACHE_TTL_MS
+    );
+    const activeLogs = cachedData?.logs;
+    const activeUsers = cachedData?.users;
     
     // Client-side filtering for SPA experience
     const [search, setSearch] = useState('');
@@ -60,10 +71,14 @@ const Index = ({ logs, users, actionTypes }: Props) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [detailItem, setDetailItem] = useState<ActivityLogItem | null>(null);
     const itemsPerPage = 15;
+    
+    // Extract data
+    const logsData = activeLogs || [];
+    const usersData = activeUsers || [];
 
     // Filtered data
     const filteredData = useMemo(() => {
-        let result = logs;
+        let result = logsData;
 
         // Search filter
         if (search) {
@@ -98,7 +113,7 @@ const Index = ({ logs, users, actionTypes }: Props) => {
         }
 
         return result;
-    }, [logs, search, userFilter, actionFilter, dateFromFilter, dateToFilter]);
+    }, [logsData, search, userFilter, actionFilter, dateFromFilter, dateToFilter]);
 
     // Paginated data
     const paginatedData = useMemo(() => {
@@ -133,24 +148,24 @@ const Index = ({ logs, users, actionTypes }: Props) => {
     const getActionColor = (action: string) => {
         switch (action) {
             case 'login':
-                return 'bg-green-100 text-green-700';
+                return 'bg-success-light text-success';
             case 'logout':
-                return 'bg-gray-100 text-gray-700';
+                return 'bg-surface-hover text-text-secondary';
             case 'login_failed':
-                return 'bg-red-100 text-red-700';
+                return 'bg-danger-light text-danger';
             case 'create':
-                return 'bg-blue-100 text-blue-700';
+                return 'bg-primary-light text-primary';
             case 'update':
-                return 'bg-amber-100 text-amber-700';
+                return 'bg-warning-light text-warning';
             case 'delete':
             case 'force_delete':
-                return 'bg-red-100 text-red-700';
+                return 'bg-danger-light text-danger';
             case 'restore':
-                return 'bg-purple-100 text-purple-700';
+                return 'bg-secondary-light text-secondary';
             case 'password_change':
-                return 'bg-indigo-100 text-indigo-700';
+                return 'bg-accent-light text-accent';
             default:
-                return 'bg-gray-100 text-gray-700';
+                return 'bg-surface-hover text-text-secondary';
         }
     };
 
@@ -202,7 +217,7 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                         className="border border-border-default rounded-lg px-3 py-2 text-sm"
                     >
                         <option value="">Semua Pengguna</option>
-                        {users.map((user) => (
+                        {usersData.map((user) => (
                             <option key={user.id} value={user.id}>{user.name}</option>
                         ))}
                     </select>
@@ -235,10 +250,16 @@ const Index = ({ logs, users, actionTypes }: Props) => {
 
             {/* Table */}
             <div className="bg-surface border border-border-default rounded-lg overflow-hidden">
+                {isLoading && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={8} />
+                    </div>
+                ) : (
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-border-default">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-surface-hover">
                             <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Waktu</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Pengguna</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Aksi</th>
@@ -248,9 +269,12 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Detail</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-border-default">
-                            {paginatedData.map((item) => (
-                                <tr key={item.id} className="hover:bg-gray-50">
+                        <tbody className="bg-surface divide-y divide-border-default">
+                            {paginatedData.map((item, index) => (
+                                <tr key={item.id} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
+                                    </td>
                                     <td className="px-4 py-3 whitespace-nowrap">
                                         <div className="flex items-center gap-1.5 text-text-secondary text-sm">
                                             <Clock className="h-3.5 w-3.5" />
@@ -316,8 +340,8 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                             ))}
                             {paginatedData.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="px-4 py-12 text-center text-text-secondary">
-                                        <Activity className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                                    <td colSpan={8} className="px-4 py-12 text-center text-text-secondary">
+                                        <Activity className="h-12 w-12 mx-auto mb-3 text-text-muted" />
                                         <p className="text-lg font-medium">Tidak ada activity log</p>
                                         <p className="text-sm">
                                             {hasFilters ? 'Tidak ada data yang cocok dengan filter' : 'Belum ada aktivitas tercatat'}
@@ -328,10 +352,11 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                         </tbody>
                     </table>
                 </div>
+                )}
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {activeLogs && totalPages > 1 && (
                 <div className="mt-4 flex justify-center">
                     <Pagination
                         currentPage={currentPage}
@@ -349,9 +374,9 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                 size="lg"
             >
                 {detailItem?.properties && (
-                    <div className="space-y-4">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="space-y-4">
+                            <div className="bg-surface-hover rounded-lg p-4">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <span className="text-text-secondary">Waktu:</span>
                                     <p className="font-medium">{detailItem.created_at}</p>
@@ -373,7 +398,7 @@ const Index = ({ logs, users, actionTypes }: Props) => {
 
                         <div>
                             <h4 className="text-sm font-medium text-text-secondary mb-2">Data Properties:</h4>
-                            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs">
+                            <pre className="bg-surface-hover text-text-primary p-4 rounded-lg overflow-x-auto text-xs border border-border-default">
                                 {JSON.stringify(detailItem.properties, null, 2)}
                             </pre>
                         </div>

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Penjadwalan;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\Storage;
 
 class PenjadwalanResource extends JsonResource
 {
+    /**
+     * @param mixed $resource
+     */
+    public function __construct($resource)
+    {
+        parent::__construct($resource);
+    }
+
     /**
      * Transform the resource into an array.
      *

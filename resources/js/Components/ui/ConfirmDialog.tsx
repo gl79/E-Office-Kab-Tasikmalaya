@@ -36,29 +36,29 @@ export default function ConfirmDialog({
         defaultConfirmText: string;
     }> = {
         delete: {
-            icon: <Trash2 className="w-6 h-6 text-red-600" />,
-            iconBg: 'bg-red-100',
+            icon: <Trash2 className="w-6 h-6 text-danger" />,
+            iconBg: 'bg-danger-light',
             confirmVariant: 'danger',
             defaultTitle: 'Hapus Data',
             defaultConfirmText: 'Hapus',
         },
         restore: {
-            icon: <RotateCcw className="w-6 h-6 text-green-600" />,
-            iconBg: 'bg-green-100',
+            icon: <RotateCcw className="w-6 h-6 text-success" />,
+            iconBg: 'bg-success-light',
             confirmVariant: 'primary',
             defaultTitle: 'Pulihkan Data',
             defaultConfirmText: 'Pulihkan',
         },
         warning: {
-            icon: <AlertTriangle className="w-6 h-6 text-yellow-600" />,
-            iconBg: 'bg-yellow-100',
+            icon: <AlertTriangle className="w-6 h-6 text-warning" />,
+            iconBg: 'bg-warning-light',
             confirmVariant: 'primary',
             defaultTitle: 'Konfirmasi',
             defaultConfirmText: 'Ya, Lanjutkan',
         },
         info: {
-            icon: <Info className="w-6 h-6 text-blue-600" />,
-            iconBg: 'bg-blue-100',
+            icon: <Info className="w-6 h-6 text-primary" />,
+            iconBg: 'bg-primary-light',
             confirmVariant: 'primary',
             defaultTitle: 'Informasi',
             defaultConfirmText: 'OK',
@@ -86,12 +86,12 @@ export default function ConfirmDialog({
                 </div>
 
                 {/* Title */}
-                <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                <h3 className="mt-4 text-lg font-semibold text-text-primary">
                     {title || config.defaultTitle}
                 </h3>
 
                 {/* Message */}
-                <div className="mt-2 text-sm text-gray-600">
+                <div className="mt-2 text-sm text-text-secondary">
                     {message}
                 </div>
 

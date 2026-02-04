@@ -187,13 +187,13 @@ export default function CetakKartu({ suratMasuk }: Props) {
             <div className="no-print fixed top-4 right-4 z-50 flex gap-2">
                 <button
                     onClick={() => window.print()}
-                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors"
+                    className="bg-primary text-text-inverse px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors"
                 >
                     Cetak
                 </button>
                 <Link
                     href={route('persuratan.surat-masuk.index')}
-                    className="bg-text-secondary text-white px-4 py-2 rounded-lg hover:bg-text-primary transition-colors no-underline block"
+                    className="bg-text-secondary text-text-inverse px-4 py-2 rounded-lg hover:bg-text-primary transition-colors no-underline block"
                 >
                     Kembali
                 </Link>

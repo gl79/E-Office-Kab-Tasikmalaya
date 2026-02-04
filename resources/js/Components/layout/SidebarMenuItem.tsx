@@ -213,10 +213,10 @@ export default function SidebarMenuItem({
                     </span>
                 </button>
             ) : item.href ? (
-                // Leaf item with href - Inertia Link with prefetch
+                // Leaf item with href - Inertia Link
                 <Link
                     href={item.href}
-                    prefetch
+
                     preserveState
                     preserveScroll
                     className={`${baseClasses} ${activeClasses}`}

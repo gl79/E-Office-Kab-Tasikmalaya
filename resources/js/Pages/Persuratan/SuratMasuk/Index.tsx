@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Head, router, Link } from '@inertiajs/react';
-import { Pencil, Trash2, Plus, Search, Eye, Printer, FileText, Filter, MoreVertical } from 'lucide-react';
+import { Head, router, Link, usePage } from '@inertiajs/react';
+import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
@@ -8,7 +8,10 @@ import { TextInput } from '@/Components/form';
 import FormSelect from '@/Components/form/FormSelect';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
+import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { PageProps } from '@/types';
+import { useDeferredDataMutable } from '@/hooks';
+import { formatDateShort } from '@/utils';
 
 interface SuratMasukTujuan {
     id: string;
@@ -31,17 +34,23 @@ interface SuratMasuk {
     indeks_berkas?: { kode: string; nama: string } | null;
     kode_klasifikasi?: { kode: string; nama: string } | null;
     staff_pengolah?: { name: string; nip: string } | null;
-    [key: string]: unknown;
 }
 
 interface Props extends PageProps {
-    suratMasuk: SuratMasuk[];
+    suratMasuk?: SuratMasuk[];
     sifatOptions: Record<string, string>;
 }
 
+const CACHE_TTL_MS = 60_000;
 const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
-    // Local state for real-time updates
-    const [suratMasuk, setSuratMasuk] = useState(initialSuratMasuk);
+    const { auth } = usePage<PageProps>().props;
+
+    // Use custom hook for deferred data with mutable state
+    const { data: suratMasuk, updateAndCache, isLoading, hasCached } = useDeferredDataMutable<SuratMasuk[]>(
+        `surat_masuk_${auth.user.id}`,
+        initialSuratMasuk,
+        CACHE_TTL_MS
+    );
 
     // Client-side Search & Pagination
     const [search, setSearch] = useState('');
@@ -74,6 +83,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
 
     // Filter data client-side
     const filteredData = useMemo(() => {
+        if (!suratMasuk) return [];
         let data = suratMasuk;
 
         // Search filter
@@ -129,8 +139,8 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                // Remove item from local state for real-time update
-                setSuratMasuk(prev => prev.filter(item => item.id !== itemToDelete.id));
+                // Remove item from local state and cache for real-time update
+                updateAndCache(prev => prev.filter(item => item.id !== itemToDelete.id));
             },
             onFinish: () => {
                 setIsDeleting(false);
@@ -148,15 +158,6 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
             onSuccess: () => {
                 setDisposisiModalOpen(false);
             },
-        });
-    };
-
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
         });
     };
 
@@ -265,6 +266,11 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 </div>
 
                 {/* Table */}
+                {isLoading && !hasCached ? (
+                    <div className="p-4">
+                        <TableShimmer columns={7} />
+                    </div>
+                ) : (
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-border-default">
                         <thead className="bg-surface-hover">
@@ -288,11 +294,11 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                         {item.nomor_agenda}
                                     </td>
                                     <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {formatDate(item.tanggal_diterima)}
+                                        {formatDateShort(item.tanggal_diterima)}
                                     </td>
                                     <td className="px-4 py-3 text-sm">
                                         <div className="font-medium text-text-primary">{item.nomor_surat}</div>
-                                        <div className="text-text-secondary text-xs">{formatDate(item.tanggal_surat)}</div>
+                                        <div className="text-text-secondary text-xs">{formatDateShort(item.tanggal_surat)}</div>
                                     </td>
                                     <td className="px-4 py-3 text-text-primary text-sm">
                                         {item.asal_surat}
@@ -305,7 +311,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                             align="right"
                                             width="48"
                                             trigger={
-                                                <button className="p-1 hover:bg-surface-active rounded-full transition-colors text-text-secondary">
+                                                <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
                                                     <MoreVertical className="h-5 w-5" />
                                                 </button>
                                             }
@@ -360,7 +366,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                         setSelectedSurat(item);
                                                         setDeleteModalOpen(true);
                                                     }}
-                                                    className="flex items-center gap-2 text-danger hover:bg-danger-subtle focus:bg-danger-subtle"
+                                                    className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                     <span>Hapus</span>
@@ -380,6 +386,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                         </tbody>
                     </table>
                 </div>
+                )}
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-border-default">
@@ -429,7 +436,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">Tanggal Diterima</p>
-                                <p className="font-medium text-text-primary">{formatDate(detailSurat.tanggal_diterima)}</p>
+                                <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_diterima)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">Nomor Surat</p>
@@ -437,7 +444,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">Tanggal Surat</p>
-                                <p className="font-medium text-text-primary">{formatDate(detailSurat.tanggal_surat)}</p>
+                                <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_surat)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">Asal Surat</p>
@@ -496,7 +503,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
             >
                 {disposisiSurat && (
                     <div className="space-y-4">
-                        <div className="bg-surface-active p-4 rounded-lg border border-border-default">
+                        <div className="bg-surface-hover p-4 rounded-lg border border-border-default">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                                 <div>
                                     <span className="text-text-secondary">Nomor Agenda:</span>
@@ -514,7 +521,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                         </div>
 
                         <div>
-                            <p className="text-sm font-medium text-gray-700 mb-3">
+                            <p className="text-sm font-medium text-text-secondary mb-3">
                                 Pilih Penanda Tangan:
                             </p>
                             <div className="space-y-2">

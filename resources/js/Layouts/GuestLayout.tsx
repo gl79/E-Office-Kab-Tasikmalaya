@@ -24,8 +24,8 @@ export default function Guest({ children }: PropsWithChildren) {
             <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary-hover to-primary-dark relative overflow-hidden">
                 {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+                    <div className="absolute top-20 left-20 w-72 h-72 bg-surface rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-20 right-20 w-96 h-96 bg-surface rounded-full blur-3xl"></div>
                 </div>
                 
                 {/* Content */}
@@ -34,21 +34,21 @@ export default function Guest({ children }: PropsWithChildren) {
                         <div className="mb-8">
                             <img src="/images/pemkabtasik.png" alt="Logo Kabupaten Tasikmalaya" className="w-32 h-32 object-contain mx-auto" />
                         </div>
-                        <h1 className="text-4xl font-bold text-white mb-4">
+                        <h1 className="text-4xl font-bold text-text-inverse mb-4">
                             E-Office
                         </h1>
                         <p className="text-xl text-primary-light mb-2">
                             Kabupaten Tasikmalaya
                         </p>
-                        <p className="text-white/90 text-sm max-w-sm mx-auto leading-relaxed">
+                        <p className="text-text-inverse/90 text-sm max-w-sm mx-auto leading-relaxed">
                             Sistem Informasi Tata Kelola Surat Menyurat, Penjadwalan Kegiatan dan Cuti
                         </p>
                     </div>
                     
                     {/* Footer */}
                     <div className="absolute bottom-8 text-center">
-                        <p className="text-white/80 text-sm">
-                            © 2026 Pemerintah Kabupaten Tasikmalaya
+                        <p className="text-text-inverse/80 text-sm">
+                            (c) 2026 Pemerintah Kabupaten Tasikmalaya
                         </p>
                     </div>
                 </div>
@@ -73,12 +73,11 @@ export default function Guest({ children }: PropsWithChildren) {
                     
                     {/* Desktop Footer */}
                     <p className="hidden lg:block text-center text-text-muted text-sm mt-8">
-                        © 2026 Pemerintah Kabupaten Tasikmalaya
+                        (c) 2026 Pemerintah Kabupaten Tasikmalaya
                     </p>
                 </div>
             </div>
         </div>
     );
 }
-
 

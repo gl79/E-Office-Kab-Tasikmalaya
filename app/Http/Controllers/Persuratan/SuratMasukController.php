@@ -9,8 +9,8 @@ use App\Models\IndeksSurat;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
 use App\Models\User;
+use App\Support\CacheHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -24,14 +24,13 @@ class SuratMasukController extends Controller
     {
         $this->authorize('viewAny', SuratMasuk::class);
 
-        // Load all data for client-side filtering
-        $suratMasuk = SuratMasuk::query()
-            ->with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah'])
-            ->latest('tanggal_diterima')
-            ->get();
-
         return Inertia::render('Persuratan/SuratMasuk/Index', [
-            'suratMasuk' => $suratMasuk,
+            'suratMasuk' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_masuk_list', 60, function () {
+                return SuratMasuk::query()
+                    ->with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah'])
+                    ->latest('tanggal_diterima')
+                    ->get();
+            })),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
         ]);
     }
@@ -85,6 +84,8 @@ class SuratMasukController extends Controller
             }
 
             DB::commit();
+
+            CacheHelper::flush(['persuratan_list']);
 
             return redirect()->route('persuratan.surat-masuk.index')
                 ->with('success', 'Surat Masuk berhasil ditambahkan.');
@@ -178,6 +179,8 @@ class SuratMasukController extends Controller
 
             DB::commit();
 
+            CacheHelper::flush(['persuratan_list']);
+
             return redirect()->route('persuratan.surat-masuk.index')
                 ->with('success', 'Surat Masuk berhasil diperbarui.');
         } catch (\Exception $e) {
@@ -198,7 +201,8 @@ class SuratMasukController extends Controller
 
         $suratMasuk->delete();
 
-        Cache::tags(['persuratan_archive'])->flush();
+        CacheHelper::flush(['persuratan_archive']);
+        CacheHelper::flush(['persuratan_list']);
 
         return redirect()->back()->with('success', 'Surat Masuk berhasil dihapus.');
     }
@@ -213,7 +217,8 @@ class SuratMasukController extends Controller
 
         $suratMasuk->restore();
 
-        Cache::tags(['persuratan_archive'])->flush();
+        CacheHelper::flush(['persuratan_archive']);
+        CacheHelper::flush(['persuratan_list']);
 
         return redirect()->back()->with('success', 'Surat Masuk berhasil dipulihkan.');
     }
@@ -233,7 +238,8 @@ class SuratMasukController extends Controller
 
         $suratMasuk->forceDelete();
 
-        Cache::tags(['persuratan_archive'])->flush();
+        CacheHelper::flush(['persuratan_archive']);
+        CacheHelper::flush(['persuratan_list']);
 
         return redirect()->back()->with('success', 'Surat Masuk berhasil dihapus permanen.');
     }
@@ -277,7 +283,7 @@ class SuratMasukController extends Controller
             'penanda_tangan' => $penandaTangan['nama'],
             'jabatan_penanda_tangan' => $penandaTangan['jabatan'],
             'tanggal_disposisi' => now(),
-            'created_by' => auth()->id(),
+            'created_by' => $request->user()->id,
         ]);
 
         return Inertia::render('Persuratan/SuratMasuk/CetakDisposisi', [
@@ -319,9 +325,10 @@ class SuratMasukController extends Controller
             return redirect()->back()->with('error', 'File surat tidak ditemukan.');
         }
 
-        return Storage::disk('public')->download(
-            $suratMasuk->file_path,
+        return response()->download(
+            storage_path('app/public/' . $suratMasuk->file_path),
             'Surat_Masuk_' . $suratMasuk->nomor_agenda . '.' . pathinfo($suratMasuk->file_path, PATHINFO_EXTENSION)
         );
     }
 }
+
