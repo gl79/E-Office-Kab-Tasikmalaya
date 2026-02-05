@@ -7,6 +7,7 @@ import FormWizard from '@/Components/form/FormWizard';
 import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
 import FormSelect from '@/Components/form/FormSelect';
+import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormMultiSelect from '@/Components/form/FormMultiSelect';
 import FormFileUpload from '@/Components/form/FormFileUpload';
@@ -123,15 +124,11 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                 <div className="w-full">
                     <div className="bg-surface overflow-hidden shadow-sm sm:rounded-lg p-6">
                         {/* Header */}
-                        <div className="flex items-center gap-4 mb-6">
-                            <Link href={route('persuratan.surat-masuk.index')}>
-                                <Button variant="secondary" size="sm">
-                                    <ArrowLeft className="h-4 w-4" />
-                                </Button>
-                            </Link>
+                        <div className="mb-6">
                             <h1 className="text-2xl font-semibold text-text-primary">
                                 Tambah Surat Masuk
                             </h1>
+                            <p className="text-text-secondary text-sm mt-1">Lengkapi formulir di bawah ini untuk menambahkan surat masuk baru</p>
                         </div>
 
                         <form onSubmit={handleSubmit}>
@@ -146,7 +143,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
-                                                <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat *" />
+                                                <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat" required />
                                                 <FormDatePicker
                                                     id="tanggal_surat"
                                                     value={data.tanggal_surat}
@@ -157,7 +154,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="nomor_surat" value="Nomor Surat *" />
+                                                <InputLabel htmlFor="nomor_surat" value="Nomor Surat" required />
                                                 <TextInput
                                                     id="nomor_surat"
                                                     value={data.nomor_surat}
@@ -168,8 +165,8 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                 <InputError message={errors.nomor_surat} className="mt-1" />
                                             </div>
 
-                                            <div className="md:col-span-2">
-                                                <InputLabel htmlFor="asal_surat" value="Asal Surat *" />
+                                            <div>
+                                                <InputLabel htmlFor="asal_surat" value="Asal Surat" required />
                                                 <TextInput
                                                     id="asal_surat"
                                                     value={data.asal_surat}
@@ -180,28 +177,33 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                 <InputError message={errors.asal_surat} className="mt-1" />
                                             </div>
 
-                                            <div className="md:col-span-2">
-                                                <InputLabel value="Kepada (Tujuan Surat) *" />
-                                                <FormMultiSelect
-                                                    options={tujuanOptions}
-                                                    value={data.tujuan}
-                                                    onChange={(value) => setData('tujuan', value)}
-                                                    placeholder="Pilih tujuan surat..."
-                                                    allowCustom={true}
-                                                    customPlaceholder="Tambah tujuan lainnya..."
-                                                    error={errors.tujuan}
-                                                />
+                                            <div>
+                                                <InputLabel value="Kepada (Tujuan Surat)" required />
+                                                <div className="mt-1">
+                                                    <FormMultiSelect
+                                                        options={tujuanOptions}
+                                                        value={data.tujuan}
+                                                        onChange={(value) => setData('tujuan', value)}
+                                                        placeholder="Pilih tujuan surat..."
+                                                        allowCustom={true}
+                                                        customPlaceholder="Tambah tujuan lainnya..."
+                                                        error={errors.tujuan}
+        
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="sifat" value="Sifat Surat *" />
-                                                <FormSelect
+                                                <InputLabel htmlFor="sifat" value="Sifat Surat" required />
+                                                <FormSelectWithCustom
                                                     id="sifat"
                                                     options={sifatSelectOptions}
                                                     value={data.sifat}
                                                     onChange={(e) => setData('sifat', e.target.value)}
                                                     placeholder="Pilih sifat surat"
-                                                    className="w-full mt-1 px-2"
+                                                    customPlaceholder="Ketik sifat surat lainnya..."
+                                                    allowCustom={true}
+                                                    className="w-full mt-1"
                                                 />
                                                 <InputError message={errors.sifat} className="mt-1" />
                                             </div>
@@ -221,7 +223,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                             </div>
 
                                             <div className="md:col-span-2">
-                                                <InputLabel htmlFor="perihal" value="Perihal *" />
+                                                <InputLabel htmlFor="perihal" value="Perihal" required />
                                                 <FormTextarea
                                                     id="perihal"
                                                     value={data.perihal}
@@ -234,7 +236,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                             </div>
 
                                             <div className="md:col-span-2">
-                                                <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas Surat *" />
+                                                <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas Surat" required />
                                                 <FormTextarea
                                                     id="isi_ringkas"
                                                     value={data.isi_ringkas}
@@ -254,7 +256,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
-                                                <InputLabel htmlFor="tanggal_diterima" value="Tanggal Diterima *" />
+                                                <InputLabel htmlFor="tanggal_diterima" value="Tanggal Diterima" required />
                                                 <FormDatePicker
                                                     id="tanggal_diterima"
                                                     value={data.tanggal_diterima}
@@ -265,7 +267,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="nomor_agenda" value="Nomor Agenda *" />
+                                                <InputLabel htmlFor="nomor_agenda" value="Nomor Agenda" required />
                                                 <TextInput
                                                     id="nomor_agenda"
                                                     value={data.nomor_agenda}
@@ -340,13 +342,15 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                             </div>
 
                                             <div className="md:col-span-2">
-                                                <InputLabel value="Upload File Surat Digital *" />
-                                                <FormFileUpload
-                                                    onChange={(file) => setData('file', file)}
-                                                    accept=".pdf,.doc,.docx"
-                                                    maxSize={5}
-                                                    error={errors.file}
-                                                />
+                                                <InputLabel value="Upload File Surat Digital" />
+                                                <div className="mt-1">
+                                                    <FormFileUpload
+                                                        onChange={(file) => setData('file', file)}
+                                                        accept=".pdf,.doc,.docx"
+                                                        maxSize={5}
+                                                        error={errors.file}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

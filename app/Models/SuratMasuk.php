@@ -58,15 +58,15 @@ class SuratMasuk extends Model
      * Konstanta untuk nilai sifat surat
      */
     public const SIFAT_BIASA = 'biasa';
-    public const SIFAT_PENTING = 'penting';
-    public const SIFAT_SEGERA = 'segera';
-    public const SIFAT_AMAT_SEGERA = 'amat_segera';
+    public const SIFAT_TERBATAS = 'terbatas';
+    public const SIFAT_RAHASIA = 'rahasia';
+    public const SIFAT_SANGAT_RAHASIA = 'sangat_rahasia';
 
     public const SIFAT_OPTIONS = [
         self::SIFAT_BIASA => 'Biasa',
-        self::SIFAT_PENTING => 'Penting',
-        self::SIFAT_SEGERA => 'Segera',
-        self::SIFAT_AMAT_SEGERA => 'Amat Segera',
+        self::SIFAT_TERBATAS => 'Terbatas',
+        self::SIFAT_RAHASIA => 'Rahasia',
+        self::SIFAT_SANGAT_RAHASIA => 'Sangat Rahasia',
     ];
 
     /**

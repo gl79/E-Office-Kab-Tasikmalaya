@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Sekpri Wakil Bupati',
-                'username' => 'sekpriwabup123@',
+                'username' => 'sekpriwabup',
                 'email' => 'sekpriwabup123@eoffice.test',
                 'password' => Hash::make('sekpripwabup123@'),
                 'role' => User::ROLE_SEKPRI_WAKIL_BUPATI,

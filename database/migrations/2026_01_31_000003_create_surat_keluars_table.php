@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('isi_ringkas');
 
             // Sifat Surat
-            $table->string('sifat_1', 20); // biasa, penting, rahasia, segera
+            $table->string('sifat_1', 20); // biasa, terbatas, rahasia, sangat_rahasia
             $table->string('sifat_2', 20); // biasa, penting, segera, amat_segera
 
             // Foreign Keys ke Data Master

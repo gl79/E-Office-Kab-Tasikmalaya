@@ -1,31 +1,36 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, Plus } from 'lucide-react';
 
-interface FormMultiSelectProps {
-    options: string[];
-    value: string[];
-    onChange: (value: string[]) => void;
+interface FormSelectWithCustomProps {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLSelectElement> | { target: { value: string } }) => void;
     placeholder?: string;
     allowCustom?: boolean;
     customPlaceholder?: string;
     disabled?: boolean;
-    error?: string;
+    className?: string;
+    id?: string;
 }
 
-export default function FormMultiSelect({
+export default function FormSelectWithCustom({
     options,
     value,
     onChange,
     placeholder = 'Pilih...',
     allowCustom = true,
-    customPlaceholder = 'Tambah lainnya...',
+    customPlaceholder = 'Ketik custom...',
     disabled = false,
-    error,
-}: FormMultiSelectProps) {
+    className = '',
+    id,
+}: FormSelectWithCustomProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [customInput, setCustomInput] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Check if current value is a custom value (not in options)
+    const isCustomValue = value && !options.some(opt => opt.value === value);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -40,26 +45,17 @@ export default function FormMultiSelect({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleToggle = (option: string) => {
-        if (disabled) return;
-
-        if (value.includes(option)) {
-            onChange(value.filter(v => v !== option));
-        } else {
-            onChange([...value, option]);
-        }
-    };
-
-    const handleRemove = (option: string) => {
-        if (disabled) return;
-        onChange(value.filter(v => v !== option));
+    const handleSelect = (selectedValue: string) => {
+        onChange({ target: { value: selectedValue } } as React.ChangeEvent<HTMLSelectElement>);
+        setIsOpen(false);
     };
 
     const handleAddCustom = () => {
-        if (customInput.trim() && !value.includes(customInput.trim())) {
-            onChange([...value, customInput.trim()]);
+        if (customInput.trim()) {
+            onChange({ target: { value: customInput.trim() } } as React.ChangeEvent<HTMLSelectElement>);
             setCustomInput('');
             setShowCustomInput(false);
+            setIsOpen(false);
         }
     };
 
@@ -70,51 +66,36 @@ export default function FormMultiSelect({
         }
     };
 
+    const getDisplayLabel = () => {
+        if (!value) return placeholder;
+        const option = options.find(opt => opt.value === value);
+        return option ? option.label : value;
+    };
+
     return (
-        <div className="relative" ref={dropdownRef}>
-            {/* Selected Tags */}
-            <div
+        <div className={`relative ${className}`} ref={dropdownRef}>
+            {/* Display Button */}
+            <button
+                type="button"
+                id={id}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
+                disabled={disabled}
                 className={`
-                    min-h-[42px] p-2 py-1.5 rounded-md border shadow-sm
-                    flex flex-wrap gap-2 items-center cursor-pointer
+                    w-full px-3 py-2 rounded-md border shadow-sm
+                    flex items-center justify-between
+                    text-left text-sm
                     ${disabled
-                        ? 'bg-surface-hover border-border-light cursor-not-allowed'
+                        ? 'bg-surface-hover border-border-light cursor-not-allowed text-text-muted'
                         : 'bg-surface border-border-default hover:border-border-dark'
                     }
-                    ${error ? 'border-danger' : ''}
+                    ${!value ? 'text-text-muted' : 'text-text-primary'}
                 `}
             >
-                {value.length === 0 ? (
-                    <span className="text-text-muted text-sm">{placeholder}</span>
-                ) : (
-                    value.map((item) => (
-                        <span
-                            key={item}
-                            className="
-                                inline-flex items-center gap-1
-                                px-2 py-1 rounded-md
-                                bg-primary-light text-primary-dark text-sm
-                            "
-                        >
-                            {item}
-                            {!disabled && (
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRemove(item);
-                                    }}
-                                    className="hover:text-primary"
-                                >
-                                    <X className="w-3 h-3" />
-                                </button>
-                            )}
-                        </span>
-                    ))
-                )}
-                <ChevronDown className={`w-4 h-4 text-text-muted ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </div>
+                <span className={isCustomValue ? 'text-primary font-medium' : ''}>
+                    {getDisplayLabel()}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
 
             {/* Dropdown */}
             {isOpen && !disabled && (
@@ -126,23 +107,15 @@ export default function FormMultiSelect({
                     {/* Predefined Options */}
                     {options.map((option) => (
                         <div
-                            key={option}
-                            onClick={() => handleToggle(option)}
+                            key={option.value}
+                            onClick={() => handleSelect(option.value)}
                             className={`
-                                px-3 py-1.5 cursor-pointer text-sm
+                                px-3 py-2 cursor-pointer text-sm
                                 hover:bg-surface-hover
-                                ${value.includes(option) ? 'bg-primary-light text-primary-dark' : ''}
+                                ${value === option.value ? 'bg-primary-light text-primary-dark font-medium' : 'text-text-primary'}
                             `}
                         >
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={value.includes(option)}
-                                    onChange={() => {}}
-                                    className="rounded border-border-default text-primary focus:ring-primary"
-                                />
-                                {option}
-                            </div>
+                            {option.label}
                         </div>
                     ))}
 
@@ -156,7 +129,7 @@ export default function FormMultiSelect({
                                         value={customInput}
                                         onChange={(e) => setCustomInput(e.target.value)}
                                         onKeyDown={handleKeyDown}
-                                        placeholder="Masukkan tujuan lain..."
+                                        placeholder="Masukkan nilai custom..."
                                         className="
                                             flex-1 px-2 py-1.5 text-sm
                                             border border-border-default rounded-md
@@ -192,10 +165,6 @@ export default function FormMultiSelect({
                         </div>
                     )}
                 </div>
-            )}
-
-            {error && (
-                <p className="mt-1 text-sm text-danger">{error}</p>
             )}
         </div>
     );

@@ -37,7 +37,7 @@ class SuratKeluar extends Model
     ];
 
     protected $casts = [
-        'tanggal_surat' => 'date',
+        'tanggal_surat' => 'datetime',
         'lampiran' => 'integer',
     ];
 
@@ -45,15 +45,15 @@ class SuratKeluar extends Model
      * Konstanta untuk nilai sifat 1 (klasifikasi keamanan)
      */
     public const SIFAT_1_BIASA = 'biasa';
-    public const SIFAT_1_PENTING = 'penting';
+    public const SIFAT_1_TERBATAS = 'terbatas';
     public const SIFAT_1_RAHASIA = 'rahasia';
-    public const SIFAT_1_SEGERA = 'segera';
+    public const SIFAT_1_SANGAT_RAHASIA = 'sangat_rahasia';
 
     public const SIFAT_1_OPTIONS = [
         self::SIFAT_1_BIASA => 'Biasa',
-        self::SIFAT_1_PENTING => 'Penting',
+        self::SIFAT_1_TERBATAS => 'Terbatas',
         self::SIFAT_1_RAHASIA => 'Rahasia',
-        self::SIFAT_1_SEGERA => 'Segera',
+        self::SIFAT_1_SANGAT_RAHASIA => 'Sangat Rahasia',
     ];
 
     /**

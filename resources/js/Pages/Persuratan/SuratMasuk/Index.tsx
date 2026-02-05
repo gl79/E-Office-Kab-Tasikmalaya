@@ -164,9 +164,9 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     const getSifatBadge = (sifatValue: string) => {
         const variants: Record<string, 'default' | 'info' | 'warning' | 'danger'> = {
             biasa: 'default',
-            penting: 'info',
-            segera: 'warning',
-            amat_segera: 'danger',
+            terbatas: 'info',
+            rahasia: 'warning',
+            sangat_rahasia: 'danger',
         };
         return (
             <Badge variant={variants[sifatValue] || 'default'} className="justify-center min-w-[80px] whitespace-nowrap">

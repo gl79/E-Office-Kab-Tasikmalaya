@@ -22,7 +22,7 @@ return new class extends Migration
             $table->date('tanggal_surat');
             $table->string('asal_surat', 255);
             $table->string('nomor_surat', 100)->unique();
-            $table->string('sifat', 20); // biasa, penting, segera, amat_segera
+            $table->string('sifat', 20); // biasa, terbatas, rahasia, sangat_rahasia
             $table->integer('lampiran')->nullable();
             $table->text('perihal');
             $table->text('isi_ringkas');

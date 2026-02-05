@@ -1,10 +1,11 @@
 import { Head, useForm, Link } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
 import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
 import FormSelect from '@/Components/form/FormSelect';
+import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormFileUpload from '@/Components/form/FormFileUpload';
 import InputLabel from '@/Components/form/InputLabel';
@@ -76,15 +77,12 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
             <div className="py-6">
                 <div className="w-full">
                     <div className="bg-surface overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div className="flex items-center gap-4 mb-6">
-                            <Link href={route('persuratan.surat-keluar.index')}>
-                                <Button variant="secondary" size="sm">
-                                    <ArrowLeft className="h-4 w-4" />
-                                </Button>
-                            </Link>
+                        {/* Header */}
+                        <div className="mb-6">
                             <h1 className="text-2xl font-semibold text-text-primary">
                                 Tambah Surat Keluar
                             </h1>
+                            <p className="text-text-secondary text-sm mt-1">Lengkapi formulir di bawah ini untuk menambahkan surat keluar baru</p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
@@ -188,13 +186,15 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
 
                                 <div>
                                     <InputLabel htmlFor="sifat_1" value="Sifat *" />
-                                    <FormSelect
+                                    <FormSelectWithCustom
                                         id="sifat_1"
                                         options={sifat1SelectOptions}
                                         value={data.sifat_1}
                                         onChange={(e) => setData('sifat_1', e.target.value)}
                                         placeholder="Pilih sifat"
-                                        className="w-full mt-1 px-2"
+                                        customPlaceholder="Ketik sifat surat lainnya..."
+                                        allowCustom={true}
+                                        className="w-full mt-1"
                                     />
                                     <InputError message={errors.sifat_1} className="mt-1" />
                                 </div>

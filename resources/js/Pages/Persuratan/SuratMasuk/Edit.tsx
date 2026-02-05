@@ -7,6 +7,7 @@ import FormWizard from '@/Components/form/FormWizard';
 import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
 import FormSelect from '@/Components/form/FormSelect';
+import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormMultiSelect from '@/Components/form/FormMultiSelect';
 import FormFileUpload from '@/Components/form/FormFileUpload';
@@ -144,19 +145,15 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
         <AppLayout>
             <Head title="Edit Surat Masuk" />
 
-            <div className="py-12">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div className="py-6">
+                <div className="w-full">
                     <div className="bg-surface overflow-hidden shadow-sm sm:rounded-lg p-6">
                         {/* Header */}
-                        <div className="flex items-center gap-4 mb-6">
-                            <Link href={route('persuratan.surat-masuk.index')}>
-                                <Button variant="secondary" size="sm">
-                                    <ArrowLeft className="h-4 w-4" />
-                                </Button>
-                            </Link>
+                        <div className="mb-6">
                             <h1 className="text-2xl font-semibold text-text-primary">
                                 Edit Surat Masuk
                             </h1>
+                            <p className="text-text-secondary text-sm mt-1">Perbarui informasi surat masuk pada formulir di bawah ini</p>
                         </div>
 
                         <form onSubmit={handleSubmit}>
@@ -171,7 +168,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
-                                                <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat *" />
+                                                <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat" required />
                                                 <FormDatePicker
                                                     id="tanggal_surat"
                                                     value={data.tanggal_surat}
@@ -182,46 +179,55 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="nomor_surat" value="Nomor Surat *" />
+                                                <InputLabel htmlFor="nomor_surat" value="Nomor Surat" required />
                                                 <TextInput
                                                     id="nomor_surat"
                                                     value={data.nomor_surat}
                                                     onChange={(e) => setData('nomor_surat', e.target.value)}
+                                                    placeholder="Masukkan nomor surat"
                                                     className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.nomor_surat} className="mt-1" />
                                             </div>
 
-                                            <div className="md:col-span-2">
-                                                <InputLabel htmlFor="asal_surat" value="Asal Surat *" />
+                                            <div>
+                                                <InputLabel htmlFor="asal_surat" value="Asal Surat" required />
                                                 <TextInput
                                                     id="asal_surat"
                                                     value={data.asal_surat}
                                                     onChange={(e) => setData('asal_surat', e.target.value)}
+                                                    placeholder="Masukkan asal surat"
                                                     className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.asal_surat} className="mt-1" />
                                             </div>
 
-                                            <div className="md:col-span-2">
-                                                <InputLabel value="Kepada (Tujuan Surat) *" />
-                                                <FormMultiSelect
-                                                    options={tujuanOptions}
-                                                    value={data.tujuan}
-                                                    onChange={(value) => setData('tujuan', value)}
-                                                    allowCustom={true}
-                                                    error={errors.tujuan}
-                                                />
+                                            <div>
+                                                <InputLabel value="Kepada (Tujuan Surat)" required />
+                                                <div className="mt-1">
+                                                    <FormMultiSelect
+                                                        options={tujuanOptions}
+                                                        value={data.tujuan}
+                                                        onChange={(value) => setData('tujuan', value)}
+                                                        placeholder="Pilih tujuan surat..."
+                                                        allowCustom={true}
+                                                        customPlaceholder="Tambah tujuan lainnya..."
+                                                        error={errors.tujuan}
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="sifat" value="Sifat Surat *" />
-                                                <FormSelect
+                                                <InputLabel htmlFor="sifat" value="Sifat Surat" required />
+                                                <FormSelectWithCustom
                                                     id="sifat"
                                                     options={sifatSelectOptions}
                                                     value={data.sifat}
                                                     onChange={(e) => setData('sifat', e.target.value)}
-                                                    className="w-full mt-1 px-2"
+                                                    placeholder="Pilih sifat surat"
+                                                    customPlaceholder="Ketik sifat surat lainnya..."
+                                                    allowCustom={true}
+                                                    className="w-full mt-1"
                                                 />
                                                 <InputError message={errors.sifat} className="mt-1" />
                                             </div>
@@ -233,6 +239,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     type="number"
                                                     value={data.lampiran}
                                                     onChange={(e) => setData('lampiran', e.target.value)}
+                                                    placeholder="Jumlah lampiran"
                                                     min="0"
                                                     className="w-full mt-1 px-2"
                                                 />
@@ -240,11 +247,12 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                             </div>
 
                                             <div className="md:col-span-2">
-                                                <InputLabel htmlFor="perihal" value="Perihal *" />
+                                                <InputLabel htmlFor="perihal" value="Perihal" required />
                                                 <FormTextarea
                                                     id="perihal"
                                                     value={data.perihal}
                                                     onChange={(e) => setData('perihal', e.target.value)}
+                                                    placeholder="Masukkan perihal surat"
                                                     rows={2}
                                                     className="w-full mt-1 px-2"
                                                 />
@@ -252,11 +260,12 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                             </div>
 
                                             <div className="md:col-span-2">
-                                                <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas Surat *" />
+                                                <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas Surat" required />
                                                 <FormTextarea
                                                     id="isi_ringkas"
                                                     value={data.isi_ringkas}
                                                     onChange={(e) => setData('isi_ringkas', e.target.value)}
+                                                    placeholder="Masukkan ringkasan isi surat"
                                                     rows={4}
                                                     className="w-full mt-1 px-2"
                                                 />
@@ -271,7 +280,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
-                                                <InputLabel htmlFor="tanggal_diterima" value="Tanggal Diterima *" />
+                                                <InputLabel htmlFor="tanggal_diterima" value="Tanggal Diterima" required />
                                                 <FormDatePicker
                                                     id="tanggal_diterima"
                                                     value={data.tanggal_diterima}
@@ -282,11 +291,12 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="nomor_agenda" value="Nomor Agenda *" />
+                                                <InputLabel htmlFor="nomor_agenda" value="Nomor Agenda" required />
                                                 <TextInput
                                                     id="nomor_agenda"
                                                     value={data.nomor_agenda}
                                                     onChange={(e) => setData('nomor_agenda', e.target.value)}
+                                                    placeholder="Contoh: 0001"
                                                     className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.nomor_agenda} className="mt-1" />
@@ -299,6 +309,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     options={indeksOptions}
                                                     value={data.indeks_berkas_id}
                                                     onChange={(e) => setData('indeks_berkas_id', e.target.value)}
+                                                    placeholder="Pilih indeks berkas"
                                                     className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.indeks_berkas_id} className="mt-1" />
@@ -311,6 +322,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     options={indeksOptions}
                                                     value={data.kode_klasifikasi_id}
                                                     onChange={(e) => setData('kode_klasifikasi_id', e.target.value)}
+                                                    placeholder="Pilih kode klasifikasi"
                                                     className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.kode_klasifikasi_id} className="mt-1" />
@@ -323,6 +335,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     options={userOptions}
                                                     value={data.staff_pengolah_id}
                                                     onChange={(e) => setData('staff_pengolah_id', e.target.value)}
+                                                    placeholder="Pilih staff pengolah"
                                                     className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.staff_pengolah_id} className="mt-1" />
@@ -345,6 +358,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     id="catatan_tambahan"
                                                     value={data.catatan_tambahan}
                                                     onChange={(e) => setData('catatan_tambahan', e.target.value)}
+                                                    placeholder="Catatan internal (opsional)"
                                                     rows={3}
                                                     className="w-full mt-1 px-2"
                                                 />
@@ -353,16 +367,18 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
 
                                             <div className="md:col-span-2">
                                                 <InputLabel value="Upload File Surat Digital" />
-                                                <FormFileUpload
-                                                    onChange={(file) => setData('file', file)}
-                                                    accept=".pdf,.doc,.docx"
-                                                    maxSize={5}
-                                                    currentFile={suratMasuk.file_path}
-                                                    error={errors.file}
-                                                />
-                                                <p className="text-sm text-text-secondary mt-1">
-                                                    Kosongkan jika tidak ingin mengubah file
-                                                </p>
+                                                <div className="mt-1">
+                                                    <FormFileUpload
+                                                        onChange={(file) => setData('file', file)}
+                                                        accept=".pdf,.doc,.docx"
+                                                        maxSize={5}
+                                                        currentFile={suratMasuk.file_path}
+                                                        error={errors.file}
+                                                    />
+                                                    <p className="text-sm text-text-secondary mt-1">
+                                                        Kosongkan jika tidak ingin mengubah file
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

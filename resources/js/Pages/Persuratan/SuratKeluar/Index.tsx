@@ -140,9 +140,9 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
     const getSifatBadge = (sifatValue: string) => {
         const variants: Record<string, 'default' | 'info' | 'warning' | 'danger'> = {
             biasa: 'default',
-            penting: 'info',
-            segera: 'warning',
-            amat_segera: 'danger',
+            terbatas: 'info',
+            rahasia: 'warning',
+            sangat_rahasia: 'danger',
         };
 
         return (

@@ -5,6 +5,7 @@ import Button from '@/Components/ui/Button';
 import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
 import FormSelect from '@/Components/form/FormSelect';
+import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormFileUpload from '@/Components/form/FormFileUpload';
 import InputLabel from '@/Components/form/InputLabel';
@@ -208,13 +209,15 @@ export default function Edit({ suratKeluar, indeksSurat, unitKerja, sifat1Option
 
                                 <div>
                                     <InputLabel htmlFor="sifat_1" value="Sifat *" />
-                                    <FormSelect
+                                    <FormSelectWithCustom
                                         id="sifat_1"
                                         options={sifat1SelectOptions}
                                         value={data.sifat_1}
                                         onChange={(e) => setData('sifat_1', e.target.value)}
                                         placeholder="Pilih sifat"
-                                        className="w-full mt-1 px-2"
+                                        customPlaceholder="Ketik sifat surat lainnya..."
+                                        allowCustom={true}
+                                        className="w-full mt-1"
                                     />
                                     <InputError message={errors.sifat_1} className="mt-1" />
                                 </div>
