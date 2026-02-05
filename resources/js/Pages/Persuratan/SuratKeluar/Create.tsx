@@ -73,8 +73,8 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
         <AppLayout>
             <Head title="Tambah Surat Keluar" />
 
-            <div className="py-12">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div className="py-6">
+                <div className="w-full">
                     <div className="bg-surface overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex items-center gap-4 mb-6">
                             <Link href={route('persuratan.surat-keluar.index')}>
@@ -95,7 +95,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         id="tanggal_surat"
                                         value={data.tanggal_surat}
                                         onChange={(e) => setData('tanggal_surat', e.target.value)}
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.tanggal_surat} className="mt-1" />
                                 </div>
@@ -107,7 +107,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.no_urut}
                                         onChange={(e) => setData('no_urut', e.target.value)}
                                         placeholder="Masukkan no urut"
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.no_urut} className="mt-1" />
                                 </div>
@@ -119,7 +119,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.nomor_surat}
                                         onChange={(e) => setData('nomor_surat', e.target.value)}
                                         placeholder="Masukkan nomor surat"
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.nomor_surat} className="mt-1" />
                                 </div>
@@ -131,7 +131,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.kepada}
                                         onChange={(e) => setData('kepada', e.target.value)}
                                         placeholder="Tujuan surat"
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.kepada} className="mt-1" />
                                 </div>
@@ -144,7 +144,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.indeks_id}
                                         onChange={(e) => setData('indeks_id', e.target.value)}
                                         placeholder="Pilih indeks"
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.indeks_id} className="mt-1" />
                                 </div>
@@ -157,7 +157,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.kode_klasifikasi_id}
                                         onChange={(e) => setData('kode_klasifikasi_id', e.target.value)}
                                         placeholder="Pilih kode klasifikasi"
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.kode_klasifikasi_id} className="mt-1" />
                                 </div>
@@ -170,7 +170,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.unit_kerja_id}
                                         onChange={(e) => setData('unit_kerja_id', e.target.value)}
                                         placeholder="Pilih unit kerja"
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.unit_kerja_id} className="mt-1" />
                                 </div>
@@ -181,7 +181,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         id="kode_pengolah"
                                         value={data.kode_pengolah}
                                         onChange={(e) => setData('kode_pengolah', e.target.value)}
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.kode_pengolah} className="mt-1" />
                                 </div>
@@ -194,7 +194,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.sifat_1}
                                         onChange={(e) => setData('sifat_1', e.target.value)}
                                         placeholder="Pilih sifat"
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.sifat_1} className="mt-1" />
                                 </div>
@@ -207,7 +207,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.lampiran}
                                         onChange={(e) => setData('lampiran', e.target.value)}
                                         min="0"
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.lampiran} className="mt-1" />
                                 </div>
@@ -219,7 +219,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.perihal}
                                         onChange={(e) => setData('perihal', e.target.value)}
                                         rows={2}
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.perihal} className="mt-1" />
                                 </div>
@@ -231,7 +231,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.isi_ringkas}
                                         onChange={(e) => setData('isi_ringkas', e.target.value)}
                                         rows={4}
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.isi_ringkas} className="mt-1" />
                                 </div>
@@ -243,7 +243,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         value={data.catatan}
                                         onChange={(e) => setData('catatan', e.target.value)}
                                         rows={2}
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.catatan} className="mt-1" />
                                 </div>

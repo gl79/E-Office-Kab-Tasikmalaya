@@ -3,7 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { PropsWithChildren, useEffect } from 'react';
 import { ToastProvider, useToast } from '@/Components/ui';
 import { PageProps } from '@/types';
-import { Building2 } from 'lucide-react';
+import { Copyright } from 'lucide-react';
 
 export default function Guest({ children }: PropsWithChildren) {
     const { flash } = usePage<PageProps & { flash: { success?: string; error?: string } }>().props;
@@ -47,8 +47,9 @@ export default function Guest({ children }: PropsWithChildren) {
                     
                     {/* Footer */}
                     <div className="absolute bottom-8 text-center">
-                        <p className="text-text-inverse/80 text-sm">
-                            (c) 2026 Pemerintah Kabupaten Tasikmalaya
+                        <p className="text-text-inverse/80 text-sm flex items-center justify-center gap-1">
+                            <Copyright className="h-3.5 w-3.5" />
+                            2026 Pemerintah Kabupaten Tasikmalaya
                         </p>
                     </div>
                 </div>
@@ -73,7 +74,10 @@ export default function Guest({ children }: PropsWithChildren) {
                     
                     {/* Desktop Footer */}
                     <p className="hidden lg:block text-center text-text-muted text-sm mt-8">
-                        (c) 2026 Pemerintah Kabupaten Tasikmalaya
+                        <span className="inline-flex items-center justify-center gap-1">
+                            <Copyright className="h-3.5 w-3.5" />
+                            2026 Pemerintah Kabupaten Tasikmalaya
+                        </span>
                     </p>
                 </div>
             </div>

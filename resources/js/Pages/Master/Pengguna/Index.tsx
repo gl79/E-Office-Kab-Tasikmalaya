@@ -241,15 +241,15 @@ const Index = ({ data, filters, roles, modules }: Props) => {
             <div className="bg-surface rounded-lg border border-border-default">
                 {/* Toolbar */}
                 <div className="p-4 border-b border-border-default">
-                    <div className="flex justify-between items-center">
-                        <div className="flex gap-4">
-                            <div className="flex gap-2 flex-1 max-w-md">
+                    <div className="flex flex-col lg:flex-row justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-3/4">
+                            <div className="flex gap-2 w-full sm:w-2/4">
                                 <TextInput
                                     type="text"
                                     placeholder="Cari nama, username, NIP..."
                                     value={search}
                                     onChange={handleSearchChange}
-                                    className="w-full"
+                                    className="w-full px-2"
                                 />
                                 <Button variant="secondary" disabled>
                                     <Search className="h-4 w-4" />
@@ -392,13 +392,13 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                             </div>
 
                             {/* Nama */}
-                            <div className="min-h-[76px]">
+                            <div className="min-h-[76px] ml-2">
                                 <InputLabel htmlFor="name" value="Nama Lengkap *" />
                                 <TextInput
                                     id="name"
                                     value={form.data.name}
                                     onChange={(e) => form.setData('name', e.target.value)}
-                                    className="mt-1 w-full"
+                                    className="mt-1 w-full px-2"
                                     required
                                 />
                                 <InputError message={form.errors.name} className="mt-1" />
@@ -411,20 +411,20 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                     id="username"
                                     value={form.data.username}
                                     onChange={(e) => form.setData('username', e.target.value)}
-                                    className="mt-1 w-full"
+                                    className="mt-1 w-full px-2"
                                     required
                                 />
                                 <InputError message={form.errors.username} className="mt-1" />
                             </div>
 
                             {/* NIP */}
-                            <div className="min-h-[76px]">
+                            <div className="min-h-[76px] ml-2">
                                 <InputLabel htmlFor="nip" value="NIP" />
                                 <TextInput
                                     id="nip"
                                     value={form.data.nip}
                                     onChange={(e) => form.setData('nip', e.target.value)}
-                                    className="mt-1 w-full"
+                                    className="mt-1 w-full px-2"
                                     placeholder="199001012020011001"
                                 />
                                 <InputError message={form.errors.nip} className="mt-1" />
@@ -437,13 +437,13 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                     id="jabatan"
                                     value={form.data.jabatan}
                                     onChange={(e) => form.setData('jabatan', e.target.value)}
-                                    className="mt-1 w-full"
+                                    className="mt-1 w-full px-2"
                                 />
                                 <InputError message={form.errors.jabatan} className="mt-1" />
                             </div>
 
                             {/* Jenis Kelamin */}
-                            <div className="min-h-[76px]">
+                            <div className="min-h-[76px] ml-2">
                                 <InputLabel value="Jenis Kelamin" />
                                 <div className="mt-2 flex gap-4">
                                     <label className="flex items-center cursor-pointer">
@@ -479,20 +479,20 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                     type="email"
                                     value={form.data.email}
                                     onChange={(e) => form.setData('email', e.target.value)}
-                                    className="mt-1 w-full"
+                                    className="mt-1 w-full px-2"
                                 />
                                 <InputError message={form.errors.email} className="mt-1" />
                             </div>
 
                             {/* Password */}
-                            <div className="min-h-[76px]">
+                            <div className="min-h-[76px] ml-2">
                                 <InputLabel htmlFor="password" value={editItem ? 'Password (kosongkan jika tidak diubah)' : 'Password *'} />
                                 <TextInput
                                     id="password"
                                     type="password"
                                     value={form.data.password}
                                     onChange={(e) => form.setData('password', e.target.value)}
-                                    className="mt-1 w-full"
+                                    className="mt-1 w-full px-2"
                                     required={!editItem}
                                 />
                                 <InputError message={form.errors.password} className="mt-1" />

@@ -207,7 +207,7 @@ const ArchiveIndex = ({ archived: initialArchived, filters }: Props) => {
                                 placeholder="Cari kegiatan, nomor surat, lokasi..."
                                 value={search}
                                 onChange={handleSearchChange}
-                                className="w-full"
+                                className="w-full px-3"
                             />
                             <Button variant="secondary" disabled>
                                 <Search className="h-4 w-4" />

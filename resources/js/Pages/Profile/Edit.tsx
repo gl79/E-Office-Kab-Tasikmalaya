@@ -86,7 +86,7 @@ const Edit = ({ status, user }: Props) => {
             </div>
 
             <div className="py-4">
-                <div className="max-w-4xl space-y-6">
+                <div className="w-full space-y-6">
                     {/* Profile Photo Section */}
                     <div className="p-6 bg-surface shadow-sm rounded-lg border border-border-default">
                         <h3 className="text-lg font-medium text-text-primary mb-4">Foto Profil</h3>

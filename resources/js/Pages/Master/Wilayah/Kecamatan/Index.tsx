@@ -270,7 +270,7 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
                                     placeholder="Cari Kecamatan..."
                                     value={search}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                                    className="w-full"
+                                    className="w-full px-3"
                                 />
                                 <Button variant="secondary" disabled>
                                     <Search className="h-4 w-4" />
@@ -309,7 +309,7 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
                         <div className="flex gap-2">
                             <Button onClick={openCreateModal}>
                                 <Plus className="h-4 w-4 mr-2" />
-                                Tambah
+                                Tambah Kecamatan
                             </Button>
                         </div>
                     </div>
@@ -394,7 +394,7 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('kode', e.target.value)}
                             placeholder="Contoh: 01"
                             maxLength={2}
-                            className="w-full"
+                            className="w-full px-2"
                         />
                         {errors.kode && <p className="text-sm text-danger">{errors.kode}</p>}
                     </div>
@@ -405,7 +405,7 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
                             value={formData.nama}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
                             placeholder="Contoh: CIPATUJAH"
-                            className="w-full"
+                            className="w-full px-2"
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
@@ -457,7 +457,7 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
                             id="edit-kode"
                             value={formData.kode}
                             disabled
-                            className="w-full bg-surface-hover"
+                            className="w-full px-2 bg-surface-hover"
                         />
                     </div>
                     <div className="space-y-2">
@@ -466,7 +466,7 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
                             id="edit-nama"
                             value={formData.nama}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
-                            className="w-full"
+                            className="w-full px-2"
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>

@@ -137,6 +137,21 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
         });
     };
 
+    const getSifatBadge = (sifatValue: string) => {
+        const variants: Record<string, 'default' | 'info' | 'warning' | 'danger'> = {
+            biasa: 'default',
+            penting: 'info',
+            segera: 'warning',
+            amat_segera: 'danger',
+        };
+
+        return (
+            <Badge variant={variants[sifatValue] || 'default'} className="justify-center min-w-[80px] whitespace-nowrap">
+                {sifat1Options[sifatValue] || sifatValue}
+            </Badge>
+        );
+    };
+
     return (
         <>
             <Head title="Surat Keluar" />
@@ -159,10 +174,11 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                     placeholder="Cari nomor surat, kepada, perihal..."
                                     value={search}
                                     onChange={handleSearchChange}
-                                    className="w-full"
+                                    className="w-full px-2"
                                 />
-                                <Button variant="secondary" onClick={() => setShowFilters(!showFilters)} title="Filter Lanjutan">
+                                <Button variant="secondary" onClick={() => setShowFilters(!showFilters)} title="Filter Lanjutan" className="gap-2">
                                     <Filter className={`h-4 w-4 ${showFilters ? 'text-primary' : ''}`} />
+                                    <span>Filter</span>
                                 </Button>
                             </div>
                             <Link href={route('persuratan.surat-keluar.create')}>
@@ -186,7 +202,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                             setStartDate(e.target.value);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full"
+                                        className="w-full px-2"
                                     />
                                 </div>
                                 <div>
@@ -199,7 +215,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                             setEndDate(e.target.value);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full"
+                                        className="w-full px-2"
                                     />
                                 </div>
                             </div>
@@ -223,7 +239,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor Surat</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Kepada</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Sifat</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-10"></th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-20">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="bg-surface divide-y divide-border-default">
@@ -245,9 +261,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                         {item.kepada}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <Badge variant="info" className="justify-center min-w-[80px]">
-                                            {sifat1Options[item.sifat_1] || item.sifat_1}
-                                        </Badge>
+                                        {getSifatBadge(item.sifat_1)}
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <Dropdown
@@ -386,7 +400,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">Sifat</p>
-                                <Badge variant="info">{sifat1Options[detailSurat.sifat_1] || detailSurat.sifat_1}</Badge>
+                                {getSifatBadge(detailSurat.sifat_1)}
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">Lampiran</p>

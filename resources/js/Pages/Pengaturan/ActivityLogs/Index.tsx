@@ -209,12 +209,12 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                         placeholder="Cari deskripsi, IP, user..."
                         value={search}
                         onChange={handleSearchChange}
-                        className="w-full"
+                        className="w-full px-2"
                     />
                     <select
                         value={userFilter}
                         onChange={(e) => { setUserFilter(e.target.value); setCurrentPage(1); }}
-                        className="border border-border-default rounded-lg px-3 py-2 text-sm"
+                        className="border border-border-default rounded-lg px-2 py-2 text-sm"
                     >
                         <option value="">Semua Pengguna</option>
                         {usersData.map((user) => (
@@ -224,7 +224,7 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                     <select
                         value={actionFilter}
                         onChange={(e) => { setActionFilter(e.target.value); setCurrentPage(1); }}
-                        className="border border-border-default rounded-lg px-3 py-2 text-sm"
+                        className="border border-border-default rounded-lg px-2 py-2 text-sm"
                     >
                         <option value="">Semua Aksi</option>
                         {actionTypes.map((type) => (
@@ -236,14 +236,14 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                         placeholder="Dari Tanggal"
                         value={dateFromFilter}
                         onChange={(e) => { setDateFromFilter(e.target.value); setCurrentPage(1); }}
-                        className="w-full"
+                        className="w-full px-2"
                     />
                     <TextInput
                         type="date"
                         placeholder="Sampai Tanggal"
                         value={dateToFilter}
                         onChange={(e) => { setDateToFilter(e.target.value); setCurrentPage(1); }}
-                        className="w-full"
+                        className="w-full px-2"
                     />
                 </div>
             </div>

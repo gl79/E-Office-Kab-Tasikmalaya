@@ -88,7 +88,7 @@ export default function Archive({ data, filters }: Props) {
                         placeholder="Cari nama, username..."
                         value={localSearch}
                         onChange={(e) => setLocalSearch(e.target.value)}
-                        className="w-full"
+                        className="w-full px-3"
                     />
                 </div>
             </div>

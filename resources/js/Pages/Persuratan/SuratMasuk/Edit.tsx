@@ -176,7 +176,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     id="tanggal_surat"
                                                     value={data.tanggal_surat}
                                                     onChange={(e) => setData('tanggal_surat', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.tanggal_surat} className="mt-1" />
                                             </div>
@@ -187,7 +187,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     id="nomor_surat"
                                                     value={data.nomor_surat}
                                                     onChange={(e) => setData('nomor_surat', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.nomor_surat} className="mt-1" />
                                             </div>
@@ -198,7 +198,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     id="asal_surat"
                                                     value={data.asal_surat}
                                                     onChange={(e) => setData('asal_surat', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.asal_surat} className="mt-1" />
                                             </div>
@@ -221,7 +221,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     options={sifatSelectOptions}
                                                     value={data.sifat}
                                                     onChange={(e) => setData('sifat', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.sifat} className="mt-1" />
                                             </div>
@@ -234,7 +234,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     value={data.lampiran}
                                                     onChange={(e) => setData('lampiran', e.target.value)}
                                                     min="0"
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.lampiran} className="mt-1" />
                                             </div>
@@ -246,7 +246,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     value={data.perihal}
                                                     onChange={(e) => setData('perihal', e.target.value)}
                                                     rows={2}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.perihal} className="mt-1" />
                                             </div>
@@ -258,7 +258,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     value={data.isi_ringkas}
                                                     onChange={(e) => setData('isi_ringkas', e.target.value)}
                                                     rows={4}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.isi_ringkas} className="mt-1" />
                                             </div>
@@ -276,7 +276,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     id="tanggal_diterima"
                                                     value={data.tanggal_diterima}
                                                     onChange={(e) => setData('tanggal_diterima', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.tanggal_diterima} className="mt-1" />
                                             </div>
@@ -287,7 +287,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     id="nomor_agenda"
                                                     value={data.nomor_agenda}
                                                     onChange={(e) => setData('nomor_agenda', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.nomor_agenda} className="mt-1" />
                                             </div>
@@ -299,7 +299,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     options={indeksOptions}
                                                     value={data.indeks_berkas_id}
                                                     onChange={(e) => setData('indeks_berkas_id', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.indeks_berkas_id} className="mt-1" />
                                             </div>
@@ -311,7 +311,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     options={indeksOptions}
                                                     value={data.kode_klasifikasi_id}
                                                     onChange={(e) => setData('kode_klasifikasi_id', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.kode_klasifikasi_id} className="mt-1" />
                                             </div>
@@ -323,7 +323,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     options={userOptions}
                                                     value={data.staff_pengolah_id}
                                                     onChange={(e) => setData('staff_pengolah_id', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.staff_pengolah_id} className="mt-1" />
                                             </div>
@@ -334,7 +334,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     id="tanggal_diteruskan"
                                                     value={data.tanggal_diteruskan}
                                                     onChange={(e) => setData('tanggal_diteruskan', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.tanggal_diteruskan} className="mt-1" />
                                             </div>
@@ -346,7 +346,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                     value={data.catatan_tambahan}
                                                     onChange={(e) => setData('catatan_tambahan', e.target.value)}
                                                     rows={3}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.catatan_tambahan} className="mt-1" />
                                             </div>

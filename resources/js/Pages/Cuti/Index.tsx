@@ -182,7 +182,7 @@ const CutiIndex = ({ cuti, statusOptions, filters }: Props) => {
                                 placeholder="Cari pegawai, atasan, jenis cuti..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full"
+                                className="w-full px-2"
                             />
                             <Button variant="secondary" disabled>
                                 <Search className="h-4 w-4" />

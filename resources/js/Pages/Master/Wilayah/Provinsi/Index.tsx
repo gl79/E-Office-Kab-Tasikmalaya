@@ -163,10 +163,10 @@ export default function Index({ auth, provinsi: initialProvinsi, filters }: Prop
                         <div className="flex gap-2 w-full sm:w-80">
                             <TextInput
                                 type="text"
-                                placeholder="Cari provinsi..."
+                                placeholder="Cari Provinsi..."
                                 value={search}
                                 onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                                className="w-full"
+                                className="w-full px-2"
                             />
                             <Button variant="secondary" disabled>
                                 <Search className="h-4 w-4" />
@@ -219,7 +219,7 @@ export default function Index({ auth, provinsi: initialProvinsi, filters }: Prop
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('kode', e.target.value)}
                             placeholder="Contoh: 32"
                             maxLength={2}
-                            className="w-full"
+                            className="w-full px-2"
                         />
                         {errors.kode && <p className="text-sm text-danger">{errors.kode}</p>}
                     </div>
@@ -230,7 +230,7 @@ export default function Index({ auth, provinsi: initialProvinsi, filters }: Prop
                             value={formData.nama}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
                             placeholder="Contoh: JAWA BARAT"
-                            className="w-full"
+                            className="w-full px-2"
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
@@ -259,7 +259,7 @@ export default function Index({ auth, provinsi: initialProvinsi, filters }: Prop
                             id="edit-nama"
                             value={formData.nama}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
-                            className="w-full"
+                            className="w-full px-2"
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>

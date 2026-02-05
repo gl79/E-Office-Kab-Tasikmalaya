@@ -4,6 +4,7 @@ import { usePage, Link } from '@inertiajs/react';
 import { menuItems, MenuItem } from '@/config/menu';
 import SidebarMenuItem from './SidebarMenuItem';
 import { PageProps } from '@/types';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface SidebarProps {
     /** Additional CSS classes for customization */
@@ -22,6 +23,10 @@ interface SidebarProps {
     items?: MenuItem[];
     /** Callback when logout is clicked */
     onLogoutClick?: () => void;
+    /** Collapse sidebar on desktop */
+    collapsed?: boolean;
+    /** Toggle collapse state */
+    onToggleCollapse?: () => void;
 }
 
 /**
@@ -38,7 +43,9 @@ export default function Sidebar({
     items,
     onLogoutClick,
     isOpen = false,
-    onClose
+    onClose,
+    collapsed = false,
+    onToggleCollapse
 }: SidebarProps & { isOpen?: boolean; onClose?: () => void }) {
     const { auth } = usePage<PageProps>().props;
     const userRole = auth.user?.role;
@@ -80,20 +87,38 @@ export default function Sidebar({
                     bg-surface border-r border-border-default
                     transition-transform duration-300 ease-in-out
                     lg:static lg:translate-x-0
-                    ${width}
+                    ${collapsed ? 'w-64 lg:w-20' : width}
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                     ${className}
                 `.trim()}
             >
                 {/* Sidebar Branding / Header */}
-                <div className="h-16 flex items-center px-6 border-b border-border-default bg-surface sticky top-0 z-10">
-                    <Link href={route('dashboard')} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <div
+                    className={`
+                        h-16 flex items-center border-b border-border-default bg-surface sticky top-0 z-10
+                        ${collapsed ? 'px-6 lg:px-2 lg:justify-between' : 'px-6'}
+                    `}
+                >
+                    <Link
+                        href={route('dashboard')}
+                        className={`flex items-center gap-3 hover:opacity-80 transition-opacity ${collapsed ? 'justify-center' : ''}`}
+                        title="Dashboard"
+                    >
                         <img src="/images/pemkabtasik.png" alt="Logo Kabupaten Tasikmalaya" className="w-8 h-8 object-contain" />
-                        <div className="text-sm font-bold text-text-primary leading-tight">
+                        <div className={`text-sm font-bold text-text-primary leading-tight ${collapsed ? 'lg:hidden' : ''}`}>
                             E-Office<br/>
                             <span className="font-semibold text-text-secondary text-xs">Kab. Tasikmalaya</span>
                         </div>
                     </Link>
+                    {/* Collapse toggle (desktop) */}
+                    <button
+                        onClick={onToggleCollapse}
+                        className="ml-auto hidden lg:inline-flex items-center justify-center w-8 h-8 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
+                        title={collapsed ? 'Perluas Sidebar' : 'Perkecil Sidebar'}
+                        type="button"
+                    >
+                        {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                    </button>
                     {/* Close button for mobile */}
                     <button 
                         onClick={onClose}
@@ -106,7 +131,7 @@ export default function Sidebar({
                 </div>
 
                 {/* Sidebar Content Container */}
-                <div className="flex-1 py-4 px-3 overflow-y-auto h-[calc(100vh-4rem)]">
+                <div className={`flex-1 py-4 overflow-y-auto h-[calc(100vh-4rem)] ${collapsed ? 'px-3 lg:px-2' : 'px-3'}`}>
                     {children ?? (
                         <nav className="space-y-1">
                             {menuToRender.map((item, index) => (
@@ -114,6 +139,7 @@ export default function Sidebar({
                                     key={`${item.label}-${index}`}
                                     item={item}
                                     onLogoutClick={onLogoutClick}
+                                    collapsed={collapsed}
                                 />
                             ))}
                         </nav>

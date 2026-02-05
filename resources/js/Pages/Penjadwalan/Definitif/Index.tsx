@@ -191,13 +191,13 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
                                 placeholder="Cari kegiatan, nomor surat, lokasi..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full"
+                                className="w-full px-3"
                             />
                             <FormSelect
                                 options={disposisiSelectOptions}
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                className="w-full"
+                                className="w-full px-3"
                             />
                              <div className="flex gap-2">
                                 <Button onClick={handleApplyFilter} className="flex-1">

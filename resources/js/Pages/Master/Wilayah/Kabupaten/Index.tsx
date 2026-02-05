@@ -226,10 +226,10 @@ export default function Index({ auth, kabupaten: initialKabupaten, filters }: Pr
                             <div className="flex gap-2 w-full sm:w-80">
                                 <TextInput
                                     type="text"
-                                    placeholder="Cari kabupaten..."
+                                    placeholder="Cari Kabupaten..."
                                     value={search}
                                     onChange={handleSearchChange}
-                                    className="w-full"
+                                    className="w-full px-2"
                                 />
                                 <Button variant="secondary" disabled>
                                     <Search className="h-4 w-4" />
@@ -315,7 +315,7 @@ export default function Index({ auth, kabupaten: initialKabupaten, filters }: Pr
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('kode', e.target.value)}
                             placeholder="Contoh: 01"
                             maxLength={2}
-                            className="w-full"
+                            className="w-full px-2"
                         />
                         {errors.kode && <p className="text-sm text-danger">{errors.kode}</p>}
                     </div>
@@ -326,7 +326,7 @@ export default function Index({ auth, kabupaten: initialKabupaten, filters }: Pr
                             value={formData.nama}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
                             placeholder="Contoh: TASIKMALAYA"
-                            className="w-full"
+                            className="w-full px-2"
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
@@ -370,7 +370,7 @@ export default function Index({ auth, kabupaten: initialKabupaten, filters }: Pr
                             id="edit-nama"
                             value={formData.nama}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
-                            className="w-full"
+                            className="w-full px-2"
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>

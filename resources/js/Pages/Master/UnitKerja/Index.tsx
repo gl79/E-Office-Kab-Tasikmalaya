@@ -158,7 +158,7 @@ const Index = ({ auth, unitKerja: initialUnitKerja, filters }: Props) => {
                                     placeholder="Cari Unit Kerja..."
                                     value={search}
                                     onChange={handleSearchChange}
-                                    className="w-full"
+                                    className="w-full px-3"
                                 />
                                 <Button variant="secondary" disabled>
                                     <Search className="h-4 w-4" />

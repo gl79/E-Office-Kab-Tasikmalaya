@@ -230,7 +230,7 @@ const JadwalIndex = ({ belumDijadwalkan, sudahDijadwalkan, activeTab: initialTab
                             placeholder="Cari nomor surat, asal surat, perihal..."
                             value={search}
                             onChange={handleSearchChange}
-                            className="w-full"
+                            className="w-full px-3"
                         />
                         <Button variant="secondary" disabled>
                             <Search className="h-4 w-4" />

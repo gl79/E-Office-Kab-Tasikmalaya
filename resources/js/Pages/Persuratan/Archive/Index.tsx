@@ -199,7 +199,7 @@ const Index = ({ archives: initialArchives }: Props) => {
                                 placeholder="Cari nomor surat, perihal..."
                                 value={search}
                                 onChange={handleSearchChange}
-                                className="w-full"
+                                className="w-full py-1 px-2"
                             />
                             <div className="w-full sm:w-48">
                                 <FormSelect
@@ -207,7 +207,7 @@ const Index = ({ archives: initialArchives }: Props) => {
                                     value={type}
                                     onChange={handleTypeChange}
                                     placeholder="Jenis Surat"
-                                    className="w-full"
+                                    className="w-full py-2 px-2"
                                 />
                             </div>
                         </div>

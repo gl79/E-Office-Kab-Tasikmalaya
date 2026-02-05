@@ -119,8 +119,8 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
         <AppLayout>
             <Head title="Tambah Surat Masuk" />
 
-            <div className="py-12">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div className="py-6">
+                <div className="w-full">
                     <div className="bg-surface overflow-hidden shadow-sm sm:rounded-lg p-6">
                         {/* Header */}
                         <div className="flex items-center gap-4 mb-6">
@@ -151,7 +151,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     id="tanggal_surat"
                                                     value={data.tanggal_surat}
                                                     onChange={(e) => setData('tanggal_surat', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.tanggal_surat} className="mt-1" />
                                             </div>
@@ -163,7 +163,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     value={data.nomor_surat}
                                                     onChange={(e) => setData('nomor_surat', e.target.value)}
                                                     placeholder="Masukkan nomor surat"
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.nomor_surat} className="mt-1" />
                                             </div>
@@ -175,7 +175,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     value={data.asal_surat}
                                                     onChange={(e) => setData('asal_surat', e.target.value)}
                                                     placeholder="Masukkan asal surat"
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.asal_surat} className="mt-1" />
                                             </div>
@@ -201,7 +201,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     value={data.sifat}
                                                     onChange={(e) => setData('sifat', e.target.value)}
                                                     placeholder="Pilih sifat surat"
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.sifat} className="mt-1" />
                                             </div>
@@ -215,7 +215,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     onChange={(e) => setData('lampiran', e.target.value)}
                                                     placeholder="Jumlah lampiran"
                                                     min="0"
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.lampiran} className="mt-1" />
                                             </div>
@@ -228,7 +228,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     onChange={(e) => setData('perihal', e.target.value)}
                                                     placeholder="Masukkan perihal surat"
                                                     rows={2}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.perihal} className="mt-1" />
                                             </div>
@@ -241,7 +241,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     onChange={(e) => setData('isi_ringkas', e.target.value)}
                                                     placeholder="Masukkan ringkasan isi surat"
                                                     rows={4}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.isi_ringkas} className="mt-1" />
                                             </div>
@@ -259,7 +259,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     id="tanggal_diterima"
                                                     value={data.tanggal_diterima}
                                                     onChange={(e) => setData('tanggal_diterima', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.tanggal_diterima} className="mt-1" />
                                             </div>
@@ -271,7 +271,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     value={data.nomor_agenda}
                                                     onChange={(e) => setData('nomor_agenda', e.target.value)}
                                                     placeholder="Contoh: 0001"
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.nomor_agenda} className="mt-1" />
                                             </div>
@@ -284,7 +284,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     value={data.indeks_berkas_id}
                                                     onChange={(e) => setData('indeks_berkas_id', e.target.value)}
                                                     placeholder="Pilih indeks berkas"
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.indeks_berkas_id} className="mt-1" />
                                             </div>
@@ -297,7 +297,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     value={data.kode_klasifikasi_id}
                                                     onChange={(e) => setData('kode_klasifikasi_id', e.target.value)}
                                                     placeholder="Pilih kode klasifikasi"
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.kode_klasifikasi_id} className="mt-1" />
                                             </div>
@@ -310,7 +310,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     value={data.staff_pengolah_id}
                                                     onChange={(e) => setData('staff_pengolah_id', e.target.value)}
                                                     placeholder="Pilih staff pengolah"
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.staff_pengolah_id} className="mt-1" />
                                             </div>
@@ -321,7 +321,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     id="tanggal_diteruskan"
                                                     value={data.tanggal_diteruskan}
                                                     onChange={(e) => setData('tanggal_diteruskan', e.target.value)}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.tanggal_diteruskan} className="mt-1" />
                                             </div>
@@ -334,7 +334,7 @@ export default function Create({ indeksSurat, users, sifatOptions, tujuanOptions
                                                     onChange={(e) => setData('catatan_tambahan', e.target.value)}
                                                     placeholder="Catatan internal (opsional)"
                                                     rows={3}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.catatan_tambahan} className="mt-1" />
                                             </div>

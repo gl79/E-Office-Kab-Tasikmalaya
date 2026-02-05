@@ -202,10 +202,11 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     placeholder="Cari nomor agenda, nomor surat, asal surat..."
                                     value={search}
                                     onChange={handleSearchChange}
-                                    className="w-full"
+                                    className="w-full px-2"
                                 />
-                                <Button variant="secondary" onClick={() => setShowFilters(!showFilters)} title="Filter Lanjutan">
+                                <Button variant="secondary" onClick={() => setShowFilters(!showFilters)} title="Filter Lanjutan" className="gap-2">
                                     <Filter className={`h-4 w-4 ${showFilters ? 'text-primary' : ''}`} />
+                                    <span>Filter</span>
                                 </Button>
                             </div>
                             <Link href={route('persuratan.surat-masuk.create')}>
@@ -229,7 +230,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                             setStartDate(e.target.value);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full"
+                                        className="w-full px-2"
                                     />
                                 </div>
                                 <div>
@@ -242,7 +243,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                             setEndDate(e.target.value);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full"
+                                        className="w-full px-2"
                                     />
                                 </div>
                                 <div>
@@ -257,7 +258,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                             setCurrentPage(1);
                                         }}
                                         placeholder="Semua Sifat"
-                                        className="w-full"
+                                        className="w-full px-2"
                                     />
                                 </div>
                             </div>
@@ -281,7 +282,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor / Tgl Surat</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Asal Surat</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Sifat</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-10"></th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-20">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="bg-surface divide-y divide-border-default">

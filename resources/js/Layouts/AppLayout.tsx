@@ -35,11 +35,27 @@ function AppLayoutInner({
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     // Close mobile sidebar on route change
     useEffect(() => {
         setIsMobileSidebarOpen(false);
     }, [url]);
+
+    // Load sidebar collapse preference
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const stored = window.localStorage.getItem('sidebar_collapsed');
+        if (stored) {
+            setIsSidebarCollapsed(stored === '1');
+        }
+    }, []);
+
+    // Persist sidebar collapse preference
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        window.localStorage.setItem('sidebar_collapsed', isSidebarCollapsed ? '1' : '0');
+    }, [isSidebarCollapsed]);
 
     // Password Change Form
     const { data: passwordData, setData: setPasswordData, put: putPassword, processing: passwordProcessing, errors: passwordErrors, reset: resetPassword } = useForm({
@@ -164,6 +180,8 @@ function AppLayoutInner({
                             onLogoutClick={() => setShowLogoutModal(true)}
                             isOpen={isMobileSidebarOpen}
                             onClose={() => setIsMobileSidebarOpen(false)}
+                            collapsed={isSidebarCollapsed}
+                            onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
                         >
                             {sidebarContent}
                         </Sidebar>

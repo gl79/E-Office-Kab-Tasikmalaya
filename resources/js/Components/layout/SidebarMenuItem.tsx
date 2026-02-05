@@ -37,6 +37,8 @@ interface SidebarMenuItemProps {
     depth?: number;
     /** Callback for logout action */
     onLogoutClick?: () => void;
+    /** Collapse sidebar */
+    collapsed?: boolean;
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -79,7 +81,8 @@ const iconMap: Record<string, LucideIcon> = {
 export default function SidebarMenuItem({ 
     item, 
     depth = 0,
-    onLogoutClick
+    onLogoutClick,
+    collapsed = false
 }: SidebarMenuItemProps) {
     const { url } = usePage();
     const hasChildren = item.children && item.children.length > 0;
@@ -130,12 +133,16 @@ export default function SidebarMenuItem({
 
     // Base styles
     const baseClasses = `
-        flex items-center justify-between
-        w-full px-3 py-2.5 rounded-lg
+        flex items-center
+        w-full py-2.5 rounded-lg
         text-sm font-medium
         transition-colors duration-150
         hover:bg-surface-hover
     `;
+
+    const layoutClasses = collapsed
+        ? 'justify-between px-3 lg:justify-center lg:px-2'
+        : 'justify-between px-3';
 
     // Active state styles
     const activeClasses = isActive 
@@ -143,7 +150,7 @@ export default function SidebarMenuItem({
         : 'text-text-secondary';
 
     // Indentation based on depth
-    const paddingLeft = depth > 0 ? `${depth * 12 + 12}px` : '12px';
+    const paddingLeft = !collapsed && depth > 0 ? `${depth * 12 + 12}px` : undefined;
 
     // Toggle submenu
     const handleToggle = () => {
@@ -158,20 +165,20 @@ export default function SidebarMenuItem({
     // Render menu item content
     const renderContent = () => (
         <>
-            <span className="flex items-center gap-3">
+            <span className={`flex items-center ${collapsed ? 'gap-3 lg:gap-0' : 'gap-3'}`}>
                 {/* Icon */}
                 {IconComponent && (
                     <span className={`w-5 h-5 flex items-center justify-center ${isActive ? 'text-primary' : 'text-text-muted'}`}>
                         <IconComponent className="w-4 h-4" />
                     </span>
                 )}
-                <span>{item.label}</span>
+                <span className={collapsed ? 'lg:sr-only' : ''}>{item.label}</span>
             </span>
 
             {/* Expand/Collapse indicator */}
             {hasChildren && (
                 <ChevronDown
-                    className={`w-4 h-4 text-text-muted transition-transform duration-200 ${
+                    className={`w-4 h-4 text-text-muted transition-transform duration-200 ${collapsed ? 'lg:hidden' : ''} ${
                         isExpanded ? 'rotate-180' : ''
                     }`}
                 />
@@ -187,8 +194,10 @@ export default function SidebarMenuItem({
                 <button
                     type="button"
                     onClick={handleToggle}
-                    className={`${baseClasses} ${activeClasses}`}
-                    style={{ paddingLeft }}
+                    className={`${baseClasses} ${layoutClasses} ${activeClasses}`}
+                    style={paddingLeft ? { paddingLeft } : undefined}
+                    title={collapsed ? item.label : undefined}
+                    aria-label={collapsed ? item.label : undefined}
                 >
                     {renderContent()}
                 </button>
@@ -200,8 +209,10 @@ export default function SidebarMenuItem({
                         e.stopPropagation();
                         onLogoutClick?.();
                     }}
-                    className={`${baseClasses} text-danger hover:bg-danger-light`}
-                    style={{ paddingLeft }}
+                    className={`${baseClasses} ${layoutClasses} text-danger hover:bg-danger-light`}
+                    style={paddingLeft ? { paddingLeft } : undefined}
+                    title={collapsed ? item.label : undefined}
+                    aria-label={collapsed ? item.label : undefined}
                 >
                     <span className="flex items-center gap-3">
                         {IconComponent && (
@@ -209,7 +220,7 @@ export default function SidebarMenuItem({
                                 <IconComponent className="w-4 h-4" />
                             </span>
                         )}
-                        <span>{item.label}</span>
+                        <span className={collapsed ? 'sr-only' : ''}>{item.label}</span>
                     </span>
                 </button>
             ) : item.href ? (
@@ -219,16 +230,20 @@ export default function SidebarMenuItem({
 
                     preserveState
                     preserveScroll
-                    className={`${baseClasses} ${activeClasses}`}
-                    style={{ paddingLeft }}
+                    className={`${baseClasses} ${layoutClasses} ${activeClasses}`}
+                    style={paddingLeft ? { paddingLeft } : undefined}
+                    title={collapsed ? item.label : undefined}
+                    aria-label={collapsed ? item.label : undefined}
                 >
                     {renderContent()}
                 </Link>
             ) : (
                 // No href, no children - static text
                 <span
-                    className={`${baseClasses} ${activeClasses} cursor-default`}
-                    style={{ paddingLeft }}
+                    className={`${baseClasses} ${layoutClasses} ${activeClasses} cursor-default`}
+                    style={paddingLeft ? { paddingLeft } : undefined}
+                    title={collapsed ? item.label : undefined}
+                    aria-label={collapsed ? item.label : undefined}
                 >
                     {renderContent()}
                 </span>
@@ -236,13 +251,14 @@ export default function SidebarMenuItem({
 
             {/* Submenu */}
             {hasChildren && isExpanded && (
-                <div className="mt-1 ml-2 border-l border-border-default pl-2">
+                <div className={`${collapsed ? 'mt-1' : 'mt-1 ml-2 border-l border-border-default pl-2'}`}>
                     {item.children!.map((child, index) => (
                         <SidebarMenuItem
                             key={`${child.label}-${index}`}
                             item={child}
                             depth={depth + 1}
                             onLogoutClick={onLogoutClick}
+                            collapsed={collapsed}
                         />
                     ))}
                 </div>

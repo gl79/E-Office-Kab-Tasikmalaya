@@ -219,7 +219,7 @@ const Index = ({ auth, archives: initialArchives, filters }: Props) => {
                                     placeholder="Cari Arsip..."
                                     value={search}
                                     onChange={handleSearchChange}
-                                    className="w-full"
+                                    className="w-full px-2"
                                 />
                                 <Button variant="secondary" disabled>
                                     <Search className="h-4 w-4" />

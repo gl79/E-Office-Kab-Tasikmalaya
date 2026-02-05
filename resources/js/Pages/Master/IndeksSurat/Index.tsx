@@ -161,7 +161,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                                     placeholder="Cari Kode atau Nama..."
                                     value={search}
                                     onChange={handleSearchChange}
-                                    className="w-full"
+                                    className="w-full px-3"
                                 />
                                 <Button variant="secondary" disabled>
                                     <Search className="h-4 w-4" />

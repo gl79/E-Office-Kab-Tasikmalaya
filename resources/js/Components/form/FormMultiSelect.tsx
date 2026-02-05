@@ -158,7 +158,7 @@ export default function FormMultiSelect({
                                         onKeyDown={handleKeyDown}
                                         placeholder="Masukkan tujuan lain..."
                                         className="
-                                            flex-1 px-3 py-1.5 text-sm
+                                            flex-1 px-2 py-1.5 text-sm
                                             border border-border-default rounded-md
                                             focus:outline-none focus:ring-1 focus:ring-primary
                                         "
