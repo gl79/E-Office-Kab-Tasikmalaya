@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { RotateCcw, Trash2, Search } from 'lucide-react';
+import { RotateCcw, Trash2 } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Pagination } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
@@ -241,84 +241,74 @@ const Index = ({ archives: initialArchives }: Props) => {
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-border-default">
+                        <table className="min-w-full border-collapse border border-border-default">
                             <thead className="bg-surface-hover">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Jenis</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">No. Agenda</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tgl Surat</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor Surat</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Perihal</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus Pada</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus Oleh</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-24">Aksi</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-12">No</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Jenis</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">No Agenda / Urut</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Tgl Surat</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Nomor Surat</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Perihal</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Dihapus Pada</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Dihapus Oleh</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-24">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-surface divide-y divide-border-default">
+                            <tbody className="bg-surface">
                                 {paginatedData.map((item, index) => (
                                     <tr key={`${item.type}-${item.id}`} className="hover:bg-surface-hover">
-                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                        <td className="border border-border-default px-4 py-3 text-center text-text-secondary text-sm">
                                             {(currentPage - 1) * itemsPerPage + index + 1}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <Badge variant={item.jenis === 'Surat Masuk' ? 'info' : 'warning'}>
+                                        <td className="border border-border-default px-4 py-3">
+                                            <Badge variant={item.jenis === 'Surat Masuk' ? 'info' : 'warning'} className="min-w-[100px] justify-center">
                                                 {item.jenis}
                                             </Badge>
                                         </td>
-                                        <td className="px-4 py-3 text-text-primary text-sm font-medium">
+                                        <td className="border border-border-default px-4 py-3 text-center text-text-primary text-sm font-medium">
                                             {item.nomor_agenda}
                                         </td>
-                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                        <td className="border border-border-default px-4 py-3 text-text-secondary text-sm">
                                             {formatDateShort(item.tanggal_surat)}
                                         </td>
-                                        <td className="px-4 py-3 text-text-primary text-sm">
+                                        <td className="border border-border-default px-4 py-3 text-text-primary text-sm">
                                             {item.nomor_surat}
                                         </td>
-                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                        <td className="border border-border-default px-4 py-3 text-text-secondary text-sm">
                                             <div className="max-w-xs truncate" title={item.perihal}>
                                                 {item.perihal}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                        <td className="border border-border-default px-4 py-3 text-text-secondary text-sm">
                                             {formatDateTime(item.deleted_at)}
                                         </td>
-                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                        <td className="border border-border-default px-4 py-3 text-text-secondary text-sm">
                                             {item.deleted_by?.name || '-'}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setSelectedItem(item);
-                                                        setRestoreModalOpen(true);
-                                                    }}
+                                        <td className="border border-border-default px-4 py-3 text-center">
+                                            <div className="flex justify-center gap-1">
+                                                <button
+                                                    onClick={() => { setSelectedItem(item); setRestoreModalOpen(true); }}
                                                     title="Pulihkan"
-                                                    className="p-1 h-8 w-8"
+                                                    className="p-1.5 rounded-lg hover:bg-surface-hover text-text-secondary transition-colors"
                                                 >
                                                     <RotateCcw className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setSelectedItem(item);
-                                                        setDeleteModalOpen(true);
-                                                    }}
+                                                </button>
+                                                <button
+                                                    onClick={() => { setSelectedItem(item); setDeleteModalOpen(true); }}
                                                     title="Hapus Permanen"
-                                                    className="p-1 h-8 w-8"
+                                                    className="p-1.5 rounded-lg hover:bg-danger-light text-danger transition-colors"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
                                 ))}
                                 {paginatedData.length === 0 && (
                                     <tr>
-                                        <td colSpan={9} className="px-4 py-8 text-center text-text-secondary">
+                                        <td colSpan={9} className="border border-border-default px-4 py-8 text-center text-text-secondary">
                                             {search ? "Tidak ada data yang cocok dengan pencarian." : "Tidak ada data di arsip."}
                                         </td>
                                     </tr>

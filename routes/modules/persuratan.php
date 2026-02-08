@@ -21,6 +21,8 @@ Route::middleware('auth')->prefix('persuratan')->name('persuratan.')->group(func
     Route::post('surat-keluar/{id}/restore', [SuratKeluarController::class, 'restore'])->name('surat-keluar.restore');
     Route::delete('surat-keluar/{id}/force-delete', [SuratKeluarController::class, 'forceDelete'])->name('surat-keluar.force-delete');
     Route::get('surat-keluar/{id}/cetak-kartu', [SuratKeluarController::class, 'cetakKartu'])->name('surat-keluar.cetak-kartu');
+    Route::get('surat-keluar/{id}/cetak-isi', [SuratKeluarController::class, 'cetakIsi'])->name('surat-keluar.cetak-isi');
+    Route::get('surat-keluar/{id}/preview', [SuratKeluarController::class, 'previewFile'])->name('surat-keluar.preview');
     Route::get('surat-keluar/{id}/download', [SuratKeluarController::class, 'downloadFile'])->name('surat-keluar.download');
 
     // Archive Routes

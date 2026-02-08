@@ -600,6 +600,18 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                 </p>
                             </div>
                         </div>
+                        {detailItem.module_access && detailItem.module_access.length > 0 && (
+                            <div className="pt-2 border-t border-border-default">
+                                <p className="text-xs text-text-secondary mb-2">Akses Modul</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {MODULE_ORDER.filter(m => detailItem.module_access?.includes(m)).map(m => (
+                                        <span key={m} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-light text-primary-dark">
+                                            {modules[m] || m}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="flex justify-end mt-4">
                             <Button variant="secondary" onClick={() => setDetailItem(null)}>Tutup</Button>
                         </div>

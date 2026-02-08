@@ -22,12 +22,20 @@ class SuratKeluarController extends Controller
     {
         $this->authorize('viewAny', SuratKeluar::class);
 
+        $user = $request->user();
+
         return Inertia::render('Persuratan/SuratKeluar/Index', [
-            'suratKeluar' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_keluar_list', 60, function () {
-                return SuratKeluar::query()
-                    ->with(['indeks', 'kodeKlasifikasi', 'unitKerja'])
-                    ->latest('tanggal_surat')
-                    ->get();
+            'suratKeluar' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_keluar_list_' . $user->id, 60, function () use ($user) {
+                $query = SuratKeluar::query()
+                    ->with(['indeks', 'kodeKlasifikasi', 'unitKerja', 'createdBy'])
+                    ->latest('tanggal_surat');
+
+                // SuperAdmin & TU see all, others only see their own surat keluar
+                if (!$user->isSuperAdmin() && !$user->isTU()) {
+                    $query->where('created_by', $user->id);
+                }
+
+                return $query->get();
             })),
             'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
         ]);
@@ -40,10 +48,13 @@ class SuratKeluarController extends Controller
     {
         $this->authorize('create', SuratKeluar::class);
 
+        $nextNoUrut = SuratKeluar::withTrashed()->whereYear('tanggal_surat', now()->year)->count() + 1;
+
         return Inertia::render('Persuratan/SuratKeluar/Create', [
-            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama']),
+            'indeksSurat' => IndeksSurat::orderBy('kode')->get(['id', 'kode', 'nama']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
             'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
+            'nextNoUrut' => $nextNoUrut,
         ]);
     }
 
@@ -112,7 +123,7 @@ class SuratKeluarController extends Controller
 
         return Inertia::render('Persuratan/SuratKeluar/Edit', [
             'suratKeluar' => $suratKeluar,
-            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama']),
+            'indeksSurat' => IndeksSurat::orderBy('kode')->get(['id', 'kode', 'nama']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
             'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
         ]);
@@ -228,6 +239,48 @@ class SuratKeluarController extends Controller
         return Inertia::render('Persuratan/SuratKeluar/CetakKartu', [
             'suratKeluar' => $suratKeluar,
         ]);
+    }
+
+    /**
+     * Generate Cetak Isi Surat Keluar
+     */
+    public function cetakIsi(string $id)
+    {
+        $suratKeluar = SuratKeluar::with([
+            'indeks',
+            'kodeKlasifikasi',
+            'unitKerja',
+            'createdBy',
+        ])->findOrFail($id);
+
+        $this->authorize('view', $suratKeluar);
+
+        return Inertia::render('Persuratan/SuratKeluar/CetakIsi', [
+            'suratKeluar' => $suratKeluar,
+        ]);
+    }
+
+    /**
+     * Preview file surat in browser
+     */
+    public function previewFile(string $id)
+    {
+        $suratKeluar = SuratKeluar::findOrFail($id);
+        $this->authorize('view', $suratKeluar);
+
+        if (!$suratKeluar->file_path) {
+            return redirect()->back()->with('error', 'File surat tidak ditemukan.');
+        }
+
+        $filePath = storage_path('app/public/' . $suratKeluar->file_path);
+
+        if (!file_exists($filePath)) {
+            return redirect()->back()->with('error', 'File tidak ditemukan di server.');
+        }
+
+        $mimeType = mime_content_type($filePath);
+
+        return response()->file($filePath, ['Content-Type' => $mimeType]);
     }
 
     /**

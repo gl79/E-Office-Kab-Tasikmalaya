@@ -44,7 +44,7 @@ class ArchiveController extends Controller
                     ->map(function ($item) {
                         $item->jenis = 'Surat Keluar';
                         $item->type = 'keluar';
-                        $item->nomor_agenda = '-';
+                        $item->nomor_agenda = $item->no_urut ? str_pad($item->no_urut, 4, '0', STR_PAD_LEFT) : '-';
                         $item->asal_surat = $item->kepada;
                         return $item;
                     });
@@ -75,6 +75,7 @@ class ArchiveController extends Controller
         }
 
         CacheHelper::flush(['persuratan_archive']);
+        CacheHelper::flush(['persuratan_list']);
 
         return redirect()->back()->with('success', $message);
     }
@@ -133,6 +134,7 @@ class ArchiveController extends Controller
 
             DB::commit();
             CacheHelper::flush(['persuratan_archive']);
+            CacheHelper::flush(['persuratan_list']);
 
             $total = $countMasuk + $countKeluar;
             return redirect()->back()

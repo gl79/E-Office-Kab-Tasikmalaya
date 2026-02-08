@@ -28,22 +28,25 @@ interface Props extends PageProps {
     indeksSurat: IndeksSurat[];
     unitKerja: UnitKerja[];
     sifat1Options: Record<string, string>;
+    nextNoUrut: number;
 }
 
-export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props) {
+export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUrut }: Props) {
+    const today = new Date().toISOString().split('T')[0];
+
     const { data, setData, post, processing, errors } = useForm({
-        tanggal_surat: '',
-        no_urut: '',
-        nomor_surat: '',
-        kepada: '',
-        perihal: '',
-        isi_ringkas: '',
-        sifat_1: '',
+        tanggal_surat: today,
+        no_urut: nextNoUrut.toString().padStart(4, '0'),
         indeks_id: '',
         kode_klasifikasi_id: '',
         unit_kerja_id: '',
         kode_pengolah: '',
+        sifat_1: '',
+        nomor_surat: '',
+        kepada: '',
+        perihal: '',
         lampiran: '',
+        isi_ringkas: '',
         catatan: '',
         file: null as File | null,
     });
@@ -62,6 +65,17 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
         value,
         label,
     }));
+
+    const selectedIndeks = indeksSurat.find(item => item.id === data.indeks_id);
+
+    const handleIndeksChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedId = e.target.value;
+        setData(prev => ({
+            ...prev,
+            indeks_id: selectedId,
+            kode_klasifikasi_id: selectedId,
+        }));
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -99,39 +113,14 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="no_urut" value="No Urut *" />
+                                    <InputLabel htmlFor="no_urut" value="Nomor Urut *" />
                                     <TextInput
                                         id="no_urut"
                                         value={data.no_urut}
                                         onChange={(e) => setData('no_urut', e.target.value)}
-                                        placeholder="Masukkan no urut"
                                         className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.no_urut} className="mt-1" />
-                                </div>
-
-                                <div>
-                                    <InputLabel htmlFor="nomor_surat" value="Nomor Surat *" />
-                                    <TextInput
-                                        id="nomor_surat"
-                                        value={data.nomor_surat}
-                                        onChange={(e) => setData('nomor_surat', e.target.value)}
-                                        placeholder="Masukkan nomor surat"
-                                        className="w-full mt-1 px-2"
-                                    />
-                                    <InputError message={errors.nomor_surat} className="mt-1" />
-                                </div>
-
-                                <div>
-                                    <InputLabel htmlFor="kepada" value="Kepada *" />
-                                    <TextInput
-                                        id="kepada"
-                                        value={data.kepada}
-                                        onChange={(e) => setData('kepada', e.target.value)}
-                                        placeholder="Tujuan surat"
-                                        className="w-full mt-1 px-2"
-                                    />
-                                    <InputError message={errors.kepada} className="mt-1" />
                                 </div>
 
                                 <div>
@@ -140,7 +129,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         id="indeks_id"
                                         options={indeksOptions}
                                         value={data.indeks_id}
-                                        onChange={(e) => setData('indeks_id', e.target.value)}
+                                        onChange={handleIndeksChange}
                                         placeholder="Pilih indeks"
                                         className="w-full mt-1 px-2"
                                     />
@@ -148,26 +137,24 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="kode_klasifikasi_id" value="Kode Klasifikasi" />
-                                    <FormSelect
-                                        id="kode_klasifikasi_id"
-                                        options={indeksOptions}
-                                        value={data.kode_klasifikasi_id}
-                                        onChange={(e) => setData('kode_klasifikasi_id', e.target.value)}
-                                        placeholder="Pilih kode klasifikasi"
-                                        className="w-full mt-1 px-2"
+                                    <InputLabel htmlFor="kode_display" value="Kode" />
+                                    <TextInput
+                                        id="kode_display"
+                                        value={selectedIndeks?.kode || ''}
+                                        readOnly
+                                        className="w-full mt-1 px-2 bg-surface-hover cursor-not-allowed"
+                                        placeholder="Otomatis terisi saat memilih Indeks"
                                     />
-                                    <InputError message={errors.kode_klasifikasi_id} className="mt-1" />
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="unit_kerja_id" value="Unit Kerja/Pengolah" />
+                                    <InputLabel htmlFor="unit_kerja_id" value="Pengolah" />
                                     <FormSelect
                                         id="unit_kerja_id"
                                         options={unitKerjaOptions}
                                         value={data.unit_kerja_id}
                                         onChange={(e) => setData('unit_kerja_id', e.target.value)}
-                                        placeholder="Pilih unit kerja"
+                                        placeholder="Pilih unit kerja pengolah"
                                         className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.unit_kerja_id} className="mt-1" />
@@ -197,6 +184,30 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                         className="w-full mt-1"
                                     />
                                     <InputError message={errors.sifat_1} className="mt-1" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="nomor_surat" value="Nomor Surat *" />
+                                    <TextInput
+                                        id="nomor_surat"
+                                        value={data.nomor_surat}
+                                        onChange={(e) => setData('nomor_surat', e.target.value)}
+                                        placeholder="Masukkan nomor surat"
+                                        className="w-full mt-1 px-2"
+                                    />
+                                    <InputError message={errors.nomor_surat} className="mt-1" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="kepada" value="Kepada *" />
+                                    <TextInput
+                                        id="kepada"
+                                        value={data.kepada}
+                                        onChange={(e) => setData('kepada', e.target.value)}
+                                        placeholder="Tujuan surat"
+                                        className="w-full mt-1 px-2"
+                                    />
+                                    <InputError message={errors.kepada} className="mt-1" />
                                 </div>
 
                                 <div>
@@ -249,10 +260,10 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options }: Props)
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <InputLabel value="Upload File Surat" />
+                                    <InputLabel value="Upload File Surat (Word/PDF/JPG)" />
                                     <FormFileUpload
                                         onChange={(file) => setData('file', file)}
-                                        accept=".pdf,.doc,.docx"
+                                        accept=".pdf,.doc,.docx,.jpg,.jpeg"
                                         maxSize={5}
                                         error={errors.file}
                                     />
