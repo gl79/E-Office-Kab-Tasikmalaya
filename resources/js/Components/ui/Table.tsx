@@ -22,6 +22,8 @@ interface TableProps<T extends object> {
     emptyMessage?: string;
     /** Additional CSS classes for table */
     className?: string;
+    /** Enable bordered table style */
+    bordered?: boolean;
 }
 
 /**
@@ -51,6 +53,7 @@ export default function Table<T extends object>({
     keyExtractor,
     emptyMessage = 'Tidak ada data',
     className = '',
+    bordered = false,
 }: TableProps<T>) {
     // Get cell value from row
     const getCellValue = (item: T, key: string): unknown => {
@@ -83,15 +86,16 @@ export default function Table<T extends object>({
     return (
         <div className={`bg-surface rounded-xl shadow-sm overflow-hidden ${className}`}>
             <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                    <thead className="bg-surface-hover text-xs text-text-secondary uppercase tracking-wider border-b border-border-light">
+                <table className={`w-full text-sm text-left ${bordered ? 'border-collapse border border-border-default' : ''}`}>
+                    <thead className={`bg-surface-hover text-xs text-text-secondary uppercase tracking-wider ${bordered ? '' : 'border-b border-border-light'}`}>
                         <tr>
                             {headers.map((header) => (
-                                <th 
+                                <th
                                     key={header.key}
                                     scope="col"
                                     className={`
-                                        px-6 py-3 font-semibold
+                                        px-6 py-3 font-bold
+                                        ${bordered ? 'border border-border-default' : ''}
                                         ${header.className || ''}
                                     `}
                                 >
@@ -100,7 +104,7 @@ export default function Table<T extends object>({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-border-light/60">
+                    <tbody className={bordered ? '' : 'divide-y divide-border-light/60'}>
                         {data.length === 0 ? (
                             <tr>
                                 <td 
@@ -130,12 +134,12 @@ export default function Table<T extends object>({
                                         const value = getCellValue(item, header.key);
                                         
                                         return (
-                                            <td 
+                                            <td
                                                 key={header.key}
                                                 className={`
                                                     px-6 py-4
                                                     text-text-primary
-                                                    group-last:border-0
+                                                    ${bordered ? 'border border-border-default' : 'group-last:border-0'}
                                                     ${header.className || ''}
                                                 `}
                                             >

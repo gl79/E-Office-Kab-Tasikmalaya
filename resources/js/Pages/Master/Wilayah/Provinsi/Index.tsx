@@ -125,17 +125,17 @@ export default function Index({ auth, provinsi: initialProvinsi, filters }: Prop
         {
             key: 'no',
             label: 'No',
-            className: 'w-16',
+            className: 'w-16 text-center',
             render: (_, __, index) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
-        { key: 'kode', label: 'Kode', className: 'w-24' },
+        { key: 'kode', label: 'Kode', className: 'w-24 text-center' },
         { key: 'nama', label: 'Nama Provinsi' },
         {
             key: 'actions',
             label: 'Aksi',
-            className: 'text-right',
+            className: 'text-center',
             render: (_, item) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-center gap-2">
                     <Button variant="secondary" size="sm" onClick={() => openEditModal(item)}>
                         <Pencil className="h-4 w-4" />
                     </Button>
@@ -190,6 +190,7 @@ export default function Index({ auth, provinsi: initialProvinsi, filters }: Prop
                         data={paginatedData}
                         keyExtractor={(item) => item.kode}
                         emptyMessage={search ? "Tidak ada provinsi yang cocok dengan pencarian." : "Tidak ada data provinsi."}
+                        bordered
                     />
                 )}
 

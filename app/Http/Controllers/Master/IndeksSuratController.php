@@ -22,9 +22,8 @@ class IndeksSuratController extends Controller
         return Inertia::render('Master/IndeksSurat/Index', [
             'indeksSurat' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember('indeks_surat_list_v2', 60, function () {
                 return IndeksSurat::query()
-                    ->select(['id', 'kode', 'nama', 'jenis_surat', 'urutan', 'created_at', 'updated_at'])
-                    ->orderBy('urutan', 'asc')
-                    ->latest()
+                    ->select(['id', 'kode', 'nama', 'jenis_surat', 'created_at', 'updated_at'])
+                    ->orderBy('kode', 'asc')
                     ->get();
             })),
             'filters' => $request->only(['search']),

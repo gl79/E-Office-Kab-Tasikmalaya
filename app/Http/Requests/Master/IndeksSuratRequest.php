@@ -31,7 +31,6 @@ class IndeksSuratRequest extends FormRequest
             ],
             'nama' => ['required', 'string', 'max:255'],
             'jenis_surat' => ['nullable', 'string', 'max:50'],
-            'urutan' => ['nullable', 'integer', 'min:0'],
         ];
     }
 }

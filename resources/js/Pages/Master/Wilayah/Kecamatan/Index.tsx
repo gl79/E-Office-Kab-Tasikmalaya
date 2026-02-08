@@ -212,13 +212,13 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
         {
             key: 'no',
             label: 'No',
-            className: 'w-16',
+            className: 'w-16 text-center',
             render: (_: unknown, __: unknown, index: number) => ((currentPage - 1) * itemsPerPage + index + 1).toString()
         },
         {
             key: 'full_kode',
             label: 'Kode',
-            className: 'w-24',
+            className: 'w-24 text-center',
             render: (_, item) => `${item.provinsi_kode}.${item.kabupaten_kode}.${item.kode}`
         },
         { key: 'nama', label: 'Nama Kecamatan' },
@@ -235,9 +235,9 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
         {
             key: 'actions',
             label: 'Aksi',
-            className: 'text-right',
+            className: 'text-center',
             render: (_: unknown, item: WilayahKecamatan) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-center gap-2">
                     <Button variant="secondary" size="sm" onClick={() => openEditModal(item)}>
                         <Pencil className="h-4 w-4" />
                     </Button>
@@ -328,6 +328,7 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
                         data={paginatedData}
                         keyExtractor={(item) => `${item.provinsi_kode}-${item.kabupaten_kode}-${item.kode}`}
                         emptyMessage="Tidak ada data kecamatan."
+                        bordered
                     />
                 )}
 

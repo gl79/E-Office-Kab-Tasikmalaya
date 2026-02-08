@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination } from '@/Components/ui';
 import { InputLabel, TextInput, InputError } from '@/Components/form';
 import { User, PageProps } from '@/types';
-import { Search, Pencil, Trash2, Plus } from 'lucide-react';
+import { Search, Pencil, Trash2, Plus, Eye } from 'lucide-react';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { useDeferredDataMutable } from '@/hooks';
 
@@ -45,6 +45,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
     const [showModal, setShowModal] = useState(false);
     const [editItem, setEditItem] = useState<User | null>(null);
     const [deleteItem, setDeleteItem] = useState<User | null>(null);
+    const [detailItem, setDetailItem] = useState<User | null>(null);
     const [previewFoto, setPreviewFoto] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -279,44 +280,46 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                         <TableShimmer columns={7} />
                     </div>
                 ) : (
-                <table className="min-w-full divide-y divide-border-default">
+                <table className="min-w-full border-collapse border border-border-default">
                     <thead className="bg-surface-hover">
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Foto</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nama</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Username</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">NIP</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Role</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Aksi</th>
+                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase w-16">No</th>
+                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Foto</th>
+                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Nama</th>
+                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Jabatan</th>
+                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Username</th>
+                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Role</th>
+                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-surface divide-y divide-border-default">
+                    <tbody className="bg-surface">
                         {paginatedData.map((item, index) => (
                             <tr key={item.id} className="hover:bg-surface-hover">
-                                <td className="px-4 py-3 text-text-secondary text-sm">
+                                <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-sm">
                                     {(currentPage - 1) * itemsPerPage + index + 1}
                                 </td>
-                                <td className="px-4 py-3">
-                                    <img
-                                        src={item.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=6366f1&color=fff`}
-                                        alt={item.name}
-                                        className="h-10 w-10 rounded-full object-cover border border-border-default"
-                                    />
+                                <td className="px-4 py-3 border border-border-default text-center">
+                                    <div className="flex justify-center">
+                                        <img
+                                            src={item.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=6366f1&color=fff`}
+                                            alt={item.name}
+                                            className="h-10 w-10 rounded-full object-cover border border-border-default"
+                                        />
+                                    </div>
                                 </td>
-                                <td className="px-4 py-3">
-                                    <div className="font-medium text-text-primary">{item.name}</div>
-                                    <div className="text-xs text-text-secondary">{item.jabatan || '-'}</div>
-                                </td>
-                                <td className="px-4 py-3 text-text-primary">{item.username}</td>
-                                <td className="px-4 py-3 text-text-secondary">{item.nip || '-'}</td>
-                                <td className="px-4 py-3">
+                                <td className="px-4 py-3 border border-border-default font-medium text-text-primary">{item.name}</td>
+                                <td className="px-4 py-3 border border-border-default text-text-secondary">{item.jabatan || '-'}</td>
+                                <td className="px-4 py-3 border border-border-default text-text-primary">{item.username}</td>
+                                <td className="px-4 py-3 border border-border-default">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
                                         {item.role_label || item.role}
                                     </span>
                                 </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex gap-2">
+                                <td className="px-4 py-3 border border-border-default text-center">
+                                    <div className="flex justify-center gap-2">
+                                        <Button size="sm" variant="secondary" onClick={() => setDetailItem(item)} title="Lihat Detail">
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
                                         <Button size="sm" variant="secondary" onClick={() => openEdit(item)} title="Edit">
                                             <Pencil className="h-4 w-4" />
                                         </Button>
@@ -331,7 +334,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                         ))}
                         {paginatedData.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                                <td colSpan={7} className="px-4 py-8 border border-border-default text-center text-text-secondary">
                                     {search || roleFilter ? 'Tidak ada data yang cocok dengan filter' : 'Tidak ada data pengguna'}
                                 </td>
                             </tr>
@@ -552,6 +555,56 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                         </Button>
                     </div>
                 </form>
+            </Modal>
+
+            {/* Detail Modal */}
+            <Modal
+                isOpen={!!detailItem}
+                onClose={() => setDetailItem(null)}
+                title="Detail Pengguna"
+                size="lg"
+            >
+                {detailItem && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <img
+                                src={detailItem.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(detailItem.name)}&background=6366f1&color=fff`}
+                                alt={detailItem.name}
+                                className="h-20 w-20 rounded-full object-cover border-2 border-border-default"
+                            />
+                            <div>
+                                <h3 className="text-lg font-semibold text-text-primary">{detailItem.name}</h3>
+                                <p className="text-sm text-text-secondary">{detailItem.jabatan || '-'}</p>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark mt-1">
+                                    {detailItem.role_label || detailItem.role}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border-default">
+                            <div>
+                                <p className="text-xs text-text-secondary">Username</p>
+                                <p className="text-sm font-medium text-text-primary">{detailItem.username}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-text-secondary">Email</p>
+                                <p className="text-sm font-medium text-text-primary">{detailItem.email || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-text-secondary">NIP</p>
+                                <p className="text-sm font-medium text-text-primary">{detailItem.nip || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-text-secondary">Jenis Kelamin</p>
+                                <p className="text-sm font-medium text-text-primary">
+                                    {detailItem.jenis_kelamin === 'L' ? 'Laki-laki' : detailItem.jenis_kelamin === 'P' ? 'Perempuan' : '-'}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <Button variant="secondary" onClick={() => setDetailItem(null)}>Tutup</Button>
+                        </div>
+                    </div>
+                )}
             </Modal>
 
             {/* Delete Confirmation Modal */}

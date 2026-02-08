@@ -178,29 +178,29 @@ const Index = ({ auth, unitKerja: initialUnitKerja, filters }: Props) => {
                         <TableShimmer columns={4} />
                     </div>
                 ) : (
-                <table className="min-w-full divide-y divide-border-default">
+                <table className="min-w-full border-collapse border border-border-default">
                     <thead className="bg-surface-hover">
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nama Unit Kerja</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Singkatan</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase">Aksi</th>
+                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase w-16">No</th>
+                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Nama Unit Kerja</th>
+                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Singkatan</th>
+                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-surface divide-y divide-border-default">
+                    <tbody className="bg-surface">
                         {paginatedData.map((unit, index) => (
                             <tr key={unit.id} className="hover:bg-surface-hover">
-                                <td className="px-4 py-3 text-text-secondary text-sm">
+                                <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-sm">
                                     {(currentPage - 1) * itemsPerPage + index + 1}
                                 </td>
-                                <td className="px-4 py-3 font-medium text-text-primary">
+                                <td className="px-4 py-3 border border-border-default font-medium text-text-primary">
                                     {unit.nama}
                                 </td>
-                                <td className="px-4 py-3 text-text-secondary">
+                                <td className="px-4 py-3 border border-border-default text-text-secondary">
                                     {unit.singkatan || '-'}
                                 </td>
-                                <td className="px-4 py-3 text-right">
-                                    <div className="flex justify-end gap-2">
+                                <td className="px-4 py-3 border border-border-default text-center">
+                                    <div className="flex justify-center gap-2">
                                         <Button 
                                             variant="secondary" 
                                             size="sm" 
@@ -223,7 +223,7 @@ const Index = ({ auth, unitKerja: initialUnitKerja, filters }: Props) => {
                         ))}
                         {paginatedData.length === 0 && (
                             <tr>
-                                <td colSpan={4} className="px-4 py-8 text-center text-text-secondary">
+                                <td colSpan={4} className="px-4 py-8 border border-border-default text-center text-text-secondary">
                                     {search ? 'Tidak ada unit kerja yang cocok dengan pencarian' : 'Tidak ada data unit kerja'}
                                 </td>
                             </tr>

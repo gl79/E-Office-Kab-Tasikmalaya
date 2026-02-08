@@ -262,31 +262,31 @@ const Index = ({ auth, archives: initialArchives, filters }: Props) => {
                         <TableShimmer columns={5} />
                     </div>
                 ) : (
-                    <table className="min-w-full divide-y divide-border-default">
+                    <table className="min-w-full border-collapse border border-border-default">
                         <thead className="bg-surface-hover">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Jenis Menu</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nama Data</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Dihapus Pada</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase">Aksi</th>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase w-16">No</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Jenis Menu</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Nama Data</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Dihapus Pada</th>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-surface divide-y divide-border-default">
+                        <tbody className="bg-surface">
                             {paginatedData.map((item, index) => (
                                 <tr key={`${item.type}-${item.id}`} className="hover:bg-surface-hover">
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                    <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-sm">
                                         {(currentPage - 1) * itemsPerPage + index + 1}
                                     </td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-3 border border-border-default">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark uppercase">
                                             {item.type}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 font-medium text-text-primary">
+                                    <td className="px-4 py-3 border border-border-default font-medium text-text-primary">
                                         {item.nama}
                                     </td>
-                                    <td className="px-4 py-3 text-text-secondary">
+                                    <td className="px-4 py-3 border border-border-default text-text-secondary">
                                         {new Date(item.deleted_at).toLocaleDateString('id-ID', {
                                             day: 'numeric',
                                             month: 'long',
@@ -295,8 +295,8 @@ const Index = ({ auth, archives: initialArchives, filters }: Props) => {
                                             minute: '2-digit'
                                         })}
                                     </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-2">
+                                    <td className="px-4 py-3 border border-border-default text-center">
+                                        <div className="flex justify-center gap-2">
                                             <Button
                                                 variant="secondary"
                                                 size="sm"
@@ -319,7 +319,7 @@ const Index = ({ auth, archives: initialArchives, filters }: Props) => {
                             ))}
                             {paginatedData.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-4 py-8 text-center text-text-secondary">
+                                    <td colSpan={5} className="px-4 py-8 border border-border-default text-center text-text-secondary">
                                         {search || type !== 'all' ? 'Tidak ada data arsip yang cocok dengan filter' : 'Tidak ada data arsip'}
                                     </td>
                                 </tr>

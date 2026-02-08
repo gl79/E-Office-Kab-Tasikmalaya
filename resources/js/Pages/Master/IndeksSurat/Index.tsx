@@ -14,7 +14,6 @@ interface IndeksSurat {
     kode: string;
     nama: string;
     jenis_surat: string | null;
-    urutan: number;
     created_at: string;
     updated_at: string;
 }
@@ -78,7 +77,6 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
         kode: '',
         nama: '',
         jenis_surat: '',
-        urutan: 0,
     });
 
     // CRUD Modal hook
@@ -103,7 +101,6 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                 kode: indeks.kode,
                 nama: indeks.nama,
                 jenis_surat: indeks.jenis_surat || '',
-                urutan: indeks.urutan || 0,
             });
             clearErrors();
         },
@@ -190,39 +187,35 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                         <TableShimmer columns={5} />
                     </div>
                 ) : (
-                    <table className="min-w-full divide-y divide-border-default">
+                    <table className="min-w-full border-collapse border border-border-default">
                         <thead className="bg-surface-hover">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-32">Kode</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nama Indeks</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Jenis Surat</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-24">Urutan</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase">Aksi</th>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase w-16">No</th>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase w-32">Kode</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Nama Indeks</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Jenis Surat</th>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-surface divide-y divide-border-default">
+                        <tbody className="bg-surface">
                             {paginatedData.map((indeks, index) => (
                                 <tr key={indeks.id} className="hover:bg-surface-hover">
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                    <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-sm">
                                         {(currentPage - 1) * itemsPerPage + index + 1}
                                     </td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-3 border border-border-default text-center">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
                                             {indeks.kode}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 font-medium text-text-primary">
+                                    <td className="px-4 py-3 border border-border-default font-medium text-text-primary">
                                         {indeks.nama}
                                     </td>
-                                    <td className="px-4 py-3 text-text-secondary">
+                                    <td className="px-4 py-3 border border-border-default text-text-secondary">
                                         {indeks.jenis_surat || '-'}
                                     </td>
-                                    <td className="px-4 py-3 text-text-secondary">
-                                        {indeks.urutan}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-2">
+                                    <td className="px-4 py-3 border border-border-default text-center">
+                                        <div className="flex justify-center gap-2">
                                             <Button
                                                 variant="secondary"
                                                 size="sm"
@@ -245,7 +238,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                             ))}
                             {paginatedData.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-4 py-8 text-center text-text-secondary">
+                                    <td colSpan={5} className="px-4 py-8 border border-border-default text-center text-text-secondary">
                                         {search ? 'Tidak ada indeks surat yang cocok dengan pencarian' : 'Tidak ada data indeks surat'}
                                     </td>
                                 </tr>
@@ -313,18 +306,6 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                         />
                         {errors.jenis_surat && <p className="text-sm text-danger">{errors.jenis_surat}</p>}
                     </div>
-                    <div className="space-y-2">
-                        <InputLabel htmlFor="urutan" value="Urutan" />
-                        <TextInput
-                            id="urutan"
-                            type="number"
-                            value={data.urutan}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('urutan', parseInt(e.target.value))}
-                            placeholder="0"
-                            className="w-full"
-                        />
-                        {errors.urutan && <p className="text-sm text-danger">{errors.urutan}</p>}
-                    </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={closeCreateModal} disabled={processing}>Batal</Button>
                         <Button type="submit" disabled={processing}>Simpan</Button>
@@ -373,17 +354,6 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                             className="w-full"
                         />
                         {errors.jenis_surat && <p className="text-sm text-danger">{errors.jenis_surat}</p>}
-                    </div>
-                    <div className="space-y-2">
-                        <InputLabel htmlFor="edit-urutan" value="Urutan" />
-                        <TextInput
-                            id="edit-urutan"
-                            type="number"
-                            value={data.urutan}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('urutan', parseInt(e.target.value))}
-                            className="w-full"
-                        />
-                        {errors.urutan && <p className="text-sm text-danger">{errors.urutan}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={closeEditModal} disabled={processing}>Batal</Button>
