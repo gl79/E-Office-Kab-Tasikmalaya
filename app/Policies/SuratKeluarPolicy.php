@@ -27,20 +27,20 @@ class SuratKeluarPolicy
 
     /**
      * Determine whether the user can create models.
-     * Only superadmin and TU can create.
+     * Superadmin, TU, and Sekpri can create.
      */
     public function create(User $user): bool
     {
-        return $user->isSuperAdmin() || $user->isTU();
+        return $user->isSuperAdmin() || $user->isTU() || $user->isSekpri();
     }
 
     /**
      * Determine whether the user can update the model.
-     * Only superadmin and TU can update.
+     * Superadmin, TU, and Sekpri can update.
      */
     public function update(User $user, SuratKeluar $suratKeluar): bool
     {
-        return $user->isSuperAdmin() || $user->isTU();
+        return $user->isSuperAdmin() || $user->isTU() || $user->isSekpri();
     }
 
     /**

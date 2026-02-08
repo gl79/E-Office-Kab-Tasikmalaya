@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination } from '@/Components/ui';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { useToast } from '@/Components/ui/Toast';
-import { TextInput, InputLabel } from '@/Components/form';
+import { TextInput, InputLabel, FormSelect } from '@/Components/form';
 import { useCRUDModal, useDeferredDataMutable } from '@/hooks';
 import type { PageProps } from '@/types';
 
@@ -13,6 +13,7 @@ interface IndeksSurat {
     id: string;
     kode: string;
     nama: string;
+    jenis_surat: string | null;
     urutan: number;
     created_at: string;
     updated_at: string;
@@ -76,6 +77,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         kode: '',
         nama: '',
+        jenis_surat: '',
         urutan: 0,
     });
 
@@ -100,6 +102,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
             setData({
                 kode: indeks.kode,
                 nama: indeks.nama,
+                jenis_surat: indeks.jenis_surat || '',
                 urutan: indeks.urutan || 0,
             });
             clearErrors();
@@ -112,10 +115,9 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
             onSuccess: () => {
                 closeCreateModal();
                 reset();
-                showToast('success', 'Indeks Surat berhasil ditambahkan.');
             },
         });
-    }, [post, closeCreateModal, reset, showToast]);
+    }, [post, closeCreateModal, reset]);
 
     const handleUpdate = useCallback((e: React.FormEvent) => {
         e.preventDefault();
@@ -124,17 +126,24 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
             onSuccess: () => {
                 closeEditModal();
                 reset();
-                showToast('success', 'Indeks Surat berhasil diperbarui.');
             },
         });
-    }, [selectedIndeks, put, closeEditModal, reset, showToast]);
+    }, [selectedIndeks, put, closeEditModal, reset]);
+
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleDelete = useCallback(() => {
         if (!selectedIndeks) return;
+        setIsDeleting(true);
         router.delete(route('master.indeks-surat.destroy', selectedIndeks.id), {
             onSuccess: () => {
                 closeDeleteModal();
-                showToast('success', 'Indeks Surat berhasil dihapus.');
+            },
+            onError: () => {
+                showToast('error', 'Gagal menghapus Indeks Surat.');
+            },
+            onFinish: () => {
+                setIsDeleting(false);
             },
         });
     }, [selectedIndeks, closeDeleteModal, showToast]);
@@ -181,64 +190,68 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                         <TableShimmer columns={5} />
                     </div>
                 ) : (
-                <table className="min-w-full divide-y divide-border-default">
-                    <thead className="bg-surface-hover">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-32">Kode</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nama Indeks</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-24">Urutan</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-surface divide-y divide-border-default">
-                        {paginatedData.map((indeks, index) => (
-                            <tr key={indeks.id} className="hover:bg-surface-hover">
-                                <td className="px-4 py-3 text-text-secondary text-sm">
-                                    {(currentPage - 1) * itemsPerPage + index + 1}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
-                                        {indeks.kode}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 font-medium text-text-primary">
-                                    {indeks.nama}
-                                </td>
-                                <td className="px-4 py-3 text-text-secondary">
-                                    {indeks.urutan}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                    <div className="flex justify-end gap-2">
-                                        <Button 
-                                            variant="secondary" 
-                                            size="sm" 
-                                            onClick={() => openEditModal(indeks)}
-                                            title="Edit"
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button 
-                                            variant="danger" 
-                                            size="sm" 
-                                            onClick={() => openDeleteModal(indeks)}
-                                            title="Hapus"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {paginatedData.length === 0 && (
+                    <table className="min-w-full divide-y divide-border-default">
+                        <thead className="bg-surface-hover">
                             <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center text-text-secondary">
-                                    {search ? 'Tidak ada indeks surat yang cocok dengan pencarian' : 'Tidak ada data indeks surat'}
-                                </td>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">No</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-32">Kode</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nama Indeks</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Jenis Surat</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-24">Urutan</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase">Aksi</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-surface divide-y divide-border-default">
+                            {paginatedData.map((indeks, index) => (
+                                <tr key={indeks.id} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 text-text-secondary text-sm">
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
+                                            {indeks.kode}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 font-medium text-text-primary">
+                                        {indeks.nama}
+                                    </td>
+                                    <td className="px-4 py-3 text-text-secondary">
+                                        {indeks.jenis_surat || '-'}
+                                    </td>
+                                    <td className="px-4 py-3 text-text-secondary">
+                                        {indeks.urutan}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => openEditModal(indeks)}
+                                                title="Edit"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => openDeleteModal(indeks)}
+                                                title="Hapus"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {paginatedData.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="px-4 py-8 text-center text-text-secondary">
+                                        {search ? 'Tidak ada indeks surat yang cocok dengan pencarian' : 'Tidak ada data indeks surat'}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 )}
 
                 {/* Pagination */}
@@ -267,6 +280,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('kode', e.target.value)}
                             placeholder="Contoh: 001"
                             className="w-full"
+                            required
                         />
                         {errors.kode && <p className="text-sm text-danger">{errors.kode}</p>}
                     </div>
@@ -278,8 +292,26 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
                             placeholder="Contoh: Surat Keputusan"
                             className="w-full"
+                            required
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
+                    </div>
+                    <div className="space-y-2">
+                        <InputLabel htmlFor="jenis_surat" value="Jenis Surat" />
+                        <FormSelect
+                            id="jenis_surat"
+                            value={data.jenis_surat}
+                            onChange={(e) => setData('jenis_surat', e.target.value)}
+                            options={[
+                                { value: 'Penandatanganan', label: 'Penandatanganan' },
+                                { value: 'Pemberian Bantuan', label: 'Pemberian Bantuan' },
+                                { value: 'Audiensi', label: 'Audiensi' },
+                                { value: 'Surat Tugas', label: 'Surat Tugas' },
+                            ]}
+                            placeholder="Pilih Jenis Surat"
+                            className="w-full"
+                        />
+                        {errors.jenis_surat && <p className="text-sm text-danger">{errors.jenis_surat}</p>}
                     </div>
                     <div className="space-y-2">
                         <InputLabel htmlFor="urutan" value="Urutan" />
@@ -294,7 +326,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                         {errors.urutan && <p className="text-sm text-danger">{errors.urutan}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button type="button" variant="secondary" onClick={closeCreateModal}>Batal</Button>
+                        <Button type="button" variant="secondary" onClick={closeCreateModal} disabled={processing}>Batal</Button>
                         <Button type="submit" disabled={processing}>Simpan</Button>
                     </div>
                 </form>
@@ -310,6 +342,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                             value={data.kode}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('kode', e.target.value)}
                             className="w-full"
+                            required
                         />
                         {errors.kode && <p className="text-sm text-danger">{errors.kode}</p>}
                     </div>
@@ -320,8 +353,26 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                             value={data.nama}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('nama', e.target.value)}
                             className="w-full"
+                            required
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
+                    </div>
+                    <div className="space-y-2">
+                        <InputLabel htmlFor="edit-jenis_surat" value="Jenis Surat" />
+                        <FormSelect
+                            id="edit-jenis_surat"
+                            value={data.jenis_surat}
+                            onChange={(e) => setData('jenis_surat', e.target.value)}
+                            options={[
+                                { value: 'Penandatanganan', label: 'Penandatanganan' },
+                                { value: 'Pemberian Bantuan', label: 'Pemberian Bantuan' },
+                                { value: 'Audiensi', label: 'Audiensi' },
+                                { value: 'Surat Tugas', label: 'Surat Tugas' },
+                            ]}
+                            placeholder="Pilih Jenis Surat"
+                            className="w-full"
+                        />
+                        {errors.jenis_surat && <p className="text-sm text-danger">{errors.jenis_surat}</p>}
                     </div>
                     <div className="space-y-2">
                         <InputLabel htmlFor="edit-urutan" value="Urutan" />
@@ -335,7 +386,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                         {errors.urutan && <p className="text-sm text-danger">{errors.urutan}</p>}
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button type="button" variant="secondary" onClick={closeEditModal}>Batal</Button>
+                        <Button type="button" variant="secondary" onClick={closeEditModal} disabled={processing}>Batal</Button>
                         <Button type="submit" disabled={processing}>Simpan Perubahan</Button>
                     </div>
                 </form>
@@ -346,8 +397,10 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                 <div className="space-y-4">
                     <p>Apakah Anda yakin ingin menghapus indeks surat ini? Data akan dipindahkan ke arsip.</p>
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button variant="secondary" onClick={closeDeleteModal}>Batal</Button>
-                        <Button variant="danger" onClick={handleDelete}>Hapus</Button>
+                        <Button variant="secondary" onClick={closeDeleteModal} disabled={isDeleting}>Batal</Button>
+                        <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
+                            {isDeleting ? 'Menghapus...' : 'Hapus'}
+                        </Button>
                     </div>
                 </div>
             </Modal>

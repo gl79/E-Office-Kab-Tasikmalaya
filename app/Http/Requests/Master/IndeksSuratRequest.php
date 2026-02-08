@@ -30,6 +30,7 @@ class IndeksSuratRequest extends FormRequest
                 Rule::unique('indeks_surat', 'kode')->ignore($this->route('indeks_surat') ?? $this->id)
             ],
             'nama' => ['required', 'string', 'max:255'],
+            'jenis_surat' => ['nullable', 'string', 'max:50'],
             'urutan' => ['nullable', 'integer', 'min:0'],
         ];
     }

@@ -34,19 +34,22 @@ class User extends Authenticatable
     /**
      * Role Constants
      */
+    // Updated Roles
     public const ROLE_SUPERADMIN = 'superadmin';
+    public const ROLE_PIMPINAN = 'pimpinan'; // Bupati & Wakil Bupati
+    public const ROLE_SEKPRI = 'sekpri'; // Sekpri Bupati & Wakil
     public const ROLE_TU = 'tu';
-    public const ROLE_SEKPRI_BUPATI = 'sekpri_bupati';
-    public const ROLE_SEKPRI_WAKIL_BUPATI = 'sekpri_wakil_bupati';
+    public const ROLE_USER = 'user'; // Sekda, Asda, dll
 
     /**
      * Available roles
      */
     public const ROLES = [
         self::ROLE_SUPERADMIN,
+        self::ROLE_PIMPINAN,
+        self::ROLE_SEKPRI,
         self::ROLE_TU,
-        self::ROLE_SEKPRI_BUPATI,
-        self::ROLE_SEKPRI_WAKIL_BUPATI,
+        self::ROLE_USER,
     ];
 
     /**
@@ -54,9 +57,10 @@ class User extends Authenticatable
      */
     public const ROLE_LABELS = [
         self::ROLE_SUPERADMIN => 'Super Admin',
+        self::ROLE_PIMPINAN => 'Pimpinan',
+        self::ROLE_SEKPRI => 'Sekpri',
         self::ROLE_TU => 'Tata Usaha',
-        self::ROLE_SEKPRI_BUPATI => 'Sekpri Bupati',
-        self::ROLE_SEKPRI_WAKIL_BUPATI => 'Sekpri Wakil Bupati',
+        self::ROLE_USER => 'User',
     ];
 
     /**
@@ -161,11 +165,35 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is Pimpinan.
+     */
+    public function isPimpinan(): bool
+    {
+        return $this->role === self::ROLE_PIMPINAN;
+    }
+
+    /**
+     * Check if user is Sekpri.
+     */
+    public function isSekpri(): bool
+    {
+        return $this->role === self::ROLE_SEKPRI;
+    }
+
+    /**
      * Check if user is TU.
      */
     public function isTU(): bool
     {
         return $this->role === self::ROLE_TU;
+    }
+
+    /**
+     * Check if user is User role.
+     */
+    public function isUser(): bool
+    {
+        return $this->role === self::ROLE_USER;
     }
 
     /**

@@ -24,12 +24,22 @@ class SuratMasukController extends Controller
     {
         $this->authorize('viewAny', SuratMasuk::class);
 
+        $user = $request->user();
+
         return Inertia::render('Persuratan/SuratMasuk/Index', [
-            'suratMasuk' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_masuk_list', 60, function () {
-                return SuratMasuk::query()
-                    ->with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah'])
-                    ->latest('tanggal_diterima')
-                    ->get();
+            'suratMasuk' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_masuk_list_' . $user->id, 60, function () use ($user) {
+                $query = SuratMasuk::query()
+                    ->with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy'])
+                    ->latest();
+
+                // SuperAdmin & TU see all, others only see surat addressed to them
+                if (!$user->isSuperAdmin() && !$user->isTU()) {
+                    $query->whereHas('tujuans', function ($q) use ($user) {
+                        $q->where('tujuan_id', $user->id);
+                    });
+                }
+
+                return $query->get();
             })),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
         ]);
@@ -43,10 +53,25 @@ class SuratMasukController extends Controller
         $this->authorize('create', SuratMasuk::class);
 
         return Inertia::render('Persuratan/SuratMasuk/Create', [
-            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama']),
-            'users' => User::select(['id', 'name', 'nip', 'jabatan'])->get(),
+            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama', 'jenis_surat']),
+            'users' => User::select(['id', 'name', 'nip', 'jabatan'])
+                ->where('role', '!=', User::ROLE_SUPERADMIN)
+                ->where('id', '!=', auth()->id())
+                ->orderByRaw("CASE
+                    WHEN name = 'Tata Usaha' THEN 1
+                    WHEN name = 'Bupati' THEN 2
+                    WHEN name = 'Wakil Bupati' THEN 3
+                    WHEN name = 'Sekpri Bupati' THEN 4
+                    WHEN name = 'Sekpri Wakil Bupati' THEN 5
+                    WHEN name = 'Sekda' THEN 6
+                    WHEN name = 'Asda 1' THEN 7
+                    WHEN name = 'Asda 2' THEN 8
+                    WHEN name = 'Asda 3' THEN 9
+                    ELSE 10
+                END")
+                ->get(),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
-            'tujuanOptions' => SuratMasuk::TUJUAN_OPTIONS,
+            'nextNomorAgenda' => SuratMasuk::generateNomorAgenda(),
         ]);
     }
 
@@ -61,6 +86,9 @@ class SuratMasukController extends Controller
         try {
             $data = $request->validated();
 
+            // Auto-generate nomor agenda
+            $data['nomor_agenda'] = SuratMasuk::generateNomorAgenda();
+
             // Handle file upload
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
@@ -68,18 +96,25 @@ class SuratMasukController extends Controller
                 $data['file_path'] = $file->storeAs('surat-masuk', $filename, 'public');
             }
 
-            // Remove tujuan from data (will be stored in separate table)
+            // Remove non-model fields before create
             $tujuanList = $data['tujuan'] ?? [];
-            unset($data['tujuan']);
+            unset($data['tujuan'], $data['file']);
 
             // Create surat masuk
             $suratMasuk = SuratMasuk::create($data);
 
             // Create tujuan records
             foreach ($tujuanList as $tujuan) {
+                // If input is ID (numeric), find user
+                $userData = null;
+                if (is_numeric($tujuan)) {
+                    $userData = User::find($tujuan);
+                }
+
                 SuratMasukTujuan::create([
                     'surat_masuk_id' => $suratMasuk->id,
-                    'tujuan' => $tujuan,
+                    'tujuan_id' => $userData?->id ?? null,
+                    'tujuan' => $userData?->name ?? $tujuan,
                 ]);
             }
 
@@ -130,10 +165,24 @@ class SuratMasukController extends Controller
 
         return Inertia::render('Persuratan/SuratMasuk/Edit', [
             'suratMasuk' => $suratMasuk,
-            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama']),
-            'users' => User::select(['id', 'name', 'nip', 'jabatan'])->get(),
+            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama', 'jenis_surat']),
+            'users' => User::select(['id', 'name', 'nip', 'jabatan'])
+                ->where('role', '!=', User::ROLE_SUPERADMIN)
+                ->where('id', '!=', auth()->id())
+                ->orderByRaw("CASE
+                    WHEN name = 'Tata Usaha' THEN 1
+                    WHEN name = 'Bupati' THEN 2
+                    WHEN name = 'Wakil Bupati' THEN 3
+                    WHEN name = 'Sekpri Bupati' THEN 4
+                    WHEN name = 'Sekpri Wakil Bupati' THEN 5
+                    WHEN name = 'Sekda' THEN 6
+                    WHEN name = 'Asda 1' THEN 7
+                    WHEN name = 'Asda 2' THEN 8
+                    WHEN name = 'Asda 3' THEN 9
+                    ELSE 10
+                END")
+                ->get(),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
-            'tujuanOptions' => SuratMasuk::TUJUAN_OPTIONS,
         ]);
     }
 
@@ -161,9 +210,9 @@ class SuratMasukController extends Controller
                 $data['file_path'] = $file->storeAs('surat-masuk', $filename, 'public');
             }
 
-            // Remove tujuan from data
+            // Remove non-model fields before update
             $tujuanList = $data['tujuan'] ?? [];
-            unset($data['tujuan']);
+            unset($data['tujuan'], $data['file']);
 
             // Update surat masuk
             $suratMasuk->update($data);
@@ -171,9 +220,15 @@ class SuratMasukController extends Controller
             // Sync tujuan records
             $suratMasuk->tujuans()->delete();
             foreach ($tujuanList as $tujuan) {
+                $userData = null;
+                if (is_numeric($tujuan)) {
+                    $userData = User::find($tujuan);
+                }
+
                 SuratMasukTujuan::create([
                     'surat_masuk_id' => $suratMasuk->id,
-                    'tujuan' => $tujuan,
+                    'tujuan_id' => $userData?->id ?? null,
+                    'tujuan' => $userData?->name ?? $tujuan,
                 ]);
             }
 
@@ -295,7 +350,12 @@ class SuratMasukController extends Controller
     /**
      * Download or preview file surat
      */
-    public function cetakIsi(string $id)
+
+
+    /**
+     * Preview file surat in browser
+     */
+    public function previewFile(string $id)
     {
         $suratMasuk = SuratMasuk::findOrFail($id);
         $this->authorize('view', $suratMasuk);
@@ -330,5 +390,13 @@ class SuratMasukController extends Controller
             'Surat_Masuk_' . $suratMasuk->nomor_agenda . '.' . pathinfo($suratMasuk->file_path, PATHINFO_EXTENSION)
         );
     }
-}
+    public function cetakIsi(string $id)
+    {
+        $suratMasuk = SuratMasuk::with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy'])->findOrFail($id);
+        $this->authorize('view', $suratMasuk);
 
+        return Inertia::render('Persuratan/SuratMasuk/CetakIsi', [
+            'suratMasuk' => $suratMasuk,
+        ]);
+    }
+}

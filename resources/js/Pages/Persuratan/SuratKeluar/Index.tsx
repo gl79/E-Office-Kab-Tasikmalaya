@@ -24,7 +24,7 @@ interface SuratKeluar {
     lampiran: number | null;
     catatan: string | null;
     file_path: string | null;
-    indeks?: { kode: string; nama: string } | null;
+    indeks?: { kode: string; nama: string; jenis_surat: string | null } | null;
     kode_klasifikasi?: { kode: string; nama: string } | null;
     unit_kerja?: { nama: string; singkatan: string } | null;
 }
@@ -68,6 +68,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
 
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailSurat, setDetailSurat] = useState<SuratKeluar | null>(null);
+    const [jenisSuratFilter, setJenisSuratFilter] = useState('');
 
     // Filter data client-side
     const filteredData = useMemo(() => {
@@ -93,8 +94,12 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
             data = data.filter(item => item.tanggal_surat <= endDate);
         }
 
+        if (jenisSuratFilter) {
+            data = data.filter(item => item.indeks?.jenis_surat === jenisSuratFilter);
+        }
+
         return data;
-    }, [suratKeluar, search, startDate, endDate]);
+    }, [suratKeluar, search, startDate, endDate, jenisSuratFilter]);
 
     // Paginate data
     const paginatedData = useMemo(() => {
@@ -191,32 +196,89 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
 
                         {/* Expandable Filters */}
                         {showFilters && (
-                            <div className="p-4 bg-surface-hover rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-4 border border-border-default animate-in fade-in slide-in-from-top-2">
+                            <div className="p-4 bg-surface-hover rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-4 border border-border-default animate-in fade-in slide-in-from-top-2">
                                 <div>
                                     <label className="block text-sm font-medium text-text-secondary mb-1">
-                                        Tanggal Mulai
+                                        Periode
                                     </label>
-                                    <FormDatePicker
-                                        value={startDate}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                            setStartDate(e.target.value);
+                                    <select
+                                        className="w-full rounded-md border-border-default bg-surface focus:border-primary focus:ring-primary sm:text-sm"
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            const now = new Date();
+                                            let start = '';
+                                            let end = '';
+
+                                            if (val === 'hari_ini') {
+                                                start = end = now.toISOString().split('T')[0];
+                                            } else if (val === 'minggu_ini') {
+                                                const first = now.getDate() - now.getDay();
+                                                const last = first + 6;
+                                                start = new Date(now.setDate(first)).toISOString().split('T')[0];
+                                                end = new Date(now.setDate(last)).toISOString().split('T')[0];
+                                            } else if (val === 'bulan_ini') {
+                                                start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                                                end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+                                            } else if (val === 'tahun_ini') {
+                                                start = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                                                end = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+                                            }
+
+                                            setStartDate(start);
+                                            setEndDate(end);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full px-2"
-                                    />
+                                    >
+                                        <option value="">Semua Waktu</option>
+                                        <option value="hari_ini">Hari Ini</option>
+                                        <option value="minggu_ini">Minggu Ini</option>
+                                        <option value="bulan_ini">Bulan Ini</option>
+                                        <option value="tahun_ini">Tahun Ini</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-text-secondary mb-1">
-                                        Tanggal Akhir
+                                        Jenis Surat
                                     </label>
-                                    <FormDatePicker
-                                        value={endDate}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                            setEndDate(e.target.value);
+                                    <select
+                                        className="w-full rounded-md border-border-default bg-surface focus:border-primary focus:ring-primary sm:text-sm"
+                                        value={jenisSuratFilter}
+                                        onChange={(e) => {
+                                            setJenisSuratFilter(e.target.value);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full px-2"
-                                    />
+                                    >
+                                        <option value="">Semua Jenis</option>
+                                        <option value="Penandatanganan">Penandatanganan</option>
+                                        <option value="Pemberian Bantuan">Pemberian Bantuan</option>
+                                        <option value="Audiensi">Audiensi</option>
+                                        <option value="Surat Tugas">Surat Tugas</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">
+                                        Custom Tanggal
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <FormDatePicker
+                                            value={startDate}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                setStartDate(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            className="w-full px-2"
+                                            placeholder="Mulai"
+                                        />
+                                        <FormDatePicker
+                                            value={endDate}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                setEndDate(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            className="w-full px-2"
+                                            placeholder="Selesai"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -229,124 +291,124 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                         <TableShimmer columns={7} />
                     </div>
                 ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-border-default">
-                        <thead className="bg-surface-hover">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Agenda</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tgl Surat</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor Surat</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Kepada</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Sifat</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-20">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-surface divide-y divide-border-default">
-                            {paginatedData.map((item, index) => (
-                                <tr key={item.id} className="hover:bg-surface-hover">
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {(currentPage - 1) * itemsPerPage + index + 1}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-primary text-sm font-medium">
-                                        {item.no_urut}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {formatDateShort(item.tanggal_surat)}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-primary text-sm">
-                                        {item.nomor_surat}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-primary text-sm">
-                                        {item.kepada}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {getSifatBadge(item.sifat_1)}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <Dropdown
-                                            align="right"
-                                            width="48"
-                                            trigger={
-                                                <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
-                                                    <MoreVertical className="h-5 w-5" />
-                                                </button>
-                                            }
-                                        >
-                                            <div className="py-1">
-                                                <Dropdown.Link
-                                                    as="button"
-                                                    onClick={() => {
-                                                        setDetailSurat(item);
-                                                        setDetailModalOpen(true);
-                                                    }}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                    <span>Lihat Detail</span>
-                                                </Dropdown.Link>
-                                                
-                                                <Dropdown.Link
-                                                    href={route('persuratan.surat-keluar.edit', item.id)}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                    <span>Edit</span>
-                                                </Dropdown.Link>
-                                                
-                                                <Dropdown.Link
-                                                    as="button"
-                                                    onClick={() => window.open(route('persuratan.surat-keluar.cetak-kartu', item.id), '_blank')}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <Printer className="h-4 w-4" />
-                                                    <span>Cetak Kartu</span>
-                                                </Dropdown.Link>
-                                                
-                                                <div className="border-t border-border-default my-1"></div>
-                                                
-                                                <Dropdown.Link
-                                                    as="button"
-                                                    onClick={() => {
-                                                        setSelectedSurat(item);
-                                                        setDeleteModalOpen(true);
-                                                    }}
-                                                    className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                    <span>Hapus</span>
-                                                </Dropdown.Link>
-                                            </div>
-                                        </Dropdown>
-                                    </td>
-                                </tr>
-                            ))}
-                            {paginatedData.length === 0 && (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border-default">
+                            <thead className="bg-surface-hover">
                                 <tr>
-                                    <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
-                                        {search || startDate || endDate ? 'Tidak ada surat keluar yang cocok dengan filter.' : 'Tidak ada data surat keluar.'}
-                                    </td>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Agenda</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tgl Surat</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor Surat</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Kepada</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Sifat</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-20">Aksi</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="bg-surface divide-y divide-border-default">
+                                {paginatedData.map((item, index) => (
+                                    <tr key={item.id} className="hover:bg-surface-hover">
+                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                            {(currentPage - 1) * itemsPerPage + index + 1}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-primary text-sm font-medium">
+                                            {item.no_urut}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-secondary text-sm">
+                                            {formatDateShort(item.tanggal_surat)}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-primary text-sm">
+                                            {item.nomor_surat}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-primary text-sm">
+                                            {item.kepada}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {getSifatBadge(item.sifat_1)}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <Dropdown
+                                                align="right"
+                                                width="48"
+                                                trigger={
+                                                    <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
+                                                        <MoreVertical className="h-5 w-5" />
+                                                    </button>
+                                                }
+                                            >
+                                                <div className="py-1">
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => {
+                                                            setDetailSurat(item);
+                                                            setDetailModalOpen(true);
+                                                        }}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                        <span>Lihat Detail</span>
+                                                    </Dropdown.Link>
+
+                                                    <Dropdown.Link
+                                                        href={route('persuratan.surat-keluar.edit', item.id)}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                        <span>Edit</span>
+                                                    </Dropdown.Link>
+
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => window.open(route('persuratan.surat-keluar.cetak-kartu', item.id), '_blank')}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <Printer className="h-4 w-4" />
+                                                        <span>Cetak Kartu</span>
+                                                    </Dropdown.Link>
+
+                                                    <div className="border-t border-border-default my-1"></div>
+
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => {
+                                                            setSelectedSurat(item);
+                                                            setDeleteModalOpen(true);
+                                                        }}
+                                                        className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span>Hapus</span>
+                                                    </Dropdown.Link>
+                                                </div>
+                                            </Dropdown>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {paginatedData.length === 0 && (
+                                    <tr>
+                                        <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                                            {search || startDate || endDate ? 'Tidak ada surat keluar yang cocok dengan filter.' : 'Tidak ada data surat keluar.'}
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
 
                 {/* Pagination */}
                 {(initialSuratKeluar || hasCached) && (
-                <div className="p-4 border-t border-border-default">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p className="text-sm text-text-secondary">
-                            Menampilkan {paginatedData.length} dari {filteredData.length} data
-                        </p>
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                        />
+                    <div className="p-4 border-t border-border-default">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <p className="text-sm text-text-secondary">
+                                Menampilkan {paginatedData.length} dari {filteredData.length} data
+                            </p>
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+                        </div>
                     </div>
-                </div>
                 )}
             </div>
 

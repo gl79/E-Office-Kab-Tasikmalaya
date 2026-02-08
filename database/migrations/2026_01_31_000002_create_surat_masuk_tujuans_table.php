@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('surat_masuk_tujuans', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->ulid('surat_masuk_id');
+            $table->foreignId('tujuan_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->string('tujuan', 255); // Bupati, Wakil Bupati, Sekda, Asda 1, dst
 
             $table->timestamps();

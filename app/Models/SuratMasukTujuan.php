@@ -15,6 +15,7 @@ class SuratMasukTujuan extends Model
 
     protected $fillable = [
         'surat_masuk_id',
+        'tujuan_id',
         'tujuan',
     ];
 
@@ -26,5 +27,13 @@ class SuratMasukTujuan extends Model
     public function suratMasuk(): BelongsTo
     {
         return $this->belongsTo(SuratMasuk::class, 'surat_masuk_id');
+    }
+
+    /**
+     * Relasi ke user (tujuan internal)
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'tujuan_id');
     }
 }

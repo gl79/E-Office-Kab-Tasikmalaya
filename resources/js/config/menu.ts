@@ -56,14 +56,14 @@ export const menuItems: MenuItem[] = [
                 icon: 'user',
             },
             {
-                label: 'Unit Kerja',
-                href: '/master/unit-kerja',
-                icon: 'building',
-            },
-            {
                 label: 'Indeks Surat',
                 href: '/master/indeks-surat',
                 icon: 'file-text',
+            },
+            {
+                label: 'Unit Kerja',
+                href: '/master/unit-kerja',
+                icon: 'building',
             },
             {
                 label: 'Archive',
@@ -76,7 +76,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Persuratan',
         icon: 'mail',
-        roles: ['superadmin', 'tu', 'sekpri_bupati', 'sekpri_wakil_bupati'],
+        roles: ['superadmin', 'tu', 'sekpri', 'user'],
         children: [
             {
                 label: 'Surat Masuk',
@@ -98,7 +98,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Penjadwalan',
         icon: 'calendar',
-        roles: ['superadmin', 'tu', 'sekpri_bupati', 'sekpri_wakil_bupati'],
+        roles: ['superadmin', 'tu', 'sekpri', 'pimpinan'],
         children: [
             {
                 label: 'Jadwal',

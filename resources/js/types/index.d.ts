@@ -3,7 +3,7 @@ export interface User {
     name: string;
     username: string;
     email: string | null;
-    role: 'superadmin' | 'tu' | 'sekpri_bupati' | 'sekpri_wakil_bupati';
+    role: 'superadmin' | 'pimpinan' | 'sekpri' | 'tu' | 'user';
     role_label?: string;
     email_verified_at?: string;
     foto?: string | null;

@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination } from '@/Components/ui';
 import { InputLabel, TextInput, InputError } from '@/Components/form';
 import { User, PageProps } from '@/types';
-import { Search, Pencil, Trash2 } from 'lucide-react';
+import { Search, Pencil, Trash2, Plus } from 'lucide-react';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { useDeferredDataMutable } from '@/hooks';
 
@@ -266,7 +266,10 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                 ))}
                             </select>
                         </div>
-                        <Button onClick={openCreate}>Tambah Pengguna</Button>
+                        <Button onClick={openCreate}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Tambah Pengguna
+                        </Button>
                     </div>
                 </div>
 

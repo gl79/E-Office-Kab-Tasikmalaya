@@ -37,19 +37,20 @@ class SuratMasukRequest extends FormRequest
                 'max:100',
                 Rule::unique('surat_masuks', 'nomor_surat')->ignore($suratMasukId),
             ],
-            'sifat' => ['required', 'string', Rule::in(array_keys(SuratMasuk::SIFAT_OPTIONS))],
+            'sifat' => ['required', 'string', 'max:50'],
             'lampiran' => ['nullable', 'integer', 'min:0'],
             'perihal' => ['required', 'string'],
             'isi_ringkas' => ['required', 'string'],
 
             // Step 2: Identitas Agenda
             'tanggal_diterima' => ['required', 'date'],
-            'nomor_agenda' => [
-                'required',
+            'nomor_agenda' => array_filter([
+                $this->isMethod('PUT') ? 'required' : null,
+                'nullable',
                 'string',
                 'max:50',
                 Rule::unique('surat_masuks', 'nomor_agenda')->ignore($suratMasukId),
-            ],
+            ]),
             'indeks_berkas_id' => ['nullable', 'string', 'exists:indeks_surat,id'],
             'kode_klasifikasi_id' => ['nullable', 'string', 'exists:indeks_surat,id'],
             'staff_pengolah_id' => ['nullable', 'integer', 'exists:users,id'],
@@ -58,9 +59,9 @@ class SuratMasukRequest extends FormRequest
 
             // File Upload
             'file' => [
-                $this->isMethod('POST') ? 'required' : 'nullable',
+                'nullable',
                 'file',
-                'mimes:pdf,doc,docx',
+                'mimes:pdf,doc,docx,jpg,jpeg',
                 'max:5120', // 5MB
             ],
         ];
@@ -107,7 +108,7 @@ class SuratMasukRequest extends FormRequest
             'tujuan.required' => 'Minimal pilih satu tujuan surat.',
             'tujuan.min' => 'Minimal pilih satu tujuan surat.',
             'file.required' => 'File Surat Digital wajib diupload.',
-            'file.mimes' => 'File harus berformat PDF, DOC, atau DOCX.',
+            'file.mimes' => 'File harus berformat PDF, DOC, DOCX, JPG, atau JPEG.',
             'file.max' => 'Ukuran file maksimal 5MB.',
         ];
     }

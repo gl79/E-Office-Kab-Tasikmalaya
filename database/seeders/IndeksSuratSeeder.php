@@ -15,53 +15,53 @@ class IndeksSuratSeeder extends Seeder
         $indexes = [
             [
                 'kode' => '000',
-                'nama' => 'Umum',
-                'urutan' => 1,
+                'nama' => 'Pemberian Bantuan Umum',
+                'jenis_surat' => IndeksSurat::JENIS_PEMBERIAN_BANTUAN,
             ],
             [
                 'kode' => '100',
                 'nama' => 'Pemerintahan',
-                'urutan' => 2,
+                'jenis_surat' => IndeksSurat::JENIS_PENANDATANGANAN,
             ],
             [
                 'kode' => '200',
                 'nama' => 'Politik',
-                'urutan' => 3,
+                'jenis_surat' => IndeksSurat::JENIS_AUDIENSI,
             ],
             [
                 'kode' => '300',
                 'nama' => 'Keamanan dan Ketertiban',
-                'urutan' => 4,
+                'jenis_surat' => IndeksSurat::JENIS_SURAT_TUGAS,
             ],
             [
                 'kode' => '400',
                 'nama' => 'Kesejahteraan Rakyat',
-                'urutan' => 5,
+                'jenis_surat' => IndeksSurat::JENIS_PEMBERIAN_BANTUAN,
             ],
             [
                 'kode' => '500',
                 'nama' => 'Perekonomian',
-                'urutan' => 6,
+                'jenis_surat' => IndeksSurat::JENIS_PENANDATANGANAN,
             ],
             [
                 'kode' => '600',
-                'nama' => 'Pekerjaan Umum dan Ketenagakerjaan',
-                'urutan' => 7,
+                'nama' => 'Pekerjaan Umum',
+                'jenis_surat' => IndeksSurat::JENIS_SURAT_TUGAS,
             ],
             [
                 'kode' => '700',
                 'nama' => 'Pengawasan',
-                'urutan' => 8,
+                'jenis_surat' => IndeksSurat::JENIS_AUDIENSI,
             ],
             [
                 'kode' => '800',
                 'nama' => 'Kepegawaian',
-                'urutan' => 9,
+                'jenis_surat' => IndeksSurat::JENIS_PENANDATANGANAN,
             ],
             [
                 'kode' => '900',
                 'nama' => 'Keuangan',
-                'urutan' => 10,
+                'jenis_surat' => IndeksSurat::JENIS_PEMBERIAN_BANTUAN,
             ],
         ];
 

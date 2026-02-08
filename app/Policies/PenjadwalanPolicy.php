@@ -14,9 +14,9 @@ class PenjadwalanPolicy
     {
         return in_array($user->role, [
             User::ROLE_SUPERADMIN,
+            User::ROLE_PIMPINAN,
+            User::ROLE_SEKPRI,
             User::ROLE_TU,
-            User::ROLE_SEKPRI_BUPATI,
-            User::ROLE_SEKPRI_WAKIL_BUPATI,
         ], true);
     }
 

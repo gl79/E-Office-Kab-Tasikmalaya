@@ -203,7 +203,7 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                         </Button>
                     )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${auth.user.role === 'superadmin' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-3`}>
                     <TextInput
                         type="text"
                         placeholder="Cari deskripsi, IP, user..."
@@ -211,16 +211,18 @@ const Index = ({ logs, users, actionTypes }: Props) => {
                         onChange={handleSearchChange}
                         className="w-full px-2"
                     />
-                    <select
-                        value={userFilter}
-                        onChange={(e) => { setUserFilter(e.target.value); setCurrentPage(1); }}
-                        className="border border-border-default rounded-lg px-2 py-2 text-sm"
-                    >
-                        <option value="">Semua Pengguna</option>
-                        {usersData.map((user) => (
-                            <option key={user.id} value={user.id}>{user.name}</option>
-                        ))}
-                    </select>
+                    {auth.user.role === 'superadmin' && (
+                        <select
+                            value={userFilter}
+                            onChange={(e) => { setUserFilter(e.target.value); setCurrentPage(1); }}
+                            className="border border-border-default rounded-lg px-2 py-2 text-sm"
+                        >
+                            <option value="">Semua Pengguna</option>
+                            {usersData.map((user) => (
+                                <option key={user.id} value={user.id}>{user.name}</option>
+                            ))}
+                        </select>
+                    )}
                     <select
                         value={actionFilter}
                         onChange={(e) => { setActionFilter(e.target.value); setCurrentPage(1); }}

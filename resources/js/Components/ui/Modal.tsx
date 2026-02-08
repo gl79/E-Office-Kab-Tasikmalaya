@@ -84,65 +84,69 @@ export default function Modal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 overflow-y-auto">
             {/* Backdrop */}
-            <div 
-                className="absolute inset-0 bg-text-primary/50"
+            <div
+                className="fixed inset-0 bg-text-primary/50"
                 onClick={handleBackdropClick}
                 aria-hidden="true"
             />
 
-            {/* Modal Content */}
-            <div 
-                className={`
-                    relative w-full mx-4
-                    bg-surface rounded-lg shadow-xl
-                    ${sizeStyles[size]}
-                `}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={title ? 'modal-title' : undefined}
-            >
-                {/* Header */}
-                {title && (
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-border-default">
-                        <h2 
-                            id="modal-title"
-                            className="text-lg font-semibold text-text-primary"
-                        >
-                            {title}
-                        </h2>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="
-                                p-1 rounded-lg
-                                text-text-secondary hover:text-text-primary
-                                hover:bg-surface-hover
-                                transition-colors
-                            "
-                            aria-label="Close modal"
-                        >
-                            <svg 
-                                className="w-5 h-5" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
+            {/* Centering wrapper */}
+            <div className="flex min-h-full items-center justify-center p-4">
+                {/* Modal Content */}
+                <div
+                    className={`
+                        relative w-full
+                        bg-surface rounded-lg shadow-xl
+                        max-h-[90vh] flex flex-col
+                        ${sizeStyles[size]}
+                    `}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby={title ? 'modal-title' : undefined}
+                >
+                    {/* Header */}
+                    {title && (
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-border-default shrink-0">
+                            <h2
+                                id="modal-title"
+                                className="text-lg font-semibold text-text-primary"
                             >
-                                <path 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth="2" 
-                                    d="M6 18L18 6M6 6l12 12" 
-                                />
-                            </svg>
-                        </button>
-                    </div>
-                )}
+                                {title}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="
+                                    p-1 rounded-lg
+                                    text-text-secondary hover:text-text-primary
+                                    hover:bg-surface-hover
+                                    transition-colors
+                                "
+                                aria-label="Close modal"
+                            >
+                                <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
 
-                {/* Body */}
-                <div className="px-6 py-4">
-                    {children}
+                    {/* Body */}
+                    <div className="px-6 py-4 overflow-y-auto">
+                        {children}
+                    </div>
                 </div>
             </div>
         </div>

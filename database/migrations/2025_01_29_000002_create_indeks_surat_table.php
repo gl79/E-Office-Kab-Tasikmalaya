@@ -15,7 +15,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->string('kode', 50)->unique();
             $table->string('nama');
-            $table->integer('urutan')->default(0);
+            $table->string('jenis_surat')->nullable(); // Penandatanganan, Pemberian Bantuan, Audiensi, Surat Tugas
 
             // Audit Trail
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

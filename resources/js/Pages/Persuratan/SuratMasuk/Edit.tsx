@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -19,6 +19,7 @@ interface IndeksSurat {
     id: string;
     kode: string;
     nama: string;
+    jenis_surat: string | null;
 }
 
 interface User {
@@ -30,6 +31,7 @@ interface User {
 
 interface SuratMasukTujuan {
     id: string;
+    tujuan_id: number | null;
     tujuan: string;
 }
 
@@ -58,18 +60,19 @@ interface Props extends PageProps {
     indeksSurat: IndeksSurat[];
     users: User[];
     sifatOptions: Record<string, string>;
-    tujuanOptions: string[];
 }
 
-export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tujuanOptions }: Props) {
+export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions }: Props) {
     const [currentStep, setCurrentStep] = useState(0);
     const [stepError, setStepError] = useState('');
+    const initialIndeks = indeksSurat.find(item => item.id.toString() === suratMasuk.indeks_berkas_id?.toString());
+    const [selectedJenisSurat, setSelectedJenisSurat] = useState(initialIndeks?.jenis_surat || '');
 
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         tanggal_surat: suratMasuk.tanggal_surat || '',
         asal_surat: suratMasuk.asal_surat || '',
-        tujuan: suratMasuk.tujuans?.map((t) => t.tujuan) || [],
+        tujuan: suratMasuk.tujuans?.map((t) => t.tujuan_id ? t.tujuan_id.toString() : t.tujuan) || [],
         nomor_surat: suratMasuk.nomor_surat || '',
         sifat: suratMasuk.sifat || '',
         lampiran: suratMasuk.lampiran?.toString() || '',
@@ -90,7 +93,12 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
         { title: 'Identitas Agenda', description: 'Data agenda & file' },
     ];
 
-    const indeksOptions = indeksSurat.map((item) => ({
+    const filteredIndeksSurat = useMemo(() => {
+        if (!selectedJenisSurat) return indeksSurat;
+        return indeksSurat.filter(item => item.jenis_surat === selectedJenisSurat);
+    }, [indeksSurat, selectedJenisSurat]);
+
+    const indeksOptions = filteredIndeksSurat.map((item) => ({
         value: item.id,
         label: `${item.kode} - ${item.nama}`,
     }));
@@ -99,6 +107,13 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
         value: user.id.toString(),
         label: user.nip ? `${user.name} (${user.nip})` : user.name,
     }));
+
+    const staffPengolahOptions = users
+        .filter((user) => !['Bupati', 'Wakil Bupati'].includes(user.name))
+        .map((user) => ({
+            value: user.id.toString(),
+            label: user.nip ? `${user.name} (${user.nip})` : user.name,
+        }));
 
     const sifatSelectOptions = Object.entries(sifatOptions).map(([value, label]) => ({
         value,
@@ -179,18 +194,6 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="nomor_surat" value="Nomor Surat" required />
-                                                <TextInput
-                                                    id="nomor_surat"
-                                                    value={data.nomor_surat}
-                                                    onChange={(e) => setData('nomor_surat', e.target.value)}
-                                                    placeholder="Masukkan nomor surat"
-                                                    className="w-full mt-1 px-2"
-                                                />
-                                                <InputError message={errors.nomor_surat} className="mt-1" />
-                                            </div>
-
-                                            <div>
                                                 <InputLabel htmlFor="asal_surat" value="Asal Surat" required />
                                                 <TextInput
                                                     id="asal_surat"
@@ -206,7 +209,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                 <InputLabel value="Kepada (Tujuan Surat)" required />
                                                 <div className="mt-1">
                                                     <FormMultiSelect
-                                                        options={tujuanOptions}
+                                                        options={userOptions}
                                                         value={data.tujuan}
                                                         onChange={(value) => setData('tujuan', value)}
                                                         placeholder="Pilih tujuan surat..."
@@ -215,6 +218,18 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                         error={errors.tujuan}
                                                     />
                                                 </div>
+                                            </div>
+
+                                            <div>
+                                                <InputLabel htmlFor="nomor_surat" value="Nomor Surat" required />
+                                                <TextInput
+                                                    id="nomor_surat"
+                                                    value={data.nomor_surat}
+                                                    onChange={(e) => setData('nomor_surat', e.target.value)}
+                                                    placeholder="Masukkan nomor surat"
+                                                    className="w-full mt-1 px-2"
+                                                />
+                                                <InputError message={errors.nomor_surat} className="mt-1" />
                                             </div>
 
                                             <div>
@@ -291,15 +306,35 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="nomor_agenda" value="Nomor Agenda" required />
+                                                <InputLabel htmlFor="nomor_agenda" value="No Urut/Agenda" required />
                                                 <TextInput
                                                     id="nomor_agenda"
-                                                    value={data.nomor_agenda}
-                                                    onChange={(e) => setData('nomor_agenda', e.target.value)}
-                                                    placeholder="Contoh: 0001"
+                                                    value={data.nomor_agenda.split('/')[1] || data.nomor_agenda}
+                                                    readOnly
+                                                    className="w-full mt-1 px-2 bg-gray-100 cursor-not-allowed"
+                                                />
+                                                <p className="text-xs text-text-secondary mt-1">No urut/agenda tidak dapat diubah</p>
+                                                <InputError message={errors.nomor_agenda} className="mt-1" />
+                                            </div>
+
+                                            <div>
+                                                <InputLabel htmlFor="jenis_surat_filter" value="Filter Jenis Surat" />
+                                                <FormSelect
+                                                    id="jenis_surat_filter"
+                                                    value={selectedJenisSurat}
+                                                    onChange={(e) => {
+                                                        setSelectedJenisSurat(e.target.value);
+                                                        setData('indeks_berkas_id', ''); // Reset on change
+                                                    }}
+                                                    options={[
+                                                        { value: 'Penandatanganan', label: 'Penandatanganan' },
+                                                        { value: 'Pemberian Bantuan', label: 'Pemberian Bantuan' },
+                                                        { value: 'Audiensi', label: 'Audiensi' },
+                                                        { value: 'Surat Tugas', label: 'Surat Tugas' },
+                                                    ]}
+                                                    placeholder="Semua Jenis Surat"
                                                     className="w-full mt-1 px-2"
                                                 />
-                                                <InputError message={errors.nomor_agenda} className="mt-1" />
                                             </div>
 
                                             <div>
@@ -332,7 +367,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                 <InputLabel htmlFor="staff_pengolah_id" value="Staff Pengolah" />
                                                 <FormSelect
                                                     id="staff_pengolah_id"
-                                                    options={userOptions}
+                                                    options={staffPengolahOptions}
                                                     value={data.staff_pengolah_id}
                                                     onChange={(e) => setData('staff_pengolah_id', e.target.value)}
                                                     placeholder="Pilih staff pengolah"
@@ -370,7 +405,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions, tuj
                                                 <div className="mt-1">
                                                     <FormFileUpload
                                                         onChange={(file) => setData('file', file)}
-                                                        accept=".pdf,.doc,.docx"
+                                                        accept=".pdf,.doc,.docx,.jpg,.jpeg"
                                                         maxSize={5}
                                                         currentFile={suratMasuk.file_path}
                                                         error={errors.file}

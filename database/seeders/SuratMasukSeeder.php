@@ -25,7 +25,7 @@ class SuratMasukSeeder extends Seeder
             return;
         }
 
-        $tujuanOptions = SuratMasuk::TUJUAN_OPTIONS;
+        $tujuanUsers = User::all(['id', 'name']);
         $sifatOptions = array_keys(SuratMasuk::SIFAT_OPTIONS);
         $asalSuratList = [
             'Kementerian Dalam Negeri',
@@ -81,15 +81,15 @@ class SuratMasukSeeder extends Seeder
                 'created_by' => $user->id,
             ]);
 
-            // Add random tujuan (1-3)
+            // Add random tujuan (1-3) with tujuan_id linking
             $numTujuan = rand(1, 3);
-            $selectedTujuan = array_rand(array_flip($tujuanOptions), $numTujuan);
-            $selectedTujuan = is_array($selectedTujuan) ? $selectedTujuan : [$selectedTujuan];
+            $selectedUsers = $tujuanUsers->random($numTujuan);
 
-            foreach ($selectedTujuan as $tujuan) {
+            foreach ($selectedUsers as $tujuanUser) {
                 SuratMasukTujuan::create([
                     'surat_masuk_id' => $suratMasuk->id,
-                    'tujuan' => $tujuan,
+                    'tujuan_id' => $tujuanUser->id,
+                    'tujuan' => $tujuanUser->name,
                 ]);
             }
         }

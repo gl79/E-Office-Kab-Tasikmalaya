@@ -17,9 +17,22 @@ class IndeksSurat extends Model
     protected $fillable = [
         'kode',
         'nama',
+        'jenis_surat',
         'urutan',
         'created_by',
         'updated_by',
         'deleted_by',
+    ];
+
+    public const JENIS_PENANDATANGANAN = 'Penandatanganan';
+    public const JENIS_PEMBERIAN_BANTUAN = 'Pemberian Bantuan';
+    public const JENIS_AUDIENSI = 'Audiensi';
+    public const JENIS_SURAT_TUGAS = 'Surat Tugas';
+
+    public const JENIS_OPTIONS = [
+        self::JENIS_PENANDATANGANAN => 'Penandatanganan',
+        self::JENIS_PEMBERIAN_BANTUAN => 'Pemberian Bantuan',
+        self::JENIS_AUDIENSI => 'Audiensi',
+        self::JENIS_SURAT_TUGAS => 'Surat Tugas',
     ];
 }

@@ -9,20 +9,20 @@ class ActivityLogPolicy
 {
     /**
      * Determine whether the user can view any models.
-     * Only superadmin can view activity logs.
+     * All authenticated users can view activity logs (their own, or all if superadmin).
      */
     public function viewAny(User $user): bool
     {
-        return $user->isSuperAdmin();
+        return true; // All authenticated users can access
     }
 
     /**
      * Determine whether the user can view the model.
-     * Only superadmin can view activity logs.
+     * Users can view their own logs, superadmin can view all logs.
      */
     public function view(User $user, ActivityLog $activityLog): bool
     {
-        return $user->isSuperAdmin();
+        return $user->isSuperAdmin() || $activityLog->user_id === $user->id;
     }
 
     /**

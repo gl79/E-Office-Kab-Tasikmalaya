@@ -1,8 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown, Plus } from 'lucide-react';
 
+interface Option {
+    value: string;
+    label: string;
+}
+
 interface FormMultiSelectProps {
-    options: string[];
+    options: Option[];
     value: string[];
     onChange: (value: string[]) => void;
     placeholder?: string;
@@ -40,19 +45,19 @@ export default function FormMultiSelect({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleToggle = (option: string) => {
+    const handleToggle = (optionValue: string) => {
         if (disabled) return;
 
-        if (value.includes(option)) {
-            onChange(value.filter(v => v !== option));
+        if (value.includes(optionValue)) {
+            onChange(value.filter(v => v !== optionValue));
         } else {
-            onChange([...value, option]);
+            onChange([...value, optionValue]);
         }
     };
 
-    const handleRemove = (option: string) => {
+    const handleRemove = (optionValue: string) => {
         if (disabled) return;
-        onChange(value.filter(v => v !== option));
+        onChange(value.filter(v => v !== optionValue));
     };
 
     const handleAddCustom = () => {
@@ -68,6 +73,11 @@ export default function FormMultiSelect({
             e.preventDefault();
             handleAddCustom();
         }
+    };
+
+    const getLabel = (val: string) => {
+        const option = options.find(o => o.value === val);
+        return option ? option.label : val;
     };
 
     return (
@@ -97,7 +107,7 @@ export default function FormMultiSelect({
                                 bg-primary-light text-primary-dark text-sm
                             "
                         >
-                            {item}
+                            {getLabel(item)}
                             {!disabled && (
                                 <button
                                     type="button"
@@ -126,22 +136,22 @@ export default function FormMultiSelect({
                     {/* Predefined Options */}
                     {options.map((option) => (
                         <div
-                            key={option}
-                            onClick={() => handleToggle(option)}
+                            key={option.value}
+                            onClick={() => handleToggle(option.value)}
                             className={`
                                 px-3 py-1.5 cursor-pointer text-sm
                                 hover:bg-surface-hover
-                                ${value.includes(option) ? 'bg-primary-light text-primary-dark' : ''}
+                                ${value.includes(option.value) ? 'bg-primary-light text-primary-dark' : ''}
                             `}
                         >
                             <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
-                                    checked={value.includes(option)}
-                                    onChange={() => {}}
+                                    checked={value.includes(option.value)}
+                                    onChange={() => { }}
                                     className="rounded border-border-default text-primary focus:ring-primary"
                                 />
-                                {option}
+                                {option.label}
                             </div>
                         </div>
                     ))}

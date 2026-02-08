@@ -70,16 +70,21 @@ class SuratMasuk extends Model
     ];
 
     /**
-     * Konstanta untuk tujuan surat predefined
+     * Generate nomor agenda otomatis dengan format SM/{number}/{year}.
+     * Nomor direset setiap pergantian tahun.
      */
-    public const TUJUAN_OPTIONS = [
-        'Bupati',
-        'Wakil Bupati',
-        'Sekda',
-        'Asda 1',
-        'Asda 2',
-        'Asda 3',
-    ];
+    public static function generateNomorAgenda(): string
+    {
+        $year = date('Y');
+
+        $lastNumber = self::withTrashed()
+            ->where('nomor_agenda', 'like', "SM/%/{$year}")
+            ->get(['nomor_agenda'])
+            ->map(fn ($s) => (int) explode('/', $s->nomor_agenda)[1])
+            ->max() ?? 0;
+
+        return 'SM/' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT) . '/' . $year;
+    }
 
     // ==================== RELATIONSHIPS ====================
 

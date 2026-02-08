@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Head, router, Link, usePage } from '@inertiajs/react';
-import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical } from 'lucide-react';
+import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
@@ -30,10 +30,14 @@ interface SuratMasuk {
     isi_ringkas: string | null;
     lampiran: number | null;
     file_path: string | null;
+    tanggal_diteruskan: string | null;
+    catatan_tambahan: string | null;
     tujuans: SuratMasukTujuan[];
-    indeks_berkas?: { kode: string; nama: string } | null;
+    indeks_berkas?: { kode: string; nama: string; jenis_surat: string | null } | null;
     kode_klasifikasi?: { kode: string; nama: string } | null;
     staff_pengolah?: { name: string; nip: string } | null;
+    created_by?: { name: string } | null;
+    created_at: string;
 }
 
 interface Props extends PageProps {
@@ -59,6 +63,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     const [endDate, setEndDate] = useState('');
     const [sifat, setSifat] = useState('');
     const [showFilters, setShowFilters] = useState(false);
+    const [periodeFilter, setPeriodeFilter] = useState('');
     const itemsPerPage = 10;
 
     // Delete Modal State
@@ -69,6 +74,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     // Detail Modal State
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailSurat, setDetailSurat] = useState<SuratMasuk | null>(null);
+    const [jenisSuratFilter, setJenisSuratFilter] = useState('');
 
     // Cetak Disposisi Modal State
     const [disposisiModalOpen, setDisposisiModalOpen] = useState(false);
@@ -110,8 +116,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
             data = data.filter(item => item.sifat === sifat);
         }
 
+        if (jenisSuratFilter) {
+            data = data.filter(item => item.indeks_berkas?.jenis_surat === jenisSuratFilter);
+        }
+
         return data;
-    }, [suratMasuk, search, startDate, endDate, sifat]);
+    }, [suratMasuk, search, startDate, endDate, sifat, jenisSuratFilter]);
 
     // Paginate data
     const paginatedData = useMemo(() => {
@@ -124,6 +134,18 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     // Reset page on filter change
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const hasActiveFilters = !!(search || startDate || endDate || sifat || jenisSuratFilter);
+
+    const handleResetFilters = () => {
+        setSearch('');
+        setStartDate('');
+        setEndDate('');
+        setSifat('');
+        setJenisSuratFilter('');
+        setPeriodeFilter('');
         setCurrentPage(1);
     };
 
@@ -152,24 +174,42 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
 
     const handleCetakDisposisi = () => {
         if (!disposisiSurat) return;
-        router.post(route('persuratan.surat-masuk.cetak-disposisi', disposisiSurat.id), {
-            penanda_tangan_index: selectedPenandaTangan,
-        }, {
-            onSuccess: () => {
-                setDisposisiModalOpen(false);
-            },
-        });
+
+        // Use hidden form with target="_blank" to open in new tab
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = route('persuratan.surat-masuk.cetak-disposisi', disposisiSurat.id);
+        form.target = '_blank';
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+
+        const ptInput = document.createElement('input');
+        ptInput.type = 'hidden';
+        ptInput.name = 'penanda_tangan_index';
+        ptInput.value = selectedPenandaTangan.toString();
+        form.appendChild(ptInput);
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        setDisposisiModalOpen(false);
     };
 
     const getSifatBadge = (sifatValue: string) => {
         const variants: Record<string, 'default' | 'info' | 'warning' | 'danger'> = {
-            biasa: 'default',
+            biasa: 'info',
             terbatas: 'info',
             rahasia: 'warning',
             sangat_rahasia: 'danger',
         };
         return (
-            <Badge variant={variants[sifatValue] || 'default'} className="justify-center min-w-[80px] whitespace-nowrap">
+            <Badge variant={variants[sifatValue] || 'info'} className="justify-center min-w-[80px] whitespace-nowrap">
                 {sifatOptions[sifatValue] || sifatValue}
             </Badge>
         );
@@ -179,6 +219,77 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         value,
         label,
     }));
+
+    const handleExportPDF = () => {
+        const dataToExport = filteredData;
+        if (dataToExport.length === 0) return;
+
+        const escapeHtml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        const filterInfo: string[] = [];
+        if (search) filterInfo.push(`Pencarian: "${escapeHtml(search)}"`);
+        if (startDate || endDate) filterInfo.push(`Periode: ${startDate || '...'} s/d ${endDate || '...'}`);
+        if (sifat) filterInfo.push(`Sifat: ${sifatOptions[sifat] || sifat}`);
+        if (jenisSuratFilter) filterInfo.push(`Jenis: ${jenisSuratFilter}`);
+
+        const rows = dataToExport.map((item, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.nomor_agenda.split('/')[1] || escapeHtml(item.nomor_agenda)}</td>
+                <td>${formatDateShort(item.tanggal_diterima)}</td>
+                <td>${formatDateShort(item.tanggal_surat)}<br><small>${escapeHtml(item.nomor_surat)}</small></td>
+                <td>${escapeHtml(item.asal_surat)}</td>
+                <td>${item.tujuans?.map(t => escapeHtml(t.tujuan)).join(', ') || '-'}</td>
+                <td>${escapeHtml(item.perihal)}</td>
+                <td>${escapeHtml(sifatOptions[item.sifat] || item.sifat)}</td>
+            </tr>
+        `).join('');
+
+        const html = `<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Laporan Surat Masuk</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Times New Roman', serif; font-size: 11px; padding: 20px; }
+    .header { text-align: center; margin-bottom: 16px; border-bottom: 3px double #000; padding-bottom: 12px; }
+    .header h1 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+    .header h2 { font-size: 16px; text-transform: uppercase; margin-top: 4px; }
+    .meta { margin-bottom: 12px; font-size: 10px; color: #555; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #333; padding: 4px 6px; text-align: left; vertical-align: top; }
+    th { background: #f0f0f0; font-size: 10px; text-transform: uppercase; text-align: center; }
+    td:first-child { text-align: center; width: 30px; }
+    td small { color: #666; }
+    .footer { margin-top: 16px; font-size: 9px; color: #888; display: flex; justify-content: space-between; }
+    @media print { body { padding: 0; } }
+</style>
+</head><body>
+<div class="header">
+    <h1>Pemerintah Kabupaten Tasikmalaya</h1>
+    <h2>Laporan Data Surat Masuk</h2>
+</div>
+${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</div>` : ''}
+<div class="meta">Total: ${dataToExport.length} data</div>
+<table>
+    <thead><tr>
+        <th>No</th><th>Agenda</th><th>Tgl Diterima</th><th>Tgl Surat / No Surat</th><th>Asal Surat</th><th>Tujuan</th><th>Perihal</th><th>Sifat</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+</table>
+<div class="footer">
+    <span>Dicetak pada: ${new Date().toLocaleString('id-ID')}</span>
+    <span>Dicetak oleh: ${auth.user.name}</span>
+</div>
+<script>window.onload = function() { window.print(); }</script>
+</body></html>`;
+
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+        }
+    };
 
     return (
         <>
@@ -209,58 +320,138 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <span>Filter</span>
                                 </Button>
                             </div>
-                            <Link href={route('persuratan.surat-masuk.create')}>
-                                <Button>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Tambah Surat
+                            <div className="flex gap-2">
+                                <Button variant="secondary" onClick={handleExportPDF} disabled={filteredData.length === 0} title="Export PDF">
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Export
                                 </Button>
-                            </Link>
+                                {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                    <Link href={route('persuratan.surat-masuk.create')}>
+                                        <Button>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Tambah Surat
+                                        </Button>
+                                    </Link>
+                                )}
+                            </div>
                         </div>
 
                         {/* Expandable Filters */}
                         {showFilters && (
-                            <div className="p-4 bg-surface-hover rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-4 border border-border-default animate-in fade-in slide-in-from-top-2">
-                                <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-1">
-                                        Tanggal Mulai
-                                    </label>
-                                    <FormDatePicker
-                                        value={startDate}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                            setStartDate(e.target.value);
-                                            setCurrentPage(1);
-                                        }}
-                                        className="w-full px-2"
-                                    />
+                            <div className="p-4 bg-surface-hover rounded-lg border border-border-default animate-in fade-in slide-in-from-top-2 space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Periode
+                                        </label>
+                                        <select
+                                            className="w-full rounded-md border-border-default bg-surface focus:border-primary focus:ring-primary sm:text-sm"
+                                            value={periodeFilter}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setPeriodeFilter(val);
+                                                const now = new Date();
+                                                let start = '';
+                                                let end = '';
+
+                                                if (val === 'hari_ini') {
+                                                    start = end = now.toISOString().split('T')[0];
+                                                } else if (val === 'minggu_ini') {
+                                                    const first = now.getDate() - now.getDay();
+                                                    const last = first + 6;
+                                                    start = new Date(now.setDate(first)).toISOString().split('T')[0];
+                                                    end = new Date(now.setDate(last)).toISOString().split('T')[0];
+                                                } else if (val === 'bulan_ini') {
+                                                    start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                                                    end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+                                                } else if (val === 'tahun_ini') {
+                                                    start = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                                                    end = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+                                                }
+
+                                                setStartDate(start);
+                                                setEndDate(end);
+                                                setCurrentPage(1);
+                                            }}
+                                        >
+                                            <option value="">Semua Waktu</option>
+                                            <option value="hari_ini">Hari Ini</option>
+                                            <option value="minggu_ini">Minggu Ini</option>
+                                            <option value="bulan_ini">Bulan Ini</option>
+                                            <option value="tahun_ini">Tahun Ini</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Jenis Surat
+                                        </label>
+                                        <select
+                                            className="w-full rounded-md border-border-default bg-surface focus:border-primary focus:ring-primary sm:text-sm"
+                                            value={jenisSuratFilter}
+                                            onChange={(e) => {
+                                                setJenisSuratFilter(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                        >
+                                            <option value="">Semua Jenis</option>
+                                            <option value="Penandatanganan">Penandatanganan</option>
+                                            <option value="Pemberian Bantuan">Pemberian Bantuan</option>
+                                            <option value="Audiensi">Audiensi</option>
+                                            <option value="Surat Tugas">Surat Tugas</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Sifat Surat
+                                        </label>
+                                        <FormSelect
+                                            options={sifatSelectOptions}
+                                            value={sifat}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                                setSifat(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            placeholder="Semua Sifat"
+                                            className="w-full px-2 text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Dari Tanggal
+                                        </label>
+                                        <FormDatePicker
+                                            value={startDate}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                setStartDate(e.target.value);
+                                                setPeriodeFilter('');
+                                                setCurrentPage(1);
+                                            }}
+                                            className="w-full px-2 text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Sampai Tanggal
+                                        </label>
+                                        <FormDatePicker
+                                            value={endDate}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                setEndDate(e.target.value);
+                                                setPeriodeFilter('');
+                                                setCurrentPage(1);
+                                            }}
+                                            className="w-full px-2 text-sm"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-1">
-                                        Tanggal Akhir
-                                    </label>
-                                    <FormDatePicker
-                                        value={endDate}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                            setEndDate(e.target.value);
-                                            setCurrentPage(1);
-                                        }}
-                                        className="w-full px-2"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-1">
-                                        Sifat Surat
-                                    </label>
-                                    <FormSelect
-                                        options={sifatSelectOptions}
-                                        value={sifat}
-                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                            setSifat(e.target.value);
-                                            setCurrentPage(1);
-                                        }}
-                                        placeholder="Semua Sifat"
-                                        className="w-full px-2"
-                                    />
-                                </div>
+                                {hasActiveFilters && (
+                                    <div className="flex justify-end">
+                                        <Button variant="secondary" size="sm" onClick={handleResetFilters} className="gap-2">
+                                            <RotateCcw className="h-3.5 w-3.5" />
+                                            Reset Filter
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -269,124 +460,157 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 {/* Table */}
                 {isLoading && !hasCached ? (
                     <div className="p-4">
-                        <TableShimmer columns={7} />
+                        <TableShimmer columns={8} />
                     </div>
                 ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-border-default">
-                        <thead className="bg-surface-hover">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">No. Agenda</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tgl Diterima</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Nomor / Tgl Surat</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Asal Surat</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Sifat</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-20">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-surface divide-y divide-border-default">
-                            {paginatedData.map((item, index) => (
-                                <tr key={item.id} className="hover:bg-surface-hover">
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {(currentPage - 1) * itemsPerPage + index + 1}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-primary text-sm font-medium">
-                                        {item.nomor_agenda}
-                                    </td>
-                                    <td className="px-4 py-3 text-text-secondary text-sm">
-                                        {formatDateShort(item.tanggal_diterima)}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm">
-                                        <div className="font-medium text-text-primary">{item.nomor_surat}</div>
-                                        <div className="text-text-secondary text-xs">{formatDateShort(item.tanggal_surat)}</div>
-                                    </td>
-                                    <td className="px-4 py-3 text-text-primary text-sm">
-                                        {item.asal_surat}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {getSifatBadge(item.sifat)}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <Dropdown
-                                            align="right"
-                                            width="48"
-                                            trigger={
-                                                <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
-                                                    <MoreVertical className="h-5 w-5" />
-                                                </button>
-                                            }
-                                        >
-                                            <div className="py-1">
-                                                <Dropdown.Link
-                                                    as="button"
-                                                    onClick={() => {
-                                                        setDetailSurat(item);
-                                                        setDetailModalOpen(true);
-                                                    }}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                    <span>Lihat Detail</span>
-                                                </Dropdown.Link>
-                                                
-                                                <Dropdown.Link
-                                                    href={route('persuratan.surat-masuk.edit', item.id)}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                    <span>Edit</span>
-                                                </Dropdown.Link>
-                                                
-                                                <Dropdown.Link
-                                                    as="button"
-                                                    onClick={() => window.open(route('persuratan.surat-masuk.cetak-kartu', item.id), '_blank')}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <Printer className="h-4 w-4" />
-                                                    <span>Cetak Kartu</span>
-                                                </Dropdown.Link>
-                                                
-                                                <Dropdown.Link
-                                                    as="button"
-                                                    onClick={() => {
-                                                        setDisposisiSurat(item);
-                                                        setDisposisiModalOpen(true);
-                                                    }}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <FileText className="h-4 w-4" />
-                                                    <span>Cetak Disposisi</span>
-                                                </Dropdown.Link>
-                                                
-                                                <div className="border-t border-border-default my-1"></div>
-                                                
-                                                <Dropdown.Link
-                                                    as="button"
-                                                    onClick={() => {
-                                                        setSelectedSurat(item);
-                                                        setDeleteModalOpen(true);
-                                                    }}
-                                                    className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                    <span>Hapus</span>
-                                                </Dropdown.Link>
-                                            </div>
-                                        </Dropdown>
-                                    </td>
-                                </tr>
-                            ))}
-                            {paginatedData.length === 0 && (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full border-collapse border border-border-default">
+                            <thead className="bg-surface-hover">
                                 <tr>
-                                    <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
-                                        {search || startDate || endDate || sifat ? 'Tidak ada surat masuk yang cocok dengan filter.' : 'Tidak ada data surat masuk.'}
-                                    </td>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-12">No</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Agenda</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase"><div>Tanggal</div><div>Diterima</div></th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase"><div>Tgl Surat</div><div>No Surat</div></th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Asal Surat</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Perihal</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Sifat</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-20">Aksi</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="bg-surface">
+                                {paginatedData.map((item, index) => (
+                                    <tr key={item.id} className="hover:bg-surface-hover">
+                                        <td className="border border-border-default px-4 py-3 text-center text-text-secondary text-sm">
+                                            {(currentPage - 1) * itemsPerPage + index + 1}
+                                        </td>
+                                        <td className="border border-border-default px-4 py-3 text-center text-text-primary text-sm font-medium">
+                                            {item.nomor_agenda.split('/')[1] || item.nomor_agenda}
+                                        </td>
+                                        <td className="border border-border-default px-4 py-3 text-text-secondary text-sm">
+                                            {formatDateShort(item.tanggal_diterima)}
+                                        </td>
+                                        <td className="border border-border-default px-4 py-3 text-sm">
+                                            <div className="font-medium text-text-primary">{formatDateShort(item.tanggal_surat)}</div>
+                                            <div className="text-text-secondary text-xs">{item.nomor_surat}</div>
+                                        </td>
+                                        <td className="border border-border-default px-4 py-3 text-text-primary text-sm">
+                                            {item.asal_surat}
+                                        </td>
+                                        <td className="border border-border-default px-4 py-3 text-text-primary text-sm">
+                                            <span className="line-clamp-2">{item.perihal}</span>
+                                        </td>
+                                        <td className="border border-border-default px-4 py-3">
+                                            {getSifatBadge(item.sifat)}
+                                        </td>
+                                        <td className="border border-border-default px-4 py-3 text-center">
+                                            <Dropdown
+                                                align="right"
+                                                width="48"
+                                                trigger={
+                                                    <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
+                                                        <MoreVertical className="h-5 w-5" />
+                                                    </button>
+                                                }
+                                            >
+                                                <div className="py-1">
+                                                    
+
+                                                    {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                                        <Dropdown.Link
+                                                            href={route('persuratan.surat-masuk.edit', item.id)}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                            <span>Edit</span>
+                                                        </Dropdown.Link>
+                                                    )}
+
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => {
+                                                            setDetailSurat(item);
+                                                            setDetailModalOpen(true);
+                                                        }}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                        <span>Lihat Detail</span>
+                                                    </Dropdown.Link>
+
+                                                    {item.file_path && (
+                                                        <Dropdown.Link
+                                                            as="button"
+                                                            onClick={() => window.open(route('persuratan.surat-masuk.preview', item.id), '_blank')}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                            <span>Lihat File</span>
+                                                        </Dropdown.Link>
+                                                    )}
+
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => window.open(route('persuratan.surat-masuk.cetak-kartu', item.id), '_blank')}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <Printer className="h-4 w-4" />
+                                                        <span>Cetak Kartu</span>
+                                                    </Dropdown.Link>
+
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => window.open(route('persuratan.surat-masuk.cetak-isi', item.id), '_blank')}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <FileText className="h-4 w-4" />
+                                                        <span>Cetak Kartu Hanya Isi</span>
+                                                    </Dropdown.Link>
+
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => {
+                                                            setDisposisiSurat(item);
+                                                            setDisposisiModalOpen(true);
+                                                        }}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <FileText className="h-4 w-4" />
+                                                        <span>Cetak Disposisi</span>
+                                                    </Dropdown.Link>
+
+
+
+                                                    {!['user', 'pimpinan', 'sekpri'].includes(auth.user.role) && (
+                                                        <>
+                                                            <div className="border-t border-border-default my-1"></div>
+                                                            <Dropdown.Link
+                                                                as="button"
+                                                                onClick={() => {
+                                                                    setSelectedSurat(item);
+                                                                    setDeleteModalOpen(true);
+                                                                }}
+                                                                className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                                <span>Hapus</span>
+                                                            </Dropdown.Link>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </Dropdown>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {paginatedData.length === 0 && (
+                                    <tr>
+                                        <td colSpan={8} className="border border-border-default px-4 py-8 text-center text-text-secondary">
+                                            {search || startDate || endDate || sifat ? 'Tidak ada surat masuk yang cocok dengan filter.' : 'Tidak ada data surat masuk.'}
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
 
                 {/* Pagination */}
@@ -429,69 +653,145 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 size="lg"
             >
                 {detailSurat && (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-sm text-text-secondary">Nomor Agenda</p>
-                                <p className="font-medium text-text-primary">{detailSurat.nomor_agenda}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-text-secondary">Tanggal Diterima</p>
-                                <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_diterima)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-text-secondary">Nomor Surat</p>
-                                <p className="font-medium text-text-primary">{detailSurat.nomor_surat}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-text-secondary">Tanggal Surat</p>
-                                <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_surat)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-text-secondary">Asal Surat</p>
-                                <p className="font-medium text-text-primary">{detailSurat.asal_surat}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-text-secondary">Sifat</p>
-                                {getSifatBadge(detailSurat.sifat)}
-                            </div>
-                            <div className="sm:col-span-2">
-                                <p className="text-sm text-text-secondary">Tujuan</p>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                    {detailSurat.tujuans?.map((t) => (
-                                        <Badge key={t.id} variant="primary" size="sm">
-                                            {t.tujuan}
-                                        </Badge>
-                                    ))}
+                    <div className="space-y-6">
+                        {/* Identitas Surat */}
+                        <div>
+                            <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Identitas Surat</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-text-secondary">Tanggal Surat</p>
+                                    <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_surat)}</p>
                                 </div>
-                            </div>
-                            <div className="sm:col-span-2">
-                                <p className="text-sm text-text-secondary">Perihal</p>
-                                <p className="font-medium text-text-primary">{detailSurat.perihal}</p>
-                            </div>
-                            {detailSurat.isi_ringkas && (
+                                <div>
+                                    <p className="text-sm text-text-secondary">Asal Surat</p>
+                                    <Badge variant="primary" className="mt-1">{detailSurat.asal_surat}</Badge>
+                                </div>
                                 <div className="sm:col-span-2">
-                                    <p className="text-sm text-text-secondary">Isi Ringkas</p>
-                                    <p className="font-medium text-text-primary">{detailSurat.isi_ringkas}</p>
+                                    <p className="text-sm text-text-secondary">Kepada (Tujuan Surat)</p>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {detailSurat.tujuans?.map((t) => (
+                                            <Badge key={t.id} variant="primary" size="sm">
+                                                {t.tujuan}
+                                            </Badge>
+                                        ))}
+                                    </div>
                                 </div>
-                            )}
-                            <div>
-                                <p className="text-sm text-text-secondary">Lampiran</p>
-                                <p className="font-medium text-text-primary">{detailSurat.lampiran || 0} berkas</p>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Nomor Surat</p>
+                                    <p className="font-medium text-text-primary">{detailSurat.nomor_surat}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Sifat</p>
+                                    {getSifatBadge(detailSurat.sifat)}
+                                </div>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Lampiran</p>
+                                    <p className="font-medium text-text-primary">{detailSurat.lampiran || 0} berkas</p>
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <p className="text-sm text-text-secondary">Perihal</p>
+                                    <p className="font-medium text-text-primary">{detailSurat.perihal}</p>
+                                </div>
+                                {detailSurat.isi_ringkas && (
+                                    <div className="sm:col-span-2">
+                                        <p className="text-sm text-text-secondary">Isi Ringkas</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.isi_ringkas}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
+
+                        {/* Identitas Agenda */}
+                        <div className="pt-4 border-t border-border-default">
+                            <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Identitas Agenda</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-text-secondary">Tanggal Diterima</p>
+                                    <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_diterima)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Nomor Agenda</p>
+                                    <p className="font-medium text-text-primary">{detailSurat.nomor_agenda}</p>
+                                </div>
+                                {detailSurat.indeks_berkas && (
+                                    <div>
+                                        <p className="text-sm text-text-secondary">Indeks Berkas</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.indeks_berkas.kode} - {detailSurat.indeks_berkas.nama}</p>
+                                    </div>
+                                )}
+                                {detailSurat.kode_klasifikasi && (
+                                    <div>
+                                        <p className="text-sm text-text-secondary">Kode Klasifikasi</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.kode_klasifikasi.kode} - {detailSurat.kode_klasifikasi.nama}</p>
+                                    </div>
+                                )}
+                                {detailSurat.staff_pengolah && (
+                                    <div>
+                                        <p className="text-sm text-text-secondary">Staff Pengolah</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.staff_pengolah.name}</p>
+                                    </div>
+                                )}
+                                {detailSurat.tanggal_diteruskan && (
+                                    <div>
+                                        <p className="text-sm text-text-secondary">Tanggal Diteruskan</p>
+                                        <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_diteruskan)}</p>
+                                    </div>
+                                )}
+                                {detailSurat.catatan_tambahan && (
+                                    <div className="sm:col-span-2">
+                                        <p className="text-sm text-text-secondary">Catatan Tambahan</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.catatan_tambahan}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* File Preview */}
                         {detailSurat.file_path && (
                             <div className="pt-4 border-t border-border-default">
-                                <a
-                                    href={route('persuratan.surat-masuk.cetak-isi', detailSurat.id)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:text-primary-hover font-medium"
-                                >
-                                    Lihat File Surat
-                                </a>
+                                <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">File Surat</h3>
+                                <div className="mb-3">
+                                    {detailSurat.file_path.match(/\.(pdf)$/i) ? (
+                                        <iframe
+                                            src={route('persuratan.surat-masuk.preview', detailSurat.id)}
+                                            className="w-full h-96 border border-border-default rounded-lg"
+                                            title="Preview Surat"
+                                        />
+                                    ) : detailSurat.file_path.match(/\.(jpe?g|png)$/i) ? (
+                                        <img
+                                            src={route('persuratan.surat-masuk.preview', detailSurat.id)}
+                                            alt="Preview Surat"
+                                            className="max-w-full h-auto rounded-lg border border-border-default"
+                                        />
+                                    ) : (
+                                        <p className="text-sm text-text-secondary italic">Preview tidak tersedia untuk format file ini.</p>
+                                    )}
+                                </div>
+                                <div className="flex gap-3">
+                                    <a
+                                        href={route('persuratan.surat-masuk.preview', detailSurat.id)}
+                                        target="_blank"
+                                        className="text-primary hover:text-primary-hover font-medium text-sm"
+                                    >
+                                        Buka di Tab Baru
+                                    </a>
+                                    <span className="text-text-secondary">|</span>
+                                    <a
+                                        href={route('persuratan.surat-masuk.download', detailSurat.id)}
+                                        className="text-primary hover:text-primary-hover font-medium text-sm"
+                                    >
+                                        Download File
+                                    </a>
+                                </div>
                             </div>
                         )}
+
+                        {/* Audit Info */}
+                        <div className="pt-4 border-t border-border-default">
+                            <p className="text-xs text-text-secondary">
+                                Diinput oleh <span className="font-medium text-text-primary">{detailSurat.created_by?.name || 'System'}</span> pada {formatDateShort(detailSurat.created_at)} jam {new Date(detailSurat.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                            </p>
+                        </div>
                     </div>
                 )}
             </Modal>

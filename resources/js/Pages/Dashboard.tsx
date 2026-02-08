@@ -73,9 +73,10 @@ const Dashboard = () => {
     // Role labels for display
     const roleLabels: Record<string, string> = {
         superadmin: 'Super Admin',
+        pimpinan: 'Pimpinan',
+        sekpri: 'Sekpri',
         tu: 'Tata Usaha',
-        sekpri_bupati: 'Sekpri Bupati',
-        sekpri_wakil_bupati: 'Sekpri Wakil Bupati',
+        user: 'User',
     };
 
     // Get greeting based on current time
@@ -154,20 +155,37 @@ const Dashboard = () => {
         { label: 'Indeks Surat', value: stats.master?.indeks_surat ?? 0, icon: FileText, color: 'text-accent', bg: 'bg-accent-light' },
     ];
 
-    // Coming soon cards for Sekpri roles - filter based on role
-    const getSekpriCards = () => {
-        const baseCards = [
-            { title: 'Surat Masuk', description: 'Daftar surat masuk terbaru', icon: Inbox, color: 'text-primary', bg: 'bg-primary-light' },
-            { title: 'Surat Keluar', description: 'Daftar surat keluar terbaru', icon: Send, color: 'text-secondary', bg: 'bg-secondary-light' },
-        ];
+    // Quick access cards for non-admin roles (with stats)
+    const getQuickCards = () => {
+        const cards: Array<{ title: string; description: string; value?: number; icon: LucideIcon; color: string; bg: string; href?: string }> = [];
 
-        if (user.role === 'sekpri_bupati') {
-            return [...baseCards, { title: 'Jadwal Bupati', description: 'Jadwal kegiatan Bupati', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light' }];
-        } else if (user.role === 'sekpri_wakil_bupati') {
-            return [...baseCards, { title: 'Jadwal Wakil Bupati', description: 'Jadwal kegiatan Wakil Bupati', icon: Clock, color: 'text-warning', bg: 'bg-warning-light' }];
+        // Pimpinan: surat masuk (filtered) + penjadwalan
+        if (user.role === 'pimpinan') {
+            cards.push(
+                { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
+                { title: 'Jadwal', description: 'Jadwal kegiatan', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/jadwal' },
+                { title: 'Jadwal Tentatif', description: 'Jadwal tentatif kegiatan', icon: Clock, color: 'text-warning', bg: 'bg-warning-light', href: '/penjadwalan/tentatif' },
+            );
         }
 
-        return baseCards;
+        // Sekpri: persuratan (filtered) + penjadwalan
+        if (user.role === 'sekpri') {
+            cards.push(
+                { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
+                { title: 'Surat Keluar', description: 'Daftar surat keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
+                { title: 'Jadwal', description: 'Jadwal kegiatan', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/jadwal' },
+            );
+        }
+
+        // User: persuratan only (filtered)
+        if (user.role === 'user') {
+            cards.push(
+                { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
+                { title: 'Surat Keluar', description: 'Daftar surat keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
+            );
+        }
+
+        return cards;
     };
 
     // Persuratan statistics cards - with actual data
@@ -206,7 +224,7 @@ const Dashboard = () => {
         { label: 'Arsip Data Master', value: stats.archive?.master ?? 0, icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover', href: '/master/archive' },
     ];
 
-    const sekpriCards = getSekpriCards();
+    const quickCards = getQuickCards();
 
     return (
         <>
@@ -437,33 +455,46 @@ const Dashboard = () => {
                     </div>
                 </>
             ) : (
-                /* Coming Soon cards for Sekpri roles */
+                /* Quick access cards for non-admin roles with stats */
                 <div className="mb-8">
-                    <h2 className="text-lg font-semibold text-text-primary mb-4">Menu Cepat</h2>
+                    <h2 className="text-lg font-semibold text-text-primary mb-4">Ringkasan</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {sekpriCards.map((card) => {
+                        {quickCards.map((card) => {
                             const Icon = card.icon;
+                            const content = (
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-text-secondary mb-1">{card.title}</p>
+                                        {card.value !== undefined ? (
+                                            <p className="text-2xl font-bold text-text-primary">
+                                                {card.value.toLocaleString('id-ID')}
+                                            </p>
+                                        ) : (
+                                            <p className="text-sm text-text-secondary">{card.description}</p>
+                                        )}
+                                    </div>
+                                    <div className={`${card.bg} ${card.color} p-3 rounded-lg`}>
+                                        <Icon className="w-6 h-6" />
+                                    </div>
+                                </div>
+                            );
+                            if (card.href) {
+                                return (
+                                    <Link
+                                        key={card.title}
+                                        href={card.href}
+                                        className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md hover:border-primary/20 transition-all"
+                                    >
+                                        {content}
+                                    </Link>
+                                );
+                            }
                             return (
-                                <div 
+                                <div
                                     key={card.title}
                                     className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md transition-shadow"
                                 >
-                                    <div className="flex items-start gap-4">
-                                        <div className={`${card.bg} ${card.color} p-3 rounded-lg shrink-0`}>
-                                            <Icon className="w-6 h-6" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="text-base font-semibold text-text-primary">
-                                                {card.title}
-                                            </h3>
-                                            <p className="text-sm text-text-secondary mt-1">
-                                                {card.description}
-                                            </p>
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-hover text-text-secondary mt-3">
-                                                Coming Soon
-                                            </span>
-                                        </div>
-                                    </div>
+                                    {content}
                                 </div>
                             );
                         })}

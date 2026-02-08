@@ -20,9 +20,9 @@ class IndeksSuratController extends Controller
 
         // Client-side search optimization: Return all data
         return Inertia::render('Master/IndeksSurat/Index', [
-            'indeksSurat' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember('indeks_surat_list', 60, function () {
+            'indeksSurat' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember('indeks_surat_list_v2', 60, function () {
                 return IndeksSurat::query()
-                    ->select(['id', 'kode', 'nama', 'urutan', 'created_at', 'updated_at'])
+                    ->select(['id', 'kode', 'nama', 'jenis_surat', 'urutan', 'created_at', 'updated_at'])
                     ->orderBy('urutan', 'asc')
                     ->latest()
                     ->get();
@@ -85,7 +85,7 @@ class IndeksSuratController extends Controller
     {
         $this->authorize('viewAny', IndeksSurat::class);
 
-        $query = IndeksSurat::onlyTrashed()->select(['id', 'kode', 'nama', 'deleted_at']);
+        $query = IndeksSurat::onlyTrashed()->select(['id', 'kode', 'nama', 'jenis_surat', 'deleted_at']);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -134,4 +134,3 @@ class IndeksSuratController extends Controller
         return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus permanen.');
     }
 }
-
