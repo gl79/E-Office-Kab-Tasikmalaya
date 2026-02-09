@@ -7,6 +7,7 @@ use App\Models\Penjadwalan;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class PenjadwalanArchiveController extends Controller
@@ -93,8 +94,12 @@ class PenjadwalanArchiveController extends Controller
                 ->with('success', 'Jadwal berhasil dipulihkan.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal memulihkan jadwal', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal memulihkan jadwal: ' . $e->getMessage());
+                ->with('error', 'Gagal memulihkan jadwal. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -118,8 +123,12 @@ class PenjadwalanArchiveController extends Controller
                 ->with('success', 'Jadwal berhasil dihapus permanen.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal menghapus jadwal', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal menghapus jadwal: ' . $e->getMessage());
+                ->with('error', 'Gagal menghapus jadwal. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -145,8 +154,12 @@ class PenjadwalanArchiveController extends Controller
                 ->with('success', "{$count} jadwal berhasil dipulihkan.");
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal memulihkan semua jadwal', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal memulihkan semua jadwal: ' . $e->getMessage());
+                ->with('error', 'Gagal memulihkan semua jadwal. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -171,8 +184,12 @@ class PenjadwalanArchiveController extends Controller
                 ->with('success', "{$count} jadwal berhasil dihapus permanen.");
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal menghapus semua jadwal', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal menghapus semua jadwal: ' . $e->getMessage());
+                ->with('error', 'Gagal menghapus semua jadwal. Silakan coba lagi atau hubungi administrator.');
         }
     }
 }

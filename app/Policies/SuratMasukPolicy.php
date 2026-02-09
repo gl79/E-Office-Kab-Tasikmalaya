@@ -18,11 +18,20 @@ class SuratMasukPolicy
 
     /**
      * Determine whether the user can view the model.
-     * All authenticated users can view.
+     * Superadmin, TU, and Sekpri can view all.
+     * Regular users can only view letters where they are recipients.
      */
     public function view(User $user, SuratMasuk $suratMasuk): bool
     {
-        return true;
+        // Superadmin, TU, and Sekpri can view all letters
+        if ($user->isSuperAdmin() || $user->isTU() || $user->isSekpri()) {
+            return true;
+        }
+
+        // Regular users can only view if they are in tujuans list
+        return $suratMasuk->tujuans()
+            ->where('tujuan_id', $user->id)
+            ->exists();
     }
 
     /**

@@ -3,35 +3,16 @@ import { Head, router, Link, usePage } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
-import Badge from '@/Components/ui/Badge';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { TextInput } from '@/Components/form';
 import FormSelect from '@/Components/form/FormSelect';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import { PageProps } from '@/types';
+import type { SuratKeluar } from '@/types/persuratan';
 import { useDeferredDataMutable } from '@/hooks';
-import { formatDateShort } from '@/utils';
+import { formatDateShort, getSifatBadge, exportToPrintWindow, escapeHtml, getDateRangeForPeriod } from '@/utils';
 
-interface SuratKeluar {
-    id: string;
-    tanggal_surat: string;
-    no_urut: string;
-    nomor_surat: string;
-    kepada: string;
-    perihal: string;
-    isi_ringkas: string;
-    sifat_1: string;
-    lampiran: number | null;
-    catatan: string | null;
-    kode_pengolah: string | null;
-    file_path: string | null;
-    indeks?: { kode: string; nama: string; jenis_surat: string | null } | null;
-    kode_klasifikasi?: { kode: string; nama: string } | null;
-    unit_kerja?: { nama: string; singkatan: string | null } | null;
-    created_by?: { name: string } | null;
-    created_at: string;
-}
 
 interface Props extends PageProps {
     suratKeluar?: SuratKeluar[];
@@ -147,93 +128,32 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
         });
     };
 
-    const getSifatBadge = (sifatValue: string) => {
-        const variants: Record<string, 'default' | 'info' | 'warning' | 'danger'> = {
-            biasa: 'info',
-            terbatas: 'info',
-            rahasia: 'warning',
-            sangat_rahasia: 'danger',
-        };
-
-        return (
-            <Badge variant={variants[sifatValue] || 'info'} className="justify-center min-w-[80px] whitespace-nowrap">
-                {sifat1Options[sifatValue] || sifatValue}
-            </Badge>
-        );
-    };
-
     const sifatSelectOptions = Object.entries(sifat1Options || {}).map(([value, label]) => ({
         value,
         label,
     }));
 
     const handleExportPDF = () => {
-        const dataToExport = filteredData;
-        if (dataToExport.length === 0) return;
-
-        const escapeHtml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
         const filterInfo: string[] = [];
         if (search) filterInfo.push(`Pencarian: "${escapeHtml(search)}"`);
         if (startDate || endDate) filterInfo.push(`Periode: ${startDate || '...'} s/d ${endDate || '...'}`);
         if (sifat) filterInfo.push(`Sifat: ${sifat1Options[sifat] || sifat}`);
         if (jenisSuratFilter) filterInfo.push(`Jenis: ${jenisSuratFilter}`);
 
-        const rows = dataToExport.map((item, index) => `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${escapeHtml(item.no_urut)}</td>
-                <td>${formatDateShort(item.tanggal_surat)}<br><small>${escapeHtml(item.nomor_surat)}</small></td>
-                <td>${escapeHtml(item.kepada)}</td>
-                <td>${escapeHtml(item.perihal)}</td>
-                <td>${escapeHtml(sifat1Options[item.sifat_1] || item.sifat_1)}</td>
-            </tr>
-        `).join('');
-
-        const html = `<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<title>Laporan Surat Keluar</title>
-<style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Times New Roman', serif; font-size: 11px; padding: 20px; }
-    .header { text-align: center; margin-bottom: 16px; border-bottom: 3px double #000; padding-bottom: 12px; }
-    .header h1 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-    .header h2 { font-size: 16px; text-transform: uppercase; margin-top: 4px; }
-    .meta { margin-bottom: 12px; font-size: 10px; color: #555; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #333; padding: 4px 6px; text-align: left; vertical-align: top; }
-    th { background: #f0f0f0; font-size: 10px; text-transform: uppercase; text-align: center; }
-    td:first-child { text-align: center; width: 30px; }
-    td small { color: #666; }
-    .footer { margin-top: 16px; font-size: 9px; color: #888; display: flex; justify-content: space-between; }
-    @media print { body { padding: 0; } }
-</style>
-</head><body>
-<div class="header">
-    <h1>Pemerintah Kabupaten Tasikmalaya</h1>
-    <h2>Laporan Data Surat Keluar</h2>
-</div>
-${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</div>` : ''}
-<div class="meta">Total: ${dataToExport.length} data</div>
-<table>
-    <thead><tr>
-        <th>No</th><th>Agenda</th><th>Tgl Surat / No Surat</th><th>Kepada</th><th>Perihal</th><th>Sifat</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-</table>
-<div class="footer">
-    <span>Dicetak pada: ${new Date().toLocaleString('id-ID')}</span>
-    <span>Dicetak oleh: ${auth.user.name}</span>
-</div>
-<script>window.onload = function() { window.print(); }</script>
-</body></html>`;
-
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-        }
+        exportToPrintWindow({
+            title: 'Laporan Data Surat Keluar',
+            columns: [
+                { header: 'No', render: (_, i) => String(i + 1) },
+                { header: 'Agenda', render: (item) => escapeHtml(item.no_urut) },
+                { header: 'Tgl Surat / No Surat', render: (item) => `${formatDateShort(item.tanggal_surat)}<br><small>${escapeHtml(item.nomor_surat)}</small>` },
+                { header: 'Kepada', render: (item) => escapeHtml(item.kepada) },
+                { header: 'Perihal', render: (item) => escapeHtml(item.perihal) },
+                { header: 'Sifat', render: (item) => escapeHtml(sifat1Options[item.sifat_1] || item.sifat_1) },
+            ],
+            data: filteredData,
+            filterInfo,
+            userName: auth.user.name,
+        });
     };
 
     return (
@@ -270,12 +190,14 @@ ${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</
                                     <Download className="h-4 w-4 mr-2" />
                                     Export
                                 </Button>
-                                <Link href={route('persuratan.surat-keluar.create')}>
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Tambah Surat
-                                    </Button>
-                                </Link>
+                                {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                    <Link href={route('persuratan.surat-keluar.create')}>
+                                        <Button>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Tambah Surat
+                                        </Button>
+                                    </Link>
+                                )}
                             </div>
                         </div>
 
@@ -293,25 +215,7 @@ ${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</
                                             onChange={(e) => {
                                                 const val = e.target.value;
                                                 setPeriodeFilter(val);
-                                                const now = new Date();
-                                                let start = '';
-                                                let end = '';
-
-                                                if (val === 'hari_ini') {
-                                                    start = end = now.toISOString().split('T')[0];
-                                                } else if (val === 'minggu_ini') {
-                                                    const first = now.getDate() - now.getDay();
-                                                    const last = first + 6;
-                                                    start = new Date(now.setDate(first)).toISOString().split('T')[0];
-                                                    end = new Date(now.setDate(last)).toISOString().split('T')[0];
-                                                } else if (val === 'bulan_ini') {
-                                                    start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-                                                    end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-                                                } else if (val === 'tahun_ini') {
-                                                    start = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
-                                                    end = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
-                                                }
-
+                                                const { start, end } = getDateRangeForPeriod(val);
                                                 setStartDate(start);
                                                 setEndDate(end);
                                                 setCurrentPage(1);
@@ -439,7 +343,7 @@ ${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</
                                             <span className="line-clamp-2">{item.perihal}</span>
                                         </td>
                                         <td className="border border-border-default px-4 py-3">
-                                            {getSifatBadge(item.sifat_1)}
+                                            {getSifatBadge(item.sifat_1, sifat1Options)}
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
                                             <Dropdown
@@ -452,13 +356,15 @@ ${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</
                                                 }
                                             >
                                                 <div className="py-1">
-                                                    <Dropdown.Link
-                                                        href={route('persuratan.surat-keluar.edit', item.id)}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                        <span>Edit</span>
-                                                    </Dropdown.Link>
+                                                    {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                                        <Dropdown.Link
+                                                            href={route('persuratan.surat-keluar.edit', item.id)}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                            <span>Edit</span>
+                                                        </Dropdown.Link>
+                                                    )}
 
                                                     <Dropdown.Link
                                                         as="button"
@@ -501,19 +407,22 @@ ${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</
                                                         <span>Cetak Kartu Hanya Isi</span>
                                                     </Dropdown.Link>
 
-                                                    <div className="border-t border-border-default my-1"></div>
-
-                                                    <Dropdown.Link
-                                                        as="button"
-                                                        onClick={() => {
-                                                            setSelectedSurat(item);
-                                                            setDeleteModalOpen(true);
-                                                        }}
-                                                        className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                        <span>Hapus</span>
-                                                    </Dropdown.Link>
+                                                    {!['user', 'pimpinan', 'sekpri'].includes(auth.user.role) && (
+                                                        <>
+                                                            <div className="border-t border-border-default my-1"></div>
+                                                            <Dropdown.Link
+                                                                as="button"
+                                                                onClick={() => {
+                                                                    setSelectedSurat(item);
+                                                                    setDeleteModalOpen(true);
+                                                                }}
+                                                                className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                                <span>Hapus</span>
+                                                            </Dropdown.Link>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </Dropdown>
                                         </td>
@@ -611,7 +520,7 @@ ${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</
                                 )}
                                 <div>
                                     <p className="text-sm text-text-secondary">Sifat</p>
-                                    {getSifatBadge(detailSurat.sifat_1)}
+                                    {getSifatBadge(detailSurat.sifat_1, sifat1Options)}
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">Nomor Surat</p>

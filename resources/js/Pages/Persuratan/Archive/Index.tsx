@@ -1,29 +1,18 @@
 import { useState, useMemo } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { RotateCcw, Trash2 } from 'lucide-react';
+import { RotateCcw, Trash2, MoreVertical } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Button, Pagination } from '@/Components/ui';
+import { Button, Pagination, Dropdown } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
 import FormSelect from '@/Components/form/FormSelect';
 import { TextInput } from '@/Components/form';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import type { PageProps } from '@/types';
+import type { ArchiveItem } from '@/types/persuratan';
 import { useDeferredDataMutable } from '@/hooks';
 import { formatDateShort, formatDateTime } from '@/utils';
 
-interface ArchiveItem {
-    id: string;
-    type: string;
-    jenis: string;
-    nomor_agenda: string;
-    tanggal_surat: string;
-    nomor_surat: string;
-    asal_surat: string;
-    perihal: string;
-    deleted_at: string;
-    deleted_by?: { name: string } | null;
-}
 
 interface Props extends PageProps {
     archives?: ArchiveItem[];
@@ -33,7 +22,7 @@ const CACHE_TTL_MS = 60_000;
 
 const Index = ({ archives: initialArchives }: Props) => {
     const { auth } = usePage<PageProps>().props;
-    const { data: archives, setData: setArchives, updateAndCache, isLoading, hasCached } = useDeferredDataMutable<ArchiveItem[]>(
+    const { data: archives, updateAndCache, isLoading, hasCached } = useDeferredDataMutable<ArchiveItem[]>(
         `persuratan_archive_${auth.user.id}`,
         initialArchives,
         CACHE_TTL_MS
@@ -267,7 +256,9 @@ const Index = ({ archives: initialArchives }: Props) => {
                                             </Badge>
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center text-text-primary text-sm font-medium">
-                                            {item.nomor_agenda}
+                                            {item.nomor_agenda?.includes('/')
+                                                ? item.nomor_agenda.split('/')[1]
+                                                : (item.nomor_agenda || '-')}
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-text-secondary text-sm">
                                             {formatDateShort(item.tanggal_surat)}
@@ -287,22 +278,35 @@ const Index = ({ archives: initialArchives }: Props) => {
                                             {item.deleted_by?.name || '-'}
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
-                                            <div className="flex justify-center gap-1">
-                                                <button
-                                                    onClick={() => { setSelectedItem(item); setRestoreModalOpen(true); }}
-                                                    title="Pulihkan"
-                                                    className="p-1.5 rounded-lg hover:bg-surface-hover text-text-secondary transition-colors"
-                                                >
-                                                    <RotateCcw className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => { setSelectedItem(item); setDeleteModalOpen(true); }}
-                                                    title="Hapus Permanen"
-                                                    className="p-1.5 rounded-lg hover:bg-danger-light text-danger transition-colors"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
+                                            <Dropdown
+                                                align="right"
+                                                width="48"
+                                                trigger={
+                                                    <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
+                                                        <MoreVertical className="h-5 w-5" />
+                                                    </button>
+                                                }
+                                            >
+                                                <div className="py-1">
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => { setSelectedItem(item); setRestoreModalOpen(true); }}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <RotateCcw className="h-4 w-4" />
+                                                        <span>Pulihkan</span>
+                                                    </Dropdown.Link>
+                                                    <div className="border-t border-border-default my-1"></div>
+                                                    <Dropdown.Link
+                                                        as="button"
+                                                        onClick={() => { setSelectedItem(item); setDeleteModalOpen(true); }}
+                                                        className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span>Hapus Permanen</span>
+                                                    </Dropdown.Link>
+                                                </div>
+                                            </Dropdown>
                                         </td>
                                     </tr>
                                 ))}

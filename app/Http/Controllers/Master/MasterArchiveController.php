@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\HandlesArchive;
 use App\Models\IndeksSurat;
 use App\Models\UnitKerja;
 use App\Models\WilayahDesa;
@@ -11,12 +12,12 @@ use App\Models\WilayahKecamatan;
 use App\Models\WilayahProvinsi;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class MasterArchiveController extends Controller
 {
+    use HandlesArchive;
     /**
      * Display a listing of the archived resources from Data Master.
      */
@@ -132,18 +133,14 @@ class MasterArchiveController extends Controller
      */
     public function restoreAll()
     {
-        DB::beginTransaction();
-        try {
-            $counts = [
-                'unit_kerja' => UnitKerja::onlyTrashed()->count(),
-                'indeks_surat' => IndeksSurat::onlyTrashed()->count(),
-                'provinsi' => WilayahProvinsi::onlyTrashed()->count(),
-                'kabupaten' => WilayahKabupaten::onlyTrashed()->count(),
-                'kecamatan' => WilayahKecamatan::onlyTrashed()->count(),
-                'desa' => WilayahDesa::onlyTrashed()->count(),
-            ];
+        return $this->archiveTransaction(function () {
+            $total = UnitKerja::onlyTrashed()->count()
+                + IndeksSurat::onlyTrashed()->count()
+                + WilayahProvinsi::onlyTrashed()->count()
+                + WilayahKabupaten::onlyTrashed()->count()
+                + WilayahKecamatan::onlyTrashed()->count()
+                + WilayahDesa::onlyTrashed()->count();
 
-            // Restore all
             UnitKerja::onlyTrashed()->update(['deleted_by' => null]);
             UnitKerja::onlyTrashed()->restore();
 
@@ -155,17 +152,8 @@ class MasterArchiveController extends Controller
             WilayahKecamatan::onlyTrashed()->restore();
             WilayahDesa::onlyTrashed()->restore();
 
-            DB::commit();
-            CacheHelper::flush(['master_archive']);
-
-            $total = array_sum($counts);
-            return redirect()->back()
-                ->with('success', "{$total} data berhasil dipulihkan.");
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()
-                ->with('error', 'Gagal memulihkan semua data: ' . $e->getMessage());
-        }
+            return "{$total} data berhasil dipulihkan.";
+        }, ['master_archive'], 'Gagal memulihkan semua data');
     }
 
     /**
@@ -173,18 +161,15 @@ class MasterArchiveController extends Controller
      */
     public function forceDeleteAll()
     {
-        DB::beginTransaction();
-        try {
-            $counts = [
-                'unit_kerja' => UnitKerja::onlyTrashed()->count(),
-                'indeks_surat' => IndeksSurat::onlyTrashed()->count(),
-                'provinsi' => WilayahProvinsi::onlyTrashed()->count(),
-                'kabupaten' => WilayahKabupaten::onlyTrashed()->count(),
-                'kecamatan' => WilayahKecamatan::onlyTrashed()->count(),
-                'desa' => WilayahDesa::onlyTrashed()->count(),
-            ];
+        return $this->archiveTransaction(function () {
+            $total = UnitKerja::onlyTrashed()->count()
+                + IndeksSurat::onlyTrashed()->count()
+                + WilayahProvinsi::onlyTrashed()->count()
+                + WilayahKabupaten::onlyTrashed()->count()
+                + WilayahKecamatan::onlyTrashed()->count()
+                + WilayahDesa::onlyTrashed()->count();
 
-            // Delete all permanently (order matters for foreign keys: desa -> kecamatan -> kabupaten -> provinsi)
+            // Order matters for foreign keys: desa -> kecamatan -> kabupaten -> provinsi
             WilayahDesa::onlyTrashed()->forceDelete();
             WilayahKecamatan::onlyTrashed()->forceDelete();
             WilayahKabupaten::onlyTrashed()->forceDelete();
@@ -193,17 +178,8 @@ class MasterArchiveController extends Controller
             IndeksSurat::onlyTrashed()->forceDelete();
             UnitKerja::onlyTrashed()->forceDelete();
 
-            DB::commit();
-            CacheHelper::flush(['master_archive']);
-
-            $total = array_sum($counts);
-            return redirect()->back()
-                ->with('success', "{$total} data berhasil dihapus permanen.");
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()
-                ->with('error', 'Gagal menghapus semua data: ' . $e->getMessage());
-        }
+            return "{$total} data berhasil dihapus permanen.";
+        }, ['master_archive'], 'Gagal menghapus semua data');
     }
 }
 

@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\Persuratan;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\HandlesArchive;
 use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ArchiveController extends Controller
 {
+    use HandlesArchive;
     /**
      * Display a listing of archived surat masuk and surat keluar.
      */
@@ -74,8 +75,7 @@ class ArchiveController extends Controller
             return redirect()->back()->with('error', 'Tipe surat tidak valid.');
         }
 
-        CacheHelper::flush(['persuratan_archive']);
-        CacheHelper::flush(['persuratan_list']);
+        CacheHelper::flush(['persuratan_archive', 'persuratan_list']);
 
         return redirect()->back()->with('success', $message);
     }
@@ -111,7 +111,7 @@ class ArchiveController extends Controller
             return redirect()->back()->with('error', 'Tipe surat tidak valid.');
         }
 
-        CacheHelper::flush(['persuratan_archive']);
+        CacheHelper::flush(['persuratan_archive', 'persuratan_list']);
 
         return redirect()->back()->with('success', $message);
     }
@@ -121,8 +121,7 @@ class ArchiveController extends Controller
      */
     public function restoreAll()
     {
-        DB::beginTransaction();
-        try {
+        return $this->archiveTransaction(function () {
             $countMasuk = SuratMasuk::onlyTrashed()->count();
             $countKeluar = SuratKeluar::onlyTrashed()->count();
 
@@ -132,18 +131,9 @@ class ArchiveController extends Controller
             SuratKeluar::onlyTrashed()->update(['deleted_by' => null]);
             SuratKeluar::onlyTrashed()->restore();
 
-            DB::commit();
-            CacheHelper::flush(['persuratan_archive']);
-            CacheHelper::flush(['persuratan_list']);
-
             $total = $countMasuk + $countKeluar;
-            return redirect()->back()
-                ->with('success', "{$total} surat berhasil dipulihkan ({$countMasuk} surat masuk, {$countKeluar} surat keluar).");
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()
-                ->with('error', 'Gagal memulihkan semua surat: ' . $e->getMessage());
-        }
+            return "{$total} surat berhasil dipulihkan ({$countMasuk} surat masuk, {$countKeluar} surat keluar).";
+        }, ['persuratan_archive', 'persuratan_list'], 'Gagal memulihkan semua surat');
     }
 
     /**
@@ -151,23 +141,16 @@ class ArchiveController extends Controller
      */
     public function forceDeleteAll()
     {
-        DB::beginTransaction();
-        try {
+        return $this->archiveTransaction(function () {
             // Delete files for surat masuk
-            $suratMasuks = SuratMasuk::onlyTrashed()->whereNotNull('file_path')->get();
-            foreach ($suratMasuks as $surat) {
-                if ($surat->file_path) {
-                    Storage::disk('public')->delete($surat->file_path);
-                }
-            }
+            SuratMasuk::onlyTrashed()->whereNotNull('file_path')->each(function ($surat) {
+                Storage::disk('public')->delete($surat->file_path);
+            });
 
             // Delete files for surat keluar
-            $suratKeluars = SuratKeluar::onlyTrashed()->whereNotNull('file_path')->get();
-            foreach ($suratKeluars as $surat) {
-                if ($surat->file_path) {
-                    Storage::disk('public')->delete($surat->file_path);
-                }
-            }
+            SuratKeluar::onlyTrashed()->whereNotNull('file_path')->each(function ($surat) {
+                Storage::disk('public')->delete($surat->file_path);
+            });
 
             $countMasuk = SuratMasuk::onlyTrashed()->count();
             $countKeluar = SuratKeluar::onlyTrashed()->count();
@@ -175,17 +158,9 @@ class ArchiveController extends Controller
             SuratMasuk::onlyTrashed()->forceDelete();
             SuratKeluar::onlyTrashed()->forceDelete();
 
-            DB::commit();
-            CacheHelper::flush(['persuratan_archive']);
-
             $total = $countMasuk + $countKeluar;
-            return redirect()->back()
-                ->with('success', "{$total} surat berhasil dihapus permanen ({$countMasuk} surat masuk, {$countKeluar} surat keluar).");
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()
-                ->with('error', 'Gagal menghapus semua surat: ' . $e->getMessage());
-        }
+            return "{$total} surat berhasil dihapus permanen ({$countMasuk} surat masuk, {$countKeluar} surat keluar).";
+        }, ['persuratan_archive'], 'Gagal menghapus semua surat');
     }
 }
 

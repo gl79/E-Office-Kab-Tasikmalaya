@@ -198,7 +198,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
         }
 
         if (editItem) {
-            router.post(route('master.pengguna.update', editItem.id), formData, {
+            router.patch(route('master.pengguna.update', editItem.id), formData, {
                 forceFormData: true,
                 preserveScroll: true,
                 onSuccess: () => {

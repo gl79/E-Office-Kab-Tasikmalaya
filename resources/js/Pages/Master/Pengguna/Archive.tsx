@@ -172,12 +172,16 @@ export default function Archive({ data, filters }: Props) {
                             disabled={!link.url}
                             onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
                             className={`px-3 py-1.5 text-sm rounded-lg border ${
-                                link.active 
-                                    ? 'bg-primary text-text-inverse border-primary' 
+                                link.active
+                                    ? 'bg-primary text-text-inverse border-primary'
                                     : 'bg-surface text-text-secondary border-border-default hover:bg-surface-hover'
                             } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            dangerouslySetInnerHTML={{ __html: link.label }}
-                        />
+                        >
+                            {link.label
+                                .replace('&laquo;', '«')
+                                .replace('&raquo;', '»')
+                                .replace('&hellip;', '...')}
+                        </button>
                     ))}
                 </div>
             )}

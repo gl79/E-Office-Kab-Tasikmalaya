@@ -5,18 +5,25 @@ import wilayahService, { Provinsi, Kabupaten, Kecamatan, Desa } from '@/services
 const TASIKMALAYA_PROVINSI = '32'; // Jawa Barat
 const TASIKMALAYA_KABUPATEN = '06'; // Kabupaten Tasikmalaya
 
-interface MockInertiaHelpers {
-    data: any;
-    setData: (field: string, value: any) => void;
+interface WilayahFormData {
+    lokasi_type?: string;
+    kode_wilayah?: string;
+    [key: string]: unknown;
 }
 
-export function useWilayahCascade(form: MockInertiaHelpers) {
+interface WilayahFormHelpers {
+    data: WilayahFormData;
+    setData: (field: string, value: unknown) => void;
+}
+
+export function useWilayahCascade(form: WilayahFormHelpers) {
     const { data, setData } = form;
 
     const [provinsiList, setProvinsiList] = useState<Provinsi[]>([]);
     const [kabupatenList, setKabupatenList] = useState<Kabupaten[]>([]);
     const [kecamatanList, setKecamatanList] = useState<Kecamatan[]>([]);
     const [desaList, setDesaList] = useState<Desa[]>([]);
+    const [error, setError] = useState<string | null>(null);
 
     const [selectedProvinsi, setSelectedProvinsi] = useState('');
     const [selectedKabupaten, setSelectedKabupaten] = useState('');
@@ -28,7 +35,7 @@ export function useWilayahCascade(form: MockInertiaHelpers) {
         if (data.lokasi_type === 'luar_daerah') {
             wilayahService.getAllProvinsi()
                 .then(response => setProvinsiList(response.data))
-                .catch(error => console.error('Error fetching provinsi:', error));
+                .catch(() => setError('Gagal memuat data provinsi.'));
         }
     }, [data.lokasi_type]);
 
@@ -37,7 +44,7 @@ export function useWilayahCascade(form: MockInertiaHelpers) {
         if (data.lokasi_type === 'dalam_daerah') {
             wilayahService.getKecamatanByKabupaten(TASIKMALAYA_PROVINSI, TASIKMALAYA_KABUPATEN)
                 .then(response => setKecamatanList(response.data))
-                .catch(error => console.error('Error fetching kecamatan:', error));
+                .catch(() => setError('Gagal memuat data kecamatan.'));
         }
     }, [data.lokasi_type]);
 
@@ -46,7 +53,7 @@ export function useWilayahCascade(form: MockInertiaHelpers) {
         if (data.lokasi_type === 'luar_daerah' && selectedProvinsi) {
             wilayahService.getKabupatenByProvinsi(selectedProvinsi)
                 .then(response => setKabupatenList(response.data))
-                .catch(error => console.error('Error fetching kabupaten:', error));
+                .catch(() => setError('Gagal memuat data kabupaten.'));
         } else {
             setKabupatenList([]);
         }
@@ -57,7 +64,7 @@ export function useWilayahCascade(form: MockInertiaHelpers) {
         if (data.lokasi_type === 'luar_daerah' && selectedProvinsi && selectedKabupaten) {
             wilayahService.getKecamatanByKabupaten(selectedProvinsi, selectedKabupaten)
                 .then(response => setKecamatanList(response.data))
-                .catch(error => console.error('Error fetching kecamatan:', error));
+                .catch(() => setError('Gagal memuat data kecamatan.'));
         }
     }, [selectedKabupaten, selectedProvinsi, data.lokasi_type]);
 
@@ -68,7 +75,7 @@ export function useWilayahCascade(form: MockInertiaHelpers) {
         if (provKode && kabKode && selectedKecamatan) {
             wilayahService.getDesaByKecamatan(provKode, kabKode, selectedKecamatan)
                 .then(response => setDesaList(response.data))
-                .catch(error => console.error('Error fetching desa:', error));
+                .catch(() => setError('Gagal memuat data desa.'));
         } else {
             setDesaList([]);
         }
@@ -77,13 +84,12 @@ export function useWilayahCascade(form: MockInertiaHelpers) {
     // Reset wilayah selections when lokasi_type changes
     useEffect(() => {
         if (data.lokasi_type) {
-            // Only reset if it's a real change interaction, though this runs on every change of data.lokasi_type
-            // Ideally we might want to manually trigger resets, but this mimics original behavior
             setSelectedProvinsi('');
             setSelectedKabupaten('');
             setSelectedKecamatan('');
             setSelectedDesa('');
             setData('kode_wilayah', '');
+            setError(null);
         }
     }, [data.lokasi_type]);
 
@@ -99,6 +105,7 @@ export function useWilayahCascade(form: MockInertiaHelpers) {
         kabupatenList,
         kecamatanList,
         desaList,
+        error,
         selectedProvinsi,
         setSelectedProvinsi,
         selectedKabupaten,

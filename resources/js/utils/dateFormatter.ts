@@ -272,6 +272,39 @@ export const formatForInput = (date: DateInput): string => {
 };
 
 /**
+ * Get date range (YYYY-MM-DD strings) for a named period filter.
+ * Returns { start: '', end: '' } when period is empty or unrecognized.
+ */
+export const getDateRangeForPeriod = (period: string): { start: string; end: string } => {
+    const now = new Date();
+    if (period === 'hari_ini') {
+        const d = now.toISOString().split('T')[0];
+        return { start: d, end: d };
+    }
+    if (period === 'minggu_ini') {
+        const day = now.getDay();
+        const first = now.getDate() - day;
+        return {
+            start: new Date(now.getFullYear(), now.getMonth(), first).toISOString().split('T')[0],
+            end: new Date(now.getFullYear(), now.getMonth(), first + 6).toISOString().split('T')[0],
+        };
+    }
+    if (period === 'bulan_ini') {
+        return {
+            start: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0],
+            end: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0],
+        };
+    }
+    if (period === 'tahun_ini') {
+        return {
+            start: new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0],
+            end: new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0],
+        };
+    }
+    return { start: '', end: '' };
+};
+
+/**
  * Format date for input[type="datetime-local"]: "2024-01-01T14:30"
  */
 export const formatForDateTimeInput = (date: DateInput): string => {

@@ -7,6 +7,7 @@ use App\Models\Cuti;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class CutiArchiveController extends Controller
@@ -78,8 +79,12 @@ class CutiArchiveController extends Controller
                 ->with('success', 'Pengajuan cuti berhasil dipulihkan.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal memulihkan pengajuan cuti', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal memulihkan pengajuan cuti: ' . $e->getMessage());
+                ->with('error', 'Gagal memulihkan pengajuan cuti. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -103,8 +108,12 @@ class CutiArchiveController extends Controller
                 ->with('success', 'Pengajuan cuti berhasil dihapus permanen.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal menghapus pengajuan cuti', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal menghapus pengajuan cuti: ' . $e->getMessage());
+                ->with('error', 'Gagal menghapus pengajuan cuti. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -130,8 +139,12 @@ class CutiArchiveController extends Controller
                 ->with('success', "{$count} pengajuan cuti berhasil dipulihkan.");
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal memulihkan semua pengajuan cuti', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal memulihkan semua pengajuan cuti: ' . $e->getMessage());
+                ->with('error', 'Gagal memulihkan semua pengajuan cuti. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -156,8 +169,12 @@ class CutiArchiveController extends Controller
                 ->with('success', "{$count} pengajuan cuti berhasil dihapus permanen.");
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal menghapus semua pengajuan cuti', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal menghapus semua pengajuan cuti: ' . $e->getMessage());
+                ->with('error', 'Gagal menghapus semua pengajuan cuti. Silakan coba lagi atau hubungi administrator.');
         }
     }
 }

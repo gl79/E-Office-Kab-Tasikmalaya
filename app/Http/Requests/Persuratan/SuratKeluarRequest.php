@@ -38,7 +38,7 @@ class SuratKeluarRequest extends FormRequest
             'perihal' => ['required', 'string'],
             'isi_ringkas' => ['required', 'string'],
             'sifat_1' => ['required', 'string', Rule::in(array_keys(SuratKeluar::SIFAT_1_OPTIONS))],
-            'sifat_2' => ['required', 'string', Rule::in(array_keys(SuratKeluar::SIFAT_2_OPTIONS))],
+            'sifat_2' => ['nullable', 'string', Rule::in(array_keys(SuratKeluar::SIFAT_2_OPTIONS))],
             'indeks_id' => ['nullable', 'string', 'exists:indeks_surat,id'],
             'kode_klasifikasi_id' => ['nullable', 'string', 'exists:indeks_surat,id'],
             'unit_kerja_id' => ['nullable', 'string', 'exists:unit_kerja,id'],

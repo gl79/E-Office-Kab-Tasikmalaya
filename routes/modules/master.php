@@ -19,7 +19,7 @@ Route::middleware('auth')->prefix('master')->name('master.')->group(function () 
     // Pengguna CRUD
     Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
     Route::post('/pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');
-    Route::post('/pengguna/{pengguna}', [PenggunaController::class, 'update'])->name('pengguna.update');
+    Route::patch('/pengguna/{pengguna}', [PenggunaController::class, 'update'])->name('pengguna.update');
     Route::delete('/pengguna/{pengguna}', [PenggunaController::class, 'destroy'])->name('pengguna.destroy');
     Route::get('/pengguna/archive', [PenggunaController::class, 'archive'])->name('pengguna.archive');
     Route::post('/pengguna/{id}/restore', [PenggunaController::class, 'restore'])->name('pengguna.restore');

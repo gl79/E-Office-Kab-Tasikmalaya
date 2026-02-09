@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { MenuItem } from '@/config/menu';
+import { PageProps } from '@/types';
 import { 
     LayoutDashboard, 
     Database, 
@@ -78,14 +79,32 @@ const iconMap: Record<string, LucideIcon> = {
  * @example
  * <SidebarMenuItem item={menuItem} depth={0} />
  */
-export default function SidebarMenuItem({ 
-    item, 
+export default function SidebarMenuItem({
+    item,
     depth = 0,
     onLogoutClick,
     collapsed = false
 }: SidebarMenuItemProps) {
-    const { url } = usePage();
-    const hasChildren = item.children && item.children.length > 0;
+    const { url, props } = usePage<PageProps>();
+    const userRole = props.auth.user?.role;
+
+    // Filter children based on role
+    const filteredChildren = item.children?.filter(child => {
+        // If no roles defined, show to everyone
+        if (!child.roles || child.roles.length === 0) {
+            return true;
+        }
+
+        // If user has no role but item requires one, hide it
+        if (!userRole) {
+            return false;
+        }
+
+        // Check if user's role is in the allowed roles
+        return child.roles.includes(userRole);
+    });
+
+    const hasChildren = filteredChildren && filteredChildren.length > 0;
 
     // Recursive function to check if any descendant is active
     const checkIsActive = (menuItem: MenuItem): boolean => {
@@ -94,7 +113,7 @@ export default function SidebarMenuItem({
             return (url === menuItem.href || url.startsWith(menuItem.href + '/') || url.startsWith(menuItem.href + '?')) &&
                    (!menuItem.excludePaths || !menuItem.excludePaths.some(path => url.startsWith(path)));
         }
-        
+
         // Check children recursively
         if (menuItem.children) {
             return menuItem.children.some(child => checkIsActive(child));
@@ -104,7 +123,7 @@ export default function SidebarMenuItem({
     };
 
     // Check if any direct child is active (or has active descendants)
-    const hasActiveChild = item.children?.some(child => checkIsActive(child));
+    const hasActiveChild = filteredChildren?.some(child => checkIsActive(child));
 
     const [isOpen, setIsOpen] = useState(!!hasActiveChild);
 
@@ -252,7 +271,7 @@ export default function SidebarMenuItem({
             {/* Submenu */}
             {hasChildren && isExpanded && (
                 <div className={`${collapsed ? 'mt-1' : 'mt-1 ml-2 border-l border-border-default pl-2'}`}>
-                    {item.children!.map((child, index) => (
+                    {filteredChildren!.map((child, index) => (
                         <SidebarMenuItem
                             key={`${child.label}-${index}`}
                             item={child}

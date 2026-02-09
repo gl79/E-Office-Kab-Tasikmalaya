@@ -10,6 +10,7 @@ use App\Support\CacheHelper;
 use App\Support\WilayahHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class PenjadwalanTentatifController extends Controller
@@ -74,8 +75,12 @@ class PenjadwalanTentatifController extends Controller
                 ->with('success', 'Kehadiran berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal memperbarui kehadiran', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal memperbarui kehadiran: ' . $e->getMessage());
+                ->with('error', 'Gagal memperbarui kehadiran. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -107,8 +112,12 @@ class PenjadwalanTentatifController extends Controller
                 ->with('success', 'Jadwal berhasil dijadikan definitif.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal mengubah status', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal mengubah status: ' . $e->getMessage());
+                ->with('error', 'Gagal mengubah status. Silakan coba lagi atau hubungi administrator.');
         }
     }
 

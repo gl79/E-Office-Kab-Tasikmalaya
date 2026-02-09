@@ -1,4 +1,5 @@
 import { Head, useForm, Link } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
@@ -24,14 +25,22 @@ interface UnitKerja {
     singkatan: string | null;
 }
 
+interface User {
+    id: string;
+    name: string;
+    nip: string | null;
+    jabatan: string | null;
+}
+
 interface Props extends PageProps {
     indeksSurat: IndeksSurat[];
     unitKerja: UnitKerja[];
+    users: User[];
     sifat1Options: Record<string, string>;
     nextNoUrut: number;
 }
 
-export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUrut }: Props) {
+export default function Create({ indeksSurat, unitKerja, users, sifat1Options, nextNoUrut }: Props) {
     const today = new Date().toISOString().split('T')[0];
 
     const { data, setData, post, processing, errors } = useForm({
@@ -61,12 +70,45 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUr
         label: item.singkatan ? `${item.nama} (${item.singkatan})` : item.nama,
     }));
 
+    const userOptions = users.map((item) => ({
+        value: item.name,
+        label: item.jabatan ? `${item.name} - ${item.jabatan}` : item.name,
+    }));
+
     const sifat1SelectOptions = Object.entries(sifat1Options).map(([value, label]) => ({
         value,
         label,
     }));
 
     const selectedIndeks = indeksSurat.find(item => item.id === data.indeks_id);
+
+    // Map sifat_1 values to letter codes
+    const getSifatCode = (sifat: string): string => {
+        const sifatMap: Record<string, string> = {
+            'biasa': 'B',
+            'terbatas': 'T',
+            'rahasia': 'R',
+            'sangat_rahasia': 'SR',
+        };
+        return sifatMap[sifat] || sifat.toUpperCase();
+    };
+
+    // Auto-generate nomor_surat when dependencies change
+    useEffect(() => {
+        const sifatCode = data.sifat_1 ? getSifatCode(data.sifat_1) : '';
+        const noUrut = data.no_urut || '';
+        const kode = selectedIndeks?.kode || '';
+        const pengolah = data.kode_pengolah || '';
+        const year = data.tanggal_surat ? new Date(data.tanggal_surat).getFullYear().toString() : '';
+
+        // Only generate if we have at least sifat and no_urut
+        if (sifatCode && noUrut) {
+            const parts = [sifatCode, noUrut, kode, pengolah, year].filter(part => part !== '');
+            const generatedNomor = parts.join('/');
+
+            setData('nomor_surat', generatedNomor);
+        }
+    }, [data.sifat_1, data.no_urut, data.indeks_id, data.kode_pengolah, data.tanggal_surat]);
 
     const handleIndeksChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedId = e.target.value;
@@ -102,7 +144,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUr
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat *" />
+                                    <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat" required />
                                     <FormDatePicker
                                         id="tanggal_surat"
                                         value={data.tanggal_surat}
@@ -113,7 +155,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUr
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="no_urut" value="Nomor Urut *" />
+                                    <InputLabel htmlFor="no_urut" value="Nomor Urut" required />
                                     <TextInput
                                         id="no_urut"
                                         value={data.no_urut}
@@ -172,7 +214,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUr
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="sifat_1" value="Sifat *" />
+                                    <InputLabel htmlFor="sifat_1" value="Sifat" required />
                                     <FormSelectWithCustom
                                         id="sifat_1"
                                         options={sifat1SelectOptions}
@@ -187,25 +229,28 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUr
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="nomor_surat" value="Nomor Surat *" />
+                                    <InputLabel htmlFor="nomor_surat" value="Nomor Surat" required />
                                     <TextInput
                                         id="nomor_surat"
                                         value={data.nomor_surat}
-                                        onChange={(e) => setData('nomor_surat', e.target.value)}
-                                        placeholder="Masukkan nomor surat"
-                                        className="w-full mt-1 px-2"
+                                        readOnly
+                                        placeholder="Otomatis terisi berdasarkan Sifat/NoUrut/Kode/Pengolah/Tahun"
+                                        className="w-full mt-1 px-2 bg-surface-hover cursor-not-allowed"
                                     />
                                     <InputError message={errors.nomor_surat} className="mt-1" />
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="kepada" value="Kepada *" />
-                                    <TextInput
+                                    <InputLabel htmlFor="kepada" value="Kepada" required />
+                                    <FormSelectWithCustom
                                         id="kepada"
+                                        options={userOptions}
                                         value={data.kepada}
                                         onChange={(e) => setData('kepada', e.target.value)}
-                                        placeholder="Tujuan surat"
-                                        className="w-full mt-1 px-2"
+                                        placeholder="Pilih penerima atau ketik manual"
+                                        customPlaceholder="Ketik nama penerima..."
+                                        allowCustom={true}
+                                        className="w-full mt-1"
                                     />
                                     <InputError message={errors.kepada} className="mt-1" />
                                 </div>
@@ -224,7 +269,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUr
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <InputLabel htmlFor="perihal" value="Perihal *" />
+                                    <InputLabel htmlFor="perihal" value="Perihal" required />
                                     <FormTextarea
                                         id="perihal"
                                         value={data.perihal}
@@ -236,7 +281,7 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUr
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas *" />
+                                    <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas" required />
                                     <FormTextarea
                                         id="isi_ringkas"
                                         value={data.isi_ringkas}
@@ -260,10 +305,10 @@ export default function Create({ indeksSurat, unitKerja, sifat1Options, nextNoUr
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <InputLabel value="Upload File Surat (Word/PDF/JPG)" />
+                                    <InputLabel value="Upload File Surat (Word/PDF)" required />
                                     <FormFileUpload
                                         onChange={(file) => setData('file', file)}
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg"
+                                        accept=".pdf,.doc,.docx"
                                         maxSize={5}
                                         error={errors.file}
                                     />

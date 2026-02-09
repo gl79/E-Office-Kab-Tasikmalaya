@@ -71,6 +71,26 @@ class SuratKeluar extends Model
         self::SIFAT_2_AMAT_SEGERA => 'Amat Segera',
     ];
 
+    /**
+     * Generate next no_urut otomatis dengan format 0001.
+     * Nomor direset setiap pergantian tahun berdasarkan tanggal_surat.
+     */
+    public static function generateNextNoUrut(): int
+    {
+        $year = date('Y');
+
+        $lastNumber = self::withTrashed()
+            ->whereYear('tanggal_surat', $year)
+            ->get(['no_urut'])
+            ->map(function ($s) {
+                // Remove leading zeros and convert to int
+                return (int) ltrim($s->no_urut, '0') ?: 0;
+            })
+            ->max() ?? 0;
+
+        return $lastNumber + 1;
+    }
+
     // ==================== RELATIONSHIPS ====================
 
     /**

@@ -53,9 +53,51 @@ interface DashboardPageProps extends PageProps {
 
 const CACHE_TTL_MS = 60_000;
 
+interface WelcomeBannerProps {
+    fotoUrl?: string | null;
+    name: string;
+    nip?: string | null;
+    jabatan?: string | null;
+    roleLabel: string;
+    greeting: string;
+}
+
+const WelcomeBanner = ({ fotoUrl, name, nip, jabatan, roleLabel, greeting }: WelcomeBannerProps) => (
+    <div className="bg-gradient-to-r from-primary to-primary-dark rounded-xl p-6 text-text-inverse">
+        <div className="flex items-center gap-5">
+            <img
+                src={fotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=ffffff&color=2563eb&size=128`}
+                alt={name}
+                className="h-20 w-20 rounded-full object-cover border-4 border-text-inverse/30 shadow-lg"
+            />
+            <div className="flex-1">
+                <h1 className="text-2xl font-bold">{greeting}, {name}!</h1>
+                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
+                        <span className="text-primary-light text-xs">Nama Lengkap</span>
+                        <p className="text-text-inverse font-medium text-sm">{name}</p>
+                    </div>
+                    <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
+                        <span className="text-primary-light text-xs">NIP</span>
+                        <p className="text-text-inverse font-medium text-sm break-all">{nip || '-'}</p>
+                    </div>
+                    <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
+                        <span className="text-primary-light text-xs">Jabatan</span>
+                        <p className="text-text-inverse font-medium text-sm">{jabatan || '-'}</p>
+                    </div>
+                    <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
+                        <span className="text-primary-light text-xs">Role</span>
+                        <p className="text-text-inverse font-medium text-sm">{roleLabel}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
 /**
  * Dashboard Page
- * 
+ *
  * Landing page setelah login.
  * Menampilkan info user dan statistik data berdasarkan role.
  */
@@ -101,38 +143,14 @@ const Dashboard = () => {
             <>
                 <Head title="Dashboard" />
                 <div className="mb-8">
-                    <div className="bg-linear-to-r from-primary to-primary-dark rounded-xl p-6 text-text-inverse">
-                        <div className="flex items-center gap-5">
-                            <img 
-                                src={user.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=ffffff&color=2563eb&size=128`} 
-                                alt={user.name} 
-                                className="h-20 w-20 rounded-full object-cover border-4 border-text-inverse/30 shadow-lg"
-                            />
-                            <div className="flex-1">
-                                <h1 className="text-2xl font-bold">
-                                    {getGreeting()}, {user.name}!
-                                </h1>
-                                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
-                                        <span className="text-primary-light text-xs">Nama Lengkap</span>
-                                        <p className="text-text-inverse font-medium text-sm">{user.name}</p>
-                                    </div>
-                                    <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
-                                        <span className="text-primary-light text-xs">NIP</span>
-                                        <p className="text-text-inverse font-medium text-sm break-all">{user.nip || '-'}</p>
-                                    </div>
-                                    <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
-                                        <span className="text-primary-light text-xs">Jabatan</span>
-                                        <p className="text-text-inverse font-medium text-sm">{user.jabatan || '-'}</p>
-                                    </div>
-                                    <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
-                                        <span className="text-primary-light text-xs">Role</span>
-                                        <p className="text-text-inverse font-medium text-sm">{roleLabels[user.role] || user.role}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <WelcomeBanner
+                        fotoUrl={user.foto_url}
+                        name={user.name}
+                        nip={user.nip}
+                        jabatan={user.jabatan}
+                        roleLabel={roleLabels[user.role] || user.role}
+                        greeting={getGreeting()}
+                    />
                 </div>
                 <DashboardShimmer />
             </>
@@ -232,38 +250,14 @@ const Dashboard = () => {
 
             {/* Welcome Section with User Photo */}
             <div className="mb-8">
-                <div className="bg-linear-to-r from-primary to-primary-dark rounded-xl p-6 text-text-inverse">
-                    <div className="flex items-center gap-5">
-                        <img 
-                            src={user.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=ffffff&color=2563eb&size=128`} 
-                            alt={user.name} 
-                            className="h-20 w-20 rounded-full object-cover border-4 border-text-inverse/30 shadow-lg"
-                        />
-                        <div className="flex-1">
-                            <h1 className="text-2xl font-bold">
-                                {getGreeting()}, {user.name}!
-                            </h1>
-                            <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
-                                <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
-                                    <span className="text-primary-light text-xs">Nama Lengkap</span>
-                                    <p className="text-text-inverse font-medium text-sm">{user.name}</p>
-                                </div>
-                                <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
-                                    <span className="text-primary-light text-xs">NIP</span>
-                                    <p className="text-text-inverse font-medium text-sm break-all">{user.nip || '-'}</p>
-                                </div>
-                                <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
-                                    <span className="text-primary-light text-xs">Jabatan</span>
-                                    <p className="text-text-inverse font-medium text-sm">{user.jabatan || '-'}</p>
-                                </div>
-                                <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
-                                    <span className="text-primary-light text-xs">Role</span>
-                                    <p className="text-text-inverse font-medium text-sm">{roleLabels[user.role] || user.role}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <WelcomeBanner
+                    fotoUrl={user.foto_url}
+                    name={user.name}
+                    nip={user.nip}
+                    jabatan={user.jabatan}
+                    roleLabel={roleLabels[user.role] || user.role}
+                    greeting={getGreeting()}
+                />
             </div>
 
             {/* Content based on role */}

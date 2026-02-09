@@ -17,6 +17,12 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request): Response
     {
+        // Only SuperAdmin can access activity logs
+        $user = $request->user();
+        if (!$user || $user->role !== User::ROLE_SUPERADMIN) {
+            abort(403, 'Unauthorized access to Activity Logs');
+        }
+
         // Get all users for filter dropdown
         $users = Inertia::defer(fn() => CacheHelper::tags(['activity_logs'])->remember('activity_logs_users', 60, function () {
             return User::select('id', 'name', 'username')

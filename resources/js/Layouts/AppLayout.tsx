@@ -1,33 +1,18 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePage, router, useForm, Link } from '@inertiajs/react';
-import { Header, Sidebar, Footer } from '@/Components/layout';
-import { MenuItem } from '@/config/menu';
+import { Sidebar, Footer } from '@/Components/layout';
 import { PageProps } from '@/types';
 import { Button, Modal, ToastProvider, useToast, Breadcrumb } from '@/Components/ui';
 import { BreadcrumbItem } from '@/Components/ui/Breadcrumb';
 
 interface AppLayoutProps {
     children: ReactNode;
-    showSidebar?: boolean;
-    showFooter?: boolean;
-    headerLogo?: ReactNode;
-    sidebarContent?: ReactNode;
-    sidebarMenuItems?: MenuItem[];
-    footerContent?: ReactNode;
 }
 
 /**
  * Inner component yang menggunakan Toast context
  */
-function AppLayoutInner({
-    children,
-    showSidebar = true,
-    showFooter = true,
-    headerLogo,
-    sidebarContent,
-    sidebarMenuItems,
-    footerContent,
-}: AppLayoutProps) {
+function AppLayoutInner({ children }: AppLayoutProps) {
     const { auth, flash, url } = usePage<PageProps & { flash: { success?: string; error?: string }, url: string }>().props;
     const user = auth.user;
     const { showToast } = useToast();
@@ -174,18 +159,13 @@ function AppLayoutInner({
                 {/* Main Container (Sidebar + Content) */}
                 <div className="flex flex-1 overflow-hidden relative">
                     {/* Sidebar */}
-                    {showSidebar && (
-                        <Sidebar 
-                            items={sidebarMenuItems}
-                            onLogoutClick={() => setShowLogoutModal(true)}
-                            isOpen={isMobileSidebarOpen}
-                            onClose={() => setIsMobileSidebarOpen(false)}
-                            collapsed={isSidebarCollapsed}
-                            onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
-                        >
-                            {sidebarContent}
-                        </Sidebar>
-                    )}
+                    <Sidebar
+                        onLogoutClick={() => setShowLogoutModal(true)}
+                        isOpen={isMobileSidebarOpen}
+                        onClose={() => setIsMobileSidebarOpen(false)}
+                        collapsed={isSidebarCollapsed}
+                        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+                    />
 
                     {/* Main Content Area */}
                     <main className="flex-1 overflow-y-auto p-4 lg:p-6 w-full">
@@ -200,11 +180,7 @@ function AppLayoutInner({
                 </div>
 
                 {/* Footer */}
-                {showFooter && (
-                    <Footer>
-                        {footerContent}
-                    </Footer>
-                )}
+                <Footer />
             </div>
 
             {/* Logout Confirmation Modal */}

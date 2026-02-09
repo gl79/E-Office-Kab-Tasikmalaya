@@ -30,7 +30,7 @@ class SuratMasukRequest extends FormRequest
             'tanggal_surat' => ['required', 'date'],
             'asal_surat' => ['required', 'string', 'max:255'],
             'tujuan' => ['required', 'array', 'min:1'],
-            'tujuan.*' => ['required', 'string', 'max:255'],
+            'tujuan.*' => ['required', 'string', 'exists:users,id'],
             'nomor_surat' => [
                 'required',
                 'string',
@@ -53,7 +53,7 @@ class SuratMasukRequest extends FormRequest
             ]),
             'indeks_berkas_id' => ['nullable', 'string', 'exists:indeks_surat,id'],
             'kode_klasifikasi_id' => ['nullable', 'string', 'exists:indeks_surat,id'],
-            'staff_pengolah_id' => ['nullable', 'integer', 'exists:users,id'],
+            'staff_pengolah_id' => ['nullable', 'string', 'exists:users,id'],
             'tanggal_diteruskan' => ['nullable', 'date'],
             'catatan_tambahan' => ['nullable', 'string'],
 

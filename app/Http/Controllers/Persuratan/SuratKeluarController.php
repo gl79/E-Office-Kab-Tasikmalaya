@@ -7,14 +7,17 @@ use App\Http\Requests\Persuratan\SuratKeluarRequest;
 use App\Models\IndeksSurat;
 use App\Models\SuratKeluar;
 use App\Models\UnitKerja;
+use App\Models\User;
+use App\Services\Persuratan\SuratKeluarService;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class SuratKeluarController extends Controller
 {
+    public function __construct(private readonly SuratKeluarService $service) {}
     /**
      * Display a listing of the resource.
      */
@@ -30,8 +33,8 @@ class SuratKeluarController extends Controller
                     ->with(['indeks', 'kodeKlasifikasi', 'unitKerja', 'createdBy'])
                     ->latest('tanggal_surat');
 
-                // SuperAdmin & TU see all, others only see their own surat keluar
-                if (!$user->isSuperAdmin() && !$user->isTU()) {
+                // SuperAdmin sees all, others (including TU) only see surat keluar they created
+                if (!$user->isSuperAdmin()) {
                     $query->where('created_by', $user->id);
                 }
 
@@ -48,11 +51,15 @@ class SuratKeluarController extends Controller
     {
         $this->authorize('create', SuratKeluar::class);
 
-        $nextNoUrut = SuratKeluar::withTrashed()->whereYear('tanggal_surat', now()->year)->count() + 1;
+        $nextNoUrut = SuratKeluar::generateNextNoUrut();
 
         return Inertia::render('Persuratan/SuratKeluar/Create', [
             'indeksSurat' => IndeksSurat::orderBy('kode')->get(['id', 'kode', 'nama']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
+            'users' => User::select(['id', 'name', 'nip', 'jabatan'])
+                ->where('role', '!=', User::ROLE_SUPERADMIN)
+                ->orderBy('name')
+                ->get(),
             'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
             'nextNoUrut' => $nextNoUrut,
         ]);
@@ -65,31 +72,24 @@ class SuratKeluarController extends Controller
     {
         $this->authorize('create', SuratKeluar::class);
 
-        DB::beginTransaction();
         try {
             $data = $request->validated();
-
-            // Handle file upload
             if ($request->hasFile('file')) {
-                $file = $request->file('file');
-                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
-                $data['file_path'] = $file->storeAs('surat-keluar', $filename, 'public');
+                $data['file'] = $request->file('file');
             }
 
-            // Create surat keluar
-            SuratKeluar::create($data);
-
-            CacheHelper::flush(['persuratan_list']);
-
-            DB::commit();
+            $this->service->store($data);
 
             return redirect()->route('persuratan.surat-keluar.index')
                 ->with('success', 'Surat Keluar berhasil ditambahkan.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            Log::error('Gagal menyimpan surat keluar', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Gagal menyimpan surat keluar: ' . $e->getMessage());
+                ->with('error', 'Gagal menyimpan surat keluar. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -125,6 +125,10 @@ class SuratKeluarController extends Controller
             'suratKeluar' => $suratKeluar,
             'indeksSurat' => IndeksSurat::orderBy('kode')->get(['id', 'kode', 'nama']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
+            'users' => User::select(['id', 'name', 'nip', 'jabatan'])
+                ->where('role', '!=', User::ROLE_SUPERADMIN)
+                ->orderBy('name')
+                ->get(),
             'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
         ]);
     }
@@ -137,36 +141,24 @@ class SuratKeluarController extends Controller
         $suratKeluar = SuratKeluar::findOrFail($id);
         $this->authorize('update', $suratKeluar);
 
-        DB::beginTransaction();
         try {
             $data = $request->validated();
-
-            // Handle file upload
             if ($request->hasFile('file')) {
-                // Delete old file
-                if ($suratKeluar->file_path) {
-                    Storage::disk('public')->delete($suratKeluar->file_path);
-                }
-
-                $file = $request->file('file');
-                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
-                $data['file_path'] = $file->storeAs('surat-keluar', $filename, 'public');
+                $data['file'] = $request->file('file');
             }
 
-            // Update surat keluar
-            $suratKeluar->update($data);
-
-            CacheHelper::flush(['persuratan_list']);
-
-            DB::commit();
+            $this->service->update($suratKeluar, $data);
 
             return redirect()->route('persuratan.surat-keluar.index')
                 ->with('success', 'Surat Keluar berhasil diperbarui.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            Log::error('Gagal memperbarui surat keluar', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Gagal memperbarui surat keluar: ' . $e->getMessage());
+                ->with('error', 'Gagal memperbarui surat keluar. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -178,10 +170,7 @@ class SuratKeluarController extends Controller
         $suratKeluar = SuratKeluar::findOrFail($id);
         $this->authorize('delete', $suratKeluar);
 
-        $suratKeluar->delete();
-
-        CacheHelper::flush(['persuratan_archive']);
-        CacheHelper::flush(['persuratan_list']);
+        $this->service->delete($suratKeluar);
 
         return redirect()->back()->with('success', 'Surat Keluar berhasil dihapus.');
     }
@@ -196,8 +185,7 @@ class SuratKeluarController extends Controller
 
         $suratKeluar->restore();
 
-        CacheHelper::flush(['persuratan_archive']);
-        CacheHelper::flush(['persuratan_list']);
+        CacheHelper::flush(['persuratan_archive', 'persuratan_list']);
 
         return redirect()->back()->with('success', 'Surat Keluar berhasil dipulihkan.');
     }
@@ -217,8 +205,7 @@ class SuratKeluarController extends Controller
 
         $suratKeluar->forceDelete();
 
-        CacheHelper::flush(['persuratan_archive']);
-        CacheHelper::flush(['persuratan_list']);
+        CacheHelper::flush(['persuratan_archive', 'persuratan_list']);
 
         return redirect()->back()->with('success', 'Surat Keluar berhasil dihapus permanen.');
     }

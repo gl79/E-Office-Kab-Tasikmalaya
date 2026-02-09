@@ -10,35 +10,10 @@ import FormDatePicker from '@/Components/form/FormDatePicker';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { PageProps } from '@/types';
+import type { SuratMasuk } from '@/types/persuratan';
 import { useDeferredDataMutable } from '@/hooks';
-import { formatDateShort } from '@/utils';
+import { formatDateShort, getSifatBadge, exportToPrintWindow, escapeHtml, getDateRangeForPeriod } from '@/utils';
 
-interface SuratMasukTujuan {
-    id: string;
-    tujuan: string;
-}
-
-interface SuratMasuk {
-    id: string;
-    nomor_agenda: string;
-    tanggal_diterima: string;
-    tanggal_surat: string;
-    asal_surat: string;
-    nomor_surat: string;
-    sifat: string;
-    perihal: string;
-    isi_ringkas: string | null;
-    lampiran: number | null;
-    file_path: string | null;
-    tanggal_diteruskan: string | null;
-    catatan_tambahan: string | null;
-    tujuans: SuratMasukTujuan[];
-    indeks_berkas?: { kode: string; nama: string; jenis_surat: string | null } | null;
-    kode_klasifikasi?: { kode: string; nama: string } | null;
-    staff_pengolah?: { name: string; nip: string } | null;
-    created_by?: { name: string } | null;
-    created_at: string;
-}
 
 interface Props extends PageProps {
     suratMasuk?: SuratMasuk[];
@@ -201,94 +176,34 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         setDisposisiModalOpen(false);
     };
 
-    const getSifatBadge = (sifatValue: string) => {
-        const variants: Record<string, 'default' | 'info' | 'warning' | 'danger'> = {
-            biasa: 'info',
-            terbatas: 'info',
-            rahasia: 'warning',
-            sangat_rahasia: 'danger',
-        };
-        return (
-            <Badge variant={variants[sifatValue] || 'info'} className="justify-center min-w-[80px] whitespace-nowrap">
-                {sifatOptions[sifatValue] || sifatValue}
-            </Badge>
-        );
-    };
-
     const sifatSelectOptions = Object.entries(sifatOptions || {}).map(([value, label]) => ({
         value,
         label,
     }));
 
     const handleExportPDF = () => {
-        const dataToExport = filteredData;
-        if (dataToExport.length === 0) return;
-
-        const escapeHtml = (str: string) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
         const filterInfo: string[] = [];
         if (search) filterInfo.push(`Pencarian: "${escapeHtml(search)}"`);
         if (startDate || endDate) filterInfo.push(`Periode: ${startDate || '...'} s/d ${endDate || '...'}`);
         if (sifat) filterInfo.push(`Sifat: ${sifatOptions[sifat] || sifat}`);
         if (jenisSuratFilter) filterInfo.push(`Jenis: ${jenisSuratFilter}`);
 
-        const rows = dataToExport.map((item, index) => `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${item.nomor_agenda.split('/')[1] || escapeHtml(item.nomor_agenda)}</td>
-                <td>${formatDateShort(item.tanggal_diterima)}</td>
-                <td>${formatDateShort(item.tanggal_surat)}<br><small>${escapeHtml(item.nomor_surat)}</small></td>
-                <td>${escapeHtml(item.asal_surat)}</td>
-                <td>${item.tujuans?.map(t => escapeHtml(t.tujuan)).join(', ') || '-'}</td>
-                <td>${escapeHtml(item.perihal)}</td>
-                <td>${escapeHtml(sifatOptions[item.sifat] || item.sifat)}</td>
-            </tr>
-        `).join('');
-
-        const html = `<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<title>Laporan Surat Masuk</title>
-<style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Times New Roman', serif; font-size: 11px; padding: 20px; }
-    .header { text-align: center; margin-bottom: 16px; border-bottom: 3px double #000; padding-bottom: 12px; }
-    .header h1 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-    .header h2 { font-size: 16px; text-transform: uppercase; margin-top: 4px; }
-    .meta { margin-bottom: 12px; font-size: 10px; color: #555; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #333; padding: 4px 6px; text-align: left; vertical-align: top; }
-    th { background: #f0f0f0; font-size: 10px; text-transform: uppercase; text-align: center; }
-    td:first-child { text-align: center; width: 30px; }
-    td small { color: #666; }
-    .footer { margin-top: 16px; font-size: 9px; color: #888; display: flex; justify-content: space-between; }
-    @media print { body { padding: 0; } }
-</style>
-</head><body>
-<div class="header">
-    <h1>Pemerintah Kabupaten Tasikmalaya</h1>
-    <h2>Laporan Data Surat Masuk</h2>
-</div>
-${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</div>` : ''}
-<div class="meta">Total: ${dataToExport.length} data</div>
-<table>
-    <thead><tr>
-        <th>No</th><th>Agenda</th><th>Tgl Diterima</th><th>Tgl Surat / No Surat</th><th>Asal Surat</th><th>Tujuan</th><th>Perihal</th><th>Sifat</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-</table>
-<div class="footer">
-    <span>Dicetak pada: ${new Date().toLocaleString('id-ID')}</span>
-    <span>Dicetak oleh: ${auth.user.name}</span>
-</div>
-<script>window.onload = function() { window.print(); }</script>
-</body></html>`;
-
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-        }
+        exportToPrintWindow({
+            title: 'Laporan Data Surat Masuk',
+            columns: [
+                { header: 'No', render: (_, i) => String(i + 1) },
+                { header: 'Agenda', render: (item) => item.nomor_agenda.split('/')[1] || escapeHtml(item.nomor_agenda) },
+                { header: 'Tgl Diterima', render: (item) => formatDateShort(item.tanggal_diterima) },
+                { header: 'Tgl Surat / No Surat', render: (item) => `${formatDateShort(item.tanggal_surat)}<br><small>${escapeHtml(item.nomor_surat)}</small>` },
+                { header: 'Asal Surat', render: (item) => escapeHtml(item.asal_surat) },
+                { header: 'Tujuan', render: (item) => item.tujuans?.map((t: { tujuan: string }) => escapeHtml(t.tujuan)).join(', ') || '-' },
+                { header: 'Perihal', render: (item) => escapeHtml(item.perihal) },
+                { header: 'Sifat', render: (item) => escapeHtml(sifatOptions[item.sifat] || item.sifat) },
+            ],
+            data: filteredData,
+            filterInfo,
+            userName: auth.user.name,
+        });
     };
 
     return (
@@ -350,25 +265,7 @@ ${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</
                                             onChange={(e) => {
                                                 const val = e.target.value;
                                                 setPeriodeFilter(val);
-                                                const now = new Date();
-                                                let start = '';
-                                                let end = '';
-
-                                                if (val === 'hari_ini') {
-                                                    start = end = now.toISOString().split('T')[0];
-                                                } else if (val === 'minggu_ini') {
-                                                    const first = now.getDate() - now.getDay();
-                                                    const last = first + 6;
-                                                    start = new Date(now.setDate(first)).toISOString().split('T')[0];
-                                                    end = new Date(now.setDate(last)).toISOString().split('T')[0];
-                                                } else if (val === 'bulan_ini') {
-                                                    start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-                                                    end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-                                                } else if (val === 'tahun_ini') {
-                                                    start = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
-                                                    end = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
-                                                }
-
+                                                const { start, end } = getDateRangeForPeriod(val);
                                                 setStartDate(start);
                                                 setEndDate(end);
                                                 setCurrentPage(1);
@@ -500,7 +397,7 @@ ${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</
                                             <span className="line-clamp-2">{item.perihal}</span>
                                         </td>
                                         <td className="border border-border-default px-4 py-3">
-                                            {getSifatBadge(item.sifat)}
+                                            {getSifatBadge(item.sifat, sifatOptions)}
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
                                             <Dropdown
@@ -682,7 +579,7 @@ ${filterInfo.length > 0 ? `<div class="meta">Filter: ${filterInfo.join(' | ')}</
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">Sifat</p>
-                                    {getSifatBadge(detailSurat.sifat)}
+                                    {getSifatBadge(detailSurat.sifat, sifatOptions)}
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">Lampiran</p>

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\ActivityLog;
 use App\Models\Cuti;
+use App\Models\User;
 use App\Models\IndeksSurat;
 use App\Models\Penjadwalan;
 use App\Models\SuratKeluar;
@@ -19,6 +20,7 @@ use App\Policies\IndeksSuratPolicy;
 use App\Policies\PenjadwalanPolicy;
 use App\Policies\SuratKeluarPolicy;
 use App\Policies\SuratMasukPolicy;
+use App\Policies\UserPolicy;
 use App\Policies\UnitKerjaPolicy;
 use App\Policies\WilayahDesaPolicy;
 use App\Policies\WilayahKabupatenPolicy;
@@ -52,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function registerPolicies(): void
     {
+        Gate::policy(User::class, UserPolicy::class);
         Gate::policy(UnitKerja::class, UnitKerjaPolicy::class);
         Gate::policy(IndeksSurat::class, IndeksSuratPolicy::class);
         Gate::policy(WilayahProvinsi::class, WilayahProvinsiPolicy::class);

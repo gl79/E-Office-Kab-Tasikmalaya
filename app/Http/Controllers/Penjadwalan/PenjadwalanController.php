@@ -12,6 +12,7 @@ use App\Models\SuratMasuk;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -114,9 +115,13 @@ class PenjadwalanController extends Controller
                 ->with('success', 'Jadwal berhasil dibuat.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal menyimpan jadwal', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Gagal menyimpan jadwal: ' . $e->getMessage());
+                ->with('error', 'Gagal menyimpan jadwal. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -154,9 +159,13 @@ class PenjadwalanController extends Controller
                 ->with('success', 'Jadwal berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal memperbarui jadwal', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Gagal memperbarui jadwal: ' . $e->getMessage());
+                ->with('error', 'Gagal memperbarui jadwal. Silakan coba lagi atau hubungi administrator.');
         }
     }
 

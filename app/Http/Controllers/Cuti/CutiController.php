@@ -12,6 +12,7 @@ use App\Services\CutiService;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class CutiController extends Controller
@@ -82,9 +83,13 @@ class CutiController extends Controller
                 ->with('success', 'Pengajuan cuti berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal menyimpan pengajuan cuti', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Gagal menyimpan pengajuan cuti: ' . $e->getMessage());
+                ->with('error', 'Gagal menyimpan pengajuan cuti. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -148,9 +153,13 @@ class CutiController extends Controller
                 ->with('success', 'Pengajuan cuti berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal memperbarui pengajuan cuti', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Gagal memperbarui pengajuan cuti: ' . $e->getMessage());
+                ->with('error', 'Gagal memperbarui pengajuan cuti. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -174,8 +183,12 @@ class CutiController extends Controller
                 ->with('success', 'Pengajuan cuti berhasil dibatalkan.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal membatalkan pengajuan cuti', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal membatalkan pengajuan cuti: ' . $e->getMessage());
+                ->with('error', 'Gagal membatalkan pengajuan cuti. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -199,8 +212,12 @@ class CutiController extends Controller
                 ->with('success', 'Pengajuan cuti berhasil disetujui.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal menyetujui pengajuan cuti', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal menyetujui pengajuan cuti: ' . $e->getMessage());
+                ->with('error', 'Gagal menyetujui pengajuan cuti. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -224,8 +241,12 @@ class CutiController extends Controller
                 ->with('success', 'Pengajuan cuti berhasil ditolak.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Gagal menolak pengajuan cuti', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
-                ->with('error', 'Gagal menolak pengajuan cuti: ' . $e->getMessage());
+                ->with('error', 'Gagal menolak pengajuan cuti. Silakan coba lagi atau hubungi administrator.');
         }
     }
 

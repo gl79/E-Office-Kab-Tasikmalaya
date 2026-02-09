@@ -1,4 +1,5 @@
 import { Head, useForm, Link } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
@@ -84,6 +85,34 @@ export default function Edit({ suratKeluar, indeksSurat, unitKerja, sifat1Option
     }));
 
     const selectedIndeks = indeksSurat.find(item => item.id === data.indeks_id);
+
+    // Map sifat_1 values to letter codes
+    const getSifatCode = (sifat: string): string => {
+        const sifatMap: Record<string, string> = {
+            'biasa': 'B',
+            'terbatas': 'T',
+            'rahasia': 'R',
+            'sangat_rahasia': 'SR',
+        };
+        return sifatMap[sifat] || sifat.toUpperCase();
+    };
+
+    // Auto-generate nomor_surat when dependencies change
+    useEffect(() => {
+        const sifatCode = data.sifat_1 ? getSifatCode(data.sifat_1) : '';
+        const noUrut = data.no_urut || '';
+        const kode = selectedIndeks?.kode || '';
+        const pengolah = data.kode_pengolah || '';
+        const year = data.tanggal_surat ? new Date(data.tanggal_surat).getFullYear().toString() : '';
+
+        // Only generate if we have at least sifat and no_urut
+        if (sifatCode && noUrut) {
+            const parts = [sifatCode, noUrut, kode, pengolah, year].filter(part => part !== '');
+            const generatedNomor = parts.join('/');
+
+            setData('nomor_surat', generatedNomor);
+        }
+    }, [data.sifat_1, data.no_urut, data.indeks_id, data.kode_pengolah, data.tanggal_surat]);
 
     const handleIndeksChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedId = e.target.value;
@@ -208,9 +237,9 @@ export default function Edit({ suratKeluar, indeksSurat, unitKerja, sifat1Option
                                     <TextInput
                                         id="nomor_surat"
                                         value={data.nomor_surat}
-                                        onChange={(e) => setData('nomor_surat', e.target.value)}
-                                        placeholder="Masukkan nomor surat"
-                                        className="w-full mt-1 px-2"
+                                        readOnly
+                                        placeholder="Otomatis terisi berdasarkan Sifat/NoUrut/Kode/Pengolah/Tahun"
+                                        className="w-full mt-1 px-2 bg-surface-hover cursor-not-allowed"
                                     />
                                     <InputError message={errors.nomor_surat} className="mt-1" />
                                 </div>
