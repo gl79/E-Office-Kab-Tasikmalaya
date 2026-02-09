@@ -11,16 +11,17 @@ import TableShimmer from '@/Components/shimmer/TableShimmer';
 import type { PageProps } from '@/types';
 import type { ArchiveItem } from '@/types/persuratan';
 import { useDeferredDataMutable } from '@/hooks';
-import { formatDateShort, formatDateTime } from '@/utils';
+import { formatDateShort, formatDateTime, getSifatBadge } from '@/utils';
 
 
 interface Props extends PageProps {
     archives?: ArchiveItem[];
+    sifatOptions: Record<string, string>;
 }
 
 const CACHE_TTL_MS = 60_000;
 
-const Index = ({ archives: initialArchives }: Props) => {
+const Index = ({ archives: initialArchives, sifatOptions }: Props) => {
     const { auth } = usePage<PageProps>().props;
     const { data: archives, updateAndCache, isLoading, hasCached } = useDeferredDataMutable<ArchiveItem[]>(
         `persuratan_archive_${auth.user.id}`,
@@ -234,11 +235,11 @@ const Index = ({ archives: initialArchives }: Props) => {
                             <thead className="bg-surface-hover">
                                 <tr>
                                     <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-12">No</th>
-                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Jenis</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Jenis</th>
                                     <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">No Agenda / Urut</th>
-                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Tgl Surat</th>
-                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Nomor Surat</th>
+                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase"><div>Tgl Surat</div><div>No Surat</div></th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Perihal</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Sifat</th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Dihapus Pada</th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Dihapus Oleh</th>
                                     <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-24">Aksi</th>
@@ -250,7 +251,7 @@ const Index = ({ archives: initialArchives }: Props) => {
                                         <td className="border border-border-default px-4 py-3 text-center text-text-secondary text-sm">
                                             {(currentPage - 1) * itemsPerPage + index + 1}
                                         </td>
-                                        <td className="border border-border-default px-4 py-3">
+                                        <td className="border border-border-default px-4 py-3 text-center">
                                             <Badge variant={item.jenis === 'Surat Masuk' ? 'info' : 'warning'} className="min-w-[100px] justify-center">
                                                 {item.jenis}
                                             </Badge>
@@ -260,16 +261,15 @@ const Index = ({ archives: initialArchives }: Props) => {
                                                 ? item.nomor_agenda.split('/')[1]
                                                 : (item.nomor_agenda || '-')}
                                         </td>
-                                        <td className="border border-border-default px-4 py-3 text-text-secondary text-sm">
-                                            {formatDateShort(item.tanggal_surat)}
+                                        <td className="border border-border-default px-4 py-3 text-sm">
+                                            <div className="font-medium text-text-primary">{formatDateShort(item.tanggal_surat)}</div>
+                                            <div className="text-text-secondary text-xs">{item.nomor_surat}</div>
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-text-primary text-sm">
-                                            {item.nomor_surat}
+                                            <span className="line-clamp-2">{item.perihal}</span>
                                         </td>
-                                        <td className="border border-border-default px-4 py-3 text-text-secondary text-sm">
-                                            <div className="max-w-xs truncate" title={item.perihal}>
-                                                {item.perihal}
-                                            </div>
+                                        <td className="border border-border-default px-4 py-3 text-center">
+                                            {getSifatBadge(item.sifat, sifatOptions)}
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-text-secondary text-sm">
                                             {formatDateTime(item.deleted_at)}

@@ -141,25 +141,9 @@ export const menuItems: MenuItem[] = [
         ],
     },
     {
-        label: 'Pengaturan & Logs',
-        icon: 'settings',
-        children: [
-            {
-                label: 'Profil',
-                href: '/profile',
-                icon: 'user',
-            },
-            {
-                label: 'Activity Logs',
-                href: '/pengaturan/activity-logs',
-                icon: 'activity',
-                roles: ['superadmin'],
-            },
-        ],
-    },
-    {
-        label: 'Keluar',
-        icon: 'log-out',
-        isLogout: true,
+        label: 'Activity Logs',
+        href: '/pengaturan/activity-logs',
+        icon: 'activity',
+        roles: ['superadmin'],
     },
 ];

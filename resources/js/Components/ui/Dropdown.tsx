@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, ReactNode } from 'react';
+import { useState, useRef, useEffect, useCallback, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from '@inertiajs/react';
 
 interface DropdownProps {
@@ -11,14 +12,41 @@ interface DropdownProps {
 
 const Dropdown = ({ trigger, children, align = 'right', width = '48', contentClasses = 'py-1 bg-surface' }: DropdownProps) => {
     const [open, setOpen] = useState(false);
-    const [openUpward, setOpenUpward] = useState(false);
     const triggerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+
+    const calculatePosition = useCallback(() => {
+        if (!triggerRef.current || !dropdownRef.current) return;
+
+        const triggerRect = triggerRef.current.getBoundingClientRect();
+        const dropdownRect = dropdownRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+
+        const spaceBelow = viewportHeight - triggerRect.bottom;
+        const openUpward = spaceBelow < dropdownRect.height && triggerRect.top > dropdownRect.height;
+
+        let top = openUpward
+            ? triggerRect.top - dropdownRect.height - 4
+            : triggerRect.bottom + 4;
+
+        let left = align === 'right'
+            ? triggerRect.right - dropdownRect.width
+            : triggerRect.left;
+
+        // Clamp within viewport
+        if (left < 8) left = 8;
+        if (left + dropdownRect.width > viewportWidth - 8) left = viewportWidth - dropdownRect.width - 8;
+        if (top < 8) top = 8;
+
+        setPosition({ top, left });
+    }, [align]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
-                dropdownRef.current && 
+                dropdownRef.current &&
                 !dropdownRef.current.contains(event.target as Node) &&
                 triggerRef.current &&
                 !triggerRef.current.contains(event.target as Node)
@@ -33,32 +61,32 @@ const Dropdown = ({ trigger, children, align = 'right', width = '48', contentCla
         };
     }, []);
 
-    // Calculate position when opening
+    // Recalculate position when open or on scroll/resize
     useEffect(() => {
-        if (open && triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
-            const spaceBelow = viewportHeight - rect.bottom;
-            const dropdownHeight = 200; // Estimated dropdown height
-            
-            // Open upward if not enough space below
-            setOpenUpward(spaceBelow < dropdownHeight && rect.top > dropdownHeight);
+        if (!open) {
+            setPosition(null);
+            return;
         }
-    }, [open]);
 
-    let alignmentClasses = openUpward ? 'origin-bottom' : 'origin-top';
-    if (align === 'left') {
-        alignmentClasses = openUpward ? 'origin-bottom-left left-0' : 'origin-top-left left-0';
-    } else if (align === 'right') {
-        alignmentClasses = openUpward ? 'origin-bottom-right right-0' : 'origin-top-right right-0';
-    }
+        // Initial calculation after portal renders
+        requestAnimationFrame(calculatePosition);
+
+        const handleScrollOrResize = () => {
+            if (open) calculatePosition();
+        };
+
+        window.addEventListener('scroll', handleScrollOrResize, true);
+        window.addEventListener('resize', handleScrollOrResize);
+        return () => {
+            window.removeEventListener('scroll', handleScrollOrResize, true);
+            window.removeEventListener('resize', handleScrollOrResize);
+        };
+    }, [open, calculatePosition]);
 
     let widthClasses = '';
     if (width === '48') {
         widthClasses = 'w-48';
     }
-
-    const positionClasses = openUpward ? 'bottom-full mb-2' : 'mt-2';
 
     return (
         <div className="relative">
@@ -66,15 +94,17 @@ const Dropdown = ({ trigger, children, align = 'right', width = '48', contentCla
                 {trigger}
             </div>
 
-            {open && (
+            {open && createPortal(
                 <div
                     ref={dropdownRef}
-                    className={`absolute z-50 ${positionClasses} rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
+                    className={`fixed z-[9999] rounded-md shadow-lg ${widthClasses}`}
+                    style={position ? { top: position.top, left: position.left } : { visibility: 'hidden', top: 0, left: 0 }}
                 >
                     <div className={`rounded-md ring-1 ring-border-dark/30 ${contentClasses}`}>
                         {children}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

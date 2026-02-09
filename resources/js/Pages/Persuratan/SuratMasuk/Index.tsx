@@ -370,7 +370,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase"><div>Tgl Surat</div><div>No Surat</div></th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Asal Surat</th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Perihal</th>
-                                    <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Sifat</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Sifat</th>
                                     <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-20">Aksi</th>
                                 </tr>
                             </thead>
@@ -396,7 +396,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                         <td className="border border-border-default px-4 py-3 text-text-primary text-sm">
                                             <span className="line-clamp-2">{item.perihal}</span>
                                         </td>
-                                        <td className="border border-border-default px-4 py-3">
+                                        <td className="border border-border-default px-4 py-3 text-center">
                                             {getSifatBadge(item.sifat, sifatOptions)}
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">

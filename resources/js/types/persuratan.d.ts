@@ -56,6 +56,7 @@ export interface ArchiveItem {
     nomor_agenda: string;
     tanggal_surat: string;
     nomor_surat: string;
+    sifat: string;
     asal_surat: string;
     perihal: string;
     deleted_at: string;

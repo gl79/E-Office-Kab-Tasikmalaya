@@ -8,6 +8,8 @@ use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -22,37 +24,72 @@ class ArchiveController extends Controller
         $this->authorize('viewAny', SuratMasuk::class);
         $this->authorize('viewAny', SuratKeluar::class);
 
-        $cacheKey = 'persuratan_archive_index_' . md5(json_encode($request->query()));
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $cacheKey = 'persuratan_archive_index_' . $user->id . '_' . md5(json_encode($request->query()));
 
         return Inertia::render('Persuratan/Archive/Index', [
-            'archives' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_archive'])->remember($cacheKey, 60, function () {
-                // Get all trashed surat masuk for client-side filtering
-                $suratMasuk = SuratMasuk::onlyTrashed()
+            'archives' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_archive'])->remember($cacheKey, 60, function () use ($user) {
+                // Build surat masuk query with role-based filtering
+                $masukQuery = SuratMasuk::onlyTrashed()
                     ->with(['deletedBy'])
-                    ->latest('deleted_at')
-                    ->get()
-                    ->map(function ($item) {
-                        $item->jenis = 'Surat Masuk';
-                        $item->type = 'masuk';
-                        return $item;
-                    });
+                    ->latest('deleted_at');
 
-                // Get all trashed surat keluar for client-side filtering
-                $suratKeluar = SuratKeluar::onlyTrashed()
+                if (!$user->isSuperAdmin()) {
+                    if ($user->isTU()) {
+                        $masukQuery->where(function ($q) use ($user) {
+                            $q->whereIn('id', function ($subq) use ($user) {
+                                $subq->select('surat_masuk_id')
+                                    ->from('surat_masuk_tujuans')
+                                    ->where('tujuan_id', $user->id);
+                            })
+                            ->orWhere(function ($subq) use ($user) {
+                                $subq->where('created_by', $user->id)
+                                    ->whereNotExists(function ($existsQuery) use ($user) {
+                                        $existsQuery->select(DB::raw(1))
+                                            ->from('surat_keluars')
+                                            ->whereColumn('surat_keluars.nomor_surat', 'surat_masuks.nomor_surat')
+                                            ->where('surat_keluars.created_by', $user->id);
+                                    });
+                            });
+                        });
+                    } else {
+                        $masukQuery->whereIn('id', function ($q) use ($user) {
+                            $q->select('surat_masuk_id')
+                                ->from('surat_masuk_tujuans')
+                                ->where('tujuan_id', $user->id);
+                        });
+                    }
+                }
+
+                $suratMasuk = $masukQuery->get()->map(function ($item) {
+                    $item->jenis = 'Surat Masuk';
+                    $item->type = 'masuk';
+                    return $item;
+                });
+
+                // Build surat keluar query with role-based filtering
+                $keluarQuery = SuratKeluar::onlyTrashed()
                     ->with(['deletedBy'])
-                    ->latest('deleted_at')
-                    ->get()
-                    ->map(function ($item) {
-                        $item->jenis = 'Surat Keluar';
-                        $item->type = 'keluar';
-                        $item->nomor_agenda = $item->no_urut ? str_pad($item->no_urut, 4, '0', STR_PAD_LEFT) : '-';
-                        $item->asal_surat = $item->kepada;
-                        return $item;
-                    });
+                    ->latest('deleted_at');
+
+                if (!$user->isSuperAdmin()) {
+                    $keluarQuery->where('created_by', $user->id);
+                }
+
+                $suratKeluar = $keluarQuery->get()->map(function ($item) {
+                    $item->jenis = 'Surat Keluar';
+                    $item->type = 'keluar';
+                    $item->nomor_agenda = $item->no_urut ? str_pad($item->no_urut, 4, '0', STR_PAD_LEFT) : '-';
+                    $item->asal_surat = $item->kepada;
+                    $item->sifat = $item->sifat_1;
+                    return $item;
+                });
 
                 // Merge and sort by deleted_at
                 return $suratMasuk->merge($suratKeluar)->sortByDesc('deleted_at')->values();
             })),
+            'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
         ]);
     }
 

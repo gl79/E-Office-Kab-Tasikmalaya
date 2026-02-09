@@ -288,7 +288,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                             <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Nama</th>
                             <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Jabatan</th>
                             <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Username</th>
-                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Role</th>
+                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Role</th>
                             <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Aksi</th>
                         </tr>
                     </thead>
@@ -310,7 +310,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                 <td className="px-4 py-3 border border-border-default font-medium text-text-primary">{item.name}</td>
                                 <td className="px-4 py-3 border border-border-default text-text-secondary">{item.jabatan || '-'}</td>
                                 <td className="px-4 py-3 border border-border-default text-text-primary">{item.username}</td>
-                                <td className="px-4 py-3 border border-border-default">
+                                <td className="px-4 py-3 border border-border-default text-center">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
                                         {item.role_label || item.role}
                                     </span>
@@ -320,10 +320,13 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                         <Button size="sm" variant="secondary" onClick={() => setDetailItem(item)} title="Lihat Detail">
                                             <Eye className="h-4 w-4" />
                                         </Button>
-                                        <Button size="sm" variant="secondary" onClick={() => openEdit(item)} title="Edit">
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        {item.id !== auth.user.id && (
+                                        {/* TU cannot edit/delete SuperAdmin accounts */}
+                                        {!(auth.user.role === 'tu' && item.role === 'superadmin') && (
+                                            <Button size="sm" variant="secondary" onClick={() => openEdit(item)} title="Edit">
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                        {item.id !== auth.user.id && !(auth.user.role === 'tu' && item.role === 'superadmin') && (
                                             <Button size="sm" variant="danger" onClick={() => setDeleteItem(item)} title="Hapus">
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -594,9 +597,21 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                 <p className="text-sm font-medium text-text-primary">{detailItem.nip || '-'}</p>
                             </div>
                             <div>
+                                <p className="text-xs text-text-secondary">Jabatan</p>
+                                <p className="text-sm font-medium text-text-primary">{detailItem.jabatan || '-'}</p>
+                            </div>
+                            <div>
                                 <p className="text-xs text-text-secondary">Jenis Kelamin</p>
                                 <p className="text-sm font-medium text-text-primary">
                                     {detailItem.jenis_kelamin === 'L' ? 'Laki-laki' : detailItem.jenis_kelamin === 'P' ? 'Perempuan' : '-'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-text-secondary">Role</p>
+                                <p className="text-sm font-medium text-text-primary">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
+                                        {detailItem.role_label || detailItem.role}
+                                    </span>
                                 </p>
                             </div>
                         </div>

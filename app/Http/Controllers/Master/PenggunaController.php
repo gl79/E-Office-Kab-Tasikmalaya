@@ -96,6 +96,13 @@ class PenggunaController extends Controller
     {
         $this->authorizeUserManagement();
 
+        // TU cannot edit SuperAdmin accounts
+        /** @var User $currentUser */
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        if ($currentUser->isTU() && $pengguna->isSuperAdmin()) {
+            abort(403, 'Tata Usaha tidak dapat mengedit akun Super Admin.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:50', Rule::unique('users')->ignore($pengguna->id)],
@@ -140,8 +147,13 @@ class PenggunaController extends Controller
         $this->authorizeUserManagement();
 
         // Prevent self-deletion
-        /** @var User|null $currentUser */
+        /** @var User $currentUser */
         $currentUser = \Illuminate\Support\Facades\Auth::user();
+
+        // TU cannot delete SuperAdmin accounts
+        if ($currentUser->isTU() && $pengguna->isSuperAdmin()) {
+            return back()->with('error', 'Tata Usaha tidak dapat menghapus akun Super Admin.');
+        }
         if ($currentUser && $pengguna->id === $currentUser->id) {
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
         }
