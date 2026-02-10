@@ -15,7 +15,7 @@ class IndeksSuratSeeder extends Seeder
         $indexes = [
             [
                 'kode' => '000',
-                'nama' => 'Pemberian Bantuan Umum',
+                'nama' => 'Umum',
                 'jenis_surat' => IndeksSurat::JENIS_PEMBERIAN_BANTUAN,
             ],
             [
@@ -45,7 +45,7 @@ class IndeksSuratSeeder extends Seeder
             ],
             [
                 'kode' => '600',
-                'nama' => 'Pekerjaan Umum',
+                'nama' => 'Pekerjaan Umum dan Ketenagaan',
                 'jenis_surat' => IndeksSurat::JENIS_SURAT_TUGAS,
             ],
             [
