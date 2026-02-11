@@ -55,17 +55,11 @@ class ActivityLogController extends Controller
             $query = ActivityLog::with('user:id,name,username,foto')
                 ->orderBy('created_at', 'desc');
 
-            // Non-superadmin users can only see their own logs
-            if (!auth()->user()->isSuperAdmin()) {
-                $query->where('user_id', auth()->id());
-            }
-
             // Apply filters inside the closure
             if ($search) {
                 $query->where('description', 'like', "%{$search}%");
             }
-            // Only apply user filter if superadmin
-            if ($userId && auth()->user()->isSuperAdmin()) {
+            if ($userId) {
                 $query->where('user_id', $userId);
             }
             if ($action) {

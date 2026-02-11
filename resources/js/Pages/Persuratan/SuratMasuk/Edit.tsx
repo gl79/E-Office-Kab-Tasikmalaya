@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -8,6 +8,7 @@ import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
 import FormSelect from '@/Components/form/FormSelect';
 import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
+import FormSearchableSelect from '@/Components/form/FormSearchableSelect';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormMultiSelect from '@/Components/form/FormMultiSelect';
 import FormFileUpload from '@/Components/form/FormFileUpload';
@@ -19,6 +20,8 @@ interface IndeksSurat {
     id: string;
     kode: string;
     nama: string;
+    level?: number;
+    parent_id?: string;
 }
 
 interface User {
@@ -46,6 +49,7 @@ interface SuratMasuk {
     perihal: string;
     isi_ringkas: string;
     indeks_berkas_id: string | null;
+    indeks_berkas_custom: string | null;
     kode_klasifikasi_id: string | null;
     staff_pengolah_id: number | null;
     tanggal_diteruskan: string | null;
@@ -56,12 +60,13 @@ interface SuratMasuk {
 
 interface Props extends PageProps {
     suratMasuk: SuratMasuk;
-    indeksSurat: IndeksSurat[];
+    indeksBerkasOptions: IndeksSurat[];
+    indeksKlasifikasiOptions: IndeksSurat[];
     users: User[];
     sifatOptions: Record<string, string>;
 }
 
-export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions }: Props) {
+export default function Edit({ suratMasuk, indeksBerkasOptions, indeksKlasifikasiOptions, users, sifatOptions }: Props) {
     const [currentStep, setCurrentStep] = useState(0);
     const [stepError, setStepError] = useState('');
 
@@ -78,6 +83,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions }: P
         tanggal_diterima: suratMasuk.tanggal_diterima || '',
         nomor_agenda: suratMasuk.nomor_agenda || '',
         indeks_berkas_id: suratMasuk.indeks_berkas_id || '',
+        indeks_berkas_custom: suratMasuk.indeks_berkas_custom || '',
         kode_klasifikasi_id: suratMasuk.kode_klasifikasi_id || '',
         staff_pengolah_id: suratMasuk.staff_pengolah_id?.toString() || '',
         tanggal_diteruskan: suratMasuk.tanggal_diteruskan || '',
@@ -90,18 +96,37 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions }: P
         { title: 'Identitas Agenda', description: 'Data agenda & file' },
     ];
 
-    const indeksOptions = indeksSurat.map((item) => ({
+    // Indeks Berkas: level 1 (Primer) dan level 2 (Sub Primer)
+    const indeksBerkasSelectOptions = indeksBerkasOptions.map((item) => ({
         value: item.id,
         label: `${item.kode} - ${item.nama}`,
     }));
 
-    const userOptions = users.map((user) => ({
-        value: user.id.toString(),
-        label: user.nip ? `${user.name} (${user.nip})` : user.name,
-    }));
+    // Kode Klasifikasi: level 3+ (berdasarkan kode prefix dari indeks berkas yang dipilih)
+    const kodeKlasifikasiOptions = useMemo(() => {
+        if (!data.indeks_berkas_id) return [];
+        const selectedIndeks = indeksBerkasOptions.find((item) => item.id === data.indeks_berkas_id);
+        if (!selectedIndeks) return [];
+        const prefix = selectedIndeks.kode + '.';
+        return indeksKlasifikasiOptions
+            .filter((item) => item.kode.startsWith(prefix))
+            .map((item) => ({
+                value: item.id,
+                label: `${item.kode} - ${item.nama}`,
+            }));
+    }, [data.indeks_berkas_id, indeksBerkasOptions, indeksKlasifikasiOptions]);
 
+    // Tujuan Surat: hilangkan Sekpri Bupati dan Sekpri Wakil Bupati
+    const userOptions = users
+        .filter((user) => !['Sekpri Bupati', 'Sekpri Wakil Bupati'].includes(user.name))
+        .map((user) => ({
+            value: user.id.toString(),
+            label: user.nip ? `${user.name} (${user.nip})` : user.name,
+        }));
+
+    // Staff Pengolah: semua user kecuali Sekpri Bupati dan Sekpri Wakil Bupati
     const staffPengolahOptions = users
-        .filter((user) => !['Bupati', 'Wakil Bupati'].includes(user.name))
+        .filter((user) => !['Sekpri Bupati', 'Sekpri Wakil Bupati'].includes(user.name))
         .map((user) => ({
             value: user.id.toString(),
             label: user.nip ? `${user.name} (${user.nip})` : user.name,
@@ -146,6 +171,24 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions }: P
         post(route('persuratan.surat-masuk.update', suratMasuk.id), {
             forceFormData: true,
         });
+    };
+
+    const handleIndeksBerkasChange = (value: string) => {
+        setData((prevData) => ({
+            ...prevData,
+            indeks_berkas_id: value,
+            indeks_berkas_custom: '',
+            kode_klasifikasi_id: '', // Reset kode klasifikasi saat indeks berkas berubah
+        }));
+    };
+
+    const handleIndeksBerkasCustomChange = (customValue: string) => {
+        setData((prevData) => ({
+            ...prevData,
+            indeks_berkas_id: '',
+            indeks_berkas_custom: customValue,
+            kode_klasifikasi_id: '', // Reset kode klasifikasi saat custom input
+        }));
     };
 
     return (
@@ -311,28 +354,35 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions }: P
 
                                             <div>
                                                 <InputLabel htmlFor="indeks_berkas_id" value="Indeks Berkas" />
-                                                <FormSelect
-                                                    id="indeks_berkas_id"
-                                                    options={indeksOptions}
-                                                    value={data.indeks_berkas_id}
-                                                    onChange={(e) => setData('indeks_berkas_id', e.target.value)}
-                                                    placeholder="Pilih indeks berkas"
-                                                    className="w-full mt-1 px-2"
-                                                />
-                                                <InputError message={errors.indeks_berkas_id} className="mt-1" />
+                                                <div className="mt-1">
+                                                    <FormSearchableSelect
+                                                        id="indeks_berkas_id"
+                                                        options={indeksBerkasSelectOptions}
+                                                        value={data.indeks_berkas_id}
+                                                        onChange={handleIndeksBerkasChange}
+                                                        onCustomChange={handleIndeksBerkasCustomChange}
+                                                        customValue={data.indeks_berkas_custom}
+                                                        placeholder="Pilih atau cari indeks berkas..."
+                                                        allowCustom={true}
+                                                        customPlaceholder="Ketik indeks berkas manual..."
+                                                        error={errors.indeks_berkas_id || errors.indeks_berkas_custom}
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div>
                                                 <InputLabel htmlFor="kode_klasifikasi_id" value="Kode Klasifikasi" />
-                                                <FormSelect
-                                                    id="kode_klasifikasi_id"
-                                                    options={indeksOptions}
-                                                    value={data.kode_klasifikasi_id}
-                                                    onChange={(e) => setData('kode_klasifikasi_id', e.target.value)}
-                                                    placeholder="Pilih kode klasifikasi"
-                                                    className="w-full mt-1 px-2"
-                                                />
-                                                <InputError message={errors.kode_klasifikasi_id} className="mt-1" />
+                                                <div className="mt-1">
+                                                    <FormSearchableSelect
+                                                        id="kode_klasifikasi_id"
+                                                        options={kodeKlasifikasiOptions}
+                                                        value={data.kode_klasifikasi_id}
+                                                        onChange={(value) => setData('kode_klasifikasi_id', value)}
+                                                        placeholder={data.indeks_berkas_id ? 'Pilih atau cari kode klasifikasi...' : 'Pilih indeks berkas terlebih dahulu'}
+                                                        disabled={!data.indeks_berkas_id}
+                                                        error={errors.kode_klasifikasi_id}
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div>

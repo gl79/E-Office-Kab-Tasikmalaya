@@ -37,6 +37,7 @@ class SuratMasuk extends Model
         'perihal',
         'isi_ringkas',
         'indeks_berkas_id',
+        'indeks_berkas_custom',
         'kode_klasifikasi_id',
         'staff_pengolah_id',
         'tanggal_diteruskan',
@@ -80,7 +81,7 @@ class SuratMasuk extends Model
         $lastNumber = self::withTrashed()
             ->where('nomor_agenda', 'like', "SM/%/{$year}")
             ->get(['nomor_agenda'])
-            ->map(fn ($s) => (int) explode('/', $s->nomor_agenda)[1])
+            ->map(fn($s) => (int) explode('/', $s->nomor_agenda)[1])
             ->max() ?? 0;
 
         return 'SM/' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT) . '/' . $year;

@@ -71,18 +71,18 @@ class SuratMasukController extends Controller
                                     ->from('surat_masuk_tujuans')
                                     ->where('tujuan_id', $user->id);
                             })
-                            // OR surat created by TU (excluding auto-created from Surat Keluar)
-                            ->orWhere(function ($subq) use ($user) {
-                                $subq->where('created_by', $user->id)
-                                    // Exclude auto-created: check if nomor_surat exists in surat_keluars with same created_by
-                                    ->whereNotExists(function ($existsQuery) use ($user) {
-                                        $existsQuery->select(DB::raw(1))
-                                            ->from('surat_keluars')
-                                            ->whereColumn('surat_keluars.nomor_surat', 'surat_masuks.nomor_surat')
-                                            ->where('surat_keluars.created_by', $user->id)
-                                            ->whereNull('surat_keluars.deleted_at');
-                                    });
-                            });
+                                // OR surat created by TU (excluding auto-created from Surat Keluar)
+                                ->orWhere(function ($subq) use ($user) {
+                                    $subq->where('created_by', $user->id)
+                                        // Exclude auto-created: check if nomor_surat exists in surat_keluars with same created_by
+                                        ->whereNotExists(function ($existsQuery) use ($user) {
+                                            $existsQuery->select(DB::raw(1))
+                                                ->from('surat_keluars')
+                                                ->whereColumn('surat_keluars.nomor_surat', 'surat_masuks.nomor_surat')
+                                                ->where('surat_keluars.created_by', $user->id)
+                                                ->whereNull('surat_keluars.deleted_at');
+                                        });
+                                });
                         });
                     } else {
                         // Regular users only see surat addressed to them
@@ -108,7 +108,8 @@ class SuratMasukController extends Controller
         $this->authorize('create', SuratMasuk::class);
 
         return Inertia::render('Persuratan/SuratMasuk/Create', [
-            'indeksSurat' => IndeksSurat::whereDoesntHave('children')->orderBy('kode')->get(['id', 'kode', 'nama']),
+            'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
+            'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'users' => $this->getUserOptions(),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
             'nextNomorAgenda' => SuratMasuk::generateNomorAgenda(),
@@ -176,7 +177,8 @@ class SuratMasukController extends Controller
 
         return Inertia::render('Persuratan/SuratMasuk/Edit', [
             'suratMasuk' => $suratMasuk,
-            'indeksSurat' => IndeksSurat::whereDoesntHave('children')->orderBy('kode')->get(['id', 'kode', 'nama']),
+            'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
+            'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'users' => $this->getUserOptions(),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
         ]);
