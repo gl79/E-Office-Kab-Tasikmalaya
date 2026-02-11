@@ -38,7 +38,6 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
     const [sifat, setSifat] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [periodeFilter, setPeriodeFilter] = useState('');
-    const [jenisSuratFilter, setJenisSuratFilter] = useState('');
     const itemsPerPage = 10;
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -48,14 +47,13 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailSurat, setDetailSurat] = useState<SuratKeluar | null>(null);
 
-    const hasActiveFilters = !!(search || startDate || endDate || sifat || jenisSuratFilter);
+    const hasActiveFilters = !!(search || startDate || endDate || sifat);
 
     const handleResetFilters = () => {
         setSearch('');
         setStartDate('');
         setEndDate('');
         setSifat('');
-        setJenisSuratFilter('');
         setPeriodeFilter('');
         setCurrentPage(1);
     };
@@ -86,12 +84,8 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
             data = data.filter(item => item.sifat_1 === sifat);
         }
 
-        if (jenisSuratFilter) {
-            data = data.filter(item => item.indeks?.jenis_surat === jenisSuratFilter);
-        }
-
         return data;
-    }, [suratKeluar, search, startDate, endDate, sifat, jenisSuratFilter]);
+    }, [suratKeluar, search, startDate, endDate, sifat]);
 
     // Paginate data
     const paginatedData = useMemo(() => {
@@ -138,8 +132,6 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
         if (search) filterInfo.push(`Pencarian: "${escapeHtml(search)}"`);
         if (startDate || endDate) filterInfo.push(`Periode: ${startDate || '...'} s/d ${endDate || '...'}`);
         if (sifat) filterInfo.push(`Sifat: ${sifat1Options[sifat] || sifat}`);
-        if (jenisSuratFilter) filterInfo.push(`Jenis: ${jenisSuratFilter}`);
-
         exportToPrintWindow({
             title: 'Laporan Data Surat Keluar',
             columns: [
@@ -204,7 +196,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                         {/* Expandable Filters */}
                         {showFilters && (
                             <div className="p-4 bg-surface-hover rounded-lg border border-border-default animate-in fade-in slide-in-from-top-2 space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-text-secondary mb-1">
                                             Periode
@@ -226,25 +218,6 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                             <option value="minggu_ini">Minggu Ini</option>
                                             <option value="bulan_ini">Bulan Ini</option>
                                             <option value="tahun_ini">Tahun Ini</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-text-secondary mb-1">
-                                            Jenis Surat
-                                        </label>
-                                        <select
-                                            className="w-full rounded-md border-border-default bg-surface focus:border-primary focus:ring-primary sm:text-sm"
-                                            value={jenisSuratFilter}
-                                            onChange={(e) => {
-                                                setJenisSuratFilter(e.target.value);
-                                                setCurrentPage(1);
-                                            }}
-                                        >
-                                            <option value="">Semua Jenis</option>
-                                            <option value="Penandatanganan">Penandatanganan</option>
-                                            <option value="Pemberian Bantuan">Pemberian Bantuan</option>
-                                            <option value="Audiensi">Audiensi</option>
-                                            <option value="Surat Tugas">Surat Tugas</option>
                                         </select>
                                     </div>
                                     <div>

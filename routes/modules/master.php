@@ -36,6 +36,7 @@ Route::middleware('auth')->prefix('master')->name('master.')->group(function () 
     Route::delete('unit-kerja/{id}/force-delete', [UnitKerjaController::class, 'forceDelete'])->name('unit-kerja.force-delete');
 
     // Indeks Surat
+    Route::get('indeks-surat/next-kode/{parentId}', [IndeksSuratController::class, 'nextKode'])->name('indeks-surat.next-kode');
     Route::resource('indeks-surat', IndeksSuratController::class)->except(['create', 'show', 'edit']);
     Route::post('indeks-surat/{id}/restore', [IndeksSuratController::class, 'restore'])->name('indeks-surat.restore');
     Route::delete('indeks-surat/{id}/force-delete', [IndeksSuratController::class, 'forceDelete'])->name('indeks-surat.force-delete');

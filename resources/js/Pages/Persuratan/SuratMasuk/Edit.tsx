@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -19,7 +19,6 @@ interface IndeksSurat {
     id: string;
     kode: string;
     nama: string;
-    jenis_surat: string | null;
 }
 
 interface User {
@@ -65,8 +64,6 @@ interface Props extends PageProps {
 export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions }: Props) {
     const [currentStep, setCurrentStep] = useState(0);
     const [stepError, setStepError] = useState('');
-    const initialIndeks = indeksSurat.find(item => item.id.toString() === suratMasuk.indeks_berkas_id?.toString());
-    const [selectedJenisSurat, setSelectedJenisSurat] = useState(initialIndeks?.jenis_surat || '');
 
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
@@ -93,12 +90,7 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions }: P
         { title: 'Identitas Agenda', description: 'Data agenda & file' },
     ];
 
-    const filteredIndeksSurat = useMemo(() => {
-        if (!selectedJenisSurat) return indeksSurat;
-        return indeksSurat.filter(item => item.jenis_surat === selectedJenisSurat);
-    }, [indeksSurat, selectedJenisSurat]);
-
-    const indeksOptions = filteredIndeksSurat.map((item) => ({
+    const indeksOptions = indeksSurat.map((item) => ({
         value: item.id,
         label: `${item.kode} - ${item.nama}`,
     }));
@@ -315,26 +307,6 @@ export default function Edit({ suratMasuk, indeksSurat, users, sifatOptions }: P
                                                 />
                                                 <p className="text-xs text-text-secondary mt-1">No urut/agenda tidak dapat diubah</p>
                                                 <InputError message={errors.nomor_agenda} className="mt-1" />
-                                            </div>
-
-                                            <div>
-                                                <InputLabel htmlFor="jenis_surat_filter" value="Filter Jenis Surat" />
-                                                <FormSelect
-                                                    id="jenis_surat_filter"
-                                                    value={selectedJenisSurat}
-                                                    onChange={(e) => {
-                                                        setSelectedJenisSurat(e.target.value);
-                                                        setData('indeks_berkas_id', ''); // Reset on change
-                                                    }}
-                                                    options={[
-                                                        { value: 'Penandatanganan', label: 'Penandatanganan' },
-                                                        { value: 'Pemberian Bantuan', label: 'Pemberian Bantuan' },
-                                                        { value: 'Audiensi', label: 'Audiensi' },
-                                                        { value: 'Surat Tugas', label: 'Surat Tugas' },
-                                                    ]}
-                                                    placeholder="Semua Jenis Surat"
-                                                    className="w-full mt-1 px-2"
-                                                />
                                             </div>
 
                                             <div>

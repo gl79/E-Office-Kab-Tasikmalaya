@@ -108,7 +108,7 @@ class SuratMasukController extends Controller
         $this->authorize('create', SuratMasuk::class);
 
         return Inertia::render('Persuratan/SuratMasuk/Create', [
-            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama', 'jenis_surat']),
+            'indeksSurat' => IndeksSurat::whereDoesntHave('children')->orderBy('kode')->get(['id', 'kode', 'nama']),
             'users' => $this->getUserOptions(),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
             'nextNomorAgenda' => SuratMasuk::generateNomorAgenda(),
@@ -176,7 +176,7 @@ class SuratMasukController extends Controller
 
         return Inertia::render('Persuratan/SuratMasuk/Edit', [
             'suratMasuk' => $suratMasuk,
-            'indeksSurat' => IndeksSurat::orderBy('urutan')->get(['id', 'kode', 'nama', 'jenis_surat']),
+            'indeksSurat' => IndeksSurat::whereDoesntHave('children')->orderBy('kode')->get(['id', 'kode', 'nama']),
             'users' => $this->getUserOptions(),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
         ]);

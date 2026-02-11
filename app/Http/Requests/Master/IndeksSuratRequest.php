@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Master;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class IndeksSuratRequest extends FormRequest
 {
@@ -22,15 +21,25 @@ class IndeksSuratRequest extends FormRequest
      */
     public function rules(): array
     {
+        if ($this->isMethod('POST')) {
+            // Jika parent_id diisi: tambah sub-kode
+            if ($this->filled('parent_id')) {
+                return [
+                    'parent_id' => ['required', 'string', 'exists:indeks_surat,id'],
+                    'nama' => ['required', 'string', 'max:255'],
+                ];
+            }
+
+            // Jika tanpa parent_id: tambah kode primer baru
+            return [
+                'kode' => ['required', 'string', 'max:10', 'unique:indeks_surat,kode'],
+                'nama' => ['required', 'string', 'max:255'],
+            ];
+        }
+
+        // Update: hanya nama yang bisa diubah
         return [
-            'kode' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('indeks_surat', 'kode')->ignore($this->route('indeks_surat') ?? $this->id)
-            ],
             'nama' => ['required', 'string', 'max:255'],
-            'jenis_surat' => ['nullable', 'string', 'max:50'],
         ];
     }
 }

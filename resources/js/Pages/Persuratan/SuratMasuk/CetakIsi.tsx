@@ -13,7 +13,7 @@ interface SuratMasuk {
     perihal: string;
     isi_ringkas: string | null;
     lampiran: number | null;
-    indeks_berkas?: { kode: string; nama: string; jenis_surat?: string } | null;
+    indeks_berkas?: { kode: string; nama: string } | null;
     staff_pengolah?: { name: string } | null;
     created_by?: { name: string } | null;
     created_at: string;
@@ -79,10 +79,6 @@ export default function CetakIsi({ suratMasuk }: Props) {
                     <div>
                         <span className="font-bold block uppercase text-xs text-gray-500">Indeks Berkas</span>
                         <span>{suratMasuk.indeks_berkas ? `${suratMasuk.indeks_berkas.kode} - ${suratMasuk.indeks_berkas.nama}` : '-'}</span>
-                    </div>
-                    <div>
-                        <span className="font-bold block uppercase text-xs text-gray-500">Jenis Surat</span>
-                        <span>{suratMasuk.indeks_berkas?.jenis_surat || '-'}</span>
                     </div>
                 </div>
 

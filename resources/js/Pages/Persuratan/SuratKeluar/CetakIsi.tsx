@@ -14,7 +14,7 @@ interface SuratKeluar {
     lampiran: number | null;
     catatan: string | null;
     kode_pengolah: string | null;
-    indeks?: { kode: string; nama: string; jenis_surat?: string } | null;
+    indeks?: { kode: string; nama: string } | null;
     unit_kerja?: { nama: string; singkatan?: string | null } | null;
     created_by?: { name: string } | null;
     created_at: string;
@@ -71,10 +71,6 @@ export default function CetakIsi({ suratKeluar }: Props) {
                     <div>
                         <span className="font-bold block uppercase text-xs text-gray-500">Indeks</span>
                         <span>{suratKeluar.indeks ? `${suratKeluar.indeks.kode} - ${suratKeluar.indeks.nama}` : '-'}</span>
-                    </div>
-                    <div>
-                        <span className="font-bold block uppercase text-xs text-gray-500">Jenis Surat</span>
-                        <span>{suratKeluar.indeks?.jenis_surat || '-'}</span>
                     </div>
                     <div>
                         <span className="font-bold block uppercase text-xs text-gray-500">Unit Pengolah</span>

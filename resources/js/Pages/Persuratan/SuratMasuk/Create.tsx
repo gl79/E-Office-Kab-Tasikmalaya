@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -19,7 +19,6 @@ interface IndeksSurat {
     id: string;
     kode: string;
     nama: string;
-    jenis_surat: string | null;
 }
 
 interface User {
@@ -39,7 +38,6 @@ interface Props extends PageProps {
 export default function Create({ indeksSurat, users, sifatOptions, nextNomorAgenda }: Props) {
     const [currentStep, setCurrentStep] = useState(0);
     const [stepError, setStepError] = useState('');
-    const [selectedJenisSurat, setSelectedJenisSurat] = useState('');
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -69,12 +67,7 @@ export default function Create({ indeksSurat, users, sifatOptions, nextNomorAgen
         { title: 'Identitas Agenda', description: 'Data agenda & file' },
     ];
 
-    const filteredIndeksSurat = useMemo(() => {
-        if (!selectedJenisSurat) return indeksSurat;
-        return indeksSurat.filter(item => item.jenis_surat === selectedJenisSurat);
-    }, [indeksSurat, selectedJenisSurat]);
-
-    const indeksOptions = filteredIndeksSurat.map((item) => ({
+    const indeksOptions = indeksSurat.map((item) => ({
         value: item.id,
         label: `${item.kode} - ${item.nama}`,
     }));
@@ -291,26 +284,6 @@ export default function Create({ indeksSurat, users, sifatOptions, nextNomorAgen
                                                 />
                                                 <p className="text-xs text-text-secondary mt-1">No urut/agenda digenerate otomatis oleh sistem</p>
                                                 <InputError message={errors.nomor_agenda} className="mt-1" />
-                                            </div>
-
-                                            <div>
-                                                <InputLabel htmlFor="jenis_surat_filter" value="Filter Jenis Surat" />
-                                                <FormSelect
-                                                    id="jenis_surat_filter"
-                                                    value={selectedJenisSurat}
-                                                    onChange={(e) => {
-                                                        setSelectedJenisSurat(e.target.value);
-                                                        setData('indeks_berkas_id', ''); // Reset selection
-                                                    }}
-                                                    options={[
-                                                        { value: 'Penandatanganan', label: 'Penandatanganan' },
-                                                        { value: 'Pemberian Bantuan', label: 'Pemberian Bantuan' },
-                                                        { value: 'Audiensi', label: 'Audiensi' },
-                                                        { value: 'Surat Tugas', label: 'Surat Tugas' },
-                                                    ]}
-                                                    placeholder="Semua Jenis Surat"
-                                                    className="w-full mt-1 px-2"
-                                                />
                                             </div>
 
                                             <div>
