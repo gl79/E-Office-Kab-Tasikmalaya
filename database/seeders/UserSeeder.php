@@ -68,34 +68,7 @@ class UserSeeder extends Seeder
                     $modulesCuti
                 ),
             ],
-            // 3. Sekpri (Persuratan, Penjadwalan, Pengaturan)
-            [
-                'name' => 'Sekpri Bupati',
-                'username' => 'sekpribupati',
-                'email' => 'sekpribupati@eoffice.test',
-                'password' => Hash::make('sekpribupati123@'),
-                'role' => User::ROLE_SEKPRI, // Unified Role
-                'jabatan' => 'Sekpri Bupati',
-                'module_access' => array_merge(
-                    ['dashboard'],
-                    $modulesPersuratan,
-                    $modulesPenjadwalan
-                ),
-            ],
-            [
-                'name' => 'Sekpri Wakil Bupati',
-                'username' => 'sekpriwabup',
-                'email' => 'sekpriwabup123@eoffice.test',
-                'password' => Hash::make('sekpriwabup123@'),
-                'role' => User::ROLE_SEKPRI, // Unified Role
-                'jabatan' => 'Sekpri Wakil Bupati',
-                'module_access' => array_merge(
-                    ['dashboard'],
-                    $modulesPersuratan,
-                    $modulesPenjadwalan
-                ),
-            ],
-            // 2. Pimpinan (Penjadwalan, Pengaturan)
+            // 2. Pimpinan (Persuratan read-only + Penjadwalan)
             [
                 'name' => 'Bupati',
                 'username' => 'bupati',
@@ -103,7 +76,10 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('bupati123@'),
                 'role' => User::ROLE_PIMPINAN,
                 'jabatan' => 'Bupati',
-                'module_access' => $modulesPenjadwalan,
+                'module_access' => array_merge(
+                    $modulesPersuratan,
+                    $modulesPenjadwalan
+                ),
             ],
             [
                 'name' => 'Wakil Bupati',
@@ -112,7 +88,10 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('wakilbupati123@'),
                 'role' => User::ROLE_PIMPINAN,
                 'jabatan' => 'Wakil Bupati',
-                'module_access' => $modulesPenjadwalan,
+                'module_access' => array_merge(
+                    $modulesPersuratan,
+                    $modulesPenjadwalan
+                ),
             ],
             // 5. User (Persuratan, Pengaturan)
             [

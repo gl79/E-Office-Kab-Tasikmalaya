@@ -380,7 +380,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                                         <span>Cetak Kartu Hanya Isi</span>
                                                     </Dropdown.Link>
 
-                                                    {!['user', 'pimpinan', 'sekpri'].includes(auth.user.role) && (
+                                                    {!['user', 'pimpinan'].includes(auth.user.role) && (
                                                         <>
                                                             <div className="border-t border-border-default my-1"></div>
                                                             <Dropdown.Link

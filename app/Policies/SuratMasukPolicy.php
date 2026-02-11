@@ -18,13 +18,13 @@ class SuratMasukPolicy
 
     /**
      * Determine whether the user can view the model.
-     * Superadmin, TU, and Sekpri can view all.
+     * Superadmin, TU, and Pimpinan can view all.
      * Regular users can only view letters where they are recipients.
      */
     public function view(User $user, SuratMasuk $suratMasuk): bool
     {
-        // Superadmin, TU, and Sekpri can view all letters
-        if ($user->isSuperAdmin() || $user->isTU() || $user->isSekpri()) {
+        // Superadmin, TU, and Pimpinan can view all letters
+        if ($user->isSuperAdmin() || $user->isTU() || $user->isPimpinan()) {
             return true;
         }
 
@@ -36,20 +36,20 @@ class SuratMasukPolicy
 
     /**
      * Determine whether the user can create models.
-     * Superadmin, TU, and Sekpri can create.
+     * Only Superadmin and TU can create.
      */
     public function create(User $user): bool
     {
-        return $user->isSuperAdmin() || $user->isTU() || $user->isSekpri();
+        return $user->isSuperAdmin() || $user->isTU();
     }
 
     /**
      * Determine whether the user can update the model.
-     * Superadmin, TU, and Sekpri can update.
+     * Only Superadmin and TU can update.
      */
     public function update(User $user, SuratMasuk $suratMasuk): bool
     {
-        return $user->isSuperAdmin() || $user->isTU() || $user->isSekpri();
+        return $user->isSuperAdmin() || $user->isTU();
     }
 
     /**

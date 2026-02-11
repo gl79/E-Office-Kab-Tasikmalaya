@@ -33,13 +33,11 @@ class SuratMasukController extends Controller
                 WHEN name = 'Tata Usaha' THEN 1
                 WHEN name = 'Bupati' THEN 2
                 WHEN name = 'Wakil Bupati' THEN 3
-                WHEN name = 'Sekpri Bupati' THEN 4
-                WHEN name = 'Sekpri Wakil Bupati' THEN 5
-                WHEN name = 'Sekda' THEN 6
-                WHEN name = 'Asda 1' THEN 7
-                WHEN name = 'Asda 2' THEN 8
-                WHEN name = 'Asda 3' THEN 9
-                ELSE 10
+                WHEN name = 'Sekda' THEN 4
+                WHEN name = 'Asda 1' THEN 5
+                WHEN name = 'Asda 2' THEN 6
+                WHEN name = 'Asda 3' THEN 7
+                ELSE 8
             END")
             ->get();
     }

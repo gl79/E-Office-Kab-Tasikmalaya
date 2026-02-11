@@ -382,7 +382,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                 }
                                             >
                                                 <div className="py-1">
-                                                    
+
 
                                                     {!['user', 'pimpinan'].includes(auth.user.role) && (
                                                         <Dropdown.Link
@@ -449,7 +449,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
 
 
 
-                                                    {!['user', 'pimpinan', 'sekpri'].includes(auth.user.role) && (
+                                                    {!['user', 'pimpinan'].includes(auth.user.role) && (
                                                         <>
                                                             <div className="border-t border-border-default my-1"></div>
                                                             <Dropdown.Link

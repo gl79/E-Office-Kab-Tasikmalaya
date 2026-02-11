@@ -37,7 +37,6 @@ class User extends Authenticatable
     // Updated Roles
     public const ROLE_SUPERADMIN = 'superadmin';
     public const ROLE_PIMPINAN = 'pimpinan'; // Bupati & Wakil Bupati
-    public const ROLE_SEKPRI = 'sekpri'; // Sekpri Bupati & Wakil
     public const ROLE_TU = 'tu';
     public const ROLE_USER = 'user'; // Sekda, Asda, dll
 
@@ -47,7 +46,6 @@ class User extends Authenticatable
     public const ROLES = [
         self::ROLE_SUPERADMIN,
         self::ROLE_PIMPINAN,
-        self::ROLE_SEKPRI,
         self::ROLE_TU,
         self::ROLE_USER,
     ];
@@ -58,7 +56,6 @@ class User extends Authenticatable
     public const ROLE_LABELS = [
         self::ROLE_SUPERADMIN => 'Super Admin',
         self::ROLE_PIMPINAN => 'Pimpinan',
-        self::ROLE_SEKPRI => 'Sekpri',
         self::ROLE_TU => 'Tata Usaha',
         self::ROLE_USER => 'User',
     ];
@@ -172,13 +169,6 @@ class User extends Authenticatable
         return $this->role === self::ROLE_PIMPINAN;
     }
 
-    /**
-     * Check if user is Sekpri.
-     */
-    public function isSekpri(): bool
-    {
-        return $this->role === self::ROLE_SEKPRI;
-    }
 
     /**
      * Check if user is TU.

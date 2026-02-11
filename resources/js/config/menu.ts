@@ -76,7 +76,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Persuratan',
         icon: 'mail',
-        roles: ['superadmin', 'tu', 'sekpri', 'user'],
+        roles: ['superadmin', 'tu', 'pimpinan', 'user'],
         children: [
             {
                 label: 'Surat Masuk',
@@ -98,7 +98,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Penjadwalan',
         icon: 'calendar',
-        roles: ['superadmin', 'tu', 'sekpri', 'pimpinan'],
+        roles: ['superadmin', 'tu', 'pimpinan'],
         children: [
             {
                 label: 'Jadwal',

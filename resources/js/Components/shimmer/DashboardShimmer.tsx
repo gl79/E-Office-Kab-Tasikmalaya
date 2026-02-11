@@ -87,7 +87,7 @@ const DashboardShimmer = () => {
                 </>
             )}
 
-            {/* Sekpri Shimmer */}
+            {/* Non-Admin Shimmer */}
             {!isAdmin && (
                 <div className="mb-8">
                     <div className="h-7 w-32 bg-border-light rounded mb-4"></div>

@@ -116,7 +116,6 @@ const Dashboard = () => {
     const roleLabels: Record<string, string> = {
         superadmin: 'Super Admin',
         pimpinan: 'Pimpinan',
-        sekpri: 'Sekpri',
         tu: 'Tata Usaha',
         user: 'User',
     };
@@ -177,21 +176,14 @@ const Dashboard = () => {
     const getQuickCards = () => {
         const cards: Array<{ title: string; description: string; value?: number; icon: LucideIcon; color: string; bg: string; href?: string }> = [];
 
-        // Pimpinan: surat masuk (filtered) + penjadwalan
+        // Pimpinan: persuratan (read-only) + penjadwalan
         if (user.role === 'pimpinan') {
             cards.push(
                 { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
+                { title: 'Surat Keluar', description: 'Daftar surat keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
+                { title: 'Arsip Persuratan', description: 'Data arsip persuratan', value: stats.archive?.persuratan ?? 0, icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover', href: '/persuratan/archive' },
                 { title: 'Jadwal', description: 'Jadwal kegiatan', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/jadwal' },
                 { title: 'Jadwal Tentatif', description: 'Jadwal tentatif kegiatan', icon: Clock, color: 'text-warning', bg: 'bg-warning-light', href: '/penjadwalan/tentatif' },
-            );
-        }
-
-        // Sekpri: persuratan (filtered) + penjadwalan
-        if (user.role === 'sekpri') {
-            cards.push(
-                { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
-                { title: 'Surat Keluar', description: 'Daftar surat keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
-                { title: 'Jadwal', description: 'Jadwal kegiatan', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/jadwal' },
             );
         }
 
@@ -218,11 +210,11 @@ const Dashboard = () => {
         color: string;
         bg: string;
     }> = [
-        { label: 'Surat Masuk', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
-        { label: 'Surat Keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
-        { title: 'Disposisi', description: 'Total disposisi surat', icon: Mail, color: 'text-warning', bg: 'bg-warning-light', comingSoon: true },
-        { label: 'Arsip Persuratan', value: stats.archive?.persuratan ?? 0, icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover', href: '/persuratan/archive' },
-    ];
+            { label: 'Surat Masuk', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
+            { label: 'Surat Keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
+            { title: 'Disposisi', description: 'Total disposisi surat', icon: Mail, color: 'text-warning', bg: 'bg-warning-light', comingSoon: true },
+            { label: 'Arsip Persuratan', value: stats.archive?.persuratan ?? 0, icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover', href: '/persuratan/archive' },
+        ];
 
     // Penjadwalan cards - Coming Soon
     const penjadwalanCards = [
@@ -376,7 +368,7 @@ const Dashboard = () => {
                             {wilayahStats.map((stat) => {
                                 const Icon = stat.icon;
                                 return (
-                                    <div 
+                                    <div
                                         key={stat.label}
                                         className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md transition-shadow"
                                     >

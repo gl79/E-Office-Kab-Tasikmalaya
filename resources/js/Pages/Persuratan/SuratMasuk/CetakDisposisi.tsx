@@ -59,8 +59,6 @@ const tujuanDisposisiOptions = [
     'Kepala Dinas terkait',
     'Kepala Badan terkait',
     'Camat terkait',
-    'Sekpri Bupati',
-    'Sekpri Wakil Bupati',
     'Ajudan',
     'Staf TU',
 ];
