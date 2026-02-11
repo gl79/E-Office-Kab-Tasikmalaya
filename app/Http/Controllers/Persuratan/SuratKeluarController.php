@@ -54,7 +54,8 @@ class SuratKeluarController extends Controller
         $nextNoUrut = SuratKeluar::generateNextNoUrut();
 
         return Inertia::render('Persuratan/SuratKeluar/Create', [
-            'indeksSurat' => IndeksSurat::whereDoesntHave('children')->orderBy('kode')->get(['id', 'kode', 'nama']),
+            'indeksBerkasOptions' => IndeksSurat::where('level', 1)->orderBy('kode')->get(['id', 'kode', 'nama']),
+            'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 1)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
             'users' => User::select(['id', 'name', 'nip', 'jabatan'])
                 ->where('role', '!=', User::ROLE_SUPERADMIN)
@@ -123,7 +124,8 @@ class SuratKeluarController extends Controller
 
         return Inertia::render('Persuratan/SuratKeluar/Edit', [
             'suratKeluar' => $suratKeluar,
-            'indeksSurat' => IndeksSurat::whereDoesntHave('children')->orderBy('kode')->get(['id', 'kode', 'nama']),
+            'indeksBerkasOptions' => IndeksSurat::where('level', 1)->orderBy('kode')->get(['id', 'kode', 'nama']),
+            'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 1)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
             'users' => User::select(['id', 'name', 'nip', 'jabatan'])
                 ->where('role', '!=', User::ROLE_SUPERADMIN)
@@ -288,4 +290,3 @@ class SuratKeluarController extends Controller
         );
     }
 }
-

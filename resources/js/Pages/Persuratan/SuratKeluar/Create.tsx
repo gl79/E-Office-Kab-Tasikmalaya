@@ -1,5 +1,5 @@
 import { Head, useForm, Link } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
@@ -7,6 +7,7 @@ import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
 import FormSelect from '@/Components/form/FormSelect';
 import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
+import FormSearchableSelect from '@/Components/form/FormSearchableSelect';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormFileUpload from '@/Components/form/FormFileUpload';
 import InputLabel from '@/Components/form/InputLabel';
@@ -17,6 +18,8 @@ interface IndeksSurat {
     id: string;
     kode: string;
     nama: string;
+    level?: number;
+    parent_id?: string;
 }
 
 interface UnitKerja {
@@ -33,14 +36,15 @@ interface User {
 }
 
 interface Props extends PageProps {
-    indeksSurat: IndeksSurat[];
+    indeksBerkasOptions: IndeksSurat[];
+    indeksKlasifikasiOptions: IndeksSurat[];
     unitKerja: UnitKerja[];
     users: User[];
     sifat1Options: Record<string, string>;
     nextNoUrut: number;
 }
 
-export default function Create({ indeksSurat, unitKerja, users, sifat1Options, nextNoUrut }: Props) {
+export default function Create({ indeksBerkasOptions, indeksKlasifikasiOptions, unitKerja, users, sifat1Options, nextNoUrut }: Props) {
     const today = new Date().toISOString().split('T')[0];
 
     const { data, setData, post, processing, errors } = useForm({
@@ -60,27 +64,46 @@ export default function Create({ indeksSurat, unitKerja, users, sifat1Options, n
         file: null as File | null,
     });
 
-    const indeksOptions = indeksSurat.map((item) => ({
+    // Indeks: hanya level Primer (level 1) dengan fitur search
+    const indeksSelectOptions = indeksBerkasOptions.map((item) => ({
         value: item.id,
         label: `${item.kode} - ${item.nama}`,
     }));
+
+    // Kode: children berdasarkan kode prefix dari indeks yang dipilih (level 2+)
+    const kodeKlasifikasiOptions = useMemo(() => {
+        if (!data.indeks_id) return [];
+        const selectedIndeks = indeksBerkasOptions.find((item) => item.id === data.indeks_id);
+        if (!selectedIndeks) return [];
+        const prefix = selectedIndeks.kode + '.';
+        return indeksKlasifikasiOptions
+            .filter((item) => item.kode.startsWith(prefix))
+            .map((item) => ({
+                value: item.id,
+                label: `${item.kode} - ${item.nama}`,
+            }));
+    }, [data.indeks_id, indeksBerkasOptions, indeksKlasifikasiOptions]);
 
     const unitKerjaOptions = unitKerja.map((item) => ({
         value: item.id,
         label: item.singkatan ? `${item.nama} (${item.singkatan})` : item.nama,
     }));
 
-    const userOptions = users.map((item) => ({
-        value: item.name,
-        label: item.jabatan ? `${item.name} - ${item.jabatan}` : item.name,
-    }));
+    // Kepada: hilangkan Sekpri Bupati dan Sekpri Wakil Bupati
+    const userOptions = users
+        .filter((item) => !['Sekpri Bupati', 'Sekpri Wakil Bupati'].includes(item.name))
+        .map((item) => ({
+            value: item.name,
+            label: item.jabatan ? `${item.name} - ${item.jabatan}` : item.name,
+        }));
 
     const sifat1SelectOptions = Object.entries(sifat1Options).map(([value, label]) => ({
         value,
         label,
     }));
 
-    const selectedIndeks = indeksSurat.find(item => item.id === data.indeks_id);
+    const selectedIndeks = indeksBerkasOptions.find(item => item.id === data.indeks_id);
+    const selectedKode = indeksKlasifikasiOptions.find(item => item.id === data.kode_klasifikasi_id);
 
     // Map sifat_1 values to letter codes
     const getSifatCode = (sifat: string): string => {
@@ -94,10 +117,11 @@ export default function Create({ indeksSurat, unitKerja, users, sifat1Options, n
     };
 
     // Auto-generate nomor_surat when dependencies change
+    // Gunakan kode dari Kode Klasifikasi jika ada, kalau tidak gunakan kode dari Indeks
     useEffect(() => {
         const sifatCode = data.sifat_1 ? getSifatCode(data.sifat_1) : '';
         const noUrut = data.no_urut || '';
-        const kode = selectedIndeks?.kode || '';
+        const kode = selectedKode?.kode || selectedIndeks?.kode || '';
         const pengolah = data.kode_pengolah || '';
         const year = data.tanggal_surat ? new Date(data.tanggal_surat).getFullYear().toString() : '';
 
@@ -108,14 +132,13 @@ export default function Create({ indeksSurat, unitKerja, users, sifat1Options, n
 
             setData('nomor_surat', generatedNomor);
         }
-    }, [data.sifat_1, data.no_urut, data.indeks_id, data.kode_pengolah, data.tanggal_surat]);
+    }, [data.sifat_1, data.no_urut, data.indeks_id, data.kode_klasifikasi_id, data.kode_pengolah, data.tanggal_surat]);
 
-    const handleIndeksChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedId = e.target.value;
+    const handleIndeksChange = (value: string) => {
         setData(prev => ({
             ...prev,
-            indeks_id: selectedId,
-            kode_klasifikasi_id: selectedId,
+            indeks_id: value,
+            kode_klasifikasi_id: '', // Reset kode saat indeks berubah
         }));
     };
 
@@ -167,26 +190,31 @@ export default function Create({ indeksSurat, unitKerja, users, sifat1Options, n
 
                                 <div>
                                     <InputLabel htmlFor="indeks_id" value="Indeks" />
-                                    <FormSelect
-                                        id="indeks_id"
-                                        options={indeksOptions}
-                                        value={data.indeks_id}
-                                        onChange={handleIndeksChange}
-                                        placeholder="Pilih indeks"
-                                        className="w-full mt-1 px-2"
-                                    />
-                                    <InputError message={errors.indeks_id} className="mt-1" />
+                                    <div className="mt-1">
+                                        <FormSearchableSelect
+                                            id="indeks_id"
+                                            options={indeksSelectOptions}
+                                            value={data.indeks_id}
+                                            onChange={handleIndeksChange}
+                                            placeholder="Pilih atau cari indeks..."
+                                            error={errors.indeks_id}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="kode_display" value="Kode" />
-                                    <TextInput
-                                        id="kode_display"
-                                        value={selectedIndeks?.kode || ''}
-                                        readOnly
-                                        className="w-full mt-1 px-2 bg-surface-hover cursor-not-allowed"
-                                        placeholder="Otomatis terisi saat memilih Indeks"
-                                    />
+                                    <InputLabel htmlFor="kode_klasifikasi_id" value="Kode" />
+                                    <div className="mt-1">
+                                        <FormSearchableSelect
+                                            id="kode_klasifikasi_id"
+                                            options={kodeKlasifikasiOptions}
+                                            value={data.kode_klasifikasi_id}
+                                            onChange={(value) => setData('kode_klasifikasi_id', value)}
+                                            placeholder={data.indeks_id ? 'Pilih atau cari kode...' : 'Pilih indeks terlebih dahulu'}
+                                            disabled={!data.indeks_id}
+                                            error={errors.kode_klasifikasi_id}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>
