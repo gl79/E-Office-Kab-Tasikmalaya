@@ -22,6 +22,7 @@ export interface SuratMasuk {
     tanggal_diteruskan: string | null;
     catatan_tambahan: string | null;
     tujuans: SuratMasukTujuan[];
+    jenis_surat?: { id: string; nama: string } | null;
     indeks_berkas?: { kode: string; nama: string } | null;
     kode_klasifikasi?: { kode: string; nama: string } | null;
     staff_pengolah?: { name: string; nip: string } | null;
@@ -42,6 +43,7 @@ export interface SuratKeluar {
     catatan: string | null;
     kode_pengolah: string | null;
     file_path: string | null;
+    jenis_surat?: { id: string; nama: string } | null;
     indeks?: { kode: string; nama: string } | null;
     kode_klasifikasi?: { kode: string; nama: string } | null;
     unit_kerja?: { nama: string; singkatan: string | null } | null;

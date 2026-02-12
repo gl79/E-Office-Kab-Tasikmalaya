@@ -15,20 +15,22 @@ return new class extends Migration
             $table->ulid('id')->primary();
 
             // Identitas Agenda
-            $table->string('nomor_agenda', 50)->unique();
+            $table->string('nomor_agenda', 50);
             $table->date('tanggal_diterima');
 
             // Identitas Surat
             $table->date('tanggal_surat');
             $table->string('asal_surat', 255);
             $table->string('nomor_surat', 100)->unique();
-            $table->string('sifat', 20); // biasa, terbatas, rahasia, sangat_rahasia
+            $table->ulid('jenis_surat_id')->nullable();
+            $table->string('sifat', 20);
             $table->integer('lampiran')->nullable();
             $table->text('perihal');
             $table->text('isi_ringkas');
 
             // Foreign Keys ke Data Master
             $table->ulid('indeks_berkas_id')->nullable();
+            $table->string('indeks_berkas_custom', 255)->nullable();
             $table->ulid('kode_klasifikasi_id')->nullable();
             $table->foreignId('staff_pengolah_id')->nullable()->constrained('users')->nullOnDelete();
 
@@ -50,8 +52,10 @@ return new class extends Migration
             $table->index('nomor_surat');
             $table->index('tanggal_diterima');
             $table->index('tanggal_surat');
+            $table->index('deleted_at');
 
             // Foreign Key Constraints for ULID fields
+            $table->foreign('jenis_surat_id')->references('id')->on('jenis_surat')->nullOnDelete();
             $table->foreign('indeks_berkas_id')->references('id')->on('indeks_surat')->nullOnDelete();
             $table->foreign('kode_klasifikasi_id')->references('id')->on('indeks_surat')->nullOnDelete();
         });

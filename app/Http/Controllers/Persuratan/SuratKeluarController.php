@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Persuratan;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Persuratan\SuratKeluarRequest;
 use App\Models\IndeksSurat;
+use App\Models\JenisSurat;
 use App\Models\SuratKeluar;
 use App\Models\UnitKerja;
 use App\Models\User;
 use App\Services\Persuratan\SuratKeluarService;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -30,7 +32,7 @@ class SuratKeluarController extends Controller
         return Inertia::render('Persuratan/SuratKeluar/Index', [
             'suratKeluar' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_keluar_list_' . $user->id, 60, function () use ($user) {
                 $query = SuratKeluar::query()
-                    ->with(['indeks', 'kodeKlasifikasi', 'unitKerja', 'createdBy'])
+                    ->with(['indeks', 'kodeKlasifikasi', 'unitKerja', 'createdBy', 'jenisSurat'])
                     ->latest('tanggal_surat');
 
                 // SuperAdmin sees all, others (including TU) only see surat keluar they created
@@ -51,11 +53,12 @@ class SuratKeluarController extends Controller
     {
         $this->authorize('create', SuratKeluar::class);
 
-        $nextNoUrut = SuratKeluar::generateNextNoUrut();
+        $nextNoUrut = SuratKeluar::generateNextNoUrut(Auth::id());
 
         return Inertia::render('Persuratan/SuratKeluar/Create', [
             'indeksBerkasOptions' => IndeksSurat::where('level', 1)->orderBy('kode')->get(['id', 'kode', 'nama']),
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 1)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
+            'jenisSuratOptions' => JenisSurat::orderBy('nama')->get(['id', 'nama']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
             'users' => User::select(['id', 'name', 'nip', 'jabatan'])
                 ->where('role', '!=', User::ROLE_SUPERADMIN)
@@ -124,6 +127,7 @@ class SuratKeluarController extends Controller
 
         return Inertia::render('Persuratan/SuratKeluar/Edit', [
             'suratKeluar' => $suratKeluar,
+            'jenisSuratOptions' => JenisSurat::orderBy('nama')->get(['id', 'nama']),
             'indeksBerkasOptions' => IndeksSurat::where('level', 1)->orderBy('kode')->get(['id', 'kode', 'nama']),
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 1)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),

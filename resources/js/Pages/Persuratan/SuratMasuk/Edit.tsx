@@ -16,6 +16,11 @@ import InputLabel from '@/Components/form/InputLabel';
 import InputError from '@/Components/form/InputError';
 import type { PageProps } from '@/types';
 
+interface JenisSurat {
+    id: string;
+    nama: string;
+}
+
 interface IndeksSurat {
     id: string;
     kode: string;
@@ -44,6 +49,7 @@ interface SuratMasuk {
     tanggal_surat: string;
     asal_surat: string;
     nomor_surat: string;
+    jenis_surat_id: string | null;
     sifat: string;
     lampiran: number | null;
     perihal: string;
@@ -60,13 +66,14 @@ interface SuratMasuk {
 
 interface Props extends PageProps {
     suratMasuk: SuratMasuk;
+    jenisSuratOptions: JenisSurat[];
     indeksBerkasOptions: IndeksSurat[];
     indeksKlasifikasiOptions: IndeksSurat[];
     users: User[];
     sifatOptions: Record<string, string>;
 }
 
-export default function Edit({ suratMasuk, indeksBerkasOptions, indeksKlasifikasiOptions, users, sifatOptions }: Props) {
+export default function Edit({ suratMasuk, jenisSuratOptions, indeksBerkasOptions, indeksKlasifikasiOptions, users, sifatOptions }: Props) {
     const [currentStep, setCurrentStep] = useState(0);
     const [stepError, setStepError] = useState('');
 
@@ -76,6 +83,7 @@ export default function Edit({ suratMasuk, indeksBerkasOptions, indeksKlasifikas
         asal_surat: suratMasuk.asal_surat || '',
         tujuan: suratMasuk.tujuans?.map((t) => t.tujuan_id ? t.tujuan_id.toString() : t.tujuan) || [],
         nomor_surat: suratMasuk.nomor_surat || '',
+        jenis_surat_id: suratMasuk.jenis_surat_id || '',
         sifat: suratMasuk.sifat || '',
         lampiran: suratMasuk.lampiran?.toString() || '',
         perihal: suratMasuk.perihal || '',
@@ -131,6 +139,11 @@ export default function Edit({ suratMasuk, indeksBerkasOptions, indeksKlasifikas
             value: user.id.toString(),
             label: user.nip ? `${user.name} (${user.nip})` : user.name,
         }));
+
+    const jenisSuratSelectOptions = jenisSuratOptions.map((item) => ({
+        value: item.id,
+        label: item.nama,
+    }));
 
     const sifatSelectOptions = Object.entries(sifatOptions).map(([value, label]) => ({
         value,
@@ -265,6 +278,20 @@ export default function Edit({ suratMasuk, indeksBerkasOptions, indeksKlasifikas
                                                     className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.nomor_surat} className="mt-1" />
+                                            </div>
+
+                                            <div>
+                                                <InputLabel htmlFor="jenis_surat_id" value="Jenis Surat" />
+                                                <div className="mt-1">
+                                                    <FormSearchableSelect
+                                                        id="jenis_surat_id"
+                                                        options={jenisSuratSelectOptions}
+                                                        value={data.jenis_surat_id}
+                                                        onChange={(value) => setData('jenis_surat_id', value)}
+                                                        placeholder="Pilih atau cari jenis surat..."
+                                                        error={errors.jenis_surat_id}
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div>

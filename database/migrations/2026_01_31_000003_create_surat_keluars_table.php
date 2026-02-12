@@ -18,13 +18,14 @@ return new class extends Migration
             $table->date('tanggal_surat');
             $table->string('no_urut', 50);
             $table->string('nomor_surat', 100)->unique();
+            $table->ulid('jenis_surat_id')->nullable();
             $table->string('kepada', 255);
             $table->text('perihal');
             $table->text('isi_ringkas');
 
             // Sifat Surat
-            $table->string('sifat_1', 20); // biasa, terbatas, rahasia, sangat_rahasia
-            $table->string('sifat_2', 20); // biasa, penting, segera, amat_segera
+            $table->string('sifat_1', 20);
+            $table->string('sifat_2', 20);
 
             // Foreign Keys ke Data Master
             $table->ulid('indeks_id')->nullable();
@@ -48,8 +49,10 @@ return new class extends Migration
             // Indexes
             $table->index('nomor_surat');
             $table->index('tanggal_surat');
+            $table->index('deleted_at');
 
             // Foreign Key Constraints for ULID fields
+            $table->foreign('jenis_surat_id')->references('id')->on('jenis_surat')->nullOnDelete();
             $table->foreign('indeks_id')->references('id')->on('indeks_surat')->nullOnDelete();
             $table->foreign('kode_klasifikasi_id')->references('id')->on('indeks_surat')->nullOnDelete();
             $table->foreign('unit_kerja_id')->references('id')->on('unit_kerja')->nullOnDelete();

@@ -3,22 +3,22 @@ import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { MenuItem } from '@/config/menu';
 import { PageProps } from '@/types';
-import { 
-    LayoutDashboard, 
-    Database, 
-    Users, 
-    User, 
-    Building2, 
-    FileText, 
-    Archive, 
-    Mail, 
-    Inbox, 
-    Send, 
-    CalendarOff, 
-    List, 
-    Calendar, 
-    CalendarCheck, 
-    CalendarClock, 
+import {
+    LayoutDashboard,
+    Database,
+    Users,
+    User,
+    Building2,
+    FileText,
+    Archive,
+    Mail,
+    Inbox,
+    Send,
+    CalendarOff,
+    List,
+    Calendar,
+    CalendarCheck,
+    CalendarClock,
     CalendarCheck2,
     Map,
     MapPin,
@@ -28,7 +28,8 @@ import {
     LogOut,
     Activity,
     LucideIcon,
-    ChevronDown
+    ChevronDown,
+    Tag
 } from 'lucide-react';
 
 interface SidebarMenuItemProps {
@@ -67,6 +68,7 @@ const iconMap: Record<string, LucideIcon> = {
     'settings': Settings,
     'log-out': LogOut,
     'activity': Activity,
+    'tag': Tag,
 };
 
 /**
@@ -111,7 +113,7 @@ export default function SidebarMenuItem({
         // Check if current item matches
         if (menuItem.href) {
             return (url === menuItem.href || url.startsWith(menuItem.href + '/') || url.startsWith(menuItem.href + '?')) &&
-                   (!menuItem.excludePaths || !menuItem.excludePaths.some(path => url.startsWith(path)));
+                (!menuItem.excludePaths || !menuItem.excludePaths.some(path => url.startsWith(path)));
         }
 
         // Check children recursively
@@ -128,9 +130,9 @@ export default function SidebarMenuItem({
     const [isOpen, setIsOpen] = useState(!!hasActiveChild);
 
     // Check if current route matches this item or any of its children
-    const isActive = (item.href 
+    const isActive = (item.href
         ? (
-            (url === item.href || url.startsWith(item.href + '/') || url.startsWith(item.href + '?')) && 
+            (url === item.href || url.startsWith(item.href + '/') || url.startsWith(item.href + '?')) &&
             (!item.excludePaths || !item.excludePaths.some(path => url.startsWith(path)))
         )
         : false) || hasActiveChild;
@@ -145,7 +147,7 @@ export default function SidebarMenuItem({
 
     // Auto-expand if has active child (only on mount/update)
     // We use a separate effect or state initialization to allow toggling
-    
+
     // Simplified: isExpanded is just isOpen. 
     // We rely on the initialization above to open it by default if active.
     const isExpanded = isOpen;
@@ -164,8 +166,8 @@ export default function SidebarMenuItem({
         : 'justify-between px-3';
 
     // Active state styles
-    const activeClasses = isActive 
-        ? 'bg-primary-light text-primary hover:bg-primary-light' 
+    const activeClasses = isActive
+        ? 'bg-primary-light text-primary hover:bg-primary-light'
         : 'text-text-secondary';
 
     // Indentation based on depth
@@ -197,9 +199,8 @@ export default function SidebarMenuItem({
             {/* Expand/Collapse indicator */}
             {hasChildren && (
                 <ChevronDown
-                    className={`w-4 h-4 text-text-muted transition-transform duration-200 ${collapsed ? 'lg:hidden' : ''} ${
-                        isExpanded ? 'rotate-180' : ''
-                    }`}
+                    className={`w-4 h-4 text-text-muted transition-transform duration-200 ${collapsed ? 'lg:hidden' : ''} ${isExpanded ? 'rotate-180' : ''
+                        }`}
                 />
             )}
         </>

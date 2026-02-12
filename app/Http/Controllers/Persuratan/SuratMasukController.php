@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Persuratan\SuratMasukRequest;
 use App\Models\DisposisiSurat;
 use App\Models\IndeksSurat;
+use App\Models\JenisSurat;
 use App\Models\SuratMasuk;
 use App\Models\User;
 use App\Services\Persuratan\SuratMasukService;
@@ -54,7 +55,7 @@ class SuratMasukController extends Controller
         return Inertia::render('Persuratan/SuratMasuk/Index', [
             'suratMasuk' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_masuk_list_' . $user->id, 60, function () use ($user) {
                 $query = SuratMasuk::query()
-                    ->with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy'])
+                    ->with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy', 'jenisSurat'])
                     ->latest();
 
                 // SuperAdmin sees all
@@ -92,7 +93,15 @@ class SuratMasukController extends Controller
                     }
                 }
 
-                return $query->get();
+                // Resolve nomor_agenda per-user:
+                // Jika user adalah penerima, gunakan nomor_agenda dari tujuan record
+                return $query->get()->map(function ($surat) use ($user) {
+                    $tujuan = $surat->tujuans->firstWhere('tujuan_id', $user->id);
+                    if ($tujuan && $tujuan->nomor_agenda) {
+                        $surat->nomor_agenda = $tujuan->nomor_agenda;
+                    }
+                    return $surat;
+                });
             })),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
         ]);
@@ -108,9 +117,10 @@ class SuratMasukController extends Controller
         return Inertia::render('Persuratan/SuratMasuk/Create', [
             'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
+            'jenisSuratOptions' => JenisSurat::orderBy('nama')->get(['id', 'nama']),
             'users' => $this->getUserOptions(),
             'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
-            'nextNomorAgenda' => SuratMasuk::generateNomorAgenda(),
+            'nextNomorAgenda' => SuratMasuk::generateNomorAgenda((string) Auth::id()),
         ]);
     }
 
@@ -143,29 +153,6 @@ class SuratMasukController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        $suratMasuk = SuratMasuk::with([
-            'tujuans',
-            'disposisis',
-            'indeksBerkas',
-            'kodeKlasifikasi',
-            'staffPengolah',
-            'createdBy',
-            'updatedBy',
-        ])->findOrFail($id);
-
-        $this->authorize('view', $suratMasuk);
-
-        return Inertia::render('Persuratan/SuratMasuk/Show', [
-            'suratMasuk' => $suratMasuk,
-            'penandaTanganOptions' => DisposisiSurat::PENANDA_TANGAN_OPTIONS,
-        ]);
-    }
-
-    /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
@@ -175,6 +162,7 @@ class SuratMasukController extends Controller
 
         return Inertia::render('Persuratan/SuratMasuk/Edit', [
             'suratMasuk' => $suratMasuk,
+            'jenisSuratOptions' => JenisSurat::orderBy('nama')->get(['id', 'nama']),
             'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'users' => $this->getUserOptions(),

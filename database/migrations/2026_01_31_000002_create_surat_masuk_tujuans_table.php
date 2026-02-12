@@ -18,7 +18,8 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
-            $table->string('tujuan', 255); // Bupati, Wakil Bupati, Sekda, Asda 1, dst
+            $table->string('tujuan', 255);
+            $table->string('nomor_agenda', 50)->nullable();
 
             $table->timestamps();
 

@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('indeks_surat', function (Blueprint $table) {
-            $table->integer('urutan')->nullable()->after('jenis_surat');
+        Schema::create('jenis_surat', function (Blueprint $table) {
+            $table->ulid('id')->primary();
+            $table->string('nama', 255);
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('indeks_surat', function (Blueprint $table) {
-            $table->dropColumn('urutan');
-        });
+        Schema::dropIfExists('jenis_surat');
     }
 };

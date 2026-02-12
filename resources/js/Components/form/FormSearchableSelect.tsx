@@ -129,7 +129,7 @@ export default function FormSearchableSelect({
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 disabled={disabled}
                 className={`
-                    w-full px-3 py-2 rounded-md border shadow-sm
+                    w-full min-h-[42px] px-3 py-2 rounded-md border shadow-sm
                     flex items-center justify-between
                     text-left text-sm
                     ${disabled

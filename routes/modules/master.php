@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Master\JenisSuratController;
 use App\Http\Controllers\Master\KepegawaianController;
 use App\Http\Controllers\Master\MasterArchiveController;
 use App\Http\Controllers\Master\PenggunaController;
@@ -40,6 +41,9 @@ Route::middleware('auth')->prefix('master')->name('master.')->group(function () 
     Route::resource('indeks-surat', IndeksSuratController::class)->except(['create', 'show', 'edit']);
     Route::post('indeks-surat/{id}/restore', [IndeksSuratController::class, 'restore'])->name('indeks-surat.restore');
     Route::delete('indeks-surat/{id}/force-delete', [IndeksSuratController::class, 'forceDelete'])->name('indeks-surat.force-delete');
+
+    // Jenis Surat
+    Route::resource('jenis-surat', JenisSuratController::class)->except(['create', 'show', 'edit']);
 
     // Wilayah Routes
     Route::prefix('wilayah')->name('wilayah.')->group(function () {

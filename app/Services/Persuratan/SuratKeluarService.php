@@ -90,6 +90,11 @@ class SuratKeluarService
         // Try to find user by name
         $recipient = User::where('name', $suratKeluar->kepada)->first();
 
+        // Generate nomor agenda per-recipient
+        $nomorAgenda = $recipient
+            ? SuratMasukTujuan::generateNomorAgendaForRecipient($recipient->id)
+            : SuratMasuk::generateNomorAgenda($suratKeluar->created_by);
+
         // Get sender info
         $sender = $suratKeluar->createdBy;
         $asalSurat = $sender
@@ -98,7 +103,7 @@ class SuratKeluarService
 
         // Create SuratMasuk
         $suratMasuk = SuratMasuk::create([
-            'nomor_agenda' => SuratMasuk::generateNomorAgenda(),
+            'nomor_agenda' => $nomorAgenda,
             'tanggal_diterima' => now(),
             'tanggal_surat' => $suratKeluar->tanggal_surat,
             'asal_surat' => $asalSurat,
@@ -114,11 +119,12 @@ class SuratKeluarService
             'created_by' => $suratKeluar->created_by,
         ]);
 
-        // Create tujuan record
+        // Create tujuan record dengan nomor agenda per-recipient
         SuratMasukTujuan::create([
             'surat_masuk_id' => $suratMasuk->id,
             'tujuan_id' => $recipient?->id,
             'tujuan' => $suratKeluar->kepada,
+            'nomor_agenda' => $nomorAgenda,
         ]);
     }
 }

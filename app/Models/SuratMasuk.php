@@ -36,6 +36,7 @@ class SuratMasuk extends Model
         'lampiran',
         'perihal',
         'isi_ringkas',
+        'jenis_surat_id',
         'indeks_berkas_id',
         'indeks_berkas_custom',
         'kode_klasifikasi_id',
@@ -72,17 +73,29 @@ class SuratMasuk extends Model
 
     /**
      * Generate nomor agenda otomatis dengan format SM/{number}/{year}.
+     * Nomor di-generate per-user (setiap user punya urutan sendiri).
      * Nomor direset setiap pergantian tahun.
      */
-    public static function generateNomorAgenda(): string
+    public static function generateNomorAgenda(string $userId): string
     {
         $year = date('Y');
 
-        $lastNumber = self::withTrashed()
+        // Hitung dari tabel surat_masuk_tujuans (surat yang ditujukan ke user ini)
+        $countFromTujuan = SuratMasukTujuan::where('tujuan_id', $userId)
+            ->where('nomor_agenda', 'like', "SM/%/{$year}")
+            ->get(['nomor_agenda'])
+            ->map(fn($t) => (int) explode('/', $t->nomor_agenda)[1])
+            ->max() ?? 0;
+
+        // Hitung dari tabel surat_masuks (surat yang di-create oleh user ini)
+        $countFromCreated = self::withTrashed()
+            ->where('created_by', $userId)
             ->where('nomor_agenda', 'like', "SM/%/{$year}")
             ->get(['nomor_agenda'])
             ->map(fn($s) => (int) explode('/', $s->nomor_agenda)[1])
             ->max() ?? 0;
+
+        $lastNumber = max($countFromTujuan, $countFromCreated);
 
         return 'SM/' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT) . '/' . $year;
     }
@@ -103,6 +116,14 @@ class SuratMasuk extends Model
     public function disposisis(): HasMany
     {
         return $this->hasMany(DisposisiSurat::class, 'surat_masuk_id');
+    }
+
+    /**
+     * Relasi ke jenis surat
+     */
+    public function jenisSurat(): BelongsTo
+    {
+        return $this->belongsTo(JenisSurat::class, 'jenis_surat_id');
     }
 
     /**

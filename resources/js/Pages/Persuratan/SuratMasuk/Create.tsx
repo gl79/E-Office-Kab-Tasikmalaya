@@ -16,6 +16,11 @@ import InputLabel from '@/Components/form/InputLabel';
 import InputError from '@/Components/form/InputError';
 import type { PageProps } from '@/types';
 
+interface JenisSurat {
+    id: string;
+    nama: string;
+}
+
 interface IndeksSurat {
     id: string;
     kode: string;
@@ -32,6 +37,7 @@ interface User {
 }
 
 interface Props extends PageProps {
+    jenisSuratOptions: JenisSurat[];
     indeksBerkasOptions: IndeksSurat[];
     indeksKlasifikasiOptions: IndeksSurat[];
     users: User[];
@@ -39,7 +45,7 @@ interface Props extends PageProps {
     nextNomorAgenda: string;
 }
 
-export default function Create({ indeksBerkasOptions, indeksKlasifikasiOptions, users, sifatOptions, nextNomorAgenda }: Props) {
+export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksKlasifikasiOptions, users, sifatOptions, nextNomorAgenda }: Props) {
     const [currentStep, setCurrentStep] = useState(0);
     const [stepError, setStepError] = useState('');
 
@@ -51,6 +57,7 @@ export default function Create({ indeksBerkasOptions, indeksKlasifikasiOptions, 
         asal_surat: '',
         tujuan: [] as string[],
         nomor_surat: '',
+        jenis_surat_id: '',
         sifat: '',
         lampiran: '',
         perihal: '',
@@ -107,6 +114,11 @@ export default function Create({ indeksBerkasOptions, indeksKlasifikasiOptions, 
             value: user.id.toString(),
             label: user.nip ? `${user.name} (${user.nip})` : user.name,
         }));
+
+    const jenisSuratSelectOptions = jenisSuratOptions.map((item) => ({
+        value: item.id,
+        label: item.nama,
+    }));
 
     const sifatSelectOptions = Object.entries(sifatOptions).map(([value, label]) => ({
         value,
@@ -241,6 +253,20 @@ export default function Create({ indeksBerkasOptions, indeksKlasifikasiOptions, 
                                                     className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.nomor_surat} className="mt-1" />
+                                            </div>
+
+                                            <div>
+                                                <InputLabel htmlFor="jenis_surat_id" value="Jenis Surat" />
+                                                <div className="mt-1">
+                                                    <FormSearchableSelect
+                                                        id="jenis_surat_id"
+                                                        options={jenisSuratSelectOptions}
+                                                        value={data.jenis_surat_id}
+                                                        onChange={(value) => setData('jenis_surat_id', value)}
+                                                        placeholder="Pilih atau cari jenis surat..."
+                                                        error={errors.jenis_surat_id}
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div>

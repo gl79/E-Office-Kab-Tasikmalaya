@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\FileService;
 use App\Support\CacheHelper;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,7 +20,7 @@ class SuratMasukService
     public function store(array $data): SuratMasuk
     {
         return DB::transaction(function () use ($data) {
-            $data['nomor_agenda'] = SuratMasuk::generateNomorAgenda();
+            $data['nomor_agenda'] = SuratMasuk::generateNomorAgenda((string) Auth::id());
 
             if (isset($data['file']) && $data['file'] instanceof UploadedFile) {
                 $data['file_path'] = FileService::store($data['file'], 'surat-masuk');
@@ -56,8 +57,14 @@ class SuratMasukService
 
             $suratMasuk->update($data);
 
+            // Simpan nomor agenda lama per-tujuan untuk di-reuse
+            $oldTujuanAgendas = $suratMasuk->tujuans()
+                ->whereNotNull('tujuan_id')
+                ->pluck('nomor_agenda', 'tujuan_id')
+                ->toArray();
+
             $suratMasuk->tujuans()->delete();
-            $this->syncTujuan($suratMasuk, $tujuanList);
+            $this->syncTujuan($suratMasuk, $tujuanList, $oldTujuanAgendas);
 
             CacheHelper::flush(['persuratan_list']);
 
@@ -76,8 +83,11 @@ class SuratMasukService
 
     /**
      * Create tujuan records for a surat masuk.
+     * Setiap penerima mendapat nomor agenda masing-masing.
+     *
+     * @param array<int, string> $oldAgendas Nomor agenda lama per tujuan_id (untuk update/reuse)
      */
-    private function syncTujuan(SuratMasuk $suratMasuk, array $tujuanList): void
+    private function syncTujuan(SuratMasuk $suratMasuk, array $tujuanList, array $oldAgendas = []): void
     {
         if (empty($tujuanList)) {
             return;
@@ -92,10 +102,18 @@ class SuratMasukService
         foreach ($tujuanList as $tujuan) {
             $userData = is_numeric($tujuan) ? $users->get($tujuan) : null;
 
+            // Generate nomor agenda per-recipient (hanya untuk user internal)
+            $nomorAgenda = null;
+            if ($userData) {
+                // Reuse nomor agenda lama jika ada (untuk update)
+                $nomorAgenda = $oldAgendas[$userData->id] ?? SuratMasukTujuan::generateNomorAgendaForRecipient($userData->id);
+            }
+
             SuratMasukTujuan::create([
                 'surat_masuk_id' => $suratMasuk->id,
                 'tujuan_id' => $userData?->id ?? null,
                 'tujuan' => $userData?->name ?? $tujuan,
+                'nomor_agenda' => $nomorAgenda,
             ]);
         }
     }

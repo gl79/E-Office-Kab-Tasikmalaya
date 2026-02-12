@@ -14,6 +14,11 @@ import InputLabel from '@/Components/form/InputLabel';
 import InputError from '@/Components/form/InputError';
 import type { PageProps } from '@/types';
 
+interface JenisSurat {
+    id: string;
+    nama: string;
+}
+
 interface IndeksSurat {
     id: string;
     kode: string;
@@ -38,6 +43,7 @@ interface SuratKeluarData {
     isi_ringkas: string;
     sifat_1: string;
     indeks_id: string | null;
+    jenis_surat_id: string | null;
     kode_klasifikasi_id: string | null;
     unit_kerja_id: string | null;
     kode_pengolah: string | null;
@@ -55,6 +61,7 @@ interface User {
 
 interface Props extends PageProps {
     suratKeluar: SuratKeluarData;
+    jenisSuratOptions: JenisSurat[];
     indeksBerkasOptions: IndeksSurat[];
     indeksKlasifikasiOptions: IndeksSurat[];
     unitKerja: UnitKerja[];
@@ -62,7 +69,7 @@ interface Props extends PageProps {
     sifat1Options: Record<string, string>;
 }
 
-export default function Edit({ suratKeluar, indeksBerkasOptions, indeksKlasifikasiOptions, unitKerja, users, sifat1Options }: Props) {
+export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptions, indeksKlasifikasiOptions, unitKerja, users, sifat1Options }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         tanggal_surat: suratKeluar.tanggal_surat?.split('T')[0] || '',
@@ -71,6 +78,7 @@ export default function Edit({ suratKeluar, indeksBerkasOptions, indeksKlasifika
         kode_klasifikasi_id: suratKeluar.kode_klasifikasi_id || '',
         unit_kerja_id: suratKeluar.unit_kerja_id || '',
         kode_pengolah: suratKeluar.kode_pengolah || '',
+        jenis_surat_id: suratKeluar.jenis_surat_id || '',
         sifat_1: suratKeluar.sifat_1 || '',
         nomor_surat: suratKeluar.nomor_surat || '',
         kepada: suratKeluar.kepada || '',
@@ -117,6 +125,11 @@ export default function Edit({ suratKeluar, indeksBerkasOptions, indeksKlasifika
     const sifat1SelectOptions = Object.entries(sifat1Options).map(([value, label]) => ({
         value,
         label,
+    }));
+
+    const jenisSuratSelectOptions = jenisSuratOptions.map((item) => ({
+        value: item.id,
+        label: item.nama,
     }));
 
     const selectedIndeks = indeksBerkasOptions.find(item => item.id === data.indeks_id);
@@ -256,6 +269,19 @@ export default function Edit({ suratKeluar, indeksBerkasOptions, indeksKlasifika
                                         className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.kode_pengolah} className="mt-1" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="jenis_surat_id" value="Jenis Surat" />
+                                    <FormSelect
+                                        id="jenis_surat_id"
+                                        options={jenisSuratSelectOptions}
+                                        value={data.jenis_surat_id}
+                                        onChange={(e) => setData('jenis_surat_id', e.target.value)}
+                                        placeholder="Pilih jenis surat"
+                                        className="w-full mt-1 px-2"
+                                    />
+                                    <InputError message={errors.jenis_surat_id} className="mt-1" />
                                 </div>
 
                                 <div>

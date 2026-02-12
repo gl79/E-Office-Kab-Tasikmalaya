@@ -14,6 +14,11 @@ import InputLabel from '@/Components/form/InputLabel';
 import InputError from '@/Components/form/InputError';
 import type { PageProps } from '@/types';
 
+interface JenisSurat {
+    id: string;
+    nama: string;
+}
+
 interface IndeksSurat {
     id: string;
     kode: string;
@@ -26,6 +31,7 @@ interface UnitKerja {
     id: string;
     nama: string;
     singkatan: string | null;
+    parent_id?: string; // Corrected interface just in case
 }
 
 interface User {
@@ -36,6 +42,7 @@ interface User {
 }
 
 interface Props extends PageProps {
+    jenisSuratOptions: JenisSurat[];
     indeksBerkasOptions: IndeksSurat[];
     indeksKlasifikasiOptions: IndeksSurat[];
     unitKerja: UnitKerja[];
@@ -44,7 +51,7 @@ interface Props extends PageProps {
     nextNoUrut: number;
 }
 
-export default function Create({ indeksBerkasOptions, indeksKlasifikasiOptions, unitKerja, users, sifat1Options, nextNoUrut }: Props) {
+export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksKlasifikasiOptions, unitKerja, users, sifat1Options, nextNoUrut }: Props) {
     const today = new Date().toISOString().split('T')[0];
 
     const { data, setData, post, processing, errors } = useForm({
@@ -54,6 +61,7 @@ export default function Create({ indeksBerkasOptions, indeksKlasifikasiOptions, 
         kode_klasifikasi_id: '',
         unit_kerja_id: '',
         kode_pengolah: '',
+        jenis_surat_id: '',
         sifat_1: '',
         nomor_surat: '',
         kepada: '',
@@ -100,6 +108,11 @@ export default function Create({ indeksBerkasOptions, indeksKlasifikasiOptions, 
     const sifat1SelectOptions = Object.entries(sifat1Options).map(([value, label]) => ({
         value,
         label,
+    }));
+
+    const jenisSuratSelectOptions = jenisSuratOptions.map((item) => ({
+        value: item.id,
+        label: item.nama,
     }));
 
     const selectedIndeks = indeksBerkasOptions.find(item => item.id === data.indeks_id);
@@ -239,6 +252,19 @@ export default function Create({ indeksBerkasOptions, indeksKlasifikasiOptions, 
                                         className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.kode_pengolah} className="mt-1" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="jenis_surat_id" value="Jenis Surat" />
+                                    <FormSelect
+                                        id="jenis_surat_id"
+                                        options={jenisSuratSelectOptions}
+                                        value={data.jenis_surat_id}
+                                        onChange={(e) => setData('jenis_surat_id', e.target.value)}
+                                        placeholder="Pilih jenis surat"
+                                        className="w-full mt-1 px-2"
+                                    />
+                                    <InputError message={errors.jenis_surat_id} className="mt-1" />
                                 </div>
 
                                 <div>

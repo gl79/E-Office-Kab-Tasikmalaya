@@ -90,6 +90,7 @@ class SuratMasukSeeder extends Seeder
                     'surat_masuk_id' => $suratMasuk->id,
                     'tujuan_id' => $tujuanUser->id,
                     'tujuan' => $tujuanUser->name,
+                    'nomor_agenda' => SuratMasukTujuan::generateNomorAgendaForRecipient($tujuanUser->id),
                 ]);
             }
         }

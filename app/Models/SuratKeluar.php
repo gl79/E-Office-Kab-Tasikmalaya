@@ -22,6 +22,7 @@ class SuratKeluar extends Model
         'kepada',
         'perihal',
         'isi_ringkas',
+        'jenis_surat_id',
         'sifat_1',
         'sifat_2',
         'indeks_id',
@@ -73,13 +74,15 @@ class SuratKeluar extends Model
 
     /**
      * Generate next no_urut otomatis dengan format 0001.
+     * Nomor di-generate per-user (setiap user punya urutan sendiri).
      * Nomor direset setiap pergantian tahun berdasarkan tanggal_surat.
      */
-    public static function generateNextNoUrut(): int
+    public static function generateNextNoUrut(int $userId): int
     {
         $year = date('Y');
 
         $lastNumber = self::withTrashed()
+            ->where('created_by', $userId)
             ->whereYear('tanggal_surat', $year)
             ->get(['no_urut'])
             ->map(function ($s) {
@@ -92,6 +95,14 @@ class SuratKeluar extends Model
     }
 
     // ==================== RELATIONSHIPS ====================
+
+    /**
+     * Relasi ke jenis surat
+     */
+    public function jenisSurat(): BelongsTo
+    {
+        return $this->belongsTo(JenisSurat::class, 'jenis_surat_id');
+    }
 
     /**
      * Relasi ke indeks surat
@@ -151,9 +162,9 @@ class SuratKeluar extends Model
         if ($search) {
             return $query->where(function ($q) use ($search) {
                 $q->where('nomor_surat', 'like', "%{$search}%")
-                  ->orWhere('kepada', 'like', "%{$search}%")
-                  ->orWhere('perihal', 'like', "%{$search}%")
-                  ->orWhere('no_urut', 'like', "%{$search}%");
+                    ->orWhere('kepada', 'like', "%{$search}%")
+                    ->orWhere('perihal', 'like', "%{$search}%")
+                    ->orWhere('no_urut', 'like', "%{$search}%");
             });
         }
         return $query;

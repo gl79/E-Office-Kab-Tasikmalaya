@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->prefix('persuratan')->name('persuratan.')->group(function () {
     // Surat Masuk Routes
-    Route::resource('surat-masuk', SuratMasukController::class);
+    Route::resource('surat-masuk', SuratMasukController::class)->except(['show']);
     Route::post('surat-masuk/{id}/restore', [SuratMasukController::class, 'restore'])->name('surat-masuk.restore');
     Route::delete('surat-masuk/{id}/force-delete', [SuratMasukController::class, 'forceDelete'])->name('surat-masuk.force-delete');
     Route::get('surat-masuk/{id}/cetak-kartu', [SuratMasukController::class, 'cetakKartu'])->name('surat-masuk.cetak-kartu');

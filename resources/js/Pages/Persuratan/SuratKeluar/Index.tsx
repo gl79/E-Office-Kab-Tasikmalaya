@@ -463,6 +463,12 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                     <p className="text-sm text-text-secondary">Nomor Urut</p>
                                     <p className="font-medium text-text-primary">{detailSurat.no_urut?.toString().padStart(4, '0')}</p>
                                 </div>
+                                {detailSurat.jenis_surat && (
+                                    <div>
+                                        <p className="text-sm text-text-secondary">Jenis Surat</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.jenis_surat.nama}</p>
+                                    </div>
+                                )}
                                 {detailSurat.indeks && (
                                     <div>
                                         <p className="text-sm text-text-secondary">Indeks</p>

@@ -535,6 +535,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <p className="text-sm text-text-secondary">Asal Surat</p>
                                     <Badge variant="primary" className="mt-1">{detailSurat.asal_surat}</Badge>
                                 </div>
+                                {detailSurat.jenis_surat && (
+                                    <div>
+                                        <p className="text-sm text-text-secondary">Jenis Surat</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.jenis_surat.nama}</p>
+                                    </div>
+                                )}
                                 <div className="sm:col-span-2">
                                     <p className="text-sm text-text-secondary">Kepada (Tujuan Surat)</p>
                                     <div className="flex flex-wrap gap-1 mt-1">
