@@ -184,10 +184,9 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
             columns: [
                 { header: 'No', render: (_, i) => String(i + 1) },
                 { header: 'Agenda', render: (item) => item.nomor_agenda.split('/')[1] || escapeHtml(item.nomor_agenda) },
-                { header: 'Tgl Diterima', render: (item) => formatDateShort(item.tanggal_diterima) },
+                { header: 'Tanggal Diterima', render: (item) => formatDateShort(item.tanggal_diterima) },
                 { header: 'Tgl Surat / No Surat', render: (item) => `${formatDateShort(item.tanggal_surat)}<br><small>${escapeHtml(item.nomor_surat)}</small>` },
                 { header: 'Asal Surat', render: (item) => escapeHtml(item.asal_surat) },
-                { header: 'Tujuan', render: (item) => item.tujuans?.map((t: { tujuan: string }) => escapeHtml(t.tujuan)).join(', ') || '-' },
                 { header: 'Perihal', render: (item) => escapeHtml(item.perihal) },
                 { header: 'Sifat', render: (item) => escapeHtml(sifatOptions[item.sifat] || item.sifat) },
             ],

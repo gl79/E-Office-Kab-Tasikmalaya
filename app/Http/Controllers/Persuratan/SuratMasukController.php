@@ -45,6 +45,17 @@ class SuratMasukController extends Controller
     }
 
     /**
+     * Get pengguna options untuk asal surat dropdown.
+     */
+    private function getAsalSuratUsers(): \Illuminate\Database\Eloquent\Collection
+    {
+        return User::select(['id', 'name', 'nip', 'jabatan'])
+            ->where('role', '!=', User::ROLE_SUPERADMIN)
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -120,6 +131,7 @@ class SuratMasukController extends Controller
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'jenisSuratOptions' => JenisSurat::orderBy('nama')->get(['id', 'nama']),
             'users' => $this->getUserOptions(),
+            'asalSuratUsers' => $this->getAsalSuratUsers(),
             'sifatOptions' => SifatSurat::getOptions(),
             'nextNomorAgenda' => SuratMasuk::generateNomorAgenda((string) Auth::id()),
         ]);
@@ -167,6 +179,7 @@ class SuratMasukController extends Controller
             'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'users' => $this->getUserOptions(),
+            'asalSuratUsers' => $this->getAsalSuratUsers(),
             'sifatOptions' => SifatSurat::getOptions(),
         ]);
     }

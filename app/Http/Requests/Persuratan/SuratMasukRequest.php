@@ -38,29 +38,63 @@ class SuratMasukRequest extends FormRequest
                 Rule::unique('surat_masuks', 'nomor_surat')->ignore($suratMasukId),
             ],
             'sifat' => ['required', 'string', 'max:50', Rule::in(SifatSurat::allowedValues())],
-            'lampiran' => ['nullable', 'integer', 'min:0'],
+            'lampiran' => array_filter([
+                $this->isMethod('POST') ? 'required' : null,
+                'nullable',
+                'integer',
+                'min:0',
+            ]),
             'perihal' => ['required', 'string'],
             'isi_ringkas' => ['required', 'string'],
 
             // Step 2: Identitas Agenda
             'tanggal_diterima' => ['required', 'date'],
             'nomor_agenda' => array_filter([
+                $this->isMethod('POST') ? 'required' : null,
                 $this->isMethod('PUT') ? 'required' : null,
                 'nullable',
                 'string',
                 'max:50',
             ]),
-            'indeks_berkas_id' => ['nullable', 'string', 'exists:indeks_surat,id'],
+            'indeks_berkas_id' => array_filter([
+                $this->isMethod('POST') ? 'required' : null,
+                'nullable',
+                'string',
+                'exists:indeks_surat,id',
+            ]),
             'indeks_berkas_custom' => ['nullable', 'string', 'max:255'],
-            'jenis_surat_id' => ['nullable', 'string', 'exists:jenis_surat,id'],
-            'kode_klasifikasi_id' => ['nullable', 'string', 'exists:indeks_surat,id'],
-            'staff_pengolah_id' => ['nullable', 'string', 'exists:users,id'],
-            'tanggal_diteruskan' => ['nullable', 'date'],
-            'catatan_tambahan' => ['nullable', 'string'],
+            'jenis_surat_id' => array_filter([
+                $this->isMethod('POST') ? 'required' : null,
+                'nullable',
+                'string',
+                'exists:jenis_surat,id',
+            ]),
+            'kode_klasifikasi_id' => array_filter([
+                $this->isMethod('POST') ? 'required' : null,
+                'nullable',
+                'string',
+                'exists:indeks_surat,id',
+            ]),
+            'staff_pengolah_id' => array_filter([
+                $this->isMethod('POST') ? 'required' : null,
+                'nullable',
+                'string',
+                'exists:users,id',
+            ]),
+            'tanggal_diteruskan' => array_filter([
+                $this->isMethod('POST') ? 'required' : null,
+                'nullable',
+                'date',
+            ]),
+            'catatan_tambahan' => array_filter([
+                $this->isMethod('POST') ? 'required' : null,
+                'nullable',
+                'string',
+            ]),
 
             // File Upload
             'file' => [
-                'nullable',
+                $this->isMethod('POST') ? 'required' : 'nullable',
                 'file',
                 'mimes:pdf,doc,docx,jpg,jpeg',
                 'max:5120', // 5MB
@@ -87,7 +121,7 @@ class SuratMasukRequest extends FormRequest
             'isi_ringkas' => 'Isi Ringkas Surat',
             'tanggal_diterima' => 'Tanggal Diterima',
             'nomor_agenda' => 'Nomor Agenda',
-            'indeks_berkas_id' => 'Indeks Berkas',
+            'indeks_berkas_id' => 'Indeks Surat',
             'indeks_berkas_custom' => 'Indeks Berkas (Custom)',
             'jenis_surat_id' => 'Jenis Surat',
             'kode_klasifikasi_id' => 'Kode Klasifikasi',

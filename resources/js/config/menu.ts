@@ -68,7 +68,7 @@ export const menuItems: MenuItem[] = [
             {
                 label: 'Sifat Surat',
                 href: '/master/sifat-surat',
-                icon: 'tag',
+                icon: 'shield',
             },
             {
                 label: 'Unit Kerja',
@@ -157,3 +157,4 @@ export const menuItems: MenuItem[] = [
         roles: ['superadmin'],
     },
 ];
+
