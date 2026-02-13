@@ -326,7 +326,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                                 return (
                                     <tr
                                         key={indeks.id}
-                                        className={`hover:bg-surface-hover ${indeks.level === 1 ? 'bg-primary-light/5 font-semibold' : ''}`}
+                                        className={`hover:bg-surface-hover ${indeks.level === 1 ? 'bg-primary-light/5' : ''}`}
                                     >
                                         <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-sm">
                                             {(currentPage - 1) * itemsPerPage + index + 1}
@@ -352,7 +352,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className={`px-4 py-3 border border-border-default text-text-primary ${indeks.level === 1 ? 'font-semibold' : ''}`}>
+                                        <td className="px-4 py-3 border border-border-default text-text-primary">
                                             {indeks.nama}
                                         </td>
                                         <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-xs">
