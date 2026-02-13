@@ -196,6 +196,20 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         });
     };
 
+    const formatTimeWithColon = (dateTime: string) => {
+        const date = new Date(dateTime);
+        if (Number.isNaN(date.getTime())) {
+            return '-';
+        }
+
+        return new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        }).format(date);
+    };
+
     return (
         <>
             <Head title="Surat Masuk" />
@@ -518,7 +532,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 isOpen={detailModalOpen}
                 onClose={() => setDetailModalOpen(false)}
                 title="Detail Surat Masuk"
-                size="lg"
+                size="xl"
             >
                 {detailSurat && (
                     <div className="space-y-6">
@@ -527,28 +541,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                             <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Identitas Surat</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-sm text-text-secondary">Tanggal Surat</p>
-                                    <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_surat)}</p>
-                                </div>
-                                <div>
                                     <p className="text-sm text-text-secondary">Asal Surat</p>
                                     <Badge variant="primary" className="mt-1">{detailSurat.asal_surat}</Badge>
                                 </div>
-                                {detailSurat.jenis_surat && (
-                                    <div>
-                                        <p className="text-sm text-text-secondary">Jenis Surat</p>
-                                        <p className="font-medium text-text-primary">{detailSurat.jenis_surat.nama}</p>
-                                    </div>
-                                )}
-                                <div className="sm:col-span-2">
-                                    <p className="text-sm text-text-secondary">Kepada (Tujuan Surat)</p>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                        {detailSurat.tujuans?.map((t) => (
-                                            <Badge key={t.id} variant="primary" size="sm">
-                                                {t.tujuan}
-                                            </Badge>
-                                        ))}
-                                    </div>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Tanggal Surat</p>
+                                    <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_surat)}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">Nomor Surat</p>
@@ -562,9 +560,29 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <p className="text-sm text-text-secondary">Lampiran</p>
                                     <p className="font-medium text-text-primary">{detailSurat.lampiran || 0} berkas</p>
                                 </div>
+                                {detailSurat.jenis_surat && (
+                                    <div>
+                                        <p className="text-sm text-text-secondary">Jenis Surat</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.jenis_surat.nama}</p>
+                                    </div>
+                                )}
                                 <div className="sm:col-span-2">
                                     <p className="text-sm text-text-secondary">Perihal</p>
                                     <p className="font-medium text-text-primary">{detailSurat.perihal}</p>
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <p className="text-sm text-text-secondary">Kepada (Tujuan Surat)</p>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {detailSurat.tujuans?.length ? (
+                                            detailSurat.tujuans.map((t) => (
+                                                <Badge key={t.id} variant="primary" size="sm">
+                                                    {t.tujuan}
+                                                </Badge>
+                                            ))
+                                        ) : (
+                                            <p className="font-medium text-text-primary">-</p>
+                                        )}
+                                    </div>
                                 </div>
                                 {detailSurat.isi_ringkas && (
                                     <div className="sm:col-span-2">
@@ -580,31 +598,33 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                             <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Identitas Agenda</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
+                                    <p className="text-sm text-text-secondary">Klasifikasi</p>
+                                    <p className="font-medium text-text-primary">
+                                        {detailSurat.kode_klasifikasi
+                                            ? `${detailSurat.kode_klasifikasi.kode} - ${detailSurat.kode_klasifikasi.nama}`
+                                            : '-'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Nomor Urut/Agenda</p>
+                                    <p className="font-medium text-text-primary">{detailSurat.nomor_agenda.split('/')[1] || detailSurat.nomor_agenda}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Pengagenda/Pengolah</p>
+                                    <p className="font-medium text-text-primary">{detailSurat.staff_pengolah?.name || '-'}</p>
+                                </div>
+                                <div>
                                     <p className="text-sm text-text-secondary">Tanggal Diterima</p>
                                     <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_diterima)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-text-secondary">Nomor Agenda</p>
-                                    <p className="font-medium text-text-primary">{detailSurat.nomor_agenda}</p>
+                                    <p className="text-sm text-text-secondary">Indeks Surat</p>
+                                    <p className="font-medium text-text-primary">
+                                        {detailSurat.indeks_berkas
+                                            ? `${detailSurat.indeks_berkas.kode} - ${detailSurat.indeks_berkas.nama}`
+                                            : '-'}
+                                    </p>
                                 </div>
-                                {detailSurat.indeks_berkas && (
-                                    <div>
-                                        <p className="text-sm text-text-secondary">Indeks Berkas</p>
-                                        <p className="font-medium text-text-primary">{detailSurat.indeks_berkas.kode} - {detailSurat.indeks_berkas.nama}</p>
-                                    </div>
-                                )}
-                                {detailSurat.kode_klasifikasi && (
-                                    <div>
-                                        <p className="text-sm text-text-secondary">Kode Klasifikasi</p>
-                                        <p className="font-medium text-text-primary">{detailSurat.kode_klasifikasi.kode} - {detailSurat.kode_klasifikasi.nama}</p>
-                                    </div>
-                                )}
-                                {detailSurat.staff_pengolah && (
-                                    <div>
-                                        <p className="text-sm text-text-secondary">Staff Pengolah</p>
-                                        <p className="font-medium text-text-primary">{detailSurat.staff_pengolah.name}</p>
-                                    </div>
-                                )}
                                 {detailSurat.tanggal_diteruskan && (
                                     <div>
                                         <p className="text-sm text-text-secondary">Tanggal Diteruskan</p>
@@ -663,7 +683,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                         {/* Audit Info */}
                         <div className="pt-4 border-t border-border-default">
                             <p className="text-xs text-text-secondary">
-                                Diinput oleh <span className="font-medium text-text-primary">{detailSurat.created_by?.name || 'System'}</span> pada {formatDateShort(detailSurat.created_at)} jam {new Date(detailSurat.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                                Diinput oleh <span className="font-medium text-text-primary">{detailSurat.created_by?.name || 'System'}</span> pada {formatDateShort(detailSurat.created_at)} pukul {formatTimeWithColon(detailSurat.created_at)}
                             </p>
                         </div>
                     </div>
