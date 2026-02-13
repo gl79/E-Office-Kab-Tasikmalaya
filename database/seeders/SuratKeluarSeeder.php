@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\IndeksSurat;
+use App\Models\SifatSurat;
 use App\Models\SuratKeluar;
 use App\Models\UnitKerja;
 use App\Models\User;
@@ -26,7 +27,7 @@ class SuratKeluarSeeder extends Seeder
             return;
         }
 
-        $sifat1Options = array_keys(SuratKeluar::SIFAT_1_OPTIONS);
+        $sifat1Options = array_keys(SifatSurat::getOptions());
         $sifat2Options = array_keys(SuratKeluar::SIFAT_2_OPTIONS);
 
         $kepadaList = [

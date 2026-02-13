@@ -286,15 +286,13 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
 
                                 <div>
                                     <InputLabel htmlFor="sifat_1" value="Sifat *" />
-                                    <FormSelectWithCustom
+                                    <FormSelect
                                         id="sifat_1"
                                         options={sifat1SelectOptions}
                                         value={data.sifat_1}
                                         onChange={(e) => setData('sifat_1', e.target.value)}
                                         placeholder="Pilih sifat"
-                                        customPlaceholder="Ketik sifat surat lainnya..."
-                                        allowCustom={true}
-                                        className="w-full mt-1"
+                                        className="w-full mt-1 px-2"
                                     />
                                     <InputError message={errors.sifat_1} className="mt-1" />
                                 </div>

@@ -66,6 +66,11 @@ export const menuItems: MenuItem[] = [
                 icon: 'tag',
             },
             {
+                label: 'Sifat Surat',
+                href: '/master/sifat-surat',
+                icon: 'tag',
+            },
+            {
                 label: 'Unit Kerja',
                 href: '/master/unit-kerja',
                 icon: 'building',

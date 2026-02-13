@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Persuratan;
 
-use App\Models\SuratMasuk;
+use App\Models\SifatSurat;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -37,7 +37,7 @@ class SuratMasukRequest extends FormRequest
                 'max:100',
                 Rule::unique('surat_masuks', 'nomor_surat')->ignore($suratMasukId),
             ],
-            'sifat' => ['required', 'string', 'max:50'],
+            'sifat' => ['required', 'string', 'max:50', Rule::in(SifatSurat::allowedValues())],
             'lampiran' => ['nullable', 'integer', 'min:0'],
             'perihal' => ['required', 'string'],
             'isi_ringkas' => ['required', 'string'],

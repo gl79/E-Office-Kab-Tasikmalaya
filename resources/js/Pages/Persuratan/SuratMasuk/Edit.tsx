@@ -7,7 +7,6 @@ import FormWizard from '@/Components/form/FormWizard';
 import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
 import FormSelect from '@/Components/form/FormSelect';
-import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
 import FormSearchableSelect from '@/Components/form/FormSearchableSelect';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormMultiSelect from '@/Components/form/FormMultiSelect';
@@ -296,15 +295,13 @@ export default function Edit({ suratMasuk, jenisSuratOptions, indeksBerkasOption
 
                                             <div>
                                                 <InputLabel htmlFor="sifat" value="Sifat Surat" required />
-                                                <FormSelectWithCustom
+                                                <FormSelect
                                                     id="sifat"
                                                     options={sifatSelectOptions}
                                                     value={data.sifat}
                                                     onChange={(e) => setData('sifat', e.target.value)}
                                                     placeholder="Pilih sifat surat"
-                                                    customPlaceholder="Ketik sifat surat lainnya..."
-                                                    allowCustom={true}
-                                                    className="w-full mt-1"
+                                                    className="w-full mt-1 px-2"
                                                 />
                                                 <InputError message={errors.sifat} className="mt-1" />
                                             </div>

@@ -7,6 +7,7 @@ use App\Http\Requests\Persuratan\SuratMasukRequest;
 use App\Models\DisposisiSurat;
 use App\Models\IndeksSurat;
 use App\Models\JenisSurat;
+use App\Models\SifatSurat;
 use App\Models\SuratMasuk;
 use App\Models\User;
 use App\Services\Persuratan\SuratMasukService;
@@ -103,7 +104,7 @@ class SuratMasukController extends Controller
                     return $surat;
                 });
             })),
-            'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
+            'sifatOptions' => SifatSurat::getOptions(),
         ]);
     }
 
@@ -119,7 +120,7 @@ class SuratMasukController extends Controller
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'jenisSuratOptions' => JenisSurat::orderBy('nama')->get(['id', 'nama']),
             'users' => $this->getUserOptions(),
-            'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
+            'sifatOptions' => SifatSurat::getOptions(),
             'nextNomorAgenda' => SuratMasuk::generateNomorAgenda((string) Auth::id()),
         ]);
     }
@@ -166,7 +167,7 @@ class SuratMasukController extends Controller
             'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'users' => $this->getUserOptions(),
-            'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
+            'sifatOptions' => SifatSurat::getOptions(),
         ]);
     }
 

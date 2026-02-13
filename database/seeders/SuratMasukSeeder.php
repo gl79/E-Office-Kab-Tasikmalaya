@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\IndeksSurat;
+use App\Models\SifatSurat;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
 use App\Models\User;
@@ -26,7 +27,7 @@ class SuratMasukSeeder extends Seeder
         }
 
         $tujuanUsers = User::all(['id', 'name']);
-        $sifatOptions = array_keys(SuratMasuk::SIFAT_OPTIONS);
+        $sifatOptions = array_keys(SifatSurat::getOptions());
         $asalSuratList = [
             'Kementerian Dalam Negeri',
             'Pemerintah Provinsi Jawa Barat',

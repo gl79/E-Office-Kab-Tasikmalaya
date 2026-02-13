@@ -213,7 +213,7 @@ class SuratKeluar extends Model
      */
     public function getSifat1LabelAttribute(): string
     {
-        return self::SIFAT_1_OPTIONS[$this->sifat_1] ?? $this->sifat_1;
+        return SifatSurat::getOptions()[$this->sifat_1] ?? $this->sifat_1;
     }
 
     /**

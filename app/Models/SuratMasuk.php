@@ -256,7 +256,7 @@ class SuratMasuk extends Model
      */
     public function getSifatLabelAttribute(): string
     {
-        return self::SIFAT_OPTIONS[$this->sifat] ?? $this->sifat;
+        return SifatSurat::getOptions()[$this->sifat] ?? $this->sifat;
     }
 
     /**

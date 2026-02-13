@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Persuratan\SuratKeluarRequest;
 use App\Models\IndeksSurat;
 use App\Models\JenisSurat;
+use App\Models\SifatSurat;
 use App\Models\SuratKeluar;
 use App\Models\UnitKerja;
 use App\Models\User;
@@ -42,7 +43,7 @@ class SuratKeluarController extends Controller
 
                 return $query->get();
             })),
-            'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
+            'sifat1Options' => SifatSurat::getOptions(),
         ]);
     }
 
@@ -64,7 +65,7 @@ class SuratKeluarController extends Controller
                 ->where('role', '!=', User::ROLE_SUPERADMIN)
                 ->orderBy('name')
                 ->get(),
-            'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
+            'sifat1Options' => SifatSurat::getOptions(),
             'nextNoUrut' => $nextNoUrut,
         ]);
     }
@@ -135,7 +136,7 @@ class SuratKeluarController extends Controller
                 ->where('role', '!=', User::ROLE_SUPERADMIN)
                 ->orderBy('name')
                 ->get(),
-            'sifat1Options' => SuratKeluar::SIFAT_1_OPTIONS,
+            'sifat1Options' => SifatSurat::getOptions(),
         ]);
     }
 

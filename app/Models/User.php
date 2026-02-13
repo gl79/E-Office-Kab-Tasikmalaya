@@ -70,6 +70,7 @@ class User extends Authenticatable
         'master.pengguna' => 'Data Master - Pengguna',
         'master.unit-kerja' => 'Data Master - Unit Kerja',
         'master.indeks-surat' => 'Data Master - Indeks Surat',
+        'master.sifat-surat' => 'Data Master - Sifat Surat',
         'persuratan.surat-masuk' => 'Persuratan - Surat Masuk',
         'persuratan.surat-keluar' => 'Persuratan - Surat Keluar',
         'cuti' => 'Cuti',

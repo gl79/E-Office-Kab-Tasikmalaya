@@ -4,6 +4,7 @@ use App\Http\Controllers\Master\JenisSuratController;
 use App\Http\Controllers\Master\KepegawaianController;
 use App\Http\Controllers\Master\MasterArchiveController;
 use App\Http\Controllers\Master\PenggunaController;
+use App\Http\Controllers\Master\SifatSuratController;
 use App\Http\Controllers\Master\UnitKerjaController;
 use App\Http\Controllers\Master\IndeksSuratController;
 use App\Http\Controllers\Master\Wilayah\DesaController;
@@ -44,6 +45,9 @@ Route::middleware('auth')->prefix('master')->name('master.')->group(function () 
 
     // Jenis Surat
     Route::resource('jenis-surat', JenisSuratController::class)->except(['create', 'show', 'edit']);
+
+    // Sifat Surat
+    Route::resource('sifat-surat', SifatSuratController::class)->except(['create', 'show', 'edit']);
 
     // Wilayah Routes
     Route::prefix('wilayah')->name('wilayah.')->group(function () {

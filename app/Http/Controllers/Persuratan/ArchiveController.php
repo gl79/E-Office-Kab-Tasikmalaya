@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Persuratan;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\HandlesArchive;
+use App\Models\SifatSurat;
 use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
 use App\Support\CacheHelper;
@@ -89,7 +90,7 @@ class ArchiveController extends Controller
                 // Merge and sort by deleted_at
                 return $suratMasuk->merge($suratKeluar)->sortByDesc('deleted_at')->values();
             })),
-            'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
+            'sifatOptions' => SifatSurat::getOptions(),
         ]);
     }
 
@@ -200,4 +201,3 @@ class ArchiveController extends Controller
         }, ['persuratan_archive'], 'Gagal menghapus semua surat');
     }
 }
-

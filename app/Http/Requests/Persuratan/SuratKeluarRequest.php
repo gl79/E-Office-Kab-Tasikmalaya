@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Persuratan;
 
+use App\Models\SifatSurat;
 use App\Models\SuratKeluar;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -37,7 +38,7 @@ class SuratKeluarRequest extends FormRequest
             'kepada' => ['required', 'string', 'max:255'],
             'perihal' => ['required', 'string'],
             'isi_ringkas' => ['required', 'string'],
-            'sifat_1' => ['required', 'string', Rule::in(array_keys(SuratKeluar::SIFAT_1_OPTIONS))],
+            'sifat_1' => ['required', 'string', Rule::in(SifatSurat::allowedValues())],
             'sifat_2' => ['nullable', 'string', Rule::in(array_keys(SuratKeluar::SIFAT_2_OPTIONS))],
             'jenis_surat_id' => ['nullable', 'string', 'exists:jenis_surat,id'],
             'indeks_id' => ['nullable', 'string', 'exists:indeks_surat,id'],
