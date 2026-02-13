@@ -51,7 +51,7 @@ class SuratMasukController extends Controller
     {
         return User::select(['id', 'name', 'nip', 'jabatan'])
             ->where('role', '!=', User::ROLE_SUPERADMIN)
-            ->orderBy('name')
+            ->orderBy('name', 'asc')
             ->get();
     }
 
@@ -127,9 +127,9 @@ class SuratMasukController extends Controller
         $this->authorize('create', SuratMasuk::class);
 
         return Inertia::render('Persuratan/SuratMasuk/Create', [
-            'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
-            'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
-            'jenisSuratOptions' => JenisSurat::orderBy('nama')->get(['id', 'nama']),
+            'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode', 'asc')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
+            'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode', 'asc')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
+            'jenisSuratOptions' => JenisSurat::orderBy('nama', 'asc')->get(['id', 'nama']),
             'users' => $this->getUserOptions(),
             'asalSuratUsers' => $this->getAsalSuratUsers(),
             'sifatOptions' => SifatSurat::getOptions(),
@@ -175,9 +175,9 @@ class SuratMasukController extends Controller
 
         return Inertia::render('Persuratan/SuratMasuk/Edit', [
             'suratMasuk' => $suratMasuk,
-            'jenisSuratOptions' => JenisSurat::orderBy('nama')->get(['id', 'nama']),
-            'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
-            'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
+            'jenisSuratOptions' => JenisSurat::orderBy('nama', 'asc')->get(['id', 'nama']),
+            'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode', 'asc')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
+            'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode', 'asc')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'users' => $this->getUserOptions(),
             'asalSuratUsers' => $this->getAsalSuratUsers(),
             'sifatOptions' => SifatSurat::getOptions(),

@@ -552,6 +552,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <p className="text-sm text-text-secondary">Nomor Surat</p>
                                     <p className="font-medium text-text-primary">{detailSurat.nomor_surat}</p>
                                 </div>
+                                {detailSurat.jenis_surat && (
+                                    <div>
+                                        <p className="text-sm text-text-secondary">Jenis Surat</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.jenis_surat.nama}</p>
+                                    </div>
+                                )}
                                 <div>
                                     <p className="text-sm text-text-secondary">Sifat</p>
                                     {getSifatBadge(detailSurat.sifat, sifatOptions)}
@@ -560,12 +566,6 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <p className="text-sm text-text-secondary">Lampiran</p>
                                     <p className="font-medium text-text-primary">{detailSurat.lampiran || 0} berkas</p>
                                 </div>
-                                {detailSurat.jenis_surat && (
-                                    <div>
-                                        <p className="text-sm text-text-secondary">Jenis Surat</p>
-                                        <p className="font-medium text-text-primary">{detailSurat.jenis_surat.nama}</p>
-                                    </div>
-                                )}
                                 <div className="sm:col-span-2">
                                     <p className="text-sm text-text-secondary">Perihal</p>
                                     <p className="font-medium text-text-primary">{detailSurat.perihal}</p>
