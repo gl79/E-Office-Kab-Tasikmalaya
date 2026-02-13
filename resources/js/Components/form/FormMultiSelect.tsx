@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { X, ChevronDown, Plus } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { X, ChevronDown, Plus, Search } from 'lucide-react';
 
 interface Option {
     value: string;
@@ -28,15 +28,18 @@ export default function FormMultiSelect({
     error,
 }: FormMultiSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const [customInput, setCustomInput] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
+                setSearchQuery('');
                 setShowCustomInput(false);
             }
         };
@@ -44,6 +47,20 @@ export default function FormMultiSelect({
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Focus search input saat dropdown dibuka
+    useEffect(() => {
+        if (isOpen && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isOpen]);
+
+    // Filter options berdasarkan search query
+    const filteredOptions = useMemo(() => {
+        if (!searchQuery.trim()) return options;
+        const query = searchQuery.toLowerCase();
+        return options.filter((opt) => opt.label.toLowerCase().includes(query));
+    }, [options, searchQuery]);
 
     const handleToggle = (optionValue: string) => {
         if (disabled) return;
@@ -129,12 +146,33 @@ export default function FormMultiSelect({
             {/* Dropdown */}
             {isOpen && !disabled && (
                 <div className="
-                    absolute z-10 w-full mt-1
+                    absolute z-50 w-full mt-1
                     bg-surface border border-border-default rounded-md shadow-lg
-                    max-h-60 overflow-auto
                 ">
+                    {/* Search Input */}
+                    <div className="p-2 border-b border-border-light">
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                            <input
+                                ref={searchInputRef}
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Cari..."
+                                className="
+                                    w-full pl-8 pr-3 py-1.5 text-sm
+                                    border border-border-default rounded-md
+                                    focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
+                                    bg-surface text-text-primary
+                                "
+                            />
+                        </div>
+                    </div>
+
                     {/* Predefined Options */}
-                    {options.map((option) => (
+                    <div className="max-h-48 overflow-auto">
+                    {filteredOptions.length > 0 ? (
+                    filteredOptions.map((option) => (
                         <div
                             key={option.value}
                             onClick={() => handleToggle(option.value)}
@@ -154,7 +192,13 @@ export default function FormMultiSelect({
                                 {option.label}
                             </div>
                         </div>
-                    ))}
+                    ))
+                    ) : (
+                        <div className="px-3 py-3 text-sm text-text-muted text-center">
+                            Tidak ada data ditemukan
+                        </div>
+                    )}
+                    </div>
 
                     {/* Custom Input */}
                     {allowCustom && (

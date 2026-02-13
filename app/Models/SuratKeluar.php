@@ -81,17 +81,23 @@ class SuratKeluar extends Model
     {
         $year = date('Y');
 
-        $lastNumber = self::withTrashed()
-            ->where('created_by', $userId)
+        // Hanya hitung surat yang masih aktif (tidak dihapus) untuk user ini
+        $existingNumbers = self::where('created_by', $userId)
             ->whereYear('tanggal_surat', $year)
-            ->get(['no_urut'])
-            ->map(function ($s) {
-                // Remove leading zeros and convert to int
-                return (int) ltrim($s->no_urut, '0') ?: 0;
+            ->pluck('no_urut')
+            ->map(function ($noUrut) {
+                return (int) ltrim($noUrut, '0') ?: 0;
             })
-            ->max() ?? 0;
+            ->sort()
+            ->values();
 
-        return $lastNumber + 1;
+        // Cari nomor pertama yang tersedia (isi gap yang kosong)
+        $nextNumber = 1;
+        while ($existingNumbers->contains($nextNumber)) {
+            $nextNumber++;
+        }
+
+        return $nextNumber;
     }
 
     // ==================== RELATIONSHIPS ====================

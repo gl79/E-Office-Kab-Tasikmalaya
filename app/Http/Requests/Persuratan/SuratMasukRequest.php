@@ -45,7 +45,7 @@ class SuratMasukRequest extends FormRequest
                 'min:0',
             ]),
             'perihal' => ['required', 'string'],
-            'isi_ringkas' => ['required', 'string'],
+            'isi_ringkas' => ['nullable', 'string'],
 
             // Step 2: Identitas Agenda
             'tanggal_diterima' => ['required', 'date'],
@@ -86,11 +86,7 @@ class SuratMasukRequest extends FormRequest
                 'nullable',
                 'date',
             ]),
-            'catatan_tambahan' => array_filter([
-                $this->isMethod('POST') ? 'required' : null,
-                'nullable',
-                'string',
-            ]),
+            'catatan_tambahan' => ['nullable', 'string'],
 
             // File Upload
             'file' => [

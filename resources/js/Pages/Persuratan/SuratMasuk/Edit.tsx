@@ -354,7 +354,7 @@ export default function Edit({
                                             </div>
 
                                             <div className="md:col-span-2">
-                                                <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas Surat" required />
+                                                <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas Surat" />
                                                 <div className="mt-1">
                                                     <FormTextarea
                                                         id="isi_ringkas"

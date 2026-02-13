@@ -80,24 +80,29 @@ class SuratMasuk extends Model
     {
         $year = date('Y');
 
-        // Hitung dari tabel surat_masuk_tujuans (surat yang ditujukan ke user ini)
-        $countFromTujuan = SuratMasukTujuan::where('tujuan_id', $userId)
+        // Kumpulkan semua nomor agenda yang masih aktif (tidak dihapus) untuk user ini
+        // Dari tabel surat_masuk_tujuans (surat yang ditujukan ke user ini, parent tidak dihapus)
+        $tujuanNumbers = SuratMasukTujuan::where('tujuan_id', $userId)
             ->where('nomor_agenda', 'like', "SM/%/{$year}")
-            ->get(['nomor_agenda'])
-            ->map(fn($t) => (int) explode('/', $t->nomor_agenda)[1])
-            ->max() ?? 0;
+            ->whereHas('suratMasuk', fn($q) => $q->whereNull('deleted_at'))
+            ->pluck('nomor_agenda')
+            ->map(fn($agenda) => (int) explode('/', $agenda)[1]);
 
-        // Hitung dari tabel surat_masuks (surat yang di-create oleh user ini)
-        $countFromCreated = self::withTrashed()
-            ->where('created_by', $userId)
+        // Dari tabel surat_masuks (surat yang di-create oleh user ini, tidak dihapus)
+        $createdNumbers = self::where('created_by', $userId)
             ->where('nomor_agenda', 'like', "SM/%/{$year}")
-            ->get(['nomor_agenda'])
-            ->map(fn($s) => (int) explode('/', $s->nomor_agenda)[1])
-            ->max() ?? 0;
+            ->pluck('nomor_agenda')
+            ->map(fn($agenda) => (int) explode('/', $agenda)[1]);
 
-        $lastNumber = max($countFromTujuan, $countFromCreated);
+        $existingNumbers = $tujuanNumbers->merge($createdNumbers)->unique()->sort()->values();
 
-        return 'SM/' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT) . '/' . $year;
+        // Cari nomor pertama yang tersedia (isi gap yang kosong)
+        $nextNumber = 1;
+        while ($existingNumbers->contains($nextNumber)) {
+            $nextNumber++;
+        }
+
+        return 'SM/' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT) . '/' . $year;
     }
 
     // ==================== RELATIONSHIPS ====================

@@ -6,8 +6,6 @@ import Button from '@/Components/ui/Button';
 import FormWizard from '@/Components/form/FormWizard';
 import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
-import FormSelect from '@/Components/form/FormSelect';
-import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
 import FormSearchableSelect from '@/Components/form/FormSearchableSelect';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormMultiSelect from '@/Components/form/FormMultiSelect';
@@ -148,8 +146,7 @@ export default function Create({
             'jenis_surat_id',
             'sifat',
             'lampiran',
-            'perihal',
-            'isi_ringkas'
+            'perihal'
         ];
         const hasErrors = requiredFields.some((field) => !data[field as keyof typeof data]);
         const hasTujuan = data.tujuan.length > 0;
@@ -170,7 +167,6 @@ export default function Create({
             'kode_klasifikasi_id',
             'staff_pengolah_id',
             'tanggal_diteruskan',
-            'catatan_tambahan',
         ];
         const hasErrors = requiredFields.some((field) => !data[field as keyof typeof data]);
         const hasFile = !!data.file;
@@ -259,18 +255,19 @@ export default function Create({
                                             <div>
                                                 <InputLabel htmlFor="asal_surat" value="Asal Surat" required />
                                                 <div className="mt-1">
-                                                    <FormSelectWithCustom
+                                                    <FormSearchableSelect
                                                         id="asal_surat"
                                                         options={asalSuratOptions}
-                                                        value={data.asal_surat}
-                                                        onChange={(e) => setData('asal_surat', e.target.value)}
-                                                        placeholder="Pilih asal surat"
+                                                        value={asalSuratOptions.some(opt => opt.value === data.asal_surat) ? data.asal_surat : ''}
+                                                        customValue={!asalSuratOptions.some(opt => opt.value === data.asal_surat) ? data.asal_surat : ''}
+                                                        onChange={(value) => setData('asal_surat', value)}
+                                                        onCustomChange={(customValue) => setData('asal_surat', customValue)}
+                                                        placeholder="Pilih atau cari asal surat..."
                                                         customPlaceholder="Ketik asal surat lainnya..."
                                                         allowCustom={true}
-                                                        className="w-full"
+                                                        error={errors.asal_surat}
                                                     />
                                                 </div>
-                                                <InputError message={errors.asal_surat} className="mt-1" />
                                             </div>
 
                                             <div>
@@ -319,16 +316,15 @@ export default function Create({
                                             <div>
                                                 <InputLabel htmlFor="sifat" value="Sifat Surat" required />
                                                 <div className="mt-1">
-                                                    <FormSelect
+                                                    <FormSearchableSelect
                                                         id="sifat"
                                                         options={sifatSelectOptions}
                                                         value={data.sifat}
-                                                        onChange={(e) => setData('sifat', e.target.value)}
-                                                        placeholder="Pilih sifat surat"
-                                                        className="w-full"
+                                                        onChange={(value) => setData('sifat', value)}
+                                                        placeholder="Pilih atau cari sifat surat..."
+                                                        error={errors.sifat}
                                                     />
                                                 </div>
-                                                <InputError message={errors.sifat} className="mt-1" />
                                             </div>
 
                                             <div>
@@ -363,7 +359,7 @@ export default function Create({
                                             </div>
 
                                             <div className="md:col-span-2">
-                                                <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas Surat" required />
+                                                <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas Surat" />
                                                 <div className="mt-1">
                                                     <FormTextarea
                                                         id="isi_ringkas"
@@ -443,16 +439,15 @@ export default function Create({
                                             <div>
                                                 <InputLabel htmlFor="staff_pengolah_id" value="Staff Pengolah" required />
                                                 <div className="mt-1">
-                                                    <FormSelect
+                                                    <FormSearchableSelect
                                                         id="staff_pengolah_id"
                                                         options={staffPengolahOptions}
                                                         value={data.staff_pengolah_id}
-                                                        onChange={(e) => setData('staff_pengolah_id', e.target.value)}
-                                                        placeholder="Pilih staff pengolah"
-                                                        className="w-full"
+                                                        onChange={(value) => setData('staff_pengolah_id', value)}
+                                                        placeholder="Pilih atau cari staff pengolah..."
+                                                        error={errors.staff_pengolah_id}
                                                     />
                                                 </div>
-                                                <InputError message={errors.staff_pengolah_id} className="mt-1" />
                                             </div>
 
                                             <div>
@@ -469,7 +464,7 @@ export default function Create({
                                             </div>
 
                                             <div className="md:col-span-2">
-                                                <InputLabel htmlFor="catatan_tambahan" value="Catatan Tambahan" required />
+                                                <InputLabel htmlFor="catatan_tambahan" value="Catatan Tambahan" />
                                                 <div className="mt-1">
                                                     <FormTextarea
                                                         id="catatan_tambahan"

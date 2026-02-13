@@ -10,7 +10,8 @@
       "Bash(tree:*)",
       "Bash(find:*)",
       "Bash(wc:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npx vite build)"
     ]
   }
 }

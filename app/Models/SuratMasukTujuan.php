@@ -30,13 +30,22 @@ class SuratMasukTujuan extends Model
     {
         $year = date('Y');
 
-        $lastNumber = self::where('tujuan_id', $userId)
+        // Hanya hitung nomor agenda yang parent surat masuk-nya masih aktif (tidak dihapus)
+        $existingNumbers = self::where('tujuan_id', $userId)
             ->where('nomor_agenda', 'like', "SM/%/{$year}")
-            ->get(['nomor_agenda'])
-            ->map(fn($t) => (int) explode('/', $t->nomor_agenda)[1])
-            ->max() ?? 0;
+            ->whereHas('suratMasuk', fn($q) => $q->whereNull('deleted_at'))
+            ->pluck('nomor_agenda')
+            ->map(fn($agenda) => (int) explode('/', $agenda)[1])
+            ->sort()
+            ->values();
 
-        return 'SM/' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT) . '/' . $year;
+        // Cari nomor pertama yang tersedia (isi gap yang kosong)
+        $nextNumber = 1;
+        while ($existingNumbers->contains($nextNumber)) {
+            $nextNumber++;
+        }
+
+        return 'SM/' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT) . '/' . $year;
     }
 
     // ==================== RELATIONSHIPS ====================

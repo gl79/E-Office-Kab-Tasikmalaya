@@ -5,8 +5,6 @@ import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
 import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
-import FormSelect from '@/Components/form/FormSelect';
-import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
 import FormSearchableSelect from '@/Components/form/FormSearchableSelect';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormFileUpload from '@/Components/form/FormFileUpload';
@@ -172,6 +170,9 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
         }));
     };
 
+    // Cek apakah kepada value berasal dari options
+    const isKepadaFromOptions = userOptions.some(opt => opt.value === data.kepada);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post(route('persuratan.surat-keluar.update', suratKeluar.id), {
@@ -197,29 +198,34 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat *" />
-                                    <FormDatePicker
-                                        id="tanggal_surat"
-                                        value={data.tanggal_surat}
-                                        onChange={(e) => setData('tanggal_surat', e.target.value)}
-                                        className="w-full mt-1 px-2"
-                                    />
+                                    <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat" required />
+                                    <div className="mt-1">
+                                        <FormDatePicker
+                                            id="tanggal_surat"
+                                            value={data.tanggal_surat}
+                                            onChange={(e) => setData('tanggal_surat', e.target.value)}
+                                            className="w-full"
+                                        />
+                                    </div>
                                     <InputError message={errors.tanggal_surat} className="mt-1" />
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="no_urut" value="Nomor Urut *" />
-                                    <TextInput
-                                        id="no_urut"
-                                        value={data.no_urut}
-                                        onChange={(e) => setData('no_urut', e.target.value)}
-                                        className="w-full mt-1 px-2"
-                                    />
+                                    <InputLabel htmlFor="no_urut" value="Nomor Urut" required />
+                                    <div className="mt-1">
+                                        <TextInput
+                                            id="no_urut"
+                                            value={data.no_urut}
+                                            readOnly
+                                            className="w-full bg-gray-100 cursor-not-allowed"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-text-secondary mt-1">Nomor urut digenerate otomatis oleh sistem</p>
                                     <InputError message={errors.no_urut} className="mt-1" />
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="indeks_id" value="Indeks" />
+                                    <InputLabel htmlFor="indeks_id" value="Indeks" required />
                                     <div className="mt-1">
                                         <FormSearchableSelect
                                             id="indeks_id"
@@ -233,7 +239,7 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="kode_klasifikasi_id" value="Kode" />
+                                    <InputLabel htmlFor="kode_klasifikasi_id" value="Kode" required />
                                     <div className="mt-1">
                                         <FormSearchableSelect
                                             id="kode_klasifikasi_id"
@@ -248,140 +254,166 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="unit_kerja_id" value="Pengolah" />
-                                    <FormSelect
-                                        id="unit_kerja_id"
-                                        options={unitKerjaOptions}
-                                        value={data.unit_kerja_id}
-                                        onChange={(e) => setData('unit_kerja_id', e.target.value)}
-                                        placeholder="Pilih unit kerja pengolah"
-                                        className="w-full mt-1 px-2"
-                                    />
-                                    <InputError message={errors.unit_kerja_id} className="mt-1" />
+                                    <InputLabel htmlFor="unit_kerja_id" value="Pengolah" required />
+                                    <div className="mt-1">
+                                        <FormSearchableSelect
+                                            id="unit_kerja_id"
+                                            options={unitKerjaOptions}
+                                            value={data.unit_kerja_id}
+                                            onChange={(value) => setData('unit_kerja_id', value)}
+                                            placeholder="Pilih atau cari unit kerja pengolah..."
+                                            error={errors.unit_kerja_id}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="kode_pengolah" value="Kode Pengolah" />
-                                    <TextInput
-                                        id="kode_pengolah"
-                                        value={data.kode_pengolah}
-                                        onChange={(e) => setData('kode_pengolah', e.target.value)}
-                                        className="w-full mt-1 px-2"
-                                    />
+                                    <InputLabel htmlFor="kode_pengolah" value="Kode Pengolah" required />
+                                    <div className="mt-1">
+                                        <TextInput
+                                            id="kode_pengolah"
+                                            value={data.kode_pengolah}
+                                            onChange={(e) => setData('kode_pengolah', e.target.value)}
+                                            placeholder="Masukkan kode pengolah"
+                                            className="w-full"
+                                        />
+                                    </div>
                                     <InputError message={errors.kode_pengolah} className="mt-1" />
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="jenis_surat_id" value="Jenis Surat" />
-                                    <FormSelect
-                                        id="jenis_surat_id"
-                                        options={jenisSuratSelectOptions}
-                                        value={data.jenis_surat_id}
-                                        onChange={(e) => setData('jenis_surat_id', e.target.value)}
-                                        placeholder="Pilih jenis surat"
-                                        className="w-full mt-1 px-2"
-                                    />
-                                    <InputError message={errors.jenis_surat_id} className="mt-1" />
+                                    <InputLabel htmlFor="jenis_surat_id" value="Jenis Surat" required />
+                                    <div className="mt-1">
+                                        <FormSearchableSelect
+                                            id="jenis_surat_id"
+                                            options={jenisSuratSelectOptions}
+                                            value={data.jenis_surat_id}
+                                            onChange={(value) => setData('jenis_surat_id', value)}
+                                            placeholder="Pilih atau cari jenis surat..."
+                                            error={errors.jenis_surat_id}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="sifat_1" value="Sifat *" />
-                                    <FormSelect
-                                        id="sifat_1"
-                                        options={sifat1SelectOptions}
-                                        value={data.sifat_1}
-                                        onChange={(e) => setData('sifat_1', e.target.value)}
-                                        placeholder="Pilih sifat"
-                                        className="w-full mt-1 px-2"
-                                    />
-                                    <InputError message={errors.sifat_1} className="mt-1" />
+                                    <InputLabel htmlFor="sifat_1" value="Sifat Surat" required />
+                                    <div className="mt-1">
+                                        <FormSearchableSelect
+                                            id="sifat_1"
+                                            options={sifat1SelectOptions}
+                                            value={data.sifat_1}
+                                            onChange={(value) => setData('sifat_1', value)}
+                                            placeholder="Pilih atau cari sifat surat..."
+                                            error={errors.sifat_1}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="nomor_surat" value="Nomor Surat *" />
-                                    <TextInput
-                                        id="nomor_surat"
-                                        value={data.nomor_surat}
-                                        readOnly
-                                        placeholder="Otomatis terisi berdasarkan Sifat/NoUrut/Kode/Pengolah/Tahun"
-                                        className="w-full mt-1 px-2 bg-surface-hover cursor-not-allowed"
-                                    />
+                                    <InputLabel htmlFor="nomor_surat" value="Nomor Surat" required />
+                                    <div className="mt-1">
+                                        <TextInput
+                                            id="nomor_surat"
+                                            value={data.nomor_surat}
+                                            readOnly
+                                            placeholder="Otomatis terisi berdasarkan Sifat/NoUrut/Kode/Pengolah/Tahun"
+                                            className="w-full bg-gray-100 cursor-not-allowed"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-text-secondary mt-1">Nomor surat digenerate otomatis oleh sistem</p>
                                     <InputError message={errors.nomor_surat} className="mt-1" />
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="kepada" value="Kepada *" />
-                                    <FormSelectWithCustom
-                                        id="kepada"
-                                        options={userOptions}
-                                        value={data.kepada}
-                                        onChange={(e) => setData('kepada', e.target.value)}
-                                        placeholder="Pilih penerima atau ketik manual"
-                                        customPlaceholder="Ketik nama penerima..."
-                                        allowCustom={true}
-                                        className="w-full mt-1"
-                                    />
-                                    <InputError message={errors.kepada} className="mt-1" />
+                                    <InputLabel htmlFor="kepada" value="Kepada" required />
+                                    <div className="mt-1">
+                                        <FormSearchableSelect
+                                            id="kepada"
+                                            options={userOptions}
+                                            value={isKepadaFromOptions ? data.kepada : ''}
+                                            customValue={!isKepadaFromOptions ? data.kepada : ''}
+                                            onChange={(value) => setData('kepada', value)}
+                                            onCustomChange={(customValue) => setData('kepada', customValue)}
+                                            placeholder="Pilih atau cari penerima..."
+                                            customPlaceholder="Ketik nama penerima..."
+                                            allowCustom={true}
+                                            error={errors.kepada}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="lampiran" value="Lampiran" />
-                                    <TextInput
-                                        id="lampiran"
-                                        type="number"
-                                        value={data.lampiran}
-                                        onChange={(e) => setData('lampiran', e.target.value)}
-                                        min="0"
-                                        className="w-full mt-1 px-2"
-                                    />
+                                    <InputLabel htmlFor="lampiran" value="Lampiran" required />
+                                    <div className="mt-1">
+                                        <TextInput
+                                            id="lampiran"
+                                            type="number"
+                                            value={data.lampiran}
+                                            onChange={(e) => setData('lampiran', e.target.value)}
+                                            placeholder="Jumlah lampiran"
+                                            min="0"
+                                            className="w-full"
+                                        />
+                                    </div>
                                     <InputError message={errors.lampiran} className="mt-1" />
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <InputLabel htmlFor="perihal" value="Perihal *" />
-                                    <FormTextarea
-                                        id="perihal"
-                                        value={data.perihal}
-                                        onChange={(e) => setData('perihal', e.target.value)}
-                                        rows={2}
-                                        className="w-full mt-1 px-2"
-                                    />
+                                    <InputLabel htmlFor="perihal" value="Perihal" required />
+                                    <div className="mt-1">
+                                        <FormTextarea
+                                            id="perihal"
+                                            value={data.perihal}
+                                            onChange={(e) => setData('perihal', e.target.value)}
+                                            placeholder="Masukkan perihal surat"
+                                            rows={2}
+                                            className="w-full"
+                                        />
+                                    </div>
                                     <InputError message={errors.perihal} className="mt-1" />
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas *" />
-                                    <FormTextarea
-                                        id="isi_ringkas"
-                                        value={data.isi_ringkas}
-                                        onChange={(e) => setData('isi_ringkas', e.target.value)}
-                                        rows={4}
-                                        className="w-full mt-1 px-2"
-                                    />
+                                    <InputLabel htmlFor="isi_ringkas" value="Isi Ringkas" required />
+                                    <div className="mt-1">
+                                        <FormTextarea
+                                            id="isi_ringkas"
+                                            value={data.isi_ringkas}
+                                            onChange={(e) => setData('isi_ringkas', e.target.value)}
+                                            placeholder="Masukkan ringkasan isi surat"
+                                            rows={4}
+                                            className="w-full"
+                                        />
+                                    </div>
                                     <InputError message={errors.isi_ringkas} className="mt-1" />
                                 </div>
 
                                 <div className="md:col-span-2">
                                     <InputLabel htmlFor="catatan" value="Catatan" />
-                                    <FormTextarea
-                                        id="catatan"
-                                        value={data.catatan}
-                                        onChange={(e) => setData('catatan', e.target.value)}
-                                        rows={2}
-                                        className="w-full mt-1 px-2"
-                                    />
+                                    <div className="mt-1">
+                                        <FormTextarea
+                                            id="catatan"
+                                            value={data.catatan}
+                                            onChange={(e) => setData('catatan', e.target.value)}
+                                            placeholder="Masukkan catatan"
+                                            rows={2}
+                                            className="w-full"
+                                        />
+                                    </div>
                                     <InputError message={errors.catatan} className="mt-1" />
                                 </div>
 
                                 <div className="md:col-span-2">
                                     <InputLabel value="Upload File Surat (Kosongkan jika tidak ingin mengubah)" />
-                                    <FormFileUpload
-                                        onChange={(file) => setData('file', file)}
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg"
-                                        maxSize={5}
-                                        error={errors.file}
-                                        currentFile={suratKeluar.file_path ? suratKeluar.file_path.split('/').pop() : undefined}
-                                    />
+                                    <div className="mt-1">
+                                        <FormFileUpload
+                                            onChange={(file) => setData('file', file)}
+                                            accept=".pdf,.doc,.docx,.jpg,.jpeg"
+                                            maxSize={5}
+                                            error={errors.file}
+                                            currentFile={suratKeluar.file_path ? suratKeluar.file_path.split('/').pop() : undefined}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
