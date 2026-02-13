@@ -15,7 +15,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->char('parent_id', 26)->nullable();
             $table->string('kode', 50)->unique();
-            $table->string('nama');
+            $table->text('nama');
             $table->unsignedTinyInteger('level')->default(1);
             $table->integer('urutan')->nullable();
 

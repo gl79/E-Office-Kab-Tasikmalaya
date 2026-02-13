@@ -108,14 +108,40 @@ class IndeksSuratController extends Controller
     }
 
     /**
-     * Update the specified resource in storage (nama only).
+     * Update the specified resource in storage.
      */
     public function update(IndeksSuratRequest $request, string $id)
     {
         $indeksSurat = IndeksSurat::findOrFail($id);
         $this->authorize('update', $indeksSurat);
 
-        $indeksSurat->update(['nama' => $request->nama]);
+        $updateData = ['nama' => $request->nama];
+
+        // Jika kode berubah, hitung ulang level & parent_id
+        if ($request->filled('kode') && $request->kode !== $indeksSurat->kode) {
+            $newKode = $request->kode;
+            $newLevel = substr_count($newKode, '.') + 1;
+            $newParentId = null;
+
+            if (str_contains($newKode, '.')) {
+                $parentKode = substr($newKode, 0, strrpos($newKode, '.'));
+                $parent = IndeksSurat::where('kode', $parentKode)->first();
+
+                if (!$parent) {
+                    return redirect()->back()->withErrors([
+                        'kode' => "Parent dengan kode '{$parentKode}' tidak ditemukan.",
+                    ]);
+                }
+
+                $newParentId = $parent->id;
+            }
+
+            $updateData['kode'] = $newKode;
+            $updateData['level'] = $newLevel;
+            $updateData['parent_id'] = $newParentId;
+        }
+
+        $indeksSurat->update($updateData);
 
         CacheHelper::flush(['master_list']);
         CacheHelper::flush(['master_archive']);
@@ -147,30 +173,6 @@ class IndeksSuratController extends Controller
         CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus.');
-    }
-
-    /**
-     * Display a listing of the archived resources.
-     */
-    public function archive(Request $request)
-    {
-        $this->authorize('viewAny', IndeksSurat::class);
-
-        $query = IndeksSurat::onlyTrashed()->select(['id', 'kode', 'nama', 'level', 'deleted_at']);
-
-        if ($request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->whereRaw('LOWER(kode) LIKE LOWER(?)', ['%' . $request->search . '%'])
-                    ->orWhereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $request->search . '%']);
-            });
-        }
-
-        $indeksSurat = $query->latest('deleted_at')->paginate(10)->withQueryString();
-
-        return Inertia::render('Master/IndeksSurat/Archive', [
-            'indeksSurat' => $indeksSurat,
-            'filters' => $request->only(['search']),
-        ]);
     }
 
     /**

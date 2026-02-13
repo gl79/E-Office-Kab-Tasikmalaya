@@ -159,7 +159,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
         onOpenEdit: (indeks) => {
             setData({
                 parent_id: '',
-                kode: '',
+                kode: indeks.kode,
                 nama: indeks.nama,
             });
             clearErrors();
@@ -372,7 +372,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                                                     variant="secondary"
                                                     size="sm"
                                                     onClick={() => openEditModal(indeks)}
-                                                    title="Edit Nama"
+                                                    title="Edit"
                                                 >
                                                     <Pencil className="h-3.5 w-3.5" />
                                                 </Button>
@@ -464,11 +464,15 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
                         <InputLabel htmlFor="edit-kode" value="Kode" />
                         <TextInput
                             id="edit-kode"
-                            value={selectedIndeks?.kode || ''}
-                            readOnly
-                            className="w-full bg-gray-100 cursor-not-allowed"
+                            value={data.kode}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('kode', e.target.value)}
+                            placeholder="Contoh: 000.1.1"
+                            className="w-full"
                         />
-                        <p className="text-xs text-text-secondary">Kode tidak dapat diubah</p>
+                        {errors.kode && <p className="text-sm text-danger">{errors.kode}</p>}
+                        <p className="text-xs text-text-secondary">
+                            Format: angka dipisahkan titik (contoh: 000, 000.1, 000.1.1). Parent kode harus sudah ada.
+                        </p>
                     </div>
                     <div className="space-y-2">
                         <InputLabel htmlFor="edit-nama" value="Nama" />

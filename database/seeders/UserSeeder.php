@@ -60,6 +60,7 @@ class UserSeeder extends Seeder
                 'email' => 'tatausaha@eoffice.test',
                 'password' => Hash::make('tatausaha123@'),
                 'role' => User::ROLE_TU,
+                'jabatan' => 'Tata Usaha',
                 'module_access' => array_merge(
                     ['dashboard'],
                     $modulesMaster,
