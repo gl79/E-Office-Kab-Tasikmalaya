@@ -19,6 +19,7 @@ use Illuminate\Notifications\Notifiable;
  * @property string|null $jenis_kelamin
  * @property string|null $jabatan
  * @property array|null $module_access
+ * @property int|null $created_by
  * @property \Illuminate\Support\Carbon|null $password_changed_at
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -91,6 +92,7 @@ class User extends Authenticatable
         'jenis_kelamin',
         'jabatan',
         'module_access',
+        'created_by',
         'password_changed_at',
     ];
 
@@ -143,6 +145,14 @@ class User extends Authenticatable
             return asset('storage/' . $this->foto);
         }
         return null;
+    }
+
+    /**
+     * Get the user who created this user.
+     */
+    public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

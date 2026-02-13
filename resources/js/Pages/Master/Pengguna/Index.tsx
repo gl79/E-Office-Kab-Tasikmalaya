@@ -1,7 +1,7 @@
-import { useState, useRef, FormEvent, useMemo, useCallback, useEffect } from 'react';
-import { Head, router, useForm, usePage, Link } from '@inertiajs/react';
+import { useState, useRef, FormEvent, useMemo, useCallback } from 'react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Button, Modal, Pagination } from '@/Components/ui';
+import { Button, Modal, Pagination, useToast } from '@/Components/ui';
 import { InputLabel, TextInput, InputError } from '@/Components/form';
 import { User, PageProps } from '@/types';
 import { Search, Pencil, Trash2, Plus, Eye } from 'lucide-react';
@@ -15,28 +15,13 @@ interface Props extends PageProps {
         role?: string;
     };
     roles: Record<string, string>;
-    modules: Record<string, string>;
 }
-
-// Module order matching sidebar
-const MODULE_ORDER = [
-    'dashboard',
-    'master.kepegawaian',
-    'master.pengguna',
-    'master.unit-kerja',
-    'master.indeks-surat',
-    'persuratan.surat-masuk',
-    'persuratan.surat-keluar',
-    'cuti',
-    'penjadwalan.jadwal',
-    'penjadwalan.tentatif',
-    'penjadwalan.definitif',
-];
 
 const CACHE_TTL_MS = 60_000;
 
-const Index = ({ data, filters, roles, modules }: Props) => {
+const Index = ({ data, filters, roles }: Props) => {
     const { auth } = usePage<PageProps>().props;
+    const { showToast } = useToast();
     const { data: users, isLoading, hasCached } = useDeferredDataMutable<User[]>(
         `master_pengguna_${auth.user.id}`,
         data,
@@ -111,26 +96,8 @@ const Index = ({ data, filters, roles, modules }: Props) => {
         nip: '',
         jenis_kelamin: '' as 'L' | 'P' | '',
         jabatan: '',
-        module_access: [] as string[],
         foto: null as File | null,
     });
-
-    // Ordered modules matching sidebar
-    const orderedModules = useMemo(() => {
-        const ordered: [string, string][] = [];
-        MODULE_ORDER.forEach(key => {
-            if (modules[key]) {
-                ordered.push([key, modules[key]]);
-            }
-        });
-        // Add any remaining modules not in order
-        Object.entries(modules).forEach(([key, label]) => {
-            if (!MODULE_ORDER.includes(key)) {
-                ordered.push([key, label]);
-            }
-        });
-        return ordered;
-    }, [modules]);
 
     const openCreate = useCallback(() => {
         form.reset();
@@ -150,7 +117,6 @@ const Index = ({ data, filters, roles, modules }: Props) => {
             nip: item.nip || '',
             jenis_kelamin: item.jenis_kelamin || '',
             jabatan: item.jabatan || '',
-            module_access: item.module_access || [],
             foto: null,
         });
         form.clearErrors();
@@ -167,55 +133,27 @@ const Index = ({ data, filters, roles, modules }: Props) => {
         }
     }, [form]);
 
-    const handleModuleToggle = useCallback((module: string) => {
-        const current = form.data.module_access;
-        if (current.includes(module)) {
-            form.setData('module_access', current.filter(m => m !== module));
-        } else {
-            form.setData('module_access', [...current, module]);
-        }
-    }, [form]);
-
     const handleSubmit = useCallback((e: FormEvent) => {
         e.preventDefault();
 
-        const formData = new FormData();
-        formData.append('name', form.data.name);
-        formData.append('username', form.data.username);
-        formData.append('email', form.data.email);
-        if (form.data.password) {
-            formData.append('password', form.data.password);
-        }
-        formData.append('role', form.data.role);
-        formData.append('nip', form.data.nip);
-        formData.append('jenis_kelamin', form.data.jenis_kelamin);
-        formData.append('jabatan', form.data.jabatan);
-        form.data.module_access.forEach((m, i) => {
-            formData.append(`module_access[${i}]`, m);
-        });
-        if (form.data.foto) {
-            formData.append('foto', form.data.foto);
-        }
+        const options = {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowModal(false);
+                setEditItem(null);
+            },
+            onError: () => {
+                showToast('error', 'Terdapat kesalahan pada form. Silakan periksa kembali.');
+            },
+        };
 
         if (editItem) {
-            router.patch(route('master.pengguna.update', editItem.id), formData, {
-                forceFormData: true,
-                preserveScroll: true,
-                onSuccess: () => {
-                    setShowModal(false);
-                    setEditItem(null);
-                },
-            });
+            form.patch(route('master.pengguna.update', editItem.id), options);
         } else {
-            router.post(route('master.pengguna.store'), formData, {
-                forceFormData: true,
-                preserveScroll: true,
-                onSuccess: () => {
-                    setShowModal(false);
-                },
-            });
+            form.post(route('master.pengguna.store'), options);
         }
-    }, [form.data, editItem]);
+    }, [form, editItem, showToast]);
 
     const handleDelete = useCallback(() => {
         if (deleteItem) {
@@ -402,7 +340,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
 
                             {/* Nama */}
                             <div className="min-h-[76px] ml-2">
-                                <InputLabel htmlFor="name" value="Nama Lengkap *" />
+                                <InputLabel htmlFor="name" value="Nama Lengkap" required />
                                 <TextInput
                                     id="name"
                                     value={form.data.name}
@@ -415,7 +353,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
 
                             {/* Username */}
                             <div className="min-h-[76px]">
-                                <InputLabel htmlFor="username" value="Username *" />
+                                <InputLabel htmlFor="username" value="Username" required />
                                 <TextInput
                                     id="username"
                                     value={form.data.username}
@@ -495,7 +433,7 @@ const Index = ({ data, filters, roles, modules }: Props) => {
 
                             {/* Password */}
                             <div className="min-h-[76px] ml-2">
-                                <InputLabel htmlFor="password" value={editItem ? 'Password (kosongkan jika tidak diubah)' : 'Password *'} />
+                                <InputLabel htmlFor="password" value={editItem ? 'Password (kosongkan jika tidak diubah)' : 'Password'} required={!editItem} />
                                 <TextInput
                                     id="password"
                                     type="password"
@@ -503,13 +441,15 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                     onChange={(e) => form.setData('password', e.target.value)}
                                     className="mt-1 w-full px-2"
                                     required={!editItem}
+                                    minLength={8}
                                 />
                                 <InputError message={form.errors.password} className="mt-1" />
+                                <p className="text-xs text-text-secondary mt-1">Minimal 8 karakter</p>
                             </div>
 
                             {/* Role */}
                             <div className="min-h-[76px]">
-                                <InputLabel htmlFor="role" value="Role *" />
+                                <InputLabel htmlFor="role" value="Role" required />
                                 <select
                                     id="role"
                                     value={form.data.role}
@@ -522,28 +462,6 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                     ))}
                                 </select>
                                 <InputError message={form.errors.role} className="mt-1" />
-                            </div>
-
-                            {/* Module Access - UI only, not applied yet */}
-                            <div className="md:col-span-2">
-                                <InputLabel value="Akses Modul" />
-                                <p className="text-xs text-text-secondary mb-2">
-                                    Pilih modul yang dapat diakses oleh pengguna ini
-                                    <span className="text-accent-dark ml-1">(Fitur dalam pengembangan)</span>
-                                </p>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-surface-hover rounded-lg">
-                                    {orderedModules.map(([key, label]) => (
-                                        <label key={key} className="flex items-center text-sm cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={form.data.module_access.includes(key)}
-                                                onChange={() => handleModuleToggle(key)}
-                                                className="mr-2 rounded border-border-default text-primary focus:ring-primary"
-                                            />
-                                            <span className="truncate">{label}</span>
-                                        </label>
-                                    ))}
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -615,16 +533,24 @@ const Index = ({ data, filters, roles, modules }: Props) => {
                                 </p>
                             </div>
                         </div>
-                        {detailItem.module_access && detailItem.module_access.length > 0 && (
-                            <div className="pt-2 border-t border-border-default">
-                                <p className="text-xs text-text-secondary mb-2">Akses Modul</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {MODULE_ORDER.filter(m => detailItem.module_access?.includes(m)).map(m => (
-                                        <span key={m} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-light text-primary-dark">
-                                            {modules[m] || m}
-                                        </span>
-                                    ))}
-                                </div>
+                        {/* Info Pembuat */}
+                        {detailItem.created_at && (
+                            <div className="pt-3 border-t border-border-default">
+                                <p className="text-xs text-text-secondary italic">
+                                    Data ditambahkan oleh{' '}
+                                    <span className="font-semibold text-text-primary">
+                                        {detailItem.creator?.role_label || detailItem.creator?.role || '-'}
+                                    </span>
+                                    {' '}pada{' '}
+                                    <span className="font-semibold text-text-primary">
+                                        {(() => {
+                                            const d = new Date(detailItem.created_at!);
+                                            const tanggal = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+                                            const waktu = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+                                            return `${tanggal} Pukul ${waktu}`;
+                                        })()}
+                                    </span>
+                                </p>
                             </div>
                         )}
                         <div className="flex justify-end mt-4">

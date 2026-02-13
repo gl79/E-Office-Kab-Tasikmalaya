@@ -43,17 +43,23 @@ class UserSeeder extends Seeder
 
         $modulesCuti = ['cuti'];
 
-        // 1. Super Admin (Access All by Role Logic)
-        $users = [
+        // 1. Super Admin (dibuat pertama sebagai pembuat semua user awal)
+        $superAdmin = User::updateOrCreate(
+            ['username' => 'superadmin'],
             [
                 'name' => 'Super Admin',
-                'username' => 'superadmin',
                 'email' => 'superadmin@eoffice.test',
                 'password' => Hash::make('tasik123@'),
                 'role' => User::ROLE_SUPERADMIN,
-                'module_access' => [], // Superadmin has all access
-            ],
-            // 4. Tata Usaha (Master, Persuratan, Penjadwalan, Cuti, Pengaturan)
+                'module_access' => [],
+            ]
+        );
+
+        // Set created_by Super Admin ke dirinya sendiri
+        $superAdmin->update(['created_by' => $superAdmin->id]);
+
+        // 2. User lainnya (created_by = Super Admin)
+        $users = [
             [
                 'name' => 'Tata Usaha',
                 'username' => 'tatausaha',
@@ -61,6 +67,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('tatausaha123@'),
                 'role' => User::ROLE_TU,
                 'jabatan' => 'Tata Usaha',
+                'created_by' => $superAdmin->id,
                 'module_access' => array_merge(
                     ['dashboard'],
                     $modulesMaster,
@@ -69,7 +76,6 @@ class UserSeeder extends Seeder
                     $modulesCuti
                 ),
             ],
-            // 2. Pimpinan (Persuratan read-only + Penjadwalan)
             [
                 'name' => 'Bupati',
                 'username' => 'bupati',
@@ -77,6 +83,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('bupati123@'),
                 'role' => User::ROLE_PIMPINAN,
                 'jabatan' => 'Bupati',
+                'created_by' => $superAdmin->id,
                 'module_access' => array_merge(
                     $modulesPersuratan,
                     $modulesPenjadwalan
@@ -89,12 +96,12 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('wakilbupati123@'),
                 'role' => User::ROLE_PIMPINAN,
                 'jabatan' => 'Wakil Bupati',
+                'created_by' => $superAdmin->id,
                 'module_access' => array_merge(
                     $modulesPersuratan,
                     $modulesPenjadwalan
                 ),
             ],
-            // 5. User (Persuratan, Pengaturan)
             [
                 'name' => 'Sekda',
                 'username' => 'sekda',
@@ -102,6 +109,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('sekda123@'),
                 'role' => User::ROLE_USER,
                 'jabatan' => 'Sekretaris Daerah',
+                'created_by' => $superAdmin->id,
                 'module_access' => $modulesPersuratan,
             ],
             [
@@ -111,6 +119,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('asda1123@'),
                 'role' => User::ROLE_USER,
                 'jabatan' => 'Asisten Daerah 1',
+                'created_by' => $superAdmin->id,
                 'module_access' => $modulesPersuratan,
             ],
             [
@@ -120,6 +129,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('asda2123@'),
                 'role' => User::ROLE_USER,
                 'jabatan' => 'Asisten Daerah 2',
+                'created_by' => $superAdmin->id,
                 'module_access' => $modulesPersuratan,
             ],
             [
@@ -129,6 +139,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('asda3123@'),
                 'role' => User::ROLE_USER,
                 'jabatan' => 'Asisten Daerah 3',
+                'created_by' => $superAdmin->id,
                 'module_access' => $modulesPersuratan,
             ],
         ];
@@ -140,7 +151,7 @@ class UserSeeder extends Seeder
             );
         }
 
-        $this->command->info('Created/updated ' . count($users) . ' users.');
+        $this->command->info('Created/updated ' . (count($users) + 1) . ' users.');
         $this->command->info('Default login: superadmin / tasik123@');
     }
 }

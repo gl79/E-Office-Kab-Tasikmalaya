@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('jenis_kelamin', ['L', 'P'])->nullable();
             $table->string('jabatan')->nullable();
             $table->json('module_access')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('email')->unique()->nullable();
             $table->string('password');
             $table->timestamp('password_changed_at')->nullable();

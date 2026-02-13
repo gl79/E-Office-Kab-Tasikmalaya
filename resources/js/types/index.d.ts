@@ -13,6 +13,13 @@ export interface User {
     jenis_kelamin?: 'L' | 'P' | null;
     module_access?: string[] | null;
     can_manage_users?: boolean;
+    created_by?: number | null;
+    creator?: {
+        id: number;
+        name: string;
+        role: string;
+        role_label?: string;
+    } | null;
     password_changed_at?: string | null;
     created_at?: string;
     deleted_at?: string | null;
