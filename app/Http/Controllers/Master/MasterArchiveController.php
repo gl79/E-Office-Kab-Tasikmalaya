@@ -12,6 +12,7 @@ use App\Models\WilayahKecamatan;
 use App\Models\WilayahProvinsi;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -133,6 +134,8 @@ class MasterArchiveController extends Controller
      */
     public function restoreAll()
     {
+        $this->authorizeBulkArchiveAction();
+
         return $this->archiveTransaction(function () {
             $total = UnitKerja::onlyTrashed()->count()
                 + IndeksSurat::onlyTrashed()->count()
@@ -161,6 +164,8 @@ class MasterArchiveController extends Controller
      */
     public function forceDeleteAll()
     {
+        $this->authorizeBulkArchiveAction();
+
         return $this->archiveTransaction(function () {
             $total = UnitKerja::onlyTrashed()->count()
                 + IndeksSurat::onlyTrashed()->count()
@@ -181,5 +186,11 @@ class MasterArchiveController extends Controller
             return "{$total} data berhasil dihapus permanen.";
         }, ['master_archive'], 'Gagal menghapus semua data');
     }
-}
 
+    private function authorizeBulkArchiveAction(): void
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+        abort_unless($user && ($user->isSuperAdmin() || $user->isTU()), 403);
+    }
+}

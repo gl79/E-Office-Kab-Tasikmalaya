@@ -18,11 +18,14 @@ class SuratKeluarPolicy
 
     /**
      * Determine whether the user can view the model.
-     * All authenticated users can view.
+     * Superadmin dan TU dapat melihat semua.
+     * User lain hanya dapat melihat surat yang mereka buat.
      */
     public function view(User $user, SuratKeluar $suratKeluar): bool
     {
-        return true;
+        return $user->isSuperAdmin()
+            || $user->isTU()
+            || $suratKeluar->created_by === $user->id;
     }
 
     /**

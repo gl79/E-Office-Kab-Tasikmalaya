@@ -77,9 +77,9 @@ class SuratKeluar extends Model
      * Nomor di-generate per-user (setiap user punya urutan sendiri).
      * Nomor direset setiap pergantian tahun berdasarkan tanggal_surat.
      */
-    public static function generateNextNoUrut(int $userId): int
+    public static function generateNextNoUrut(int $userId, ?string $tanggalSurat = null): int
     {
-        $year = date('Y');
+        $year = $tanggalSurat ? date('Y', strtotime($tanggalSurat)) : date('Y');
 
         // Hanya hitung surat yang masih aktif (tidak dihapus) untuk user ini
         $existingNumbers = self::where('created_by', $userId)

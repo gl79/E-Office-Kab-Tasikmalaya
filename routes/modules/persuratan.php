@@ -17,7 +17,7 @@ Route::middleware('auth')->prefix('persuratan')->name('persuratan.')->group(func
     Route::get('surat-masuk/{id}/download', [SuratMasukController::class, 'downloadFile'])->name('surat-masuk.download');
 
     // Surat Keluar Routes
-    Route::resource('surat-keluar', SuratKeluarController::class);
+    Route::resource('surat-keluar', SuratKeluarController::class)->except(['show']);
     Route::post('surat-keluar/{id}/restore', [SuratKeluarController::class, 'restore'])->name('surat-keluar.restore');
     Route::delete('surat-keluar/{id}/force-delete', [SuratKeluarController::class, 'forceDelete'])->name('surat-keluar.force-delete');
     Route::get('surat-keluar/{id}/cetak-kartu', [SuratKeluarController::class, 'cetakKartu'])->name('surat-keluar.cetak-kartu');

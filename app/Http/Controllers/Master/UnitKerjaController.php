@@ -80,30 +80,6 @@ class UnitKerjaController extends Controller
     }
 
     /**
-     * Display a listing of the archived resources.
-     */
-    public function archive(Request $request)
-    {
-        $this->authorize('viewAny', UnitKerja::class);
-
-        $query = UnitKerja::onlyTrashed()->select(['id', 'nama', 'singkatan', 'deleted_at']);
-
-        if ($request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->whereRaw('LOWER(nama) LIKE LOWER(?)', ['%' . $request->search . '%'])
-                    ->orWhereRaw('LOWER(singkatan) LIKE LOWER(?)', ['%' . $request->search . '%']);
-            });
-        }
-
-        $unitKerja = $query->latest('deleted_at')->paginate(10)->withQueryString();
-
-        return Inertia::render('Master/UnitKerja/Archive', [
-            'unitKerja' => $unitKerja,
-            'filters' => $request->only(['search']),
-        ]);
-    }
-
-    /**
      * Restore the specified resource from storage.
      */
     public function restore(string $id)
@@ -135,4 +111,3 @@ class UnitKerjaController extends Controller
         return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus permanen.');
     }
 }
-

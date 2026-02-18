@@ -11,6 +11,7 @@ import FormFileUpload from '@/Components/form/FormFileUpload';
 import InputLabel from '@/Components/form/InputLabel';
 import InputError from '@/Components/form/InputError';
 import type { PageProps } from '@/types';
+import { buildKepadaUserOptions, getSifatCode } from '@/utils';
 
 interface JenisSurat {
     id: string;
@@ -112,13 +113,7 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
         label: item.singkatan ? `${item.nama} (${item.singkatan})` : item.nama,
     }));
 
-    // Kepada: hilangkan Sekpri Bupati dan Sekpri Wakil Bupati
-    const userOptions = users
-        .filter((item) => !['Sekpri Bupati', 'Sekpri Wakil Bupati'].includes(item.name))
-        .map((item) => ({
-            value: item.name,
-            label: item.jabatan ? `${item.name} - ${item.jabatan}` : item.name,
-        }));
+    const userOptions = buildKepadaUserOptions(users);
 
     const sifat1SelectOptions = Object.entries(sifat1Options).map(([value, label]) => ({
         value,
@@ -132,17 +127,6 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
 
     const selectedIndeks = indeksBerkasOptions.find(item => item.id === data.indeks_id);
     const selectedKode = indeksKlasifikasiOptions.find(item => item.id === data.kode_klasifikasi_id);
-
-    // Map sifat_1 values to letter codes
-    const getSifatCode = (sifat: string): string => {
-        const sifatMap: Record<string, string> = {
-            'biasa': 'B',
-            'terbatas': 'T',
-            'rahasia': 'R',
-            'sangat_rahasia': 'SR',
-        };
-        return sifatMap[sifat] || sifat.toUpperCase();
-    };
 
     // Auto-generate nomor_surat when dependencies change
     // Gunakan kode dari Kode Klasifikasi jika ada, kalau tidak gunakan kode dari Indeks
@@ -217,7 +201,7 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
                                             id="no_urut"
                                             value={data.no_urut}
                                             readOnly
-                                            className="w-full bg-gray-100 cursor-not-allowed"
+                                            className="w-full bg-surface-hover cursor-not-allowed"
                                         />
                                     </div>
                                     <p className="text-xs text-text-secondary mt-1">Nomor urut digenerate otomatis oleh sistem</p>
@@ -317,7 +301,7 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
                                             value={data.nomor_surat}
                                             readOnly
                                             placeholder="Otomatis terisi berdasarkan Sifat/NoUrut/Kode/Pengolah/Tahun"
-                                            className="w-full bg-gray-100 cursor-not-allowed"
+                                            className="w-full bg-surface-hover cursor-not-allowed"
                                         />
                                     </div>
                                     <p className="text-xs text-text-secondary mt-1">Nomor surat digenerate otomatis oleh sistem</p>
@@ -408,7 +392,7 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
                                     <div className="mt-1">
                                         <FormFileUpload
                                             onChange={(file) => setData('file', file)}
-                                            accept=".pdf,.doc,.docx,.jpg,.jpeg"
+                                            accept=".pdf,.doc,.docx"
                                             maxSize={5}
                                             error={errors.file}
                                             currentFile={suratKeluar.file_path ? suratKeluar.file_path.split('/').pop() : undefined}

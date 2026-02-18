@@ -54,7 +54,7 @@ class SuratKeluarController extends Controller
     {
         $this->authorize('create', SuratKeluar::class);
 
-        $nextNoUrut = SuratKeluar::generateNextNoUrut(Auth::id());
+        $nextNoUrut = SuratKeluar::generateNextNoUrut((int) Auth::id());
 
         return Inertia::render('Persuratan/SuratKeluar/Create', [
             'indeksBerkasOptions' => IndeksSurat::where('level', 1)->orderBy('kode')->get(['id', 'kode', 'nama']),
@@ -96,26 +96,6 @@ class SuratKeluarController extends Controller
                 ->withInput()
                 ->with('error', 'Gagal menyimpan surat keluar. Silakan coba lagi atau hubungi administrator.');
         }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        $suratKeluar = SuratKeluar::with([
-            'indeks',
-            'kodeKlasifikasi',
-            'unitKerja',
-            'createdBy',
-            'updatedBy',
-        ])->findOrFail($id);
-
-        $this->authorize('view', $suratKeluar);
-
-        return Inertia::render('Persuratan/SuratKeluar/Show', [
-            'suratKeluar' => $suratKeluar,
-        ]);
     }
 
     /**
@@ -189,6 +169,11 @@ class SuratKeluarController extends Controller
     {
         $suratKeluar = SuratKeluar::onlyTrashed()->findOrFail($id);
         $this->authorize('restore', $suratKeluar);
+
+        $conflictMessage = $this->getRestoreConflictMessage($suratKeluar);
+        if ($conflictMessage !== null) {
+            return redirect()->back()->with('error', $conflictMessage);
+        }
 
         $suratKeluar->restore();
 
@@ -293,5 +278,27 @@ class SuratKeluarController extends Controller
             storage_path('app/public/' . $suratKeluar->file_path),
             'Surat_Keluar_' . $suratKeluar->nomor_surat . '.' . pathinfo($suratKeluar->file_path, PATHINFO_EXTENSION)
         );
+    }
+
+    private function getRestoreConflictMessage(SuratKeluar $suratKeluar): ?string
+    {
+        if (!$suratKeluar->created_by || !$suratKeluar->no_urut || !$suratKeluar->tanggal_surat) {
+            return null;
+        }
+
+        $year = date('Y', strtotime((string) $suratKeluar->tanggal_surat));
+        $hasNoUrutConflict = SuratKeluar::query()
+            ->whereNull('deleted_at')
+            ->where('id', '!=', $suratKeluar->id)
+            ->where('created_by', $suratKeluar->created_by)
+            ->whereYear('tanggal_surat', $year)
+            ->where('no_urut', $suratKeluar->no_urut)
+            ->exists();
+
+        if ($hasNoUrutConflict) {
+            return "Surat tidak dapat dipulihkan karena No Urut {$suratKeluar->no_urut} tahun {$year} sudah dipakai pada data aktif.";
+        }
+
+        return null;
     }
 }

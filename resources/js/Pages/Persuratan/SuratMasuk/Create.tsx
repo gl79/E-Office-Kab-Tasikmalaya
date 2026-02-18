@@ -13,6 +13,7 @@ import FormFileUpload from '@/Components/form/FormFileUpload';
 import InputLabel from '@/Components/form/InputLabel';
 import InputError from '@/Components/form/InputError';
 import type { PageProps } from '@/types';
+import { buildInternalUserOptions } from '@/utils';
 
 interface JenisSurat {
     id: string;
@@ -105,21 +106,9 @@ export default function Create({
             }));
     }, [data.indeks_berkas_id, indeksBerkasOptions, indeksKlasifikasiOptions]);
 
-    // Tujuan Surat: hilangkan Sekpri Bupati dan Sekpri Wakil Bupati
-    const userOptions = users
-        .filter((user) => !['Sekpri Bupati', 'Sekpri Wakil Bupati'].includes(user.name))
-        .map((user) => ({
-            value: user.id.toString(),
-            label: user.nip ? `${user.name} (${user.nip})` : user.name,
-        }));
-
-    // Staff Pengolah: semua user kecuali Sekpri Bupati dan Sekpri Wakil Bupati
-    const staffPengolahOptions = users
-        .filter((user) => !['Sekpri Bupati', 'Sekpri Wakil Bupati'].includes(user.name))
-        .map((user) => ({
-            value: user.id.toString(),
-            label: user.nip ? `${user.name} (${user.nip})` : user.name,
-        }));
+    const internalUserOptions = buildInternalUserOptions(users);
+    const userOptions = internalUserOptions;
+    const staffPengolahOptions = internalUserOptions;
 
     const asalSuratOptions = asalSuratUsers.map((user) => ({
         value: user.jabatan ? `${user.name} - ${user.jabatan}` : user.name,
@@ -400,7 +389,7 @@ export default function Create({
                                                         id="nomor_agenda"
                                                         value={data.nomor_agenda.split('/')[1] || data.nomor_agenda}
                                                         readOnly
-                                                        className="w-full bg-gray-100 cursor-not-allowed"
+                                                        className="w-full bg-surface-hover cursor-not-allowed"
                                                     />
                                                 </div>
                                                 <p className="text-xs text-text-secondary mt-1">No urut/agenda digenerate otomatis oleh sistem</p>

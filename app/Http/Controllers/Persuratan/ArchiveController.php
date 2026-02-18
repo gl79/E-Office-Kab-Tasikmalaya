@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\HandlesArchive;
 use App\Models\SifatSurat;
 use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
+use App\Models\SuratMasukTujuan;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -100,13 +101,25 @@ class ArchiveController extends Controller
     public function restore(string $type, string $id)
     {
         if ($type === 'masuk') {
-            $surat = SuratMasuk::onlyTrashed()->findOrFail($id);
+            $surat = SuratMasuk::onlyTrashed()->with('tujuans')->findOrFail($id);
             $this->authorize('restore', $surat);
+
+            $conflictMessage = $this->getSuratMasukRestoreConflictMessage($surat);
+            if ($conflictMessage !== null) {
+                return redirect()->back()->with('error', $conflictMessage);
+            }
+
             $surat->restore();
             $message = 'Surat Masuk berhasil dipulihkan.';
         } elseif ($type === 'keluar') {
             $surat = SuratKeluar::onlyTrashed()->findOrFail($id);
             $this->authorize('restore', $surat);
+
+            $conflictMessage = $this->getSuratKeluarRestoreConflictMessage($surat);
+            if ($conflictMessage !== null) {
+                return redirect()->back()->with('error', $conflictMessage);
+            }
+
             $surat->restore();
             $message = 'Surat Keluar berhasil dipulihkan.';
         } else {
@@ -159,6 +172,20 @@ class ArchiveController extends Controller
      */
     public function restoreAll()
     {
+        $this->authorizeBulkArchiveAction();
+
+        $suratMasukConflicted = SuratMasuk::onlyTrashed()->with('tujuans')->get()
+            ->first(fn(SuratMasuk $surat) => $this->getSuratMasukRestoreConflictMessage($surat) !== null);
+        if ($suratMasukConflicted) {
+            return redirect()->back()->with('error', $this->getSuratMasukRestoreConflictMessage($suratMasukConflicted));
+        }
+
+        $suratKeluarConflicted = SuratKeluar::onlyTrashed()->get()
+            ->first(fn(SuratKeluar $surat) => $this->getSuratKeluarRestoreConflictMessage($surat) !== null);
+        if ($suratKeluarConflicted) {
+            return redirect()->back()->with('error', $this->getSuratKeluarRestoreConflictMessage($suratKeluarConflicted));
+        }
+
         return $this->archiveTransaction(function () {
             $countMasuk = SuratMasuk::onlyTrashed()->count();
             $countKeluar = SuratKeluar::onlyTrashed()->count();
@@ -179,6 +206,8 @@ class ArchiveController extends Controller
      */
     public function forceDeleteAll()
     {
+        $this->authorizeBulkArchiveAction();
+
         return $this->archiveTransaction(function () {
             // Delete files for surat masuk
             SuratMasuk::onlyTrashed()->whereNotNull('file_path')->each(function ($surat) {
@@ -199,5 +228,72 @@ class ArchiveController extends Controller
             $total = $countMasuk + $countKeluar;
             return "{$total} surat berhasil dihapus permanen ({$countMasuk} surat masuk, {$countKeluar} surat keluar).";
         }, ['persuratan_archive'], 'Gagal menghapus semua surat');
+    }
+
+    private function authorizeBulkArchiveAction(): void
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+        abort_unless($user && ($user->isSuperAdmin() || $user->isTU()), 403);
+    }
+
+    private function getSuratMasukRestoreConflictMessage(SuratMasuk $surat): ?string
+    {
+        if ($surat->nomor_agenda && $surat->created_by) {
+            $hasMainAgendaConflict = SuratMasuk::query()
+                ->whereNull('deleted_at')
+                ->where('id', '!=', $surat->id)
+                ->where('created_by', $surat->created_by)
+                ->where('nomor_agenda', $surat->nomor_agenda)
+                ->exists();
+
+            if ($hasMainAgendaConflict) {
+                return "Surat tidak dapat dipulihkan karena No Agenda {$surat->nomor_agenda} sudah dipakai pada data aktif.";
+            }
+        }
+
+        foreach ($surat->tujuans as $tujuan) {
+            if (!$tujuan->tujuan_id || !$tujuan->nomor_agenda) {
+                continue;
+            }
+
+            $hasRecipientAgendaConflict = SuratMasukTujuan::query()
+                ->where('id', '!=', $tujuan->id)
+                ->where('tujuan_id', $tujuan->tujuan_id)
+                ->where('nomor_agenda', $tujuan->nomor_agenda)
+                ->whereHas('suratMasuk', function ($q) use ($surat) {
+                    $q->whereNull('deleted_at')
+                        ->where('id', '!=', $surat->id);
+                })
+                ->exists();
+
+            if ($hasRecipientAgendaConflict) {
+                return "Surat tidak dapat dipulihkan karena No Agenda tujuan {$tujuan->nomor_agenda} sudah dipakai pada data aktif.";
+            }
+        }
+
+        return null;
+    }
+
+    private function getSuratKeluarRestoreConflictMessage(SuratKeluar $surat): ?string
+    {
+        if (!$surat->created_by || !$surat->no_urut || !$surat->tanggal_surat) {
+            return null;
+        }
+
+        $year = date('Y', strtotime((string) $surat->tanggal_surat));
+        $hasNoUrutConflict = SuratKeluar::query()
+            ->whereNull('deleted_at')
+            ->where('id', '!=', $surat->id)
+            ->where('created_by', $surat->created_by)
+            ->whereYear('tanggal_surat', $year)
+            ->where('no_urut', $surat->no_urut)
+            ->exists();
+
+        if ($hasNoUrutConflict) {
+            return "Surat tidak dapat dipulihkan karena No Urut {$surat->no_urut} tahun {$year} sudah dipakai pada data aktif.";
+        }
+
+        return null;
     }
 }

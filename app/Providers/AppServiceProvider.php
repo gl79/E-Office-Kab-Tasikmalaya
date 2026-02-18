@@ -31,7 +31,6 @@ use App\Policies\WilayahKabupatenPolicy;
 use App\Policies\WilayahKecamatanPolicy;
 use App\Policies\WilayahProvinsiPolicy;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider

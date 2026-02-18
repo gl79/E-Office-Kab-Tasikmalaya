@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\FileService;
 use App\Support\CacheHelper;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,10 +21,16 @@ class SuratKeluarService
     public function store(array $data): SuratKeluar
     {
         return DB::transaction(function () use ($data) {
+            $currentUserId = (int) Auth::id();
+
             // Set default sifat_2 if not provided
             if (empty($data['sifat_2'])) {
                 $data['sifat_2'] = SuratKeluar::SIFAT_2_BIASA;
             }
+
+            // Enforce no_urut generation di backend agar tidak bisa ditimpa dari client.
+            $nextNoUrut = SuratKeluar::generateNextNoUrut($currentUserId, $data['tanggal_surat'] ?? null);
+            $data['no_urut'] = str_pad((string) $nextNoUrut, 4, '0', STR_PAD_LEFT);
 
             if (isset($data['file']) && $data['file'] instanceof UploadedFile) {
                 $data['file_path'] = FileService::store($data['file'], 'surat-keluar');
@@ -47,6 +54,9 @@ class SuratKeluarService
     public function update(SuratKeluar $suratKeluar, array $data): SuratKeluar
     {
         return DB::transaction(function () use ($suratKeluar, $data) {
+            // no_urut tidak boleh diubah dari client pada mode edit.
+            $data['no_urut'] = $suratKeluar->no_urut;
+
             // Set default sifat_2 if not provided
             if (empty($data['sifat_2'])) {
                 $data['sifat_2'] = SuratKeluar::SIFAT_2_BIASA;

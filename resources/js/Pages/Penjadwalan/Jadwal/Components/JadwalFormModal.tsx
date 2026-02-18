@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Modal, Button } from '@/Components/ui';
 import { TextInput, InputLabel, InputError, FormDatePicker, FormSelect, FormTextarea, Checkbox, TimeSelect } from '@/Components/form';
 import { useWilayahCascade } from '@/hooks/useWilayahCascade';
@@ -22,7 +22,7 @@ const JadwalFormModal: React.FC<Props> = ({
     form,
     lokasiTypeOptions
 }) => {
-    const { data, setData, post, put, processing, errors, reset } = form;
+    const { data, setData, processing, errors } = form;
 
     const {
         provinsiList,
@@ -38,25 +38,6 @@ const JadwalFormModal: React.FC<Props> = ({
         selectedDesa,
         setSelectedDesa,
     } = useWilayahCascade({ data, setData });
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        // Form logic moved to parent usually, but here we can just execute the action
-        // Actually, parent handles the URL. We should likely pass the submit handler from parent or handle data binding here.
-        // Original code used `post` and `put` from `useForm` directly in the component.
-        // We will trigger the Inertia submit here if we pass the proper route, OR we can just let the parent handle the submit function.
-        // Let's assume parent passed the form instance so we can call methods on it.
-        // However, the submit implementation is URL dependent which is in the parent.
-        // Let's modify the onSubmit prop to handle the actual submission logic or keep it here if we pass the submit handler.
-        // Re-reading original code: parent had `handleSubmit`. 
-        // Let's add `onSubmit` prop.
-    };
-
-    // BUT, the useForm instance is passed.
-    // The parent's `handleSubmit` uses data from state which this modal modifies.
-    // So we just need to bind the form fields.
-    // The submit button trigger can just be a prop `onSubmit`.
 
     return (
         <Modal

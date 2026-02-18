@@ -9,6 +9,7 @@ use App\Models\IndeksSurat;
 use App\Models\JenisSurat;
 use App\Models\SifatSurat;
 use App\Models\SuratMasuk;
+use App\Models\SuratMasukTujuan;
 use App\Models\User;
 use App\Services\Persuratan\SuratMasukService;
 use App\Support\CacheHelper;
@@ -231,8 +232,13 @@ class SuratMasukController extends Controller
      */
     public function restore(string $id)
     {
-        $suratMasuk = SuratMasuk::onlyTrashed()->findOrFail($id);
+        $suratMasuk = SuratMasuk::onlyTrashed()->with('tujuans')->findOrFail($id);
         $this->authorize('restore', $suratMasuk);
+
+        $conflictMessage = $this->getRestoreConflictMessage($suratMasuk);
+        if ($conflictMessage !== null) {
+            return redirect()->back()->with('error', $conflictMessage);
+        }
 
         $suratMasuk->restore();
 
@@ -355,5 +361,43 @@ class SuratMasukController extends Controller
         return Inertia::render('Persuratan/SuratMasuk/CetakIsi', [
             'suratMasuk' => $suratMasuk,
         ]);
+    }
+
+    private function getRestoreConflictMessage(SuratMasuk $suratMasuk): ?string
+    {
+        if ($suratMasuk->nomor_agenda && $suratMasuk->created_by) {
+            $hasMainAgendaConflict = SuratMasuk::query()
+                ->whereNull('deleted_at')
+                ->where('id', '!=', $suratMasuk->id)
+                ->where('created_by', $suratMasuk->created_by)
+                ->where('nomor_agenda', $suratMasuk->nomor_agenda)
+                ->exists();
+
+            if ($hasMainAgendaConflict) {
+                return "Surat tidak dapat dipulihkan karena No Agenda {$suratMasuk->nomor_agenda} sudah dipakai pada data aktif.";
+            }
+        }
+
+        foreach ($suratMasuk->tujuans as $tujuan) {
+            if (!$tujuan->tujuan_id || !$tujuan->nomor_agenda) {
+                continue;
+            }
+
+            $hasRecipientAgendaConflict = SuratMasukTujuan::query()
+                ->where('id', '!=', $tujuan->id)
+                ->where('tujuan_id', $tujuan->tujuan_id)
+                ->where('nomor_agenda', $tujuan->nomor_agenda)
+                ->whereHas('suratMasuk', function ($q) use ($suratMasuk) {
+                    $q->whereNull('deleted_at')
+                        ->where('id', '!=', $suratMasuk->id);
+                })
+                ->exists();
+
+            if ($hasRecipientAgendaConflict) {
+                return "Surat tidak dapat dipulihkan karena No Agenda tujuan {$tujuan->nomor_agenda} sudah dipakai pada data aktif.";
+            }
+        }
+
+        return null;
     }
 }
