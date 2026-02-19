@@ -45,7 +45,7 @@ class BupatiJadwalController extends Controller
         return Inertia::render('Penjadwalan/Bupati/Form', [
             'surat' => [
                 'id' => $surat->id,
-                'nomor_agenda' => $this->resolveSuratNomorAgendaForUser($surat, $user?->id),
+                'nomor_agenda' => $surat->nomor_agenda,
                 'nomor_surat' => $surat->nomor_surat,
                 'tanggal_surat' => $surat->tanggal_surat?->format('Y-m-d'),
                 'tanggal_surat_formatted' => $surat->tanggal_surat_formatted,
@@ -395,17 +395,5 @@ class BupatiJadwalController extends Controller
     private function trimTime(string $time): string
     {
         return strlen($time) >= 5 ? substr($time, 0, 5) : $time;
-    }
-
-    private function resolveSuratNomorAgendaForUser(SuratMasuk $surat, ?int $userId): string
-    {
-        if ($userId) {
-            $tujuan = $surat->tujuans->firstWhere('tujuan_id', $userId);
-            if ($tujuan && $tujuan->nomor_agenda) {
-                return $tujuan->nomor_agenda;
-            }
-        }
-
-        return $surat->nomor_agenda;
     }
 }

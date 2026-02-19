@@ -37,6 +37,9 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $this->assertTrue((bool) ($item['can_schedule'] ?? false));
         $this->assertFalse((bool) ($item['can_finalize_schedule'] ?? false));
         $this->assertFalse((bool) ($item['can_view_schedule'] ?? false));
+        $this->assertSame('belum_dijadwalkan', $item['penjadwalan_status'] ?? null);
+        $this->assertSame('Belum Dijadwalkan', $item['penjadwalan_status_label'] ?? null);
+        $this->assertSame('default', $item['penjadwalan_status_variant'] ?? null);
     }
 
     public function test_bupati_melihat_can_view_schedule_true_setelah_surat_sudah_dijadwalkan(): void
@@ -76,6 +79,9 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $this->assertFalse((bool) ($item['can_schedule'] ?? false));
         $this->assertFalse((bool) ($item['can_finalize_schedule'] ?? false));
         $this->assertTrue((bool) ($item['can_view_schedule'] ?? false));
+        $this->assertSame(Penjadwalan::STATUS_FORMAL_DIDISPOSISIKAN, $item['penjadwalan_status'] ?? null);
+        $this->assertSame('Didisposisikan', $item['penjadwalan_status_label'] ?? null);
+        $this->assertSame('primary', $item['penjadwalan_status_variant'] ?? null);
     }
 
     public function test_penerima_delegasi_melihat_can_finalize_schedule_true(): void
@@ -153,6 +159,40 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $this->assertFalse((bool) ($itemSudah['can_schedule'] ?? false));
         $this->assertTrue((bool) ($itemSudah['can_finalize_schedule'] ?? false));
         $this->assertFalse((bool) ($itemSudah['can_view_schedule'] ?? false));
+        $this->assertSame(Penjadwalan::STATUS_FORMAL_DALAM_PROSES, $itemSudah['penjadwalan_status'] ?? null);
+        $this->assertSame('Dalam Proses', $itemSudah['penjadwalan_status_label'] ?? null);
+        $this->assertSame('warning', $itemSudah['penjadwalan_status_variant'] ?? null);
+    }
+
+    public function test_form_jadwal_bupati_menggunakan_nomor_agenda_dari_surat_masuk(): void
+    {
+        $bupati = $this->makeUser(User::ROLE_PIMPINAN, 'Bupati', 'Bupati');
+        $creator = $this->makeUser(User::ROLE_TU, 'TU', 'Tata Usaha');
+
+        $surat = $this->makeSuratMasuk($creator, [
+            'nomor_agenda' => '0007',
+        ]);
+
+        SuratMasukTujuan::create([
+            'surat_masuk_id' => $surat->id,
+            'tujuan_id' => $bupati->id,
+            'tujuan' => $bupati->name,
+            'nomor_agenda' => 'SM/0999/' . date('Y'),
+        ]);
+
+        $inertiaVersion = app(HandleInertiaRequests::class)
+            ->version(Request::create(route('bupati.jadwal.form', $surat->id), 'GET'));
+
+        $response = $this->actingAs($bupati)->get(route('bupati.jadwal.form', $surat->id), [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $inertiaVersion,
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
+
+        $response->assertOk();
+        $response->assertHeader('X-Inertia', 'true');
+        $response->assertJsonPath('component', 'Penjadwalan/Bupati/Form');
+        $response->assertJsonPath('props.surat.nomor_agenda', '0007');
     }
 
     public function test_bupati_melihat_can_view_schedule_true_pada_jadwal_definitif(): void
@@ -251,9 +291,9 @@ class SuratMasukScheduleFlagsTest extends TestCase
         ]);
     }
 
-    private function makeSuratMasuk(User $creator): SuratMasuk
+    private function makeSuratMasuk(User $creator, array $overrides = []): SuratMasuk
     {
-        return SuratMasuk::create([
+        return SuratMasuk::create(array_merge([
             'nomor_agenda' => 'SM/' . str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT) . '/' . date('Y'),
             'tanggal_diterima' => now()->toDateString(),
             'tanggal_surat' => now()->toDateString(),
@@ -265,7 +305,7 @@ class SuratMasukScheduleFlagsTest extends TestCase
             'isi_ringkas' => 'Ringkasan isi surat uji.',
             'created_by' => $creator->id,
             'updated_by' => $creator->id,
-        ]);
+        ], $overrides));
     }
 
     private function createPenjadwalan(

@@ -189,6 +189,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 { header: 'Asal Surat', render: (item) => escapeHtml(item.asal_surat) },
                 { header: 'Perihal', render: (item) => escapeHtml(item.perihal) },
                 { header: 'Sifat', render: (item) => escapeHtml(sifatOptions[item.sifat] || item.sifat) },
+                { header: 'Status Penjadwalan', render: (item) => escapeHtml(item.penjadwalan_status_label || 'Belum Dijadwalkan') },
             ],
             data: filteredData,
             filterInfo,
@@ -342,7 +343,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 {/* Table */}
                 {isLoading && !hasCached ? (
                     <div className="p-4">
-                        <TableShimmer columns={8} />
+                        <TableShimmer columns={9} />
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -356,6 +357,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Asal Surat</th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Perihal</th>
                                     <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Sifat</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Status Penjadwalan</th>
                                     <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-20">Aksi</th>
                                 </tr>
                             </thead>
@@ -383,6 +385,11 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
                                             {getSifatBadge(item.sifat, sifatOptions)}
+                                        </td>
+                                        <td className="border border-border-default px-4 py-3 text-center">
+                                            <Badge variant={item.penjadwalan_status_variant ?? 'default'}>
+                                                {item.penjadwalan_status_label ?? 'Belum Dijadwalkan'}
+                                            </Badge>
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
                                             <Dropdown
@@ -501,7 +508,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                 ))}
                                 {paginatedData.length === 0 && (
                                     <tr>
-                                        <td colSpan={8} className="border border-border-default px-4 py-8 text-center text-text-secondary">
+                                        <td colSpan={9} className="border border-border-default px-4 py-8 text-center text-text-secondary">
                                             {search || startDate || endDate || sifat ? 'Tidak ada surat masuk yang cocok dengan filter.' : 'Tidak ada data surat masuk.'}
                                         </td>
                                     </tr>

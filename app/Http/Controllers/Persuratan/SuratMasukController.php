@@ -139,6 +139,9 @@ class SuratMasukController extends Controller
                     $surat->can_view_schedule = $hasSchedule
                         && !$surat->can_finalize_schedule
                         && ($canScheduleByBupati || $canFinalizeDelegated);
+                    $surat->penjadwalan_status = $this->resolvePenjadwalanStatusKey($surat->penjadwalan);
+                    $surat->penjadwalan_status_label = $this->resolvePenjadwalanStatusLabel($surat->penjadwalan);
+                    $surat->penjadwalan_status_variant = $this->resolvePenjadwalanStatusVariant($surat->penjadwalan);
 
                     return $surat;
                 });
@@ -390,6 +393,39 @@ class SuratMasukController extends Controller
         return Inertia::render('Persuratan/SuratMasuk/CetakIsi', [
             'suratMasuk' => $suratMasuk,
         ]);
+    }
+
+    private function resolvePenjadwalanStatusKey(?Penjadwalan $penjadwalan): string
+    {
+        if (!$penjadwalan) {
+            return 'belum_dijadwalkan';
+        }
+
+        return $penjadwalan->status_formal;
+    }
+
+    private function resolvePenjadwalanStatusLabel(?Penjadwalan $penjadwalan): string
+    {
+        if (!$penjadwalan) {
+            return 'Belum Dijadwalkan';
+        }
+
+        return $penjadwalan->status_formal_label;
+    }
+
+    private function resolvePenjadwalanStatusVariant(?Penjadwalan $penjadwalan): string
+    {
+        $statusKey = $this->resolvePenjadwalanStatusKey($penjadwalan);
+
+        return match ($statusKey) {
+            Penjadwalan::STATUS_FORMAL_TERJADWAL => 'info',
+            Penjadwalan::STATUS_FORMAL_DALAM_PROSES => 'warning',
+            Penjadwalan::STATUS_FORMAL_DIDISPOSISIKAN => 'primary',
+            Penjadwalan::STATUS_FORMAL_SELESAI => 'success',
+            Penjadwalan::STATUS_FORMAL_DITUNDA => 'warning',
+            Penjadwalan::STATUS_FORMAL_DIBATALKAN => 'danger',
+            default => 'default',
+        };
     }
 
     private function getRestoreConflictMessage(SuratMasuk $suratMasuk): ?string

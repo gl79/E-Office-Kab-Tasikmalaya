@@ -31,6 +31,9 @@ export interface SuratMasuk {
     can_schedule?: boolean;
     can_finalize_schedule?: boolean;
     can_view_schedule?: boolean;
+    penjadwalan_status?: string;
+    penjadwalan_status_label?: string;
+    penjadwalan_status_variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
     penjadwalan?: {
         id: string;
         status: string;
