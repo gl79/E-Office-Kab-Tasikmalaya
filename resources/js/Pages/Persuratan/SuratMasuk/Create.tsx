@@ -40,6 +40,7 @@ interface Props extends PageProps {
     indeksBerkasOptions: IndeksSurat[];
     indeksKlasifikasiOptions: IndeksSurat[];
     users: User[];
+    staffPengolahUsers: User[];
     asalSuratUsers: User[];
     sifatOptions: Record<string, string>;
     nextNomorAgenda: string;
@@ -50,6 +51,7 @@ export default function Create({
     indeksBerkasOptions,
     indeksKlasifikasiOptions,
     users,
+    staffPengolahUsers,
     asalSuratUsers,
     sifatOptions,
     nextNomorAgenda
@@ -108,7 +110,7 @@ export default function Create({
 
     const internalUserOptions = buildInternalUserOptions(users);
     const userOptions = internalUserOptions;
-    const staffPengolahOptions = internalUserOptions;
+    const staffPengolahOptions = buildInternalUserOptions(staffPengolahUsers);
 
     const asalSuratOptions = asalSuratUsers.map((user) => ({
         value: user.jabatan ? `${user.name} - ${user.jabatan}` : user.name,

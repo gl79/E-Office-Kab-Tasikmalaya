@@ -57,6 +57,8 @@ export interface AgendaBase {
     tempat: string;
     status: string;
     status_label: string;
+    status_formal?: string;
+    status_formal_label?: string;
     status_disposisi: string;
     status_disposisi_label: string;
 }
@@ -99,6 +101,13 @@ export interface CalendarEvent {
 
 export type DisposisiStatus = 'menunggu' | 'bupati' | 'wakil_bupati' | 'diwakilkan';
 export type PenjadwalanStatus = 'tentatif' | 'definitif';
+export type PenjadwalanStatusFormal =
+    | 'terjadwal'
+    | 'dalam_proses'
+    | 'didisposisikan'
+    | 'selesai'
+    | 'ditunda'
+    | 'dibatalkan';
 export type SifatSurat = 'biasa' | 'penting' | 'segera' | 'amat_segera';
 
 export const DISPOSISI_LABELS: Record<DisposisiStatus, string> = {

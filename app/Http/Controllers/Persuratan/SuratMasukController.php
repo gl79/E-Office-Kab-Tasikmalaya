@@ -7,6 +7,7 @@ use App\Http\Requests\Persuratan\SuratMasukRequest;
 use App\Models\DisposisiSurat;
 use App\Models\IndeksSurat;
 use App\Models\JenisSurat;
+use App\Models\Penjadwalan;
 use App\Models\SifatSurat;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
@@ -16,6 +17,7 @@ use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -46,6 +48,17 @@ class SuratMasukController extends Controller
     }
 
     /**
+     * Get user options for staff pengolah (include current user).
+     */
+    private function getStaffPengolahOptions(): \Illuminate\Database\Eloquent\Collection
+    {
+        return User::select(['id', 'name', 'nip', 'jabatan'])
+            ->where('role', '!=', User::ROLE_SUPERADMIN)
+            ->orderBy('name', 'asc')
+            ->get();
+    }
+
+    /**
      * Get pengguna options untuk asal surat dropdown.
      */
     private function getAsalSuratUsers(): \Illuminate\Database\Eloquent\Collection
@@ -68,7 +81,7 @@ class SuratMasukController extends Controller
         return Inertia::render('Persuratan/SuratMasuk/Index', [
             'suratMasuk' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_masuk_list_' . $user->id, 60, function () use ($user) {
                 $query = SuratMasuk::query()
-                    ->with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy', 'jenisSurat'])
+                    ->with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy', 'jenisSurat', 'penjadwalan'])
                     ->latest();
 
                 // SuperAdmin sees all
@@ -113,6 +126,20 @@ class SuratMasukController extends Controller
                     if ($tujuan && $tujuan->nomor_agenda) {
                         $surat->nomor_agenda = $tujuan->nomor_agenda;
                     }
+
+                    $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
+                    $canFinalizeDelegated = Gate::forUser($user)->check('finalizeDelegatedJadwal', $surat);
+                    $hasSchedule = (bool) $surat->penjadwalan;
+
+                    // Satu surat hanya bisa dijadwalkan sekali.
+                    $surat->can_schedule = $canScheduleByBupati && !$hasSchedule;
+                    $surat->can_finalize_schedule = $hasSchedule
+                        && $surat->penjadwalan->status === Penjadwalan::STATUS_TENTATIF
+                        && $canFinalizeDelegated;
+                    $surat->can_view_schedule = $hasSchedule
+                        && !$surat->can_finalize_schedule
+                        && ($canScheduleByBupati || $canFinalizeDelegated);
+
                     return $surat;
                 });
             })),
@@ -132,6 +159,7 @@ class SuratMasukController extends Controller
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode', 'asc')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'jenisSuratOptions' => JenisSurat::orderBy('nama', 'asc')->get(['id', 'nama']),
             'users' => $this->getUserOptions(),
+            'staffPengolahUsers' => $this->getStaffPengolahOptions(),
             'asalSuratUsers' => $this->getAsalSuratUsers(),
             'sifatOptions' => SifatSurat::getOptions(),
             'nextNomorAgenda' => SuratMasuk::generateNomorAgenda((string) Auth::id()),
@@ -180,6 +208,7 @@ class SuratMasukController extends Controller
             'indeksBerkasOptions' => IndeksSurat::whereIn('level', [1, 2])->orderBy('kode', 'asc')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode', 'asc')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'users' => $this->getUserOptions(),
+            'staffPengolahUsers' => $this->getStaffPengolahOptions(),
             'asalSuratUsers' => $this->getAsalSuratUsers(),
             'sifatOptions' => SifatSurat::getOptions(),
         ]);

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Events\JadwalCreated;
+use App\Listeners\SendJadwalCreatedNotification;
 use App\Models\ActivityLog;
 use App\Models\Cuti;
 use App\Models\User;
@@ -31,6 +33,7 @@ use App\Policies\WilayahKabupatenPolicy;
 use App\Policies\WilayahKecamatanPolicy;
 use App\Policies\WilayahProvinsiPolicy;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -50,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
     {
 
         $this->registerPolicies();
+        Event::listen(JadwalCreated::class, SendJadwalCreatedNotification::class);
     }
 
     /**

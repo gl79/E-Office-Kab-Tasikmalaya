@@ -28,6 +28,7 @@ import {
     LogOut,
     Activity,
     Shield,
+    History,
     LucideIcon,
     ChevronDown,
     Tag
@@ -69,6 +70,7 @@ const iconMap: Record<string, LucideIcon> = {
     'settings': Settings,
     'log-out': LogOut,
     'activity': Activity,
+    'history': History,
     'tag': Tag,
     'shield': Shield,
 };

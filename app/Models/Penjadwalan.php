@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -20,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $status
  * @property string|null $status_disposisi
  * @property string|null $dihadiri_oleh
+ * @property int|null $dihadiri_oleh_user_id
  * @property string|null $keterangan
  * @property string|null $waktu_mulai
  * @property string|null $waktu_selesai
@@ -59,6 +61,7 @@ class Penjadwalan extends Model
         'status',
         'status_disposisi',
         'dihadiri_oleh',
+        'dihadiri_oleh_user_id',
         'keterangan',
         'created_by',
         'updated_by',
@@ -68,6 +71,7 @@ class Penjadwalan extends Model
     protected $casts = [
         'tanggal_agenda' => 'datetime',
         'sampai_selesai' => 'boolean',
+        'dihadiri_oleh_user_id' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -82,6 +86,25 @@ class Penjadwalan extends Model
     public const STATUS_OPTIONS = [
         self::STATUS_TENTATIF => 'Tentatif',
         self::STATUS_DEFINITIF => 'Definitif',
+    ];
+
+    /**
+     * Konstanta untuk label status formal pemerintahan (derived, non-breaking).
+     */
+    public const STATUS_FORMAL_TERJADWAL = 'terjadwal';
+    public const STATUS_FORMAL_DALAM_PROSES = 'dalam_proses';
+    public const STATUS_FORMAL_DIDISPOSISIKAN = 'didisposisikan';
+    public const STATUS_FORMAL_SELESAI = 'selesai';
+    public const STATUS_FORMAL_DITUNDA = 'ditunda';
+    public const STATUS_FORMAL_DIBATALKAN = 'dibatalkan';
+
+    public const STATUS_FORMAL_OPTIONS = [
+        self::STATUS_FORMAL_TERJADWAL => 'Terjadwal',
+        self::STATUS_FORMAL_DALAM_PROSES => 'Dalam Proses',
+        self::STATUS_FORMAL_DIDISPOSISIKAN => 'Didisposisikan',
+        self::STATUS_FORMAL_SELESAI => 'Selesai',
+        self::STATUS_FORMAL_DITUNDA => 'Ditunda',
+        self::STATUS_FORMAL_DIBATALKAN => 'Dibatalkan',
     ];
 
     /**
@@ -142,6 +165,22 @@ class Penjadwalan extends Model
     public function deleter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    /**
+     * Relasi ke user yang ditunjuk untuk menghadiri.
+     */
+    public function dihadiriOlehUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dihadiri_oleh_user_id');
+    }
+
+    /**
+     * Relasi riwayat perubahan jadwal.
+     */
+    public function histories(): HasMany
+    {
+        return $this->hasMany(JadwalHistory::class, 'jadwal_id')->latest('created_at');
     }
 
     // ==================== SCOPES ====================
@@ -257,6 +296,46 @@ class Penjadwalan extends Model
     public function getStatusLabelAttribute(): string
     {
         return self::STATUS_OPTIONS[$this->status] ?? $this->status;
+    }
+
+    /**
+     * Get status formal pemerintahan (turunan dari status existing).
+     */
+    public function getStatusFormalAttribute(): string
+    {
+        if ($this->trashed()) {
+            return self::STATUS_FORMAL_DIBATALKAN;
+        }
+
+        if ($this->status === self::STATUS_DEFINITIF) {
+            /** @var \Illuminate\Support\Carbon|null $tanggal */
+            $tanggal = $this->tanggal_agenda;
+            if ($tanggal && $tanggal->isBefore(today())) {
+                return self::STATUS_FORMAL_SELESAI;
+            }
+
+            return self::STATUS_FORMAL_TERJADWAL;
+        }
+
+        if ($this->status_disposisi === self::DISPOSISI_MENUNGGU) {
+            /** @var \Illuminate\Support\Carbon|null $tanggal */
+            $tanggal = $this->tanggal_agenda;
+            if ($tanggal && $tanggal->isBefore(today())) {
+                return self::STATUS_FORMAL_DITUNDA;
+            }
+
+            return self::STATUS_FORMAL_DALAM_PROSES;
+        }
+
+        return self::STATUS_FORMAL_DIDISPOSISIKAN;
+    }
+
+    /**
+     * Get formal status label.
+     */
+    public function getStatusFormalLabelAttribute(): string
+    {
+        return self::STATUS_FORMAL_OPTIONS[$this->status_formal] ?? $this->status_formal;
     }
 
     /**

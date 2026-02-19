@@ -182,7 +182,7 @@ const Dashboard = () => {
                 { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
                 { title: 'Surat Keluar', description: 'Daftar surat keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
                 { title: 'Arsip Persuratan', description: 'Data arsip persuratan', value: stats.archive?.persuratan ?? 0, icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover', href: '/persuratan/archive' },
-                { title: 'Jadwal', description: 'Jadwal kegiatan', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/jadwal' },
+                { title: 'Jadwal', description: 'Jadwal kegiatan', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/tentatif' },
                 { title: 'Jadwal Tentatif', description: 'Jadwal tentatif kegiatan', icon: Clock, color: 'text-warning', bg: 'bg-warning-light', href: '/penjadwalan/tentatif' },
             );
         }

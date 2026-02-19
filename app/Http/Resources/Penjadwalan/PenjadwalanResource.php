@@ -68,6 +68,8 @@ class PenjadwalanResource extends JsonResource
             // Status Info
             'status' => $this->status,
             'status_label' => $this->status_label,
+            'status_formal' => $this->status_formal,
+            'status_formal_label' => $this->status_formal_label,
             'status_disposisi' => $this->status_disposisi,
             'status_disposisi_label' => $this->status_disposisi_label,
             'dihadiri_oleh' => $this->dihadiri_oleh,

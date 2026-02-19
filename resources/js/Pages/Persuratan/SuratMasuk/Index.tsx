@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Head, router, Link, usePage } from '@inertiajs/react';
-import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw } from 'lucide-react';
+import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw, CalendarPlus } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
@@ -459,6 +459,22 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                         <FileText className="h-4 w-4" />
                                                         <span>Cetak Disposisi</span>
                                                     </Dropdown.Link>
+
+                                                    {(item.can_schedule || item.can_finalize_schedule || item.can_view_schedule) && (
+                                                        <Dropdown.Link
+                                                            href={route('bupati.jadwal.form', item.id)}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <CalendarPlus className="h-4 w-4" />
+                                                            <span>
+                                                                {item.can_finalize_schedule
+                                                                    ? 'Finalisasi Jadwal'
+                                                                    : item.can_schedule
+                                                                        ? 'Jadwalkan'
+                                                                        : 'Lihat Jadwal'}
+                                                            </span>
+                                                        </Dropdown.Link>
+                                                    )}
 
 
 

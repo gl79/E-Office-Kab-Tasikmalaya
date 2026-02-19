@@ -13,7 +13,7 @@ class IndeksSuratSeeder extends Seeder
      */
     public function run(): void
     {
-        $path = database_path('seeders/data/klasifikasi.csv');
+        $path = database_path('seeders/data/klasifikasii.csv');
 
         if (!file_exists($path)) {
             $this->command->error('File klasifikasi.csv tidak ditemukan di database/seeders/data/');

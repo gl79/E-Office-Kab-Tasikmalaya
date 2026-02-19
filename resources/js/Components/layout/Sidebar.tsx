@@ -101,9 +101,11 @@ export default function Sidebar({
             <aside
                 className={`
                     fixed inset-y-0 left-0 z-50
+                    flex flex-col
+                    overflow-hidden
                     bg-surface border-r border-border-default
                     transition-transform duration-300 ease-in-out
-                    lg:static lg:translate-x-0
+                    lg:translate-x-0
                     ${collapsed ? 'w-64 lg:w-20' : width}
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                     ${className}
@@ -148,69 +150,75 @@ export default function Sidebar({
                 </div>
 
                 {/* Sidebar Content Container */}
-                <div className={`py-4 overflow-y-auto h-[calc(100vh-4rem)] ${collapsed ? 'px-3 lg:px-2' : 'px-3'}`}>
+                <div className={`flex-1 min-h-0 ${collapsed ? 'px-3 lg:px-2' : 'px-3'}`}>
                     {children ?? (
-                        <>
-                            <nav className="space-y-1">
-                                {menuToRender.map((item, index) => (
-                                    <SidebarMenuItem
-                                        key={`${item.label}-${index}`}
-                                        item={item}
-                                        onLogoutClick={onLogoutClick}
-                                        collapsed={collapsed}
-                                    />
-                                ))}
-                            </nav>
-
-                            {/* Profile Section - inline after menu items */}
-                            <div ref={profileRef} className="relative mt-2 pt-2 border-t border-border-default">
-                                {/* Profile Trigger Button */}
-                                <button
-                                    type="button"
-                                    onClick={() => setProfileOpen(!profileOpen)}
-                                    className={`w-full flex items-center gap-3 py-2.5 rounded-lg hover:bg-surface-hover transition-colors ${collapsed ? 'px-1 lg:justify-center' : 'px-2'}`}
-                                    title={user?.name}
-                                >
-                                    <img
-                                        src={avatarUrl}
-                                        alt={user?.name || 'User'}
-                                        className="h-8 w-8 rounded-full object-cover border border-border-default shrink-0"
-                                    />
-                                    <div className={`flex-1 min-w-0 text-left ${collapsed ? 'lg:hidden' : ''}`}>
-                                        <p className="text-sm font-medium text-text-primary truncate">{user?.name}</p>
-                                        <p className="text-xs text-text-secondary truncate">{user?.role_label || user?.role}</p>
-                                    </div>
-                                    <ChevronUp className={`w-4 h-4 text-text-muted shrink-0 transition-transform ${collapsed ? 'lg:hidden' : ''} ${profileOpen ? '' : 'rotate-180'}`} />
-                                </button>
-
-                                {/* Dropdown Menu (opens downward) */}
-                                {profileOpen && (
-                                    <div className={`mt-1 bg-surface border border-border-default rounded-lg shadow-lg overflow-hidden z-20 ${collapsed ? 'absolute left-0 w-48' : ''}`}>
-                                        <Link
-                                            href="/profile"
-                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
-                                            onClick={() => setProfileOpen(false)}
-                                        >
-                                            <UserIcon className="w-4 h-4" />
-                                            <span>Profil</span>
-                                        </Link>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setProfileOpen(false);
-                                                onLogoutClick?.();
-                                            }}
-                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-danger hover:bg-danger-light transition-colors w-full text-left"
-                                        >
-                                            <LogOut className="w-4 h-4" />
-                                            <span>Keluar</span>
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </>
+                        <nav className="h-full overflow-y-auto overscroll-y-contain py-4 space-y-1">
+                            {menuToRender.map((item, index) => (
+                                <SidebarMenuItem
+                                    key={`${item.label}-${index}`}
+                                    item={item}
+                                    onLogoutClick={onLogoutClick}
+                                    collapsed={collapsed}
+                                />
+                            ))}
+                        </nav>
                     )}
                 </div>
+
+                {/* Profile Section - fixed at bottom */}
+                {!children && (
+                    <div
+                        ref={profileRef}
+                        className={`relative shrink-0 border-t border-border-default bg-surface p-2 ${collapsed ? 'lg:px-2' : ''}`}
+                        style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
+                    >
+                        {/* Profile Trigger Button */}
+                        <button
+                            type="button"
+                            onClick={() => setProfileOpen(!profileOpen)}
+                            className={`w-full flex items-center gap-3 py-2.5 rounded-lg hover:bg-surface-hover transition-colors ${collapsed ? 'px-1 lg:justify-center' : 'px-2'}`}
+                            title={user?.name}
+                        >
+                            <img
+                                src={avatarUrl}
+                                alt={user?.name || 'User'}
+                                className="h-8 w-8 rounded-full object-cover border border-border-default shrink-0"
+                            />
+                            <div className={`flex-1 min-w-0 text-left ${collapsed ? 'lg:hidden' : ''}`}>
+                                <p className="text-sm font-medium text-text-primary truncate">{user?.name}</p>
+                                <p className="text-xs text-text-secondary truncate">{user?.role_label || user?.role}</p>
+                            </div>
+                            <ChevronUp className={`w-4 h-4 text-text-muted shrink-0 transition-transform ${collapsed ? 'lg:hidden' : ''} ${profileOpen ? '' : 'rotate-180'}`} />
+                        </button>
+
+                        {/* Dropdown Menu (opens upward) */}
+                        {profileOpen && (
+                            <div
+                                className={`absolute bottom-full mb-2 bg-surface border border-border-default rounded-lg shadow-lg overflow-hidden z-20 ${collapsed ? 'left-0 w-48' : 'left-2 right-2'}`}
+                            >
+                                <Link
+                                    href="/profile"
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
+                                    onClick={() => setProfileOpen(false)}
+                                >
+                                    <UserIcon className="w-4 h-4" />
+                                    <span>Profil</span>
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setProfileOpen(false);
+                                        onLogoutClick?.();
+                                    }}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-danger hover:bg-danger-light transition-colors w-full text-left"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    <span>Keluar</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </aside>
         </>
     );

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
 use App\Models\User;
 
@@ -77,5 +78,44 @@ class SuratMasukPolicy
     public function forceDelete(User $user, SuratMasuk $suratMasuk): bool
     {
         return $user->isSuperAdmin() || $user->isTU();
+    }
+
+    /**
+     * Determine whether Bupati can open scheduling form for this surat.
+     */
+    public function scheduleByBupati(User $user, SuratMasuk $suratMasuk): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$user->isBupati()) {
+            return false;
+        }
+
+        return $suratMasuk->tujuans()
+            ->where('tujuan_id', $user->id)
+            ->exists();
+    }
+
+    /**
+     * Determine whether delegated user can finalize tentative schedule.
+     */
+    public function finalizeDelegatedJadwal(User $user, SuratMasuk $suratMasuk): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        $jadwal = $suratMasuk->relationLoaded('penjadwalan')
+            ? $suratMasuk->penjadwalan
+            : $suratMasuk->penjadwalan()->first();
+
+        if (!$jadwal) {
+            return false;
+        }
+
+        return $jadwal->status === Penjadwalan::STATUS_TENTATIF
+            && (int) $jadwal->dihadiri_oleh_user_id === (int) $user->id;
     }
 }

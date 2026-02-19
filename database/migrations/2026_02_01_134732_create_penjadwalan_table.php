@@ -36,6 +36,10 @@ return new class extends Migration
             $table->enum('status', ['definitif', 'tentatif'])->default('tentatif');
             $table->enum('status_disposisi', ['menunggu', 'bupati', 'wakil_bupati', 'diwakilkan'])->default('menunggu');
             $table->string('dihadiri_oleh')->nullable();
+            $table->foreignId('dihadiri_oleh_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             // Catatan
             $table->text('keterangan')->nullable();
@@ -53,7 +57,9 @@ return new class extends Migration
             $table->index('tanggal_agenda');
             $table->index('status');
             $table->index('status_disposisi');
+            $table->index('dihadiri_oleh_user_id', 'penjadwalan_dihadiri_oleh_user_idx');
             $table->index(['deleted_at', 'status']);
+            $table->unique('surat_masuk_id', 'penjadwalan_surat_masuk_unique');
         });
     }
 

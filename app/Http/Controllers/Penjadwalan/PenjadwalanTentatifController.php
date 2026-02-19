@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Penjadwalan;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Jadwal\UpdateKehadiranRequest;
 use App\Http\Resources\Penjadwalan\PenjadwalanResource;
+use App\Models\JadwalHistory;
 use App\Models\Penjadwalan;
 use App\Support\CacheHelper;
 use App\Support\WilayahHelper;
@@ -60,11 +61,19 @@ class PenjadwalanTentatifController extends Controller
         DB::beginTransaction();
         try {
             $data = $request->validated();
+            $oldData = $this->captureHistorySnapshot($penjadwalan);
 
             $penjadwalan->update([
                 'dihadiri_oleh' => $data['dihadiri_oleh'],
                 'status_disposisi' => $data['status_disposisi'],
                 'keterangan' => $data['keterangan'] ?? $penjadwalan->keterangan,
+            ]);
+
+            JadwalHistory::create([
+                'jadwal_id' => $penjadwalan->id,
+                'old_data' => $oldData,
+                'new_data' => $this->captureHistorySnapshot($penjadwalan->fresh()),
+                'changed_by' => $request->user()?->id,
             ]);
 
             DB::commit();
@@ -100,8 +109,17 @@ class PenjadwalanTentatifController extends Controller
 
         DB::beginTransaction();
         try {
+            $oldData = $this->captureHistorySnapshot($penjadwalan);
+
             $penjadwalan->update([
                 'status' => Penjadwalan::STATUS_DEFINITIF,
+            ]);
+
+            JadwalHistory::create([
+                'jadwal_id' => $penjadwalan->id,
+                'old_data' => $oldData,
+                'new_data' => $this->captureHistorySnapshot($penjadwalan->fresh()),
+                'changed_by' => auth()->id(),
             ]);
 
             DB::commit();
@@ -196,5 +214,23 @@ class PenjadwalanTentatifController extends Controller
         return redirect()->back()
             ->with('success', 'Jadwal berhasil dihapus.');
     }
-}
 
+    private function captureHistorySnapshot(Penjadwalan $penjadwalan): array
+    {
+        return $penjadwalan->only([
+            'surat_masuk_id',
+            'tanggal_agenda',
+            'waktu_mulai',
+            'waktu_selesai',
+            'sampai_selesai',
+            'lokasi_type',
+            'kode_wilayah',
+            'tempat',
+            'status',
+            'status_disposisi',
+            'dihadiri_oleh',
+            'dihadiri_oleh_user_id',
+            'keterangan',
+        ]);
+    }
+}

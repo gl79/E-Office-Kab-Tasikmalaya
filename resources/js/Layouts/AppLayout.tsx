@@ -157,7 +157,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
                 </header>
 
                 {/* Main Container (Sidebar + Content) */}
-                <div className="flex flex-1 overflow-hidden relative">
+                <div className="flex flex-1 overflow-hidden relative min-h-0">
                     {/* Sidebar */}
                     <Sidebar
                         onLogoutClick={() => setShowLogoutModal(true)}
@@ -168,7 +168,13 @@ function AppLayoutInner({ children }: AppLayoutProps) {
                     />
 
                     {/* Main Content Area */}
-                    <main className="flex-1 overflow-y-auto p-4 lg:p-6 w-full">
+                    <main
+                        className={`
+                            flex-1 overflow-y-auto p-4 lg:p-6 w-full min-h-0
+                            transition-[margin] duration-300 ease-in-out
+                            ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
+                        `.trim()}
+                    >
                         {/* Breadcrumbs */}
                         {breadcrumbs.length > 0 && (
                             <div className="mb-6">

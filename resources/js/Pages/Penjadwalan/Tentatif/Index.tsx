@@ -402,7 +402,9 @@ const TentatifIndex = ({
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-text-secondary">Status Jadwal:</span>
-                                        <Badge variant="warning">{selectedAgenda.status_label}</Badge>
+                                        <Badge variant="warning">
+                                            {selectedAgenda.status_formal_label ?? selectedAgenda.status_label}
+                                        </Badge>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-text-secondary">Disposisi:</span>

@@ -1,5 +1,5 @@
 import type { CutiStatus } from '@/types/cuti';
-import type { DisposisiStatus, SifatSurat, PenjadwalanStatus } from '@/types/penjadwalan';
+import type { DisposisiStatus, SifatSurat, PenjadwalanStatus, PenjadwalanStatusFormal } from '@/types/penjadwalan';
 
 /**
  * Badge Variant Types
@@ -70,6 +70,30 @@ export function getPenjadwalanStatusVariant(status: string): BadgeVariant {
 
 export function getPenjadwalanStatusLabel(status: string): string {
     return penjadwalanStatusBadgeConfig[status as PenjadwalanStatus]?.label ?? status;
+}
+
+// ============================================
+// PENJADWALAN STATUS FORMAL BADGE CONFIG
+// ============================================
+
+export const penjadwalanStatusFormalBadgeConfig: Record<PenjadwalanStatusFormal, {
+    variant: BadgeVariant;
+    label: string;
+}> = {
+    terjadwal: { variant: 'info', label: 'Terjadwal' },
+    dalam_proses: { variant: 'warning', label: 'Dalam Proses' },
+    didisposisikan: { variant: 'primary', label: 'Didisposisikan' },
+    selesai: { variant: 'success', label: 'Selesai' },
+    ditunda: { variant: 'warning', label: 'Ditunda' },
+    dibatalkan: { variant: 'danger', label: 'Dibatalkan' },
+};
+
+export function getPenjadwalanFormalStatusVariant(status: string): BadgeVariant {
+    return penjadwalanStatusFormalBadgeConfig[status as PenjadwalanStatusFormal]?.variant ?? 'default';
+}
+
+export function getPenjadwalanFormalStatusLabel(status: string): string {
+    return penjadwalanStatusFormalBadgeConfig[status as PenjadwalanStatusFormal]?.label ?? status;
 }
 
 // ============================================

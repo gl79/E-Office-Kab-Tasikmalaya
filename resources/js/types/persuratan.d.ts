@@ -28,6 +28,14 @@ export interface SuratMasuk {
     staff_pengolah?: { name: string; nip: string } | null;
     created_by?: { name: string } | null;
     created_at: string;
+    can_schedule?: boolean;
+    can_finalize_schedule?: boolean;
+    can_view_schedule?: boolean;
+    penjadwalan?: {
+        id: string;
+        status: string;
+        dihadiri_oleh_user_id?: number | null;
+    } | null;
 }
 
 export interface SuratKeluar {

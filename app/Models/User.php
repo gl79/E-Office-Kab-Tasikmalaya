@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -77,6 +78,7 @@ class User extends Authenticatable
         'penjadwalan.jadwal' => 'Penjadwalan - Jadwal',
         'penjadwalan.tentatif' => 'Penjadwalan - Tentatif',
         'penjadwalan.definitif' => 'Penjadwalan - Definitif',
+        'penjadwalan.history' => 'Penjadwalan - History',
     ];
 
     /**
@@ -178,6 +180,36 @@ class User extends Authenticatable
     public function isPimpinan(): bool
     {
         return $this->role === self::ROLE_PIMPINAN;
+    }
+
+    /**
+     * Check if user is specifically Bupati account.
+     */
+    public function isBupati(): bool
+    {
+        if (!$this->isPimpinan()) {
+            return false;
+        }
+
+        $jabatan = Str::lower(trim((string) $this->jabatan));
+        $name = Str::lower(trim((string) $this->name));
+
+        return $jabatan === 'bupati' || $name === 'bupati';
+    }
+
+    /**
+     * Check if user is specifically Wakil Bupati account.
+     */
+    public function isWakilBupati(): bool
+    {
+        if (!$this->isPimpinan()) {
+            return false;
+        }
+
+        $jabatan = Str::lower(trim((string) $this->jabatan));
+        $name = Str::lower(trim((string) $this->name));
+
+        return $jabatan === 'wakil bupati' || $name === 'wakil bupati';
     }
 
 
