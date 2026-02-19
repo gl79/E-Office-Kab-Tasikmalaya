@@ -31,6 +31,16 @@ export type PageProps<
     auth: {
         user: User;
     };
+    flash?: {
+        success?: string;
+        error?: string;
+        warning?: string;
+        has_conflict?: boolean;
+    };
+    notifications?: {
+        surat_masuk_menunggu_penerimaan: number;
+    };
+    url?: string;
 };
 
 export interface PaginatedLink {

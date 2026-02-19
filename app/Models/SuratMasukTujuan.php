@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class SuratMasukTujuan extends Model
 {
@@ -18,7 +19,45 @@ class SuratMasukTujuan extends Model
         'tujuan_id',
         'tujuan',
         'nomor_agenda',
+        'status_penerimaan',
+        'diterima_at',
     ];
+
+    protected $casts = [
+        'diterima_at' => 'datetime',
+    ];
+
+    public const STATUS_MENUNGGU_PENERIMAAN = 'Menunggu Penerimaan';
+    public const STATUS_DITERIMA = 'Diterima';
+
+    /**
+     * Resolve status penerimaan awal berdasarkan jenis user tujuan.
+     *
+     * @return array{status_penerimaan: string, diterima_at: Carbon|null}
+     */
+    public static function initialPenerimaanState(?User $tujuanUser): array
+    {
+        $shouldWaitAcceptance = $tujuanUser
+            && $tujuanUser->isPimpinan()
+            && ($tujuanUser->isBupati() || $tujuanUser->isWakilBupati());
+
+        return [
+            'status_penerimaan' => $shouldWaitAcceptance
+                ? self::STATUS_MENUNGGU_PENERIMAAN
+                : self::STATUS_DITERIMA,
+            'diterima_at' => $shouldWaitAcceptance ? null : now(),
+        ];
+    }
+
+    public function isDiterima(): bool
+    {
+        return $this->status_penerimaan === self::STATUS_DITERIMA;
+    }
+
+    public function isMenungguPenerimaan(): bool
+    {
+        return $this->status_penerimaan === self::STATUS_MENUNGGU_PENERIMAAN;
+    }
 
     // ==================== STATIC METHODS ====================
 

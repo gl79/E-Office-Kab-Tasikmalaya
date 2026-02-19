@@ -81,7 +81,7 @@ class SuratMasukController extends Controller
         return Inertia::render('Persuratan/SuratMasuk/Index', [
             'suratMasuk' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_masuk_list_' . $user->id, 60, function () use ($user) {
                 $query = SuratMasuk::query()
-                    ->with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy', 'jenisSurat', 'penjadwalan'])
+                    ->with(['tujuans.user', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy', 'jenisSurat', 'penjadwalan'])
                     ->latest();
 
                 // SuperAdmin sees all
@@ -127,18 +127,26 @@ class SuratMasukController extends Controller
                         $surat->nomor_agenda = $tujuan->nomor_agenda;
                     }
 
+                    $isPimpinanRecipient = (bool) $tujuan
+                        && $user->isPimpinan()
+                        && ($user->isBupati() || $user->isWakilBupati());
+                    $isBupatiRecipient = $isPimpinanRecipient && $user->isBupati();
+                    $isAcceptedByCurrentUser = $tujuan?->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA;
+
                     $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
-                    $canFinalizeDelegated = Gate::forUser($user)->check('finalizeDelegatedJadwal', $surat);
                     $hasSchedule = (bool) $surat->penjadwalan;
 
-                    // Satu surat hanya bisa dijadwalkan sekali.
+                    $surat->penerimaan_status = $this->resolvePenerimaanStatusForDisplay($surat, $tujuan);
+                    $surat->penerimaan_diterima_at = $tujuan?->diterima_at?->toDateTimeString();
+                    $surat->can_accept = $isPimpinanRecipient && !$isAcceptedByCurrentUser;
+                    $surat->can_disposisi = Gate::forUser($user)->check('disposisiByBupati', $surat);
+                    $surat->can_disposisi_disabled = $isBupatiRecipient && !$isAcceptedByCurrentUser;
+
+                    // Satu surat hanya bisa dijadwalkan sekali (khusus Bupati).
                     $surat->can_schedule = $canScheduleByBupati && !$hasSchedule;
-                    $surat->can_finalize_schedule = $hasSchedule
-                        && $surat->penjadwalan->status === Penjadwalan::STATUS_TENTATIF
-                        && $canFinalizeDelegated;
+                    $surat->can_finalize_schedule = false;
                     $surat->can_view_schedule = $hasSchedule
-                        && !$surat->can_finalize_schedule
-                        && ($canScheduleByBupati || $canFinalizeDelegated);
+                        && $canScheduleByBupati;
                     $surat->penjadwalan_status = $this->resolvePenjadwalanStatusKey($surat->penjadwalan);
                     $surat->penjadwalan_status_label = $this->resolvePenjadwalanStatusLabel($surat->penjadwalan);
                     $surat->penjadwalan_status_variant = $this->resolvePenjadwalanStatusVariant($surat->penjadwalan);
@@ -247,6 +255,35 @@ class SuratMasukController extends Controller
     }
 
     /**
+     * Tandai surat sebagai diterima oleh penerima (Bupati/Wakil Bupati).
+     */
+    public function terima(Request $request, string $id)
+    {
+        $suratMasuk = SuratMasuk::with('tujuans')->findOrFail($id);
+        $this->authorize('acceptByRecipient', $suratMasuk);
+
+        $user = $request->user();
+        $tujuan = $suratMasuk->tujuans->firstWhere('tujuan_id', $user->id);
+
+        if (!$tujuan) {
+            return redirect()->back()->with('error', 'Anda bukan penerima surat ini.');
+        }
+
+        if ($tujuan->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA) {
+            return redirect()->back()->with('success', 'Surat ini sudah Anda terima sebelumnya.');
+        }
+
+        $tujuan->update([
+            'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
+            'diterima_at' => now(),
+        ]);
+
+        CacheHelper::flush(['persuratan_list']);
+
+        return redirect()->back()->with('success', 'Surat berhasil diterima.');
+    }
+
+    /**
      * Remove the specified resource from storage (soft delete).
      */
     public function destroy(string $id)
@@ -324,7 +361,7 @@ class SuratMasukController extends Controller
     public function cetakDisposisi(Request $request, string $id)
     {
         $suratMasuk = SuratMasuk::with(['tujuans'])->findOrFail($id);
-        $this->authorize('view', $suratMasuk);
+        $this->authorize('disposisiByBupati', $suratMasuk);
 
         $request->validate([
             'penanda_tangan_index' => 'required|integer|min:0|max:2',
@@ -398,32 +435,30 @@ class SuratMasukController extends Controller
     private function resolvePenjadwalanStatusKey(?Penjadwalan $penjadwalan): string
     {
         if (!$penjadwalan) {
-            return 'belum_dijadwalkan';
+            return '-';
         }
 
-        return $penjadwalan->status_formal;
+        return $penjadwalan->status;
     }
 
     private function resolvePenjadwalanStatusLabel(?Penjadwalan $penjadwalan): string
     {
         if (!$penjadwalan) {
-            return 'Belum Dijadwalkan';
+            return '-';
         }
 
-        return $penjadwalan->status_formal_label;
+        return $penjadwalan->status_label;
     }
 
     private function resolvePenjadwalanStatusVariant(?Penjadwalan $penjadwalan): string
     {
-        $statusKey = $this->resolvePenjadwalanStatusKey($penjadwalan);
+        if (!$penjadwalan) {
+            return 'default';
+        }
 
-        return match ($statusKey) {
-            Penjadwalan::STATUS_FORMAL_TERJADWAL => 'info',
-            Penjadwalan::STATUS_FORMAL_DALAM_PROSES => 'warning',
-            Penjadwalan::STATUS_FORMAL_DIDISPOSISIKAN => 'primary',
-            Penjadwalan::STATUS_FORMAL_SELESAI => 'success',
-            Penjadwalan::STATUS_FORMAL_DITUNDA => 'warning',
-            Penjadwalan::STATUS_FORMAL_DIBATALKAN => 'danger',
+        return match ($penjadwalan->status) {
+            Penjadwalan::STATUS_TENTATIF => 'warning',
+            Penjadwalan::STATUS_DEFINITIF => 'success',
             default => 'default',
         };
     }
@@ -464,5 +499,37 @@ class SuratMasukController extends Controller
         }
 
         return null;
+    }
+
+    private function resolvePenerimaanStatusForDisplay(
+        SuratMasuk $surat,
+        ?SuratMasukTujuan $currentUserTujuan
+    ): string {
+        if ($currentUserTujuan) {
+            return $currentUserTujuan->status_penerimaan ?? '-';
+        }
+
+        $pimpinanTujuans = $surat->tujuans->filter(function (SuratMasukTujuan $tujuan) {
+            $recipient = $tujuan->user;
+
+            if (!$recipient) {
+                return false;
+            }
+
+            return $recipient->isPimpinan()
+                && ($recipient->isBupati() || $recipient->isWakilBupati());
+        });
+
+        if ($pimpinanTujuans->isEmpty()) {
+            return '-';
+        }
+
+        $allAccepted = $pimpinanTujuans->every(
+            fn(SuratMasukTujuan $tujuan) => $tujuan->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA
+        );
+
+        return $allAccepted
+            ? SuratMasukTujuan::STATUS_DITERIMA
+            : SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN;
     }
 }

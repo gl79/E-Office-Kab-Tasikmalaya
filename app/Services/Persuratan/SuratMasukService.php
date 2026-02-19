@@ -63,8 +63,19 @@ class SuratMasukService
                 ->pluck('nomor_agenda', 'tujuan_id')
                 ->toArray();
 
+            // Simpan status penerimaan lama agar tidak reset saat update.
+            $oldTujuanPenerimaan = $suratMasuk->tujuans()
+                ->whereNotNull('tujuan_id')
+                ->get(['tujuan_id', 'status_penerimaan', 'diterima_at'])
+                ->keyBy('tujuan_id')
+                ->map(fn($item) => [
+                    'status_penerimaan' => $item->status_penerimaan,
+                    'diterima_at' => $item->diterima_at,
+                ])
+                ->toArray();
+
             $suratMasuk->tujuans()->delete();
-            $this->syncTujuan($suratMasuk, $tujuanList, $oldTujuanAgendas);
+            $this->syncTujuan($suratMasuk, $tujuanList, $oldTujuanAgendas, $oldTujuanPenerimaan);
 
             CacheHelper::flush(['persuratan_list']);
 
@@ -86,9 +97,14 @@ class SuratMasukService
      * Setiap penerima mendapat nomor agenda masing-masing.
      *
      * @param array<int, string> $oldAgendas Nomor agenda lama per tujuan_id (untuk update/reuse)
+     * @param array<int, array{status_penerimaan: string|null, diterima_at: \Illuminate\Support\Carbon|string|null}> $oldPenerimaan
      */
-    private function syncTujuan(SuratMasuk $suratMasuk, array $tujuanList, array $oldAgendas = []): void
-    {
+    private function syncTujuan(
+        SuratMasuk $suratMasuk,
+        array $tujuanList,
+        array $oldAgendas = [],
+        array $oldPenerimaan = []
+    ): void {
         if (empty($tujuanList)) {
             return;
         }
@@ -109,11 +125,21 @@ class SuratMasukService
                 $nomorAgenda = $oldAgendas[$userData->id] ?? SuratMasukTujuan::generateNomorAgendaForRecipient($userData->id);
             }
 
+            $penerimaanState = $userData && isset($oldPenerimaan[$userData->id])
+                ? [
+                    'status_penerimaan' => $oldPenerimaan[$userData->id]['status_penerimaan']
+                        ?? SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN,
+                    'diterima_at' => $oldPenerimaan[$userData->id]['diterima_at'] ?? null,
+                ]
+                : SuratMasukTujuan::initialPenerimaanState($userData);
+
             SuratMasukTujuan::create([
                 'surat_masuk_id' => $suratMasuk->id,
                 'tujuan_id' => $userData?->id ?? null,
                 'tujuan' => $userData?->name ?? $tujuan,
                 'nomor_agenda' => $nomorAgenda,
+                'status_penerimaan' => $penerimaanState['status_penerimaan'],
+                'diterima_at' => $penerimaanState['diterima_at'],
             ]);
         }
     }

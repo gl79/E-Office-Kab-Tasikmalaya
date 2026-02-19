@@ -380,7 +380,7 @@ export default function Edit({
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="nomor_agenda" value="No Urut/Agenda" required />
+                                                <InputLabel htmlFor="nomor_agenda" value="No Agenda" required />
                                                 <div className="mt-1">
                                                     <TextInput
                                                         id="nomor_agenda"
@@ -389,7 +389,7 @@ export default function Edit({
                                                         className="w-full bg-surface-hover cursor-not-allowed"
                                                     />
                                                 </div>
-                                                <p className="text-xs text-text-secondary mt-1">No urut/agenda tidak dapat diubah</p>
+                                                <p className="text-xs text-text-secondary mt-1">No agenda tidak dapat diubah</p>
                                                 <InputError message={errors.nomor_agenda} className="mt-1" />
                                             </div>
 

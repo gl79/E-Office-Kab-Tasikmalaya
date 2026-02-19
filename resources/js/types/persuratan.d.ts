@@ -4,7 +4,10 @@
 
 export interface SuratMasukTujuan {
     id: string;
+    tujuan_id?: number | null;
     tujuan: string;
+    status_penerimaan?: string;
+    diterima_at?: string | null;
 }
 
 export interface SuratMasuk {
@@ -28,6 +31,11 @@ export interface SuratMasuk {
     staff_pengolah?: { name: string; nip: string } | null;
     created_by?: { name: string } | null;
     created_at: string;
+    penerimaan_status?: string;
+    penerimaan_diterima_at?: string | null;
+    can_accept?: boolean;
+    can_disposisi?: boolean;
+    can_disposisi_disabled?: boolean;
     can_schedule?: boolean;
     can_finalize_schedule?: boolean;
     can_view_schedule?: boolean;

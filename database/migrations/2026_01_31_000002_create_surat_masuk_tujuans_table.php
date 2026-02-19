@@ -20,6 +20,8 @@ return new class extends Migration
                 ->nullOnDelete();
             $table->string('tujuan', 255);
             $table->string('nomor_agenda', 50)->nullable();
+            $table->string('status_penerimaan', 50)->default('Menunggu Penerimaan');
+            $table->timestamp('diterima_at')->nullable();
 
             $table->timestamps();
 
@@ -31,6 +33,7 @@ return new class extends Migration
 
             // Index
             $table->index('surat_masuk_id');
+            $table->index(['tujuan_id', 'status_penerimaan'], 'surat_masuk_tujuans_tujuan_status_index');
         });
     }
 

@@ -12,6 +12,7 @@ Route::middleware('auth')->prefix('persuratan')->name('persuratan.')->group(func
     Route::delete('surat-masuk/{id}/force-delete', [SuratMasukController::class, 'forceDelete'])->name('surat-masuk.force-delete');
     Route::get('surat-masuk/{id}/cetak-kartu', [SuratMasukController::class, 'cetakKartu'])->name('surat-masuk.cetak-kartu');
     Route::post('surat-masuk/{id}/cetak-disposisi', [SuratMasukController::class, 'cetakDisposisi'])->name('surat-masuk.cetak-disposisi');
+    Route::post('surat-masuk/{id}/terima', [SuratMasukController::class, 'terima'])->name('surat-masuk.terima');
     Route::get('surat-masuk/{id}/cetak-isi', [SuratMasukController::class, 'cetakIsi'])->name('surat-masuk.cetak-isi');
     Route::get('surat-masuk/{id}/preview', [SuratMasukController::class, 'previewFile'])->name('surat-masuk.preview');
     Route::get('surat-masuk/{id}/download', [SuratMasukController::class, 'downloadFile'])->name('surat-masuk.download');

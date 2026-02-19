@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
+use App\Models\SuratMasukTujuan;
 use App\Models\User;
 
 class SuratMasukPolicy
@@ -95,6 +95,7 @@ class SuratMasukPolicy
 
         return $suratMasuk->tujuans()
             ->where('tujuan_id', $user->id)
+            ->where('status_penerimaan', SuratMasukTujuan::STATUS_DITERIMA)
             ->exists();
     }
 
@@ -103,19 +104,46 @@ class SuratMasukPolicy
      */
     public function finalizeDelegatedJadwal(User $user, SuratMasuk $suratMasuk): bool
     {
+        return false;
+    }
+
+    /**
+     * Determine whether recipient can accept surat (Bupati / Wakil only).
+     */
+    public function acceptByRecipient(User $user, SuratMasuk $suratMasuk): bool
+    {
         if ($user->isSuperAdmin()) {
             return true;
         }
 
-        $jadwal = $suratMasuk->relationLoaded('penjadwalan')
-            ? $suratMasuk->penjadwalan
-            : $suratMasuk->penjadwalan()->first();
+        $isEligiblePimpinan = $user->isPimpinan()
+            && ($user->isBupati() || $user->isWakilBupati());
 
-        if (!$jadwal) {
+        if (!$isEligiblePimpinan) {
             return false;
         }
 
-        return $jadwal->status === Penjadwalan::STATUS_TENTATIF
-            && (int) $jadwal->dihadiri_oleh_user_id === (int) $user->id;
+        return $suratMasuk->tujuans()
+            ->where('tujuan_id', $user->id)
+            ->exists();
+    }
+
+    /**
+     * Determine whether Bupati can create disposisi.
+     */
+    public function disposisiByBupati(User $user, SuratMasuk $suratMasuk): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$user->isBupati()) {
+            return false;
+        }
+
+        return $suratMasuk->tujuans()
+            ->where('tujuan_id', $user->id)
+            ->where('status_penerimaan', SuratMasukTujuan::STATUS_DITERIMA)
+            ->exists();
     }
 }

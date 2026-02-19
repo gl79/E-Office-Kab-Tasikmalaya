@@ -24,6 +24,7 @@ class CacheHelper
         'persuratan_list' => [
             'surat_masuk_list',
             'surat_keluar_list',
+            'surat_masuk_menunggu_penerimaan_',
         ],
         'persuratan_archive' => [
             'persuratan_archive_',

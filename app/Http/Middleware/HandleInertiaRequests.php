@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\SuratMasukTujuan;
+use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -53,6 +55,35 @@ class HandleInertiaRequests extends Middleware
                 'warning' => $request->session()->get('warning'),
                 'has_conflict' => $request->session()->get('has_conflict', false),
             ],
+            'notifications' => fn() => $this->resolveNotifications($request),
+        ];
+    }
+
+    /**
+     * Shared sidebar counters.
+     *
+     * @return array<string, int>
+     */
+    private function resolveNotifications(Request $request): array
+    {
+        $user = $request->user();
+
+        if (!$user || !$user->isPimpinan() || (!$user->isBupati() && !$user->isWakilBupati())) {
+            return [
+                'surat_masuk_menunggu_penerimaan' => 0,
+            ];
+        }
+
+        $cacheKey = 'surat_masuk_menunggu_penerimaan_' . $user->id;
+
+        return [
+            'surat_masuk_menunggu_penerimaan' => CacheHelper::tags(['persuratan_list'])->remember($cacheKey, 60, function () use ($user) {
+                return SuratMasukTujuan::query()
+                    ->where('tujuan_id', $user->id)
+                    ->where('status_penerimaan', SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN)
+                    ->whereHas('suratMasuk', fn($q) => $q->whereNull('deleted_at'))
+                    ->count();
+            }),
         ];
     }
 }

@@ -130,11 +130,15 @@ class SuratKeluarService
         ]);
 
         // Create tujuan record dengan nomor agenda per-recipient
+        $penerimaanState = SuratMasukTujuan::initialPenerimaanState($recipient);
+
         SuratMasukTujuan::create([
             'surat_masuk_id' => $suratMasuk->id,
             'tujuan_id' => $recipient?->id,
             'tujuan' => $suratKeluar->kepada,
             'nomor_agenda' => $nomorAgenda,
+            'status_penerimaan' => $penerimaanState['status_penerimaan'],
+            'diterima_at' => $penerimaanState['diterima_at'],
         ]);
     }
 }

@@ -53,7 +53,7 @@ export default function CetakIsi({ suratKeluar }: Props) {
                 {/* Meta Data */}
                 <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8 text-sm">
                     <div>
-                        <span className="font-bold block uppercase text-xs text-gray-500">Nomor Urut</span>
+                        <span className="font-bold block uppercase text-xs text-gray-500">No Agenda</span>
                         <span>{suratKeluar.no_urut}</span>
                     </div>
                     <div>

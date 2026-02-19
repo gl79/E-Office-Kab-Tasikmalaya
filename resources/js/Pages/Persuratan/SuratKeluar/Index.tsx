@@ -136,7 +136,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
             title: 'Laporan Data Surat Keluar',
             columns: [
                 { header: 'No', render: (_, i) => String(i + 1) },
-                { header: 'Agenda', render: (item) => escapeHtml(item.no_urut) },
+                { header: 'No Agenda', render: (item) => escapeHtml(item.no_urut) },
                 { header: 'Tgl Surat / No Surat', render: (item) => `${formatDateShort(item.tanggal_surat)}<br><small>${escapeHtml(item.nomor_surat)}</small>` },
                 { header: 'Kepada', render: (item) => escapeHtml(item.kepada) },
                 { header: 'Perihal', render: (item) => escapeHtml(item.perihal) },
@@ -288,7 +288,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                             <thead className="bg-surface-hover">
                                 <tr>
                                     <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-12">No</th>
-                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">No Agenda / Urut</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">No Agenda</th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase"><div>Tgl Surat</div><div>No Surat</div></th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Kepada</th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Perihal</th>
@@ -460,7 +460,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                     <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_surat)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-text-secondary">Nomor Urut</p>
+                                    <p className="text-sm text-text-secondary">No Agenda</p>
                                     <p className="font-medium text-text-primary">{detailSurat.no_urut?.toString().padStart(4, '0')}</p>
                                 </div>
                                 {detailSurat.jenis_surat && (

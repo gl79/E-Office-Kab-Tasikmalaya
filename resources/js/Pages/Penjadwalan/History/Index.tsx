@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Eye, Filter, RotateCcw } from 'lucide-react';
+import { Eye, RotateCcw, Search } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Badge, Button, Modal, Pagination } from '@/Components/ui';
 import { FormSelect, TextInput } from '@/Components/form';
@@ -80,6 +80,7 @@ export default function Index({
     const [statusFormal, setStatusFormal] = useState(filters.status_formal ?? '');
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<PenjadwalanHistoryItem | null>(null);
+    const [isSyncingSearch, setIsSyncingSearch] = useState(false);
 
     const rows = historiesData?.data ?? [];
     const currentPage = historiesData?.current_page ?? 1;
@@ -98,38 +99,51 @@ export default function Index({
         [statusFormalOptions]
     );
 
-    const applyFilter = () => {
+    const navigateWithFilters = (nextSearch: string, nextStatusFormal: string, page = 1) => {
         router.get(
             route('penjadwalan.history.index'),
             {
-                search: search || undefined,
-                status_formal: statusFormal || undefined,
-                page: 1,
+                search: nextSearch || undefined,
+                status_formal: nextStatusFormal || undefined,
+                page,
             },
             { preserveState: true, preserveScroll: true, replace: true }
         );
+    };
+
+    useEffect(() => {
+        if (search === (filters.search ?? '')) {
+            return;
+        }
+
+        setIsSyncingSearch(true);
+
+        const timer = window.setTimeout(() => {
+            navigateWithFilters(search, statusFormal, 1);
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [search, statusFormal, filters.search]);
+
+    useEffect(() => {
+        setSearch(filters.search ?? '');
+        setStatusFormal(filters.status_formal ?? '');
+        setIsSyncingSearch(false);
+    }, [filters.search, filters.status_formal]);
+
+    const handleStatusFormalChange = (value: string) => {
+        setStatusFormal(value);
+        navigateWithFilters(search, value, 1);
     };
 
     const resetFilter = () => {
         setSearch('');
         setStatusFormal('');
-        router.get(
-            route('penjadwalan.history.index'),
-            {},
-            { preserveState: true, preserveScroll: true, replace: true }
-        );
+        navigateWithFilters('', '', 1);
     };
 
     const changePage = (page: number) => {
-        router.get(
-            route('penjadwalan.history.index'),
-            {
-                search: search || undefined,
-                status_formal: statusFormal || undefined,
-                page,
-            },
-            { preserveState: true, preserveScroll: true, replace: true }
-        );
+        navigateWithFilters(search, statusFormal, page);
     };
 
     return (
@@ -143,28 +157,36 @@ export default function Index({
 
             <div className="rounded-lg border border-border-default bg-surface">
                 <div className="border-b border-border-default p-4">
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-                        <TextInput
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Cari nomor agenda, nomor surat, perihal..."
-                            className="w-full px-2"
-                        />
-                        <FormSelect
-                            options={statusFormalSelectOptions}
-                            value={statusFormal}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFormal(e.target.value)}
-                            className="w-full px-2"
-                        />
-                        <Button onClick={applyFilter} className="gap-2">
-                            <Filter className="h-4 w-4" />
-                            Terapkan
-                        </Button>
-                        <Button variant="secondary" onClick={resetFilter} className="gap-2">
-                            <RotateCcw className="h-4 w-4" />
-                            Reset
-                        </Button>
+                    <div className="space-y-3">
+                        <div className="flex gap-2 max-w-md">
+                            <TextInput
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Cari nomor agenda, nomor surat, perihal..."
+                                className="w-full px-3"
+                            />
+                            <Button variant="secondary" disabled>
+                                <Search className="h-4 w-4" />
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,320px)_auto] sm:items-center">
+                            <FormSelect
+                                options={statusFormalSelectOptions}
+                                value={statusFormal}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStatusFormalChange(e.target.value)}
+                                className="w-full px-2"
+                            />
+                            <Button variant="secondary" onClick={resetFilter} className="gap-2">
+                                <RotateCcw className="h-4 w-4" />
+                                Reset
+                            </Button>
+                        </div>
+
+                        {isSyncingSearch && (
+                            <p className="text-xs text-text-secondary">Mencari data...</p>
+                        )}
                     </div>
                 </div>
 
@@ -311,4 +333,3 @@ export default function Index({
 }
 
 Index.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
-

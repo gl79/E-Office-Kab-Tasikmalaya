@@ -41,11 +41,13 @@ class BupatiJadwalController extends Controller
 
         $bupati = $this->resolveBupatiUser();
         $existing = $surat->penjadwalan?->load('dihadiriOlehUser');
+        $tujuanForUser = $surat->tujuans->firstWhere('tujuan_id', $user?->id);
+        $displayNomorAgenda = $tujuanForUser?->nomor_agenda ?: $surat->nomor_agenda;
 
         return Inertia::render('Penjadwalan/Bupati/Form', [
             'surat' => [
                 'id' => $surat->id,
-                'nomor_agenda' => $surat->nomor_agenda,
+                'nomor_agenda' => $displayNomorAgenda,
                 'nomor_surat' => $surat->nomor_surat,
                 'tanggal_surat' => $surat->tanggal_surat?->format('Y-m-d'),
                 'tanggal_surat_formatted' => $surat->tanggal_surat_formatted,
@@ -201,7 +203,7 @@ class BupatiJadwalController extends Controller
             ) {
                 if (!$existingJadwal) {
                     $alreadyScheduled = Penjadwalan::query()
-                        ->where('surat_masuk_id', $surat->id)
+                        ->where('surat_masuk_id', '=', $surat->id, 'and')
                         ->lockForUpdate()
                         ->exists();
 
@@ -303,7 +305,7 @@ class BupatiJadwalController extends Controller
     private function resolveBupatiUser(): ?User
     {
         return User::query()
-            ->where('role', User::ROLE_PIMPINAN)
+            ->where('role', '=', User::ROLE_PIMPINAN, 'and')
             ->where(function ($query) {
                 $query->whereRaw('LOWER(jabatan) = ?', ['bupati'])
                     ->orWhereRaw('LOWER(name) = ?', ['bupati']);
@@ -341,7 +343,7 @@ class BupatiJadwalController extends Controller
     private function ensureRecipientTujuan(SuratMasuk $surat, User $attendee): void
     {
         $alreadyExists = $surat->tujuans()
-            ->where('tujuan_id', $attendee->id)
+            ->where('tujuan_id', '=', $attendee->id, 'and')
             ->exists();
 
         if ($alreadyExists) {
@@ -353,6 +355,7 @@ class BupatiJadwalController extends Controller
             'tujuan_id' => $attendee->id,
             'tujuan' => $attendee->name,
             'nomor_agenda' => SuratMasukTujuan::generateNomorAgendaForRecipient((string) $attendee->id),
+            ...SuratMasukTujuan::initialPenerimaanState($attendee),
         ]);
     }
 
@@ -370,8 +373,8 @@ class BupatiJadwalController extends Controller
             : $this->normalizeTime((string) $waktuSelesai);
 
         $query = Penjadwalan::query()
-            ->whereDate('tanggal_agenda', $tanggal)
-            ->where('dihadiri_oleh_user_id', $attendeeUserId);
+            ->whereDate('tanggal_agenda', '=', $tanggal, 'and')
+            ->where('dihadiri_oleh_user_id', '=', $attendeeUserId, 'and');
 
         if ($ignoreJadwalId) {
             $query->where('id', '!=', $ignoreJadwalId);

@@ -178,7 +178,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="no_urut" value="Nomor Urut" required />
+                                    <InputLabel htmlFor="no_urut" value="No Agenda" required />
                                     <div className="mt-1">
                                         <TextInput
                                             id="no_urut"
@@ -187,7 +187,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             className="w-full bg-surface-hover cursor-not-allowed"
                                         />
                                     </div>
-                                    <p className="text-xs text-text-secondary mt-1">Nomor urut digenerate otomatis oleh sistem</p>
+                                    <p className="text-xs text-text-secondary mt-1">No agenda digenerate otomatis oleh sistem</p>
                                     <InputError message={errors.no_urut} className="mt-1" />
                                 </div>
 

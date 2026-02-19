@@ -93,6 +93,10 @@ export default function SidebarMenuItem({
 }: SidebarMenuItemProps) {
     const { url, props } = usePage<PageProps>();
     const userRole = props.auth.user?.role;
+    const pendingSuratMasuk = props.notifications?.surat_masuk_menunggu_penerimaan ?? 0;
+    const badgeCount = item.badgeKey === 'surat_masuk_menunggu_penerimaan'
+        ? pendingSuratMasuk
+        : 0;
 
     // Filter children based on role
     const filteredChildren = item.children?.filter(child => {
@@ -197,7 +201,14 @@ export default function SidebarMenuItem({
                         <IconComponent className="w-4 h-4" />
                     </span>
                 )}
-                <span className={collapsed ? 'lg:sr-only' : ''}>{item.label}</span>
+                <span className={collapsed ? 'lg:sr-only' : 'inline-flex items-center gap-2'}>
+                    <span>{item.label}</span>
+                    {badgeCount > 0 && (
+                        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-danger-light px-1.5 py-0.5 text-[11px] font-semibold text-danger">
+                            ({badgeCount})
+                        </span>
+                    )}
+                </span>
             </span>
 
             {/* Expand/Collapse indicator */}

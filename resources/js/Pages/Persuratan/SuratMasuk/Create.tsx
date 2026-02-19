@@ -385,7 +385,7 @@ export default function Create({
                                             </div>
 
                                             <div>
-                                                <InputLabel htmlFor="nomor_agenda" value="No Urut/Agenda" required />
+                                                <InputLabel htmlFor="nomor_agenda" value="No Agenda" required />
                                                 <div className="mt-1">
                                                     <TextInput
                                                         id="nomor_agenda"
@@ -394,7 +394,7 @@ export default function Create({
                                                         className="w-full bg-surface-hover cursor-not-allowed"
                                                     />
                                                 </div>
-                                                <p className="text-xs text-text-secondary mt-1">No urut/agenda digenerate otomatis oleh sistem</p>
+                                                <p className="text-xs text-text-secondary mt-1">No agenda digenerate otomatis oleh sistem</p>
                                                 <InputError message={errors.nomor_agenda} className="mt-1" />
                                             </div>
 

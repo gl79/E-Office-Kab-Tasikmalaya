@@ -17,6 +17,8 @@ export interface MenuItem {
     excludePaths?: string[];
     /** Roles allowed to view this menu item */
     roles?: string[];
+    /** Shared prop key for menu badge counter */
+    badgeKey?: 'surat_masuk_menunggu_penerimaan';
     /** Whether this is a logout action (requires special handling) */
     isLogout?: boolean;
 }
@@ -92,6 +94,7 @@ export const menuItems: MenuItem[] = [
                 label: 'Surat Masuk',
                 href: '/persuratan/surat-masuk',
                 icon: 'inbox',
+                badgeKey: 'surat_masuk_menunggu_penerimaan',
             },
             {
                 label: 'Surat Keluar',
