@@ -10,6 +10,7 @@ use App\Models\Penjadwalan;
 use App\Support\CacheHelper;
 use App\Support\WilayahHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -17,8 +18,7 @@ use Inertia\Inertia;
 class PenjadwalanTentatifController extends Controller
 {
     /**
-     * Display a listing of tentatif penjadwalan.
-     * Tab: Menunggu Peninjauan & Sudah Ditinjau
+     * Display a listing of tentatif penjadwalan (semua status disposisi dalam 1 tabel).
      */
     public function index(Request $request)
     {
@@ -27,18 +27,9 @@ class PenjadwalanTentatifController extends Controller
         $search = $request->input('search');
 
         return Inertia::render('Penjadwalan/Tentatif/Index', [
-            'menungguPeninjauan' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember("tentatif_menunggu_{$search}", 60, function () use ($search) {
+            'tentatif' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember("tentatif_all_{$search}", 60, function () use ($search) {
                 $query = Penjadwalan::query()
-                    ->menungguPeninjauan()
-                    ->with(['suratMasuk', 'creator'])
-                    ->search($search)
-                    ->latest('tanggal_agenda')
-                    ->get();
-                return PenjadwalanResource::collection($query);
-            })),
-            'sudahDitinjau' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember("tentatif_sudah_{$search}", 60, function () use ($search) {
-                $query = Penjadwalan::query()
-                    ->sudahDitinjau()
+                    ->tentatif()
                     ->with(['suratMasuk', 'creator'])
                     ->search($search)
                     ->latest('tanggal_agenda')
@@ -119,7 +110,7 @@ class PenjadwalanTentatifController extends Controller
                 'jadwal_id' => $penjadwalan->id,
                 'old_data' => $oldData,
                 'new_data' => $this->captureHistorySnapshot($penjadwalan->fresh()),
-                'changed_by' => auth()->id(),
+                'changed_by' => Auth::id(),
             ]);
 
             DB::commit();
@@ -171,30 +162,55 @@ class PenjadwalanTentatifController extends Controller
             $wilayahInfo = WilayahHelper::getWilayahText($penjadwalan->kode_wilayah);
         }
 
+        // Surat masuk identifiers
+        $suratMasuk = $penjadwalan->suratMasuk;
+        $noAgenda = '-';
+        $noSurat = '-';
+        $tanggalSurat = '-';
+        $asalSurat = '-';
+        $perihal = '-';
+        if ($suratMasuk) {
+            // nomor_agenda format: "SM/0001/2024" → ekstrak "0001"
+            $naParts = explode('/', $suratMasuk->nomor_agenda ?? '');
+            $noAgenda = count($naParts) >= 2 ? $naParts[1] : ($suratMasuk->nomor_agenda ?? '-');
+            $noSurat = $suratMasuk->nomor_surat ?? '-';
+            $tanggalSurat = $suratMasuk->tanggal_surat_formatted ?? '-';
+            $asalSurat = $suratMasuk->asal_surat ?? '-';
+            $perihal = $suratMasuk->perihal ?? '-';
+        }
+
         $kehadiran = $penjadwalan->dihadiri_oleh ?: 'Menunggu Konfirmasi';
         $statusDisposisi = $penjadwalan->status_disposisi_label;
         $keterangan = $penjadwalan->keterangan;
 
-        $template = "RENCANA KEGIATAN BUPATI\n\n";
-        $template .= "Hari/Tanggal : {$hari}, {$tanggal}\n";
-        $template .= "Waktu        : {$waktu} WIB\n";
-        $template .= "Kegiatan     : {$kegiatan}\n";
-        $template .= "Tempat       : {$tempat}";
+        $template = "*RENCANA KEGIATAN BUPATI*\n\n";
+        $template .= "*Hari/Tanggal :* {$hari}, {$tanggal}\n";
+        $template .= "*Waktu        :* {$waktu} WIB\n";
+        $template .= "*Kegiatan     :* {$kegiatan}\n";
+        $template .= "*Tempat       :* {$tempat}";
 
         if ($wilayahInfo) {
-            $template .= "\n              {$wilayahInfo}";
+            $template .= "\n               {$wilayahInfo}";
         }
 
-        $template .= "\n\n";
-        $template .= "Kehadiran    : {$kehadiran}\n";
-        $template .= "Status       : {$statusDisposisi}";
+        $template .= "\n\n━━━━━━━━━━━━━━━━━━━━\n\n";
+        $template .= "*IDENTITAS SURAT*\n";
+        $template .= "*No. Agenda   :* {$noAgenda}\n";
+        $template .= "*No. Surat    :* {$noSurat}\n";
+        $template .= "*Tanggal Surat:* {$tanggalSurat}\n";
+        $template .= "*Asal Surat   :* {$asalSurat}\n";
+        $template .= "*Perihal      :* {$perihal}\n";
+
+        $template .= "\n━━━━━━━━━━━━━━━━━━━━\n\n";
+        $template .= "*Kehadiran    :* {$kehadiran}\n";
+        $template .= "*Status       :* {$statusDisposisi}";
 
         if ($keterangan) {
-            $template .= "\n\n{$keterangan}";
+            $template .= "\n\n*Keterangan:*\n{$keterangan}";
         }
 
         $template .= "\n\n---\n";
-        $template .= "Dikirim dari Sistem E-Office";
+        $template .= "_Dikirim dari Sistem E-Office Kab. Tasikmalaya_";
 
         return $template;
     }

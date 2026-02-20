@@ -1,12 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Search, Copy } from 'lucide-react';
+import { Search, Copy, ExternalLink } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Badge, ConfirmDialog } from '@/Components/ui';
 import { TextInput } from '@/Components/form';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
-import { useDeferredDataMutable } from '@/hooks'; // Ensure index export exists or use explicit path
-import TentatifTabNav from './Components/TentatifTabNav';
+import { useDeferredDataMutable } from '@/hooks';
 import TentatifTable from './Components/TentatifTable';
 import TentatifEditModal from './Components/TentatifEditModal';
 import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
@@ -14,8 +13,7 @@ import type { PageProps } from '@/types';
 import type { Agenda } from '@/types/penjadwalan';
 
 interface Props extends PageProps {
-    menungguPeninjauan?: { data: Agenda[] };
-    sudahDitinjau?: { data: Agenda[] };
+    tentatif?: { data: Agenda[] };
     disposisiOptions: Record<string, string>;
     filters: {
         search?: string;
@@ -23,33 +21,20 @@ interface Props extends PageProps {
 }
 
 const TentatifIndex = ({
-    menungguPeninjauan,
-    sudahDitinjau,
+    tentatif,
     disposisiOptions,
     filters,
 }: Props) => {
     const { auth } = usePage<PageProps>().props;
 
-    // Cache keys
-    const menungguCacheKey = `penjadwalan_tentatif_menunggu_${auth.user.id}`;
-    const sudahCacheKey = `penjadwalan_tentatif_sudah_${auth.user.id}`;
-
-    // Deferred Data
-    const {
-        data: menungguDataRaw,
-        isLoading: isMenungguLoading
-    } = useDeferredDataMutable<{ data: Agenda[] }>(menungguCacheKey, menungguPeninjauan);
+    const cacheKey = `penjadwalan_tentatif_${auth.user.id}`;
 
     const {
-        data: sudahDataRaw,
-        isLoading: isSudahLoading
-    } = useDeferredDataMutable<{ data: Agenda[] }>(sudahCacheKey, sudahDitinjau);
+        data: tentatifDataRaw,
+        isLoading,
+    } = useDeferredDataMutable<{ data: Agenda[] }>(cacheKey, tentatif);
 
-    const menungguData = menungguDataRaw?.data || [];
-    const sudahData = sudahDataRaw?.data || [];
-
-    // Tab state
-    const [activeTab, setActiveTab] = useState<'menunggu' | 'sudah'>('menunggu');
+    const allData = tentatifDataRaw?.data || [];
 
     // Search state
     const [search, setSearch] = useState(filters.search || '');
@@ -80,21 +65,19 @@ const TentatifIndex = ({
         keterangan: '',
     });
 
-    const currentData = activeTab === 'menunggu' ? menungguData : sudahData;
-    const isLoading = activeTab === 'menunggu' ? isMenungguLoading : isSudahLoading;
-
     // Filter data client-side
     const filteredData = useMemo(() => {
-        if (!search) return currentData;
+        if (!search) return allData;
         const lowerSearch = search.toLowerCase();
-        return currentData.filter((item) =>
+        return allData.filter((item) =>
             item.nama_kegiatan?.toLowerCase().includes(lowerSearch) ||
             item.surat_masuk?.nomor_surat?.toLowerCase().includes(lowerSearch) ||
             item.surat_masuk?.asal_surat?.toLowerCase().includes(lowerSearch) ||
+            item.surat_masuk?.perihal?.toLowerCase().includes(lowerSearch) ||
             item.tempat?.toLowerCase().includes(lowerSearch) ||
-            (activeTab === 'sudah' && item.dihadiri_oleh?.toLowerCase().includes(lowerSearch))
+            item.dihadiri_oleh?.toLowerCase().includes(lowerSearch)
         );
-    }, [currentData, search, activeTab]);
+    }, [allData, search]);
 
     // Pagination
     const paginatedData = useMemo(() => {
@@ -106,12 +89,6 @@ const TentatifIndex = ({
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
-        setCurrentPage(1);
-    };
-
-    const handleTabChange = (tab: 'menunggu' | 'sudah') => {
-        setActiveTab(tab);
-        setSearch('');
         setCurrentPage(1);
     };
 
@@ -208,6 +185,13 @@ const TentatifIndex = ({
         submitHandler: handleSubmitKehadiran
     };
 
+    // Format No Agenda: "SM/0001/2024" → "0001"
+    const formatNoAgenda = (nomor?: string) => {
+        if (!nomor) return '-';
+        const parts = nomor.split('/');
+        return parts.length >= 2 ? parts[1] : nomor;
+    };
+
     return (
         <>
             <Head title="Jadwal Tentatif" />
@@ -218,20 +202,12 @@ const TentatifIndex = ({
             </div>
 
             <div className="bg-surface rounded-lg border border-border-default">
-                {/* Tabs */}
-                <TentatifTabNav
-                    activeTab={activeTab}
-                    onTabChange={handleTabChange}
-                    countMenunggu={menungguData.length}
-                    countSudah={sudahData.length}
-                />
-
                 {/* Toolbar */}
                 <div className="p-4 border-b border-border-default">
                     <div className="flex gap-2 max-w-md">
                         <TextInput
                             type="text"
-                            placeholder="Cari kegiatan, nomor surat, lokasi..."
+                            placeholder="Cari kegiatan, nomor surat, perihal, lokasi..."
                             value={search}
                             onChange={handleSearchChange}
                             className="w-full px-3"
@@ -250,7 +226,6 @@ const TentatifIndex = ({
                 ) : (
                     <TentatifTable
                         data={paginatedData}
-                        activeTab={activeTab}
                         onEditKehadiran={handleEditKehadiran}
                         onJadikanDefinitif={(agenda) => {
                             setSelectedAgenda(agenda);
@@ -302,7 +277,7 @@ const TentatifIndex = ({
                 isOpen={showWhatsAppModal}
                 onClose={() => setShowWhatsAppModal(false)}
                 title="Export WhatsApp"
-                size="md"
+                size="lg"
             >
                 <div className="space-y-4">
                     {isLoadingTemplate ? (
@@ -311,6 +286,9 @@ const TentatifIndex = ({
                         </div>
                     ) : (
                         <>
+                            <p className="text-xs text-text-secondary">
+                                Template menggunakan format bold WhatsApp (*teks*). Salin lalu tempelkan langsung ke WhatsApp.
+                            </p>
                             <div className="bg-surface-hover rounded-lg p-4 border border-border-default">
                                 <pre className="whitespace-pre-wrap text-sm font-mono text-text-primary">
                                     {whatsAppTemplate}
@@ -340,100 +318,165 @@ const TentatifIndex = ({
             <Modal
                 isOpen={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
-                title="Detail Jadwal"
-                size="lg"
+                title="Detail Jadwal Tentatif"
+                size="xl"
             >
                 {selectedAgenda && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Kolom Kiri - Informasi */}
-                        <div className="space-y-4">
+                        <div className="space-y-5 overflow-y-auto max-h-[70vh] pr-1">
+                            {/* Identitas Surat */}
                             <div>
-                                <h4 className="font-medium text-text-primary mb-3">Informasi Surat</h4>
-                                <div className="space-y-2 text-sm text-text-primary">
-                                    <p>
-                                        <span className="text-text-secondary">Nomor:</span>{' '}
-                                        <span className="font-medium">{selectedAgenda.surat_masuk?.nomor_surat}</span>
-                                    </p>
-                                    <p>
-                                        <span className="text-text-secondary">Tanggal:</span>{' '}
-                                        <span className="font-medium">{selectedAgenda.surat_masuk?.tanggal_surat_formatted}</span>
-                                    </p>
-                                    <p>
-                                        <span className="text-text-secondary">Dari:</span>{' '}
-                                        <span className="font-medium">{selectedAgenda.surat_masuk?.asal_surat}</span>
-                                    </p>
-                                    <p>
-                                        <span className="text-text-secondary">Perihal:</span>{' '}
-                                        <span className="font-medium">{selectedAgenda.surat_masuk?.perihal}</span>
-                                    </p>
+                                <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
+                                    Identitas Surat
+                                </h4>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">No. Agenda</span>
+                                        <span className="font-medium text-text-primary">
+                                            {formatNoAgenda(selectedAgenda.surat_masuk?.nomor_agenda)}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">No. Surat</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.surat_masuk?.nomor_surat || '-'}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">Tanggal Surat</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.surat_masuk?.tanggal_surat_formatted || '-'}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">Asal Surat</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.surat_masuk?.asal_surat || '-'}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">Perihal</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.surat_masuk?.perihal || '-'}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">Sifat</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.surat_masuk?.sifat_label || '-'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
+                            {/* Detail Jadwal */}
                             <div>
-                                <h4 className="font-medium text-text-primary mb-3">Detail Jadwal</h4>
-                                <div className="space-y-2 text-sm text-text-primary">
-                                    <p>
-                                        <span className="text-text-secondary">Kegiatan:</span>{' '}
-                                        <span className="font-medium">{selectedAgenda.nama_kegiatan}</span>
-                                    </p>
-                                    <p>
-                                        <span className="text-text-secondary">Tanggal:</span>{' '}
-                                        <span className="font-medium">{selectedAgenda.tanggal_format_indonesia}</span>
-                                    </p>
-                                    <p>
-                                        <span className="text-text-secondary">Waktu:</span>{' '}
-                                        <span className="font-medium">{selectedAgenda.waktu_lengkap} WIB</span>
-                                    </p>
-                                    <p>
-                                        <span className="text-text-secondary">Lokasi:</span>{' '}
-                                        <span className="font-medium">{selectedAgenda.tempat}</span>
-                                    </p>
+                                <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
+                                    Detail Jadwal
+                                </h4>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">Kegiatan</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.nama_kegiatan}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">Tanggal</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.tanggal_format_indonesia}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">Waktu</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.waktu_lengkap} WIB
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">Lokasi</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.tempat}
+                                        </span>
+                                    </div>
+                                    {selectedAgenda.lokasi_type_label && (
+                                        <div className="flex gap-2">
+                                            <span className="text-text-secondary w-28 shrink-0">Tipe Lokasi</span>
+                                            <span className="font-medium text-text-primary">
+                                                {selectedAgenda.lokasi_type_label}
+                                            </span>
+                                        </div>
+                                    )}
                                     {selectedAgenda.keterangan && (
-                                        <p>
-                                            <span className="text-text-secondary">Keterangan:</span>{' '}
-                                            <span className="font-medium">{selectedAgenda.keterangan}</span>
-                                        </p>
+                                        <div className="flex gap-2">
+                                            <span className="text-text-secondary w-28 shrink-0">Keterangan</span>
+                                            <span className="font-medium text-text-primary">
+                                                {selectedAgenda.keterangan}
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
                             </div>
 
+                            {/* Status */}
                             <div>
-                                <h4 className="font-medium text-text-primary mb-3">Status</h4>
+                                <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
+                                    Status
+                                </h4>
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-text-secondary">Status Jadwal:</span>
+                                        <span className="text-sm text-text-secondary w-28 shrink-0">Status Jadwal</span>
                                         <Badge variant="warning">
                                             {selectedAgenda.status_formal_label ?? selectedAgenda.status_label}
                                         </Badge>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-text-secondary">Disposisi:</span>
+                                        <span className="text-sm text-text-secondary w-28 shrink-0">Disposisi</span>
                                         {renderDisposisiBadge(selectedAgenda.status_disposisi)}
                                     </div>
                                     {selectedAgenda.dihadiri_oleh && (
-                                        <p className="text-sm text-text-primary">
-                                            <span className="text-text-secondary">Dihadiri:</span>{' '}
-                                            <span className="font-medium">{selectedAgenda.dihadiri_oleh}</span>
-                                        </p>
+                                        <div className="flex gap-2 text-sm">
+                                            <span className="text-text-secondary w-28 shrink-0">Dihadiri</span>
+                                            <span className="font-medium text-text-primary">
+                                                {selectedAgenda.dihadiri_oleh}
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
                             </div>
                         </div>
 
                         {/* Kolom Kanan - Preview PDF */}
-                        <div className="bg-surface-hover rounded-lg p-4 border border-border-default">
-                            <h4 className="font-medium text-text-primary mb-4">Preview Surat</h4>
-                            {selectedAgenda.surat_masuk?.file_url ? (
-                                <iframe
-                                    src={selectedAgenda.surat_masuk.file_url}
-                                    className="w-full h-[500px] border border-border-default rounded"
-                                    title="Preview Surat"
-                                />
-                            ) : (
-                                <div className="flex items-center justify-center h-[500px] bg-surface rounded">
-                                    <p className="text-text-secondary">File surat tidak tersedia</p>
-                                </div>
-                            )}
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-semibold text-text-primary">Preview Surat</h4>
+                                {selectedAgenda.surat_masuk?.file_url && (
+                                    <a
+                                        href={selectedAgenda.surat_masuk.file_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                    >
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                        Buka di tab baru
+                                    </a>
+                                )}
+                            </div>
+                            <div className="bg-surface-hover rounded-lg border border-border-default overflow-hidden flex-1">
+                                {selectedAgenda.surat_masuk?.file_url ? (
+                                    <iframe
+                                        src={selectedAgenda.surat_masuk.file_url}
+                                        className="w-full h-[560px]"
+                                        title="Preview Surat"
+                                        style={{ border: 'none' }}
+                                    />
+                                ) : (
+                                    <div className="flex items-center justify-center h-[560px]">
+                                        <p className="text-text-secondary text-sm">File surat tidak tersedia</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}

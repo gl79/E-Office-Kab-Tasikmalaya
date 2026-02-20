@@ -6,7 +6,6 @@ import type { Agenda } from '@/types/penjadwalan';
 
 interface Props {
     data: Agenda[];
-    activeTab: 'menunggu' | 'sudah';
     onEditKehadiran: (agenda: Agenda) => void;
     onJadikanDefinitif: (agenda: Agenda) => void;
     onViewDetail: (agenda: Agenda) => void;
@@ -19,7 +18,6 @@ interface Props {
 
 const TentatifTable: React.FC<Props> = ({
     data,
-    activeTab,
     onEditKehadiran,
     onJadikanDefinitif,
     onViewDetail,
@@ -41,9 +39,9 @@ const TentatifTable: React.FC<Props> = ({
                         <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-12">No</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Tanggal/Waktu</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Kegiatan</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Surat Undangan</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Disposisi</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-48">Aksi</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Surat Masuk</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Status Disposisi</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-56">Aksi</th>
                     </tr>
                 </thead>
                 <tbody className="bg-surface divide-y divide-border-default">
@@ -69,7 +67,10 @@ const TentatifTable: React.FC<Props> = ({
                             </td>
                             <td className="px-4 py-3 text-sm">
                                 <div className="font-medium text-text-primary">{item.surat_masuk?.nomor_surat || '-'}</div>
-                                <div className="text-text-secondary line-clamp-1">{item.surat_masuk?.asal_surat || '-'}</div>
+                                <div className="text-xs text-text-secondary line-clamp-1">{item.surat_masuk?.asal_surat || '-'}</div>
+                                {item.surat_masuk?.perihal && (
+                                    <div className="text-xs text-text-secondary italic line-clamp-1">{item.surat_masuk.perihal}</div>
+                                )}
                             </td>
                             <td className="px-4 py-3 text-sm">
                                 <div className="flex flex-col gap-1 items-start">
@@ -84,8 +85,8 @@ const TentatifTable: React.FC<Props> = ({
                             </td>
                             <td className="px-4 py-3">
                                 <div className="flex items-center justify-end gap-2">
-                                    {/* Atur Kehadiran button - shown for Menunggu Peninjauan tab */}
-                                    {activeTab === 'menunggu' && item.can_edit_kehadiran && (
+                                    {/* Atur Kehadiran – tersedia bagi pembuat jadwal */}
+                                    {item.can_edit_kehadiran && (
                                         <Button
                                             size="sm"
                                             variant="secondary"
@@ -96,8 +97,8 @@ const TentatifTable: React.FC<Props> = ({
                                         </Button>
                                     )}
 
-                                    {/* Jadikan Definitif button - shown for Sudah Ditinjau tab */}
-                                    {activeTab === 'sudah' && item.status_disposisi !== 'menunggu' && (
+                                    {/* Jadikan Definitif – tersedia ketika sudah ada disposisi */}
+                                    {item.status_disposisi !== 'menunggu' && (
                                         <Button
                                             size="sm"
                                             variant="success"
@@ -108,7 +109,7 @@ const TentatifTable: React.FC<Props> = ({
                                         </Button>
                                     )}
 
-                                    {/* Dropdown for other actions */}
+                                    {/* Dropdown aksi lainnya */}
                                     <Dropdown
                                         align="right"
                                         width="48"
@@ -156,10 +157,7 @@ const TentatifTable: React.FC<Props> = ({
                     {data.length === 0 && (
                         <tr>
                             <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
-                                {activeTab === 'menunggu'
-                                    ? (search ? 'Tidak ada data yang cocok.' : 'Tidak ada jadwal yang menunggu peninjauan.')
-                                    : (search ? 'Tidak ada data yang cocok.' : 'Tidak ada jadwal yang sudah ditinjau.')
-                                }
+                                {search ? 'Tidak ada data yang cocok.' : 'Tidak ada jadwal tentatif.'}
                             </td>
                         </tr>
                     )}

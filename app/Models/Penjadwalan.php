@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property string $id
  * @property string|null $surat_masuk_id
  * @property string|null $nama_kegiatan
  * @property string|null $lokasi_type
@@ -38,6 +39,8 @@ use Illuminate\Support\Carbon;
  * @property-read string $tanggal_format_indonesia
  * @property-read string $tanggal_formatted
  * @property-read string $status_label
+ * @property-read string $status_formal
+ * @property-read string $status_formal_label
  * @property-read string $status_disposisi_label
  * @property-read string $lokasi_type_label
  * @property-read string $hari

@@ -13,12 +13,35 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property string $id
+ * @property string|null $nomor_agenda
+ * @property string|null $nomor_surat
+ * @property string|null $asal_surat
+ * @property string|null $perihal
+ * @property string|null $isi_ringkas
+ * @property string|null $sifat
+ * @property int|null $lampiran
+ * @property string|null $file_path
+ * @property string|null $jenis_surat_id
+ * @property string|null $indeks_berkas_id
+ * @property string|null $indeks_berkas_custom
+ * @property string|null $kode_klasifikasi_id
+ * @property string|null $staff_pengolah_id
+ * @property string|null $catatan_tambahan
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property string|null $deleted_by
  * @property Carbon|null $tanggal_diterima
  * @property Carbon|null $tanggal_surat
  * @property Carbon|null $tanggal_diteruskan
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ *
+ * @property-read string $sifat_label
+ * @property-read string $tanggal_diterima_formatted
+ * @property-read string $tanggal_surat_formatted
+ * @property-read array $tujuan_list
  *
  * Computed properties (set dynamically in controller for API response)
  * @property string|null $penerimaan_status
