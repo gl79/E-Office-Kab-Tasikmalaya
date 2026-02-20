@@ -152,7 +152,7 @@ export const menuItems: MenuItem[] = [
                 icon: 'archive',
             },
         ],
-    },
+     },
     {
         label: 'Activity Logs',
         href: '/pengaturan/activity-logs',

@@ -430,6 +430,17 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                             </Badge>
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
+                                            <div className="flex items-center justify-center gap-1">
+                                                {item.can_accept && (
+                                                    <button
+                                                        onClick={() => handleTerima(item)}
+                                                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
+                                                        title="Terima Surat"
+                                                    >
+                                                        <Check className="h-3.5 w-3.5" />
+                                                        <span>Terima</span>
+                                                    </button>
+                                                )}
                                             <Dropdown
                                                 align="right"
                                                 width="48"
@@ -493,17 +504,6 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                         <span>Cetak Kartu Hanya Isi</span>
                                                     </Dropdown.Link>
 
-                                                    {item.can_accept && (
-                                                        <Dropdown.Link
-                                                            as="button"
-                                                            onClick={() => handleTerima(item)}
-                                                            className="flex items-center gap-2 text-secondary hover:bg-success-light focus:bg-success-light"
-                                                        >
-                                                            <Check className="h-4 w-4" />
-                                                            <span>Terima</span>
-                                                        </Dropdown.Link>
-                                                    )}
-
                                                     {(item.can_disposisi || item.can_disposisi_disabled) && (
                                                         item.can_disposisi ? (
                                                             <Dropdown.Link
@@ -562,6 +562,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                     )}
                                                 </div>
                                             </Dropdown>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -623,12 +624,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                             <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Identitas Surat</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-sm text-text-secondary">Asal Surat</p>
-                                    <Badge variant="primary" className="mt-1">{detailSurat.asal_surat}</Badge>
-                                </div>
-                                <div>
                                     <p className="text-sm text-text-secondary">Tanggal Surat</p>
                                     <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_surat)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Asal Surat</p>
+                                    <Badge variant="primary" className="mt-1">{detailSurat.asal_surat}</Badge>
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">Nomor Surat</p>
@@ -641,7 +642,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     </div>
                                 )}
                                 <div>
-                                    <p className="text-sm text-text-secondary">Sifat</p>
+                                    <p className="text-sm text-text-secondary">Sifat Surat</p>
                                     {getSifatBadge(detailSurat.sifat, sifatOptions)}
                                 </div>
                                 <div>
@@ -668,7 +669,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                 </div>
                                 {detailSurat.isi_ringkas && (
                                     <div className="sm:col-span-2">
-                                        <p className="text-sm text-text-secondary">Isi Ringkas</p>
+                                        <p className="text-sm text-text-secondary">Isi Ringkas Surat</p>
                                         <p className="font-medium text-text-primary">{detailSurat.isi_ringkas}</p>
                                     </div>
                                 )}
@@ -680,24 +681,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                             <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Identitas Agenda</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-sm text-text-secondary">Klasifikasi</p>
-                                    <p className="font-medium text-text-primary">
-                                        {detailSurat.kode_klasifikasi
-                                            ? `${detailSurat.kode_klasifikasi.kode} - ${detailSurat.kode_klasifikasi.nama}`
-                                            : '-'}
-                                    </p>
+                                    <p className="text-sm text-text-secondary">Tanggal Diterima</p>
+                                    <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_diterima)}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">No Agenda</p>
                                     <p className="font-medium text-text-primary">{detailSurat.nomor_agenda.split('/')[1] || detailSurat.nomor_agenda}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-text-secondary">Pengagenda/Pengolah</p>
-                                    <p className="font-medium text-text-primary">{detailSurat.staff_pengolah?.name || '-'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-text-secondary">Tanggal Diterima</p>
-                                    <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_diterima)}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">Indeks Surat</p>
@@ -707,12 +696,24 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                             : '-'}
                                     </p>
                                 </div>
-                                {detailSurat.tanggal_diteruskan && (
-                                    <div>
-                                        <p className="text-sm text-text-secondary">Tanggal Diteruskan</p>
-                                        <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_diteruskan)}</p>
-                                    </div>
-                                )}
+                                <div>
+                                    <p className="text-sm text-text-secondary">Kode Klasifikasi</p>
+                                    <p className="font-medium text-text-primary">
+                                        {detailSurat.kode_klasifikasi
+                                            ? `${detailSurat.kode_klasifikasi.kode} - ${detailSurat.kode_klasifikasi.nama}`
+                                            : '-'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Staff Pengolah</p>
+                                    <p className="font-medium text-text-primary">{detailSurat.staff_pengolah?.name || '-'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-text-secondary">Tanggal Diteruskan</p>
+                                    <p className="font-medium text-text-primary">
+                                        {detailSurat.tanggal_diteruskan ? formatDateShort(detailSurat.tanggal_diteruskan) : '-'}
+                                    </p>
+                                </div>
                                 {detailSurat.catatan_tambahan && (
                                     <div className="sm:col-span-2">
                                         <p className="text-sm text-text-secondary">Catatan Tambahan</p>

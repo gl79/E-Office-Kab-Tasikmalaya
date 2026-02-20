@@ -33,7 +33,6 @@ class SuratMasukController extends Controller
     {
         return User::select(['id', 'name', 'nip', 'jabatan'])
             ->where('role', '!=', User::ROLE_SUPERADMIN)
-            ->where('id', '!=', Auth::id())
             ->orderByRaw("CASE
                 WHEN name = 'Tata Usaha' THEN 1
                 WHEN name = 'Bupati' THEN 2
@@ -121,7 +120,7 @@ class SuratMasukController extends Controller
 
                 // Resolve nomor_agenda per-user:
                 // Jika user adalah penerima, gunakan nomor_agenda dari tujuan record
-                return $query->get()->map(function ($surat) use ($user) {
+                return $query->get()->map(function (SuratMasuk $surat) use ($user) {
                     $tujuan = $surat->tujuans->firstWhere('tujuan_id', $user->id);
                     if ($tujuan && $tujuan->nomor_agenda) {
                         $surat->nomor_agenda = $tujuan->nomor_agenda;

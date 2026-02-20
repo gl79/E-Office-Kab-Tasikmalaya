@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -195,6 +195,20 @@ export default function Create({
             forceFormData: true,
         });
     };
+
+    // Auto-fill Staff Pengolah saat Kepada diisi 1 user internal
+    useEffect(() => {
+        if (data.tujuan.length === 1) {
+            const selected = data.tujuan[0];
+            const isNumericId = /^\d+$/.test(selected);
+            if (isNumericId) {
+                const matched = staffPengolahUsers.find((u) => u.id.toString() === selected);
+                if (matched) {
+                    setData('staff_pengolah_id', selected);
+                }
+            }
+        }
+    }, [data.tujuan]);
 
     const handleIndeksBerkasChange = (value: string) => {
         setData((prevData) => ({

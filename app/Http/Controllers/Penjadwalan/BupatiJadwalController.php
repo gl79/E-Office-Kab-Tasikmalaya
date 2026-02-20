@@ -31,7 +31,7 @@ class BupatiJadwalController extends Controller
      */
     public function form(Request $request, SuratMasuk $surat): Response
     {
-        $surat->load(['tujuans', 'penjadwalan']);
+        $surat->load(['tujuans', 'penjadwalan', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'jenisSurat']);
 
         $user = $request->user();
         $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
@@ -52,9 +52,21 @@ class BupatiJadwalController extends Controller
                 'tanggal_surat' => $surat->tanggal_surat?->format('Y-m-d'),
                 'tanggal_surat_formatted' => $surat->tanggal_surat_formatted,
                 'asal_surat' => $surat->asal_surat,
+                'jenis_surat' => $surat->jenisSurat?->nama,
+                'sifat' => $surat->sifat,
+                'lampiran' => $surat->lampiran,
                 'perihal' => $surat->perihal,
                 'isi_ringkas' => $surat->isi_ringkas,
                 'tujuan_list' => $surat->tujuan_list,
+                'tanggal_diterima' => $surat->tanggal_diterima?->format('Y-m-d'),
+                'indeks_berkas' => $surat->indeksBerkas
+                    ? $surat->indeksBerkas->kode . ' - ' . $surat->indeksBerkas->nama
+                    : null,
+                'kode_klasifikasi' => $surat->kodeKlasifikasi
+                    ? $surat->kodeKlasifikasi->kode . ' - ' . $surat->kodeKlasifikasi->nama
+                    : null,
+                'staff_pengolah' => $surat->staffPengolah?->name,
+                'tanggal_diteruskan' => $surat->tanggal_diteruskan?->format('Y-m-d'),
             ],
             'existingJadwal' => $existing ? [
                 'id' => $existing->id,

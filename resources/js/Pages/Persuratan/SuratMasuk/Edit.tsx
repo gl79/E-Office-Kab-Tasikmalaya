@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -87,6 +87,7 @@ export default function Edit({
 }: Props) {
     const [currentStep, setCurrentStep] = useState(0);
     const [stepError, setStepError] = useState('');
+    const isMounted = useRef(false);
 
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
@@ -190,6 +191,24 @@ export default function Edit({
             forceFormData: true,
         });
     };
+
+    // Auto-fill Staff Pengolah saat Kepada diubah ke 1 user internal (skip render pertama)
+    useEffect(() => {
+        if (!isMounted.current) {
+            isMounted.current = true;
+            return;
+        }
+        if (data.tujuan.length === 1) {
+            const selected = data.tujuan[0];
+            const isNumericId = /^\d+$/.test(selected);
+            if (isNumericId) {
+                const matched = staffPengolahUsers.find((u) => u.id.toString() === selected);
+                if (matched) {
+                    setData('staff_pengolah_id', selected);
+                }
+            }
+        }
+    }, [data.tujuan]);
 
     const handleIndeksBerkasChange = (value: string) => {
         setData((prevData) => ({

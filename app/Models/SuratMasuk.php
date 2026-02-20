@@ -19,6 +19,19 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ *
+ * Computed properties (set dynamically in controller for API response)
+ * @property string|null $penerimaan_status
+ * @property string|null $penerimaan_diterima_at
+ * @property bool $can_accept
+ * @property bool $can_disposisi
+ * @property bool $can_disposisi_disabled
+ * @property bool $can_schedule
+ * @property bool $can_finalize_schedule
+ * @property bool $can_view_schedule
+ * @property string $penjadwalan_status
+ * @property string $penjadwalan_status_label
+ * @property string $penjadwalan_status_variant
  */
 class SuratMasuk extends Model
 {

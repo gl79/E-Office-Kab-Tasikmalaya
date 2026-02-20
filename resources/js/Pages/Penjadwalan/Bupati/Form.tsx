@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { formatDateShort } from '@/utils';
 import { ArrowLeft, Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button } from '@/Components/ui';
@@ -24,9 +25,17 @@ interface SuratDetail {
     tanggal_surat: string;
     tanggal_surat_formatted: string;
     asal_surat: string;
+    jenis_surat?: string | null;
+    sifat?: string | null;
+    lampiran?: number | null;
     perihal: string;
     isi_ringkas?: string | null;
     tujuan_list: string[];
+    tanggal_diterima?: string | null;
+    indeks_berkas?: string | null;
+    kode_klasifikasi?: string | null;
+    staff_pengolah?: string | null;
+    tanggal_diteruskan?: string | null;
 }
 
 interface JadwalExisting {
@@ -228,15 +237,10 @@ export default function FormPage({
             <div className="rounded-lg border border-border-default bg-surface p-4 sm:p-6">
                 <div className="mb-6 rounded-lg border border-border-default bg-surface-hover p-4">
                     <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-primary">Ringkasan Surat</h3>
-                    <div className="grid grid-cols-1 gap-3 text-sm text-text-primary sm:grid-cols-2">
-                        <div>
-                            <span className="text-text-secondary">No Agenda:</span>
-                            <span className="ml-2 font-medium">{surat.nomor_agenda}</span>
-                        </div>
-                        <div>
-                            <span className="text-text-secondary">No Surat:</span>
-                            <span className="ml-2 font-medium">{surat.nomor_surat}</span>
-                        </div>
+
+                    {/* Identitas Surat */}
+                    <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Identitas Surat</p>
+                    <div className="grid grid-cols-1 gap-2 text-sm text-text-primary sm:grid-cols-2 mb-4">
                         <div>
                             <span className="text-text-secondary">Tanggal Surat:</span>
                             <span className="ml-2 font-medium">{surat.tanggal_surat_formatted}</span>
@@ -245,16 +249,85 @@ export default function FormPage({
                             <span className="text-text-secondary">Asal Surat:</span>
                             <span className="ml-2 font-medium">{surat.asal_surat}</span>
                         </div>
+                        <div>
+                            <span className="text-text-secondary">No Surat:</span>
+                            <span className="ml-2 font-medium">{surat.nomor_surat}</span>
+                        </div>
+                        {surat.jenis_surat && (
+                            <div>
+                                <span className="text-text-secondary">Jenis Surat:</span>
+                                <span className="ml-2 font-medium">{surat.jenis_surat}</span>
+                            </div>
+                        )}
+                        {surat.sifat && (
+                            <div>
+                                <span className="text-text-secondary">Sifat Surat:</span>
+                                <span className="ml-2 font-medium capitalize">{surat.sifat.replace('_', ' ')}</span>
+                            </div>
+                        )}
+                        <div>
+                            <span className="text-text-secondary">Lampiran:</span>
+                            <span className="ml-2 font-medium">{surat.lampiran ?? 0} berkas</span>
+                        </div>
                         <div className="sm:col-span-2">
                             <span className="text-text-secondary">Perihal:</span>
                             <span className="ml-2 font-medium">{surat.perihal}</span>
                         </div>
+                        {surat.tujuan_list.length > 0 && (
+                            <div className="sm:col-span-2">
+                                <span className="text-text-secondary">Kepada:</span>
+                                <span className="ml-2 font-medium">{surat.tujuan_list.join(', ')}</span>
+                            </div>
+                        )}
                         {surat.isi_ringkas && (
                             <div className="sm:col-span-2">
                                 <span className="text-text-secondary">Isi Ringkas:</span>
                                 <span className="ml-2 font-medium">{surat.isi_ringkas}</span>
                             </div>
                         )}
+                    </div>
+
+                    {/* Identitas Agenda */}
+                    <div className="border-t border-border-default pt-3">
+                        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Identitas Agenda</p>
+                        <div className="grid grid-cols-1 gap-2 text-sm text-text-primary sm:grid-cols-2">
+                            {surat.tanggal_diterima && (
+                                <div>
+                                    <span className="text-text-secondary">Tanggal Diterima:</span>
+                                    <span className="ml-2 font-medium">{formatDateShort(surat.tanggal_diterima)}</span>
+                                </div>
+                            )}
+                            <div>
+                                <span className="text-text-secondary">No Agenda:</span>
+                                <span className="ml-2 font-medium">
+                                    {surat.nomor_agenda.split('/')[1] || surat.nomor_agenda}
+                                </span>
+                            </div>
+                            {surat.indeks_berkas && (
+                                <div>
+                                    <span className="text-text-secondary">Indeks Surat:</span>
+                                    <span className="ml-2 font-medium">{surat.indeks_berkas}</span>
+                                </div>
+                            )}
+                            {surat.kode_klasifikasi && (
+                                <div>
+                                    <span className="text-text-secondary">Kode Klasifikasi:</span>
+                                    <span className="ml-2 font-medium">{surat.kode_klasifikasi}</span>
+                                </div>
+                            )}
+                            {surat.staff_pengolah && (
+                                <div>
+                                    <span className="text-text-secondary">Staff Pengolah:</span>
+                                    <span className="ml-2 font-medium">{surat.staff_pengolah}</span>
+                                </div>
+                            )}
+                            {surat.tanggal_diteruskan && (
+                                <div>
+                                    <span className="text-text-secondary">Tanggal Diteruskan:</span>
+                                    <span className="ml-2 font-medium">{formatDateShort(surat.tanggal_diteruskan)}</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -333,38 +406,25 @@ export default function FormPage({
                             </label>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <InputLabel htmlFor="lokasi_type" value="Tipe Lokasi" required />
-                                <FormSelect
-                                    id="lokasi_type"
-                                    options={[
-                                        { value: 'dalam_daerah', label: 'Dalam Daerah' },
-                                        { value: 'luar_daerah', label: 'Luar Daerah' },
-                                    ]}
-                                    value={form.data.lokasi_type}
-                                    onChange={(e) => {
-                                        form.setData('lokasi_type', e.target.value as 'dalam_daerah' | 'luar_daerah');
-                                        form.setData('provinsi_id', '');
-                                        form.setData('kabupaten_id', '');
-                                        form.setData('kecamatan_id', '');
-                                        form.setData('desa_id', '');
-                                    }}
-                                    className="mt-1 w-full"
-                                />
-                                <InputError message={form.errors.lokasi_type} className="mt-1" />
-                            </div>
-                            <div>
-                                <InputLabel htmlFor="tempat" value="Tempat" required />
-                                <TextInput
-                                    id="tempat"
-                                    value={form.data.tempat}
-                                    onChange={(e) => form.setData('tempat', e.target.value)}
-                                    className="mt-1 w-full"
-                                    placeholder="Contoh: Pendopo Kabupaten Tasikmalaya"
-                                />
-                                <InputError message={form.errors.tempat} className="mt-1" />
-                            </div>
+                        <div>
+                            <InputLabel htmlFor="lokasi_type" value="Tipe Lokasi" required />
+                            <FormSelect
+                                id="lokasi_type"
+                                options={[
+                                    { value: 'dalam_daerah', label: 'Dalam Daerah' },
+                                    { value: 'luar_daerah', label: 'Luar Daerah' },
+                                ]}
+                                value={form.data.lokasi_type}
+                                onChange={(e) => {
+                                    form.setData('lokasi_type', e.target.value as 'dalam_daerah' | 'luar_daerah');
+                                    form.setData('provinsi_id', '');
+                                    form.setData('kabupaten_id', '');
+                                    form.setData('kecamatan_id', '');
+                                    form.setData('desa_id', '');
+                                }}
+                                className="mt-1 w-full"
+                            />
+                            <InputError message={form.errors.lokasi_type} className="mt-1" />
                         </div>
 
                         {form.data.lokasi_type === 'dalam_daerah' && (
@@ -432,6 +492,18 @@ export default function FormPage({
                                 </div>
                             </div>
                         )}
+
+                        <div>
+                            <InputLabel htmlFor="tempat" value="Tempat (Alamat Lengkap)" required />
+                            <TextInput
+                                id="tempat"
+                                value={form.data.tempat}
+                                onChange={(e) => form.setData('tempat', e.target.value)}
+                                className="mt-1 w-full"
+                                placeholder="Contoh: Pendopo Kabupaten Tasikmalaya"
+                            />
+                            <InputError message={form.errors.tempat} className="mt-1" />
+                        </div>
 
                         <div>
                             <InputLabel htmlFor="keterangan" value="Keterangan" />
