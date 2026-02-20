@@ -30,7 +30,8 @@ class UpdateKehadiranRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'dihadiri_oleh' => 'nullable|string|max:255',
+            'dihadiri_oleh' => 'nullable|integer|exists:users,id',
+            'dihadiri_oleh_custom' => 'nullable|string|max:255',
             'status_disposisi' => 'required|in:menunggu,bupati,wakil_bupati,diwakilkan',
             'keterangan' => 'nullable|string',
         ];
@@ -44,7 +45,9 @@ class UpdateKehadiranRequest extends FormRequest
         return [
             'status_disposisi.required' => 'Status disposisi wajib dipilih.',
             'status_disposisi.in' => 'Status disposisi tidak valid.',
-            'dihadiri_oleh.max' => 'Dihadiri oleh maksimal 255 karakter.',
+            'dihadiri_oleh.integer' => 'Pilihan Dihadiri Oleh tidak valid.',
+            'dihadiri_oleh.exists' => 'Pengguna Dihadiri Oleh tidak ditemukan.',
+            'dihadiri_oleh_custom.max' => 'Input manual Dihadiri Oleh maksimal 255 karakter.',
         ];
     }
 }

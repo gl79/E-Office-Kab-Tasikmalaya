@@ -73,6 +73,7 @@ class PenjadwalanResource extends JsonResource
             'status_disposisi' => $this->status_disposisi,
             'status_disposisi_label' => $this->status_disposisi_label,
             'dihadiri_oleh' => $this->dihadiri_oleh,
+            'dihadiri_oleh_user_id' => $this->dihadiri_oleh_user_id,
 
             // Catatan
             'keterangan' => $this->keterangan,

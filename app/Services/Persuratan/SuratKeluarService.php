@@ -84,7 +84,7 @@ class SuratKeluarService
     public function delete(SuratKeluar $suratKeluar): void
     {
         $suratKeluar->delete();
-        CacheHelper::flush(['persuratan_archive', 'persuratan_list']);
+        CacheHelper::flush(['persuratan_list']);
     }
 
     /**

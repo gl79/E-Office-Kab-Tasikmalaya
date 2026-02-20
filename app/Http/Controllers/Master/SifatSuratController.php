@@ -43,7 +43,7 @@ class SifatSuratController extends Controller
 
         SifatSurat::create($validated);
 
-        CacheHelper::flush(['master_list', 'persuratan_list', 'persuratan_archive']);
+        CacheHelper::flush(['master_list', 'persuratan_list']);
 
         return redirect()->back()->with('success', 'Sifat Surat berhasil ditambahkan.');
     }
@@ -69,7 +69,7 @@ class SifatSuratController extends Controller
             }
         });
 
-        CacheHelper::flush(['master_list', 'persuratan_list', 'persuratan_archive']);
+        CacheHelper::flush(['master_list', 'persuratan_list']);
 
         return redirect()->back()->with('success', 'Sifat Surat berhasil diperbarui.');
     }
@@ -90,9 +90,9 @@ class SifatSuratController extends Controller
             return redirect()->back()->with('error', 'Sifat Surat tidak dapat dihapus karena masih digunakan pada data persuratan.');
         }
 
-        $sifatSurat->delete();
+        $sifatSurat->forceDelete();
 
-        CacheHelper::flush(['master_list', 'persuratan_list', 'persuratan_archive']);
+        CacheHelper::flush(['master_list', 'persuratan_list']);
 
         return redirect()->back()->with('success', 'Sifat Surat berhasil dihapus.');
     }

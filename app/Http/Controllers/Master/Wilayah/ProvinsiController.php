@@ -46,7 +46,6 @@ class ProvinsiController extends Controller
         WilayahProvinsi::create($request->validated());
 
         CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
         WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Provinsi berhasil ditambahkan.');
@@ -63,24 +62,22 @@ class ProvinsiController extends Controller
         $provinsi->update($request->validated());
 
         CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
         WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Provinsi berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage permanently.
      */
     public function destroy(string $kode)
     {
         $provinsi = WilayahProvinsi::findOrFail($kode);
         $this->authorize('delete', $provinsi);
 
-        $provinsi->delete();
+        $provinsi->forceDelete();
 
         CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
         WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Provinsi berhasil dihapus.');
@@ -94,40 +91,6 @@ class ProvinsiController extends Controller
         $this->authorize('viewAny', WilayahProvinsi::class);
 
         return response()->json(WilayahProvinsi::orderBy('nama')->get());
-    }
-
-    /**
-     * Restore the specified resource from storage.
-     */
-    public function restore(string $kode)
-    {
-        $provinsi = WilayahProvinsi::onlyTrashed()->findOrFail($kode);
-        $this->authorize('restore', $provinsi);
-
-        $provinsi->restore();
-
-        CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
-        WilayahHelper::clearCache();
-
-        return redirect()->back()->with('success', 'Provinsi berhasil dipulihkan.');
-    }
-
-    /**
-     * Remove the specified resource from storage permanently.
-     */
-    public function forceDelete(string $kode)
-    {
-        $provinsi = WilayahProvinsi::onlyTrashed()->findOrFail($kode);
-        $this->authorize('forceDelete', $provinsi);
-
-        $provinsi->forceDelete();
-
-        CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
-        WilayahHelper::clearCache();
-
-        return redirect()->back()->with('success', 'Provinsi berhasil dihapus permanen.');
     }
 }
 

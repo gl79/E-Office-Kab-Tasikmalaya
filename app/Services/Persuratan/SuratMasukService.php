@@ -89,7 +89,7 @@ class SuratMasukService
     public function delete(SuratMasuk $suratMasuk): void
     {
         $suratMasuk->delete();
-        CacheHelper::flush(['persuratan_archive', 'persuratan_list']);
+        CacheHelper::flush(['persuratan_list']);
     }
 
     /**

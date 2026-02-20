@@ -94,14 +94,14 @@ class PenjadwalanDefinitifController extends Controller
     }
 
     /**
-     * Delete penjadwalan (soft delete)
+     * Delete penjadwalan permanently.
      */
     public function destroy(string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
         $this->authorize('delete', $penjadwalan);
 
-        $penjadwalan->delete();
+        $penjadwalan->forceDelete();
 
         CacheHelper::flush(['penjadwalan']);
 

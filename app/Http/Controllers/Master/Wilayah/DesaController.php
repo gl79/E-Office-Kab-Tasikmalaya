@@ -64,7 +64,6 @@ class DesaController extends Controller
         WilayahDesa::create($request->validated());
 
         CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
         WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Desa berhasil ditambahkan.');
@@ -85,14 +84,13 @@ class DesaController extends Controller
         $desa->update($request->validated());
 
         CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
         WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Desa berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage permanently.
      */
     public function destroy(string $provinsi_kode, string $kabupaten_kode, string $kecamatan_kode, string $kode)
     {
@@ -103,41 +101,12 @@ class DesaController extends Controller
             ->firstOrFail();
         $this->authorize('delete', $desa);
 
-        $desa->delete();
+        $desa->forceDelete();
 
         CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
         WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Desa berhasil dihapus.');
-    }
-
-    /**
-     * Restore the specified resource from storage.
-     */
-    public function restore(string $id)
-    {
-        $parts = explode('.', $id);
-        if (count($parts) !== 4) {
-            return redirect()->back()->with('error', 'Invalid ID format.');
-        }
-        [$provinsi_kode, $kabupaten_kode, $kecamatan_kode, $kode] = $parts;
-
-        $desa = WilayahDesa::onlyTrashed()
-            ->where('provinsi_kode', $provinsi_kode)
-            ->where('kabupaten_kode', $kabupaten_kode)
-            ->where('kecamatan_kode', $kecamatan_kode)
-            ->where('kode', $kode)
-            ->firstOrFail();
-        $this->authorize('restore', $desa);
-
-        $desa->restore();
-
-        CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
-        WilayahHelper::clearCache();
-
-        return redirect()->back()->with('success', 'Desa berhasil dipulihkan.');
     }
 
     /**
@@ -152,34 +121,6 @@ class DesaController extends Controller
                 ->orderBy('nama')
                 ->get()
         );
-    }
-
-    /**
-     * Remove the specified resource from storage permanently.
-     */
-    public function forceDelete(string $id)
-    {
-        $parts = explode('.', $id);
-        if (count($parts) !== 4) {
-            return redirect()->back()->with('error', 'Invalid ID format.');
-        }
-        [$provinsi_kode, $kabupaten_kode, $kecamatan_kode, $kode] = $parts;
-
-        $desa = WilayahDesa::onlyTrashed()
-            ->where('provinsi_kode', $provinsi_kode)
-            ->where('kabupaten_kode', $kabupaten_kode)
-            ->where('kecamatan_kode', $kecamatan_kode)
-            ->where('kode', $kode)
-            ->firstOrFail();
-        $this->authorize('forceDelete', $desa);
-
-        $desa->forceDelete();
-
-        CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
-        WilayahHelper::clearCache();
-
-        return redirect()->back()->with('success', 'Desa berhasil dihapus permanen.');
     }
 }
 

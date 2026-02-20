@@ -7,6 +7,7 @@ use App\Http\Requests\Jadwal\UpdateKehadiranRequest;
 use App\Http\Resources\Penjadwalan\PenjadwalanResource;
 use App\Models\JadwalHistory;
 use App\Models\Penjadwalan;
+use App\Models\User;
 use App\Support\CacheHelper;
 use App\Support\WilayahHelper;
 use Illuminate\Http\Request;
@@ -36,6 +37,11 @@ class PenjadwalanTentatifController extends Controller
                     ->get();
                 return PenjadwalanResource::collection($query);
             })),
+            'userOptions' => User::query()
+                ->select(['id', 'name', 'nip', 'jabatan'])
+                ->where('role', '!=', User::ROLE_SUPERADMIN)
+                ->orderBy('name')
+                ->get(),
             'disposisiOptions' => Penjadwalan::DISPOSISI_OPTIONS,
             'filters' => $request->only(['search']),
         ]);
@@ -53,9 +59,20 @@ class PenjadwalanTentatifController extends Controller
         try {
             $data = $request->validated();
             $oldData = $this->captureHistorySnapshot($penjadwalan);
+            $selectedUser = null;
+
+            if (!empty($data['dihadiri_oleh'])) {
+                $selectedUser = User::query()
+                    ->select(['id', 'name'])
+                    ->find((int) $data['dihadiri_oleh']);
+            }
+
+            $customAttendance = trim((string) ($data['dihadiri_oleh_custom'] ?? ''));
+            $attendanceName = $selectedUser?->name ?: ($customAttendance !== '' ? $customAttendance : null);
 
             $penjadwalan->update([
-                'dihadiri_oleh' => $data['dihadiri_oleh'],
+                'dihadiri_oleh' => $attendanceName,
+                'dihadiri_oleh_user_id' => $selectedUser?->id,
                 'status_disposisi' => $data['status_disposisi'],
                 'keterangan' => $data['keterangan'] ?? $penjadwalan->keterangan,
             ]);
@@ -216,14 +233,14 @@ class PenjadwalanTentatifController extends Controller
     }
 
     /**
-     * Delete penjadwalan (soft delete)
+     * Delete penjadwalan permanently.
      */
     public function destroy(string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
         $this->authorize('delete', $penjadwalan);
 
-        $penjadwalan->delete();
+        $penjadwalan->forceDelete();
 
         CacheHelper::flush(['penjadwalan']);
 

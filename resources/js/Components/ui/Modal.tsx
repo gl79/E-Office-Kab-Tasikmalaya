@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useCallback } from 'react';
 
-type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
+type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 interface ModalProps {
     /** Whether the modal is open */
@@ -49,6 +49,7 @@ export default function Modal({
         md: 'max-w-lg',
         lg: 'max-w-2xl',
         xl: 'max-w-4xl',
+        '2xl': 'max-w-6xl',
     };
 
     // Handle ESC key press

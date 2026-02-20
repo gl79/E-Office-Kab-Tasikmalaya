@@ -60,7 +60,6 @@ class KecamatanController extends Controller
         WilayahKecamatan::create($request->validated());
 
         CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
         WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Kecamatan berhasil ditambahkan.');
@@ -80,14 +79,13 @@ class KecamatanController extends Controller
         $kecamatan->update($request->validated());
 
         CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
         WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Kecamatan berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage permanently.
      */
     public function destroy(string $provinsi_kode, string $kabupaten_kode, string $kode)
     {
@@ -97,10 +95,9 @@ class KecamatanController extends Controller
             ->firstOrFail();
         $this->authorize('delete', $kecamatan);
 
-        $kecamatan->delete();
+        $kecamatan->forceDelete();
 
         CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
         WilayahHelper::clearCache();
 
         return redirect()->back()->with('success', 'Kecamatan berhasil dihapus.');
@@ -119,60 +116,6 @@ class KecamatanController extends Controller
                 ->orderBy('nama')
                 ->get()
         );
-    }
-
-    /**
-     * Restore the specified resource from storage.
-     */
-    public function restore(string $id)
-    {
-        $parts = explode('.', $id);
-        if (count($parts) !== 3) {
-            return redirect()->back()->with('error', 'Invalid ID format.');
-        }
-        [$provinsi_kode, $kabupaten_kode, $kode] = $parts;
-
-        $kecamatan = WilayahKecamatan::onlyTrashed()
-            ->where('provinsi_kode', $provinsi_kode)
-            ->where('kabupaten_kode', $kabupaten_kode)
-            ->where('kode', $kode)
-            ->firstOrFail();
-        $this->authorize('restore', $kecamatan);
-
-        $kecamatan->restore();
-
-        CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
-        WilayahHelper::clearCache();
-
-        return redirect()->back()->with('success', 'Kecamatan berhasil dipulihkan.');
-    }
-
-    /**
-     * Remove the specified resource from storage permanently.
-     */
-    public function forceDelete(string $id)
-    {
-        $parts = explode('.', $id);
-        if (count($parts) !== 3) {
-            return redirect()->back()->with('error', 'Invalid ID format.');
-        }
-        [$provinsi_kode, $kabupaten_kode, $kode] = $parts;
-
-        $kecamatan = WilayahKecamatan::onlyTrashed()
-            ->where('provinsi_kode', $provinsi_kode)
-            ->where('kabupaten_kode', $kabupaten_kode)
-            ->where('kode', $kode)
-            ->firstOrFail();
-        $this->authorize('forceDelete', $kecamatan);
-
-        $kecamatan->forceDelete();
-
-        CacheHelper::flush(['wilayah']);
-        CacheHelper::flush(['master_archive']);
-        WilayahHelper::clearCache();
-
-        return redirect()->back()->with('success', 'Kecamatan berhasil dihapus permanen.');
     }
 }
 

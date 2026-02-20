@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Button } from '@/Components/ui';
-import { TextInput, InputLabel, InputError, FormSelect, FormTextarea } from '@/Components/form';
+import { InputLabel, InputError, FormSelect, FormTextarea, FormSearchableSelect } from '@/Components/form';
 import type { Agenda } from '@/types/penjadwalan';
 
 interface Props {
@@ -9,9 +9,17 @@ interface Props {
     selectedAgenda: Agenda | null;
     form: any; // Inertia useForm object
     disposisiSelectOptions: { value: string; label: string }[];
+    dihadiriOlehSelectOptions: { value: string; label: string }[];
 }
 
-const TentatifEditModal: React.FC<Props> = ({ isOpen, onClose, selectedAgenda, form, disposisiSelectOptions }) => {
+const TentatifEditModal: React.FC<Props> = ({
+    isOpen,
+    onClose,
+    selectedAgenda,
+    form,
+    disposisiSelectOptions,
+    dihadiriOlehSelectOptions,
+}) => {
     const { data, setData, processing, errors, submitHandler } = form; // Assuming submitHandler is passed attached to form
 
     return (
@@ -66,14 +74,29 @@ const TentatifEditModal: React.FC<Props> = ({ isOpen, onClose, selectedAgenda, f
                         {/* Dihadiri Oleh */}
                         <div>
                             <InputLabel htmlFor="dihadiri_oleh" value="Dihadiri Oleh" />
-                            <TextInput
+                            <FormSearchableSelect
                                 id="dihadiri_oleh"
+                                options={dihadiriOlehSelectOptions}
                                 value={data.dihadiri_oleh}
-                                onChange={(e) => setData('dihadiri_oleh', e.target.value)}
+                                customValue={data.dihadiri_oleh_custom}
+                                onChange={(value) => {
+                                    setData('dihadiri_oleh', value);
+                                    if (value) {
+                                        setData('dihadiri_oleh_custom', '');
+                                    }
+                                }}
+                                onCustomChange={(customValue) => {
+                                    setData('dihadiri_oleh', '');
+                                    setData('dihadiri_oleh_custom', customValue);
+                                }}
+                                placeholder="Pilih atau cari pengguna..."
+                                customPlaceholder="Tambah manual nama yang menghadiri..."
+                                allowCustom={true}
                                 className="w-full mt-1"
-                                placeholder="Nama yang menghadiri"
+                                error={errors.dihadiri_oleh || errors.dihadiri_oleh_custom}
                             />
                             <InputError message={errors.dihadiri_oleh} className="mt-1" />
+                            <InputError message={errors.dihadiri_oleh_custom} className="mt-1" />
                         </div>
 
                         {/* Keterangan */}

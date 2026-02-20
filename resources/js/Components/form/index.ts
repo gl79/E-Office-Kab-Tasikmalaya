@@ -14,6 +14,7 @@ export { default as InputError } from './InputError';
 export { default as InputLabel } from './InputLabel';
 export { default as TextInput } from './TextInput';
 export { default as FormSelect } from './FormSelect';
+export { default as FormSearchableSelect } from './FormSearchableSelect';
 export { default as FormDatePicker } from './FormDatePicker';
 export { default as FormTextarea } from './FormTextarea';
 export { default as FormFileUpload } from './FormFileUpload';

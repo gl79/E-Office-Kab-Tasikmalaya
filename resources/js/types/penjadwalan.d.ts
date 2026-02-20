@@ -73,6 +73,7 @@ export interface Agenda extends AgendaBase {
     lokasi_type_label?: string;
     kode_wilayah?: string | null; // Added code_wilayah
     dihadiri_oleh?: string | null;
+    dihadiri_oleh_user_id?: number | null;
     keterangan?: string | null;
     can_edit_kehadiran?: boolean;
     created_by?: AgendaCreator | null;

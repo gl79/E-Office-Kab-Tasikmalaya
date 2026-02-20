@@ -85,7 +85,6 @@ class IndeksSuratController extends Controller
             ]);
 
             CacheHelper::flush(['master_list']);
-            CacheHelper::flush(['master_archive']);
 
             return redirect()->back()->with('success', 'Sub kode klasifikasi berhasil ditambahkan.');
         }
@@ -102,7 +101,6 @@ class IndeksSuratController extends Controller
         ]);
 
         CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Kode klasifikasi primer berhasil ditambahkan.');
     }
@@ -144,13 +142,12 @@ class IndeksSuratController extends Controller
         $indeksSurat->update($updateData);
 
         CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Indeks Surat berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified resource from storage (soft delete).
+     * Remove the specified resource from storage permanently.
      */
     public function destroy(string $id)
     {
@@ -167,44 +164,11 @@ class IndeksSuratController extends Controller
             return redirect()->back()->with('error', 'Tidak dapat menghapus kode yang masih memiliki sub-kode. Hapus sub-kode terlebih dahulu.');
         }
 
-        $indeksSurat->delete();
-
-        CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
-
-        return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus.');
-    }
-
-    /**
-     * Restore the specified resource from storage.
-     */
-    public function restore(string $id)
-    {
-        $indeksSurat = IndeksSurat::onlyTrashed()->findOrFail($id);
-        $this->authorize('restore', $indeksSurat);
-
-        $indeksSurat->restore();
-
-        CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
-
-        return redirect()->back()->with('success', 'Indeks Surat berhasil dipulihkan.');
-    }
-
-    /**
-     * Permanently remove the specified resource from storage.
-     */
-    public function forceDelete(string $id)
-    {
-        $indeksSurat = IndeksSurat::onlyTrashed()->findOrFail($id);
-        $this->authorize('forceDelete', $indeksSurat);
-
         $indeksSurat->forceDelete();
 
         CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
 
-        return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus permanen.');
+        return redirect()->back()->with('success', 'Indeks Surat berhasil dihapus.');
     }
 
     /**

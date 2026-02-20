@@ -41,7 +41,7 @@ const TentatifTable: React.FC<Props> = ({
                         <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Kegiatan</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Surat Masuk</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Status Disposisi</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-text-secondary uppercase w-56">Aksi</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase w-56">Aksi</th>
                     </tr>
                 </thead>
                 <tbody className="bg-surface divide-y divide-border-default">
@@ -83,39 +83,48 @@ const TentatifTable: React.FC<Props> = ({
                                     )}
                                 </div>
                             </td>
-                            <td className="px-4 py-3">
-                                <div className="flex items-center justify-end gap-2">
-                                    {/* Atur Kehadiran – tersedia bagi pembuat jadwal */}
-                                    {item.can_edit_kehadiran && (
-                                        <Button
-                                            size="sm"
-                                            variant="secondary"
-                                            onClick={() => onEditKehadiran(item)}
-                                        >
-                                            <Pencil className="h-4 w-4 mr-1" />
-                                            Atur Kehadiran
-                                        </Button>
-                                    )}
+                            <td className="px-4 py-3 text-center align-middle">
+                                <div className="mx-auto flex w-full max-w-[220px] flex-col items-center gap-2">
+                                    <div className="flex w-full flex-col items-center gap-2">
+                                        {item.can_edit_kehadiran && (
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                onClick={() => onEditKehadiran(item)}
+                                                className="w-full justify-center"
+                                            >
+                                                <Pencil className="h-4 w-4 mr-1" />
+                                                Atur Kehadiran
+                                            </Button>
+                                        )}
 
-                                    {/* Jadikan Definitif – tersedia ketika sudah ada disposisi */}
-                                    {item.status_disposisi !== 'menunggu' && (
-                                        <Button
-                                            size="sm"
-                                            variant="success"
-                                            onClick={() => onJadikanDefinitif(item)}
-                                        >
-                                            <CheckCircle className="h-4 w-4 mr-1" />
-                                            Definitif
-                                        </Button>
-                                    )}
+                                        {item.status_disposisi !== 'menunggu' && (
+                                            <Button
+                                                size="sm"
+                                                variant="success"
+                                                onClick={() => onJadikanDefinitif(item)}
+                                                className="w-full justify-center"
+                                            >
+                                                <CheckCircle className="h-4 w-4 mr-1" />
+                                                Jadikan Definitif
+                                            </Button>
+                                        )}
+                                    </div>
 
-                                    {/* Dropdown aksi lainnya */}
                                     <Dropdown
                                         align="right"
                                         width="48"
                                         trigger={
-                                            <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
-                                                <MoreVertical className="h-5 w-5" />
+                                            <button
+                                                type="button"
+                                                aria-label="Aksi lainnya"
+                                                className="
+                                                    inline-flex h-8 w-8 items-center justify-center rounded-lg
+                                                    border border-border-default bg-surface text-text-secondary
+                                                    transition-colors hover:bg-surface-hover hover:text-text-primary
+                                                "
+                                            >
+                                                <MoreVertical className="h-4 w-4" />
                                             </button>
                                         }
                                     >

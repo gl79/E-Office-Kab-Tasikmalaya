@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Penjadwalan\PenjadwalanArchiveController;
 use App\Http\Controllers\Penjadwalan\BupatiJadwalController;
 use App\Http\Controllers\Penjadwalan\PenjadwalanDefinitifController;
 use App\Http\Controllers\Penjadwalan\PenjadwalanHistoryController;
@@ -26,13 +25,6 @@ Route::middleware('auth')->prefix('penjadwalan')->name('penjadwalan.')->group(fu
 
     // Menu History Penjadwalan
     Route::get('/history', [PenjadwalanHistoryController::class, 'index'])->name('history.index');
-
-    // Menu Archive (Soft Delete)
-    Route::get('/archive', [PenjadwalanArchiveController::class, 'index'])->name('archive.index');
-    Route::post('/archive/{id}/restore', [PenjadwalanArchiveController::class, 'restore'])->name('archive.restore');
-    Route::delete('/archive/{id}/force-delete', [PenjadwalanArchiveController::class, 'forceDelete'])->name('archive.force-delete');
-    Route::post('/archive/restore-all', [PenjadwalanArchiveController::class, 'restoreAll'])->name('archive.restore-all');
-    Route::delete('/archive/force-delete-all', [PenjadwalanArchiveController::class, 'forceDeleteAll'])->name('archive.force-delete-all');
 });
 
 Route::middleware('auth')->prefix('bupati')->name('bupati.')->group(function () {

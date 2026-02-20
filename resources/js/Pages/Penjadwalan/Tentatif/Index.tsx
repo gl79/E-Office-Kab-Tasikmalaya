@@ -9,11 +9,20 @@ import { useDeferredDataMutable } from '@/hooks';
 import TentatifTable from './Components/TentatifTable';
 import TentatifEditModal from './Components/TentatifEditModal';
 import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
+import { buildInternalUserOptions } from '@/utils';
 import type { PageProps } from '@/types';
 import type { Agenda } from '@/types/penjadwalan';
 
+interface UserOption {
+    id: number;
+    name: string;
+    nip: string | null;
+    jabatan: string | null;
+}
+
 interface Props extends PageProps {
     tentatif?: { data: Agenda[] };
+    userOptions: UserOption[];
     disposisiOptions: Record<string, string>;
     filters: {
         search?: string;
@@ -22,6 +31,7 @@ interface Props extends PageProps {
 
 const TentatifIndex = ({
     tentatif,
+    userOptions,
     disposisiOptions,
     filters,
 }: Props) => {
@@ -61,6 +71,7 @@ const TentatifIndex = ({
     // Form for editing kehadiran
     const form = useForm({
         dihadiri_oleh: '',
+        dihadiri_oleh_custom: '',
         status_disposisi: 'menunggu',
         keterangan: '',
     });
@@ -94,8 +105,11 @@ const TentatifIndex = ({
 
     const handleEditKehadiran = (agenda: Agenda) => {
         setSelectedAgenda(agenda);
+        const hasMasterUser = typeof agenda.dihadiri_oleh_user_id === 'number' && agenda.dihadiri_oleh_user_id > 0;
+
         form.setData({
-            dihadiri_oleh: agenda.dihadiri_oleh || '',
+            dihadiri_oleh: hasMasterUser ? String(agenda.dihadiri_oleh_user_id) : '',
+            dihadiri_oleh_custom: hasMasterUser ? '' : (agenda.dihadiri_oleh || ''),
             status_disposisi: agenda.status_disposisi || 'menunggu',
             keterangan: agenda.keterangan || '',
         });
@@ -185,12 +199,28 @@ const TentatifIndex = ({
         submitHandler: handleSubmitKehadiran
     };
 
+    const dihadiriOlehSelectOptions = useMemo(
+        () => buildInternalUserOptions(userOptions ?? []),
+        [userOptions]
+    );
+
     // Format No Agenda: "SM/0001/2024" → "0001"
     const formatNoAgenda = (nomor?: string) => {
         if (!nomor) return '-';
         const parts = nomor.split('/');
         return parts.length >= 2 ? parts[1] : nomor;
     };
+
+    const suratMasukId = selectedAgenda?.surat_masuk?.id;
+    const suratFilePath = selectedAgenda?.surat_masuk?.file_path ?? null;
+    const suratPreviewUrl = suratMasukId
+        ? route('persuratan.surat-masuk.preview', suratMasukId)
+        : null;
+    const suratDownloadUrl = suratMasukId
+        ? route('persuratan.surat-masuk.download', suratMasukId)
+        : null;
+    const isPdfFile = !!suratFilePath && /\.(pdf)$/i.test(suratFilePath);
+    const isImageFile = !!suratFilePath && /\.(jpe?g|png|webp)$/i.test(suratFilePath);
 
     return (
         <>
@@ -270,6 +300,7 @@ const TentatifIndex = ({
                 selectedAgenda={selectedAgenda}
                 form={formWithSubmit}
                 disposisiSelectOptions={disposisiSelectOptions}
+                dihadiriOlehSelectOptions={dihadiriOlehSelectOptions}
             />
 
             {/* WhatsApp Export Modal */}
@@ -319,7 +350,7 @@ const TentatifIndex = ({
                 isOpen={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
                 title="Detail Jadwal Tentatif"
-                size="xl"
+                size="2xl"
             >
                 {selectedAgenda && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -451,9 +482,9 @@ const TentatifIndex = ({
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center justify-between">
                                 <h4 className="font-semibold text-text-primary">Preview Surat</h4>
-                                {selectedAgenda.surat_masuk?.file_url && (
+                                {suratPreviewUrl && (
                                     <a
-                                        href={selectedAgenda.surat_masuk.file_url}
+                                        href={suratPreviewUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-1 text-xs text-primary hover:underline"
@@ -464,16 +495,38 @@ const TentatifIndex = ({
                                 )}
                             </div>
                             <div className="bg-surface-hover rounded-lg border border-border-default overflow-hidden flex-1">
-                                {selectedAgenda.surat_masuk?.file_url ? (
+                                {!suratFilePath || !suratPreviewUrl ? (
+                                    <div className="flex items-center justify-center h-[560px]">
+                                        <p className="text-text-secondary text-sm">File surat tidak tersedia</p>
+                                    </div>
+                                ) : isPdfFile ? (
                                     <iframe
-                                        src={selectedAgenda.surat_masuk.file_url}
-                                        className="w-full h-[560px]"
+                                        src={suratPreviewUrl}
+                                        className="w-full h-[640px]"
                                         title="Preview Surat"
                                         style={{ border: 'none' }}
                                     />
+                                ) : isImageFile ? (
+                                    <div className="p-4">
+                                        <img
+                                            src={suratPreviewUrl}
+                                            alt="Preview Surat"
+                                            className="w-full h-auto max-h-[640px] object-contain rounded border border-border-default bg-surface"
+                                        />
+                                    </div>
                                 ) : (
-                                    <div className="flex items-center justify-center h-[560px]">
-                                        <p className="text-text-secondary text-sm">File surat tidak tersedia</p>
+                                    <div className="flex flex-col items-center justify-center h-[560px] gap-2 px-4 text-center">
+                                        <p className="text-text-secondary text-sm">
+                                            Preview tidak tersedia untuk format file ini.
+                                        </p>
+                                        {suratDownloadUrl && (
+                                            <a
+                                                href={suratDownloadUrl}
+                                                className="text-primary text-sm hover:underline"
+                                            >
+                                                Download File
+                                            </a>
+                                        )}
                                     </div>
                                 )}
                             </div>

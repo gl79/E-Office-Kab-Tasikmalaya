@@ -283,56 +283,22 @@ class SuratMasukController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage (soft delete).
+     * Remove the specified resource from storage permanently.
      */
     public function destroy(string $id)
     {
         $suratMasuk = SuratMasuk::findOrFail($id);
         $this->authorize('delete', $suratMasuk);
 
-        $this->service->delete($suratMasuk);
-
-        return redirect()->back()->with('success', 'Surat Masuk berhasil dihapus.');
-    }
-
-    /**
-     * Restore the specified resource from storage.
-     */
-    public function restore(string $id)
-    {
-        $suratMasuk = SuratMasuk::onlyTrashed()->with('tujuans')->findOrFail($id);
-        $this->authorize('restore', $suratMasuk);
-
-        $conflictMessage = $this->getRestoreConflictMessage($suratMasuk);
-        if ($conflictMessage !== null) {
-            return redirect()->back()->with('error', $conflictMessage);
-        }
-
-        $suratMasuk->restore();
-
-        CacheHelper::flush(['persuratan_archive', 'persuratan_list']);
-
-        return redirect()->back()->with('success', 'Surat Masuk berhasil dipulihkan.');
-    }
-
-    /**
-     * Permanently remove the specified resource from storage.
-     */
-    public function forceDelete(string $id)
-    {
-        $suratMasuk = SuratMasuk::onlyTrashed()->findOrFail($id);
-        $this->authorize('forceDelete', $suratMasuk);
-
-        // Delete file
         if ($suratMasuk->file_path) {
             Storage::disk('public')->delete($suratMasuk->file_path);
         }
 
         $suratMasuk->forceDelete();
 
-        CacheHelper::flush(['persuratan_archive', 'persuratan_list']);
+        CacheHelper::flush(['persuratan_list']);
 
-        return redirect()->back()->with('success', 'Surat Masuk berhasil dihapus permanen.');
+        return redirect()->back()->with('success', 'Surat Masuk berhasil dihapus.');
     }
 
     /**
@@ -460,44 +426,6 @@ class SuratMasukController extends Controller
             Penjadwalan::STATUS_DEFINITIF => 'success',
             default => 'default',
         };
-    }
-
-    private function getRestoreConflictMessage(SuratMasuk $suratMasuk): ?string
-    {
-        if ($suratMasuk->nomor_agenda && $suratMasuk->created_by) {
-            $hasMainAgendaConflict = SuratMasuk::query()
-                ->whereNull('deleted_at')
-                ->where('id', '!=', $suratMasuk->id)
-                ->where('created_by', $suratMasuk->created_by)
-                ->where('nomor_agenda', $suratMasuk->nomor_agenda)
-                ->exists();
-
-            if ($hasMainAgendaConflict) {
-                return "Surat tidak dapat dipulihkan karena No Agenda {$suratMasuk->nomor_agenda} sudah dipakai pada data aktif.";
-            }
-        }
-
-        foreach ($suratMasuk->tujuans as $tujuan) {
-            if (!$tujuan->tujuan_id || !$tujuan->nomor_agenda) {
-                continue;
-            }
-
-            $hasRecipientAgendaConflict = SuratMasukTujuan::query()
-                ->where('id', '!=', $tujuan->id)
-                ->where('tujuan_id', $tujuan->tujuan_id)
-                ->where('nomor_agenda', $tujuan->nomor_agenda)
-                ->whereHas('suratMasuk', function ($q) use ($suratMasuk) {
-                    $q->whereNull('deleted_at')
-                        ->where('id', '!=', $suratMasuk->id);
-                })
-                ->exists();
-
-            if ($hasRecipientAgendaConflict) {
-                return "Surat tidak dapat dipulihkan karena No Agenda tujuan {$tujuan->nomor_agenda} sudah dipakai pada data aktif.";
-            }
-        }
-
-        return null;
     }
 
     private function resolvePenerimaanStatusForDisplay(

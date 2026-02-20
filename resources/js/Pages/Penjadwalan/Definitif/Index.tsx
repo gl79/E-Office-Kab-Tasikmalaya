@@ -5,7 +5,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { EventInput } from '@fullcalendar/core';
-import { Search, Trash2, X, Filter } from 'lucide-react';
+import { Search, Trash2, X, Filter, ExternalLink } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Badge, ConfirmDialog } from '@/Components/ui';
 import { TextInput, FormSelect } from '@/Components/form';
@@ -132,6 +132,17 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
             label,
         })),
     ];
+
+    const suratMasukId = selectedAgenda?.surat_masuk?.id;
+    const suratFilePath = selectedAgenda?.surat_masuk?.file_path ?? null;
+    const suratPreviewUrl = suratMasukId
+        ? route('persuratan.surat-masuk.preview', suratMasukId)
+        : null;
+    const suratDownloadUrl = suratMasukId
+        ? route('persuratan.surat-masuk.download', suratMasukId)
+        : null;
+    const isPdfFile = !!suratFilePath && /\.(pdf)$/i.test(suratFilePath);
+    const isImageFile = !!suratFilePath && /\.(jpe?g|png|webp)$/i.test(suratFilePath);
 
     return (
         <>
@@ -262,7 +273,7 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
                 isOpen={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
                 title="Detail Jadwal Definitif"
-                size="lg"
+                size="2xl"
             >
                 {selectedAgenda && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -355,16 +366,52 @@ const DefinitifIndex = ({ disposisiOptions, filters }: Props) => {
 
                         {/* Kolom Kanan - Preview PDF */}
                         <div className="bg-surface-hover rounded-lg p-4 border border-border-default">
-                            <h4 className="font-medium text-text-primary mb-4">Preview Surat</h4>
-                            {selectedAgenda.surat_masuk?.file_url ? (
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="font-medium text-text-primary">Preview Surat</h4>
+                                {suratPreviewUrl && (
+                                    <a
+                                        href={suratPreviewUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                    >
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                        Buka di tab baru
+                                    </a>
+                                )}
+                            </div>
+
+                            {!suratFilePath || !suratPreviewUrl ? (
+                                <div className="flex items-center justify-center h-[640px] bg-surface rounded">
+                                    <p className="text-text-secondary">File surat tidak tersedia</p>
+                                </div>
+                            ) : isPdfFile ? (
                                 <iframe
-                                    src={selectedAgenda.surat_masuk.file_url}
-                                    className="w-full h-[500px] border border-border-default rounded"
+                                    src={suratPreviewUrl}
+                                    className="w-full h-[640px] border border-border-default rounded"
                                     title="Preview Surat"
                                 />
+                            ) : isImageFile ? (
+                                <div className="bg-surface rounded border border-border-default p-4">
+                                    <img
+                                        src={suratPreviewUrl}
+                                        alt="Preview Surat"
+                                        className="w-full h-auto max-h-[640px] object-contain"
+                                    />
+                                </div>
                             ) : (
-                                <div className="flex items-center justify-center h-[500px] bg-surface rounded">
-                                    <p className="text-text-secondary">File surat tidak tersedia</p>
+                                <div className="flex flex-col items-center justify-center h-[640px] bg-surface rounded gap-2 px-4 text-center">
+                                    <p className="text-text-secondary text-sm">
+                                        Preview tidak tersedia untuk format file ini.
+                                    </p>
+                                    {suratDownloadUrl && (
+                                        <a
+                                            href={suratDownloadUrl}
+                                            className="text-primary text-sm hover:underline"
+                                        >
+                                            Download File
+                                        </a>
+                                    )}
                                 </div>
                             )}
                         </div>

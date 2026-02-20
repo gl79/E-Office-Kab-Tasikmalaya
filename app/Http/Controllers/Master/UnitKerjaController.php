@@ -42,7 +42,6 @@ class UnitKerjaController extends Controller
         UnitKerja::create($request->validated());
 
         CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil ditambahkan.');
     }
@@ -58,56 +57,22 @@ class UnitKerjaController extends Controller
         $unitKerja->update($request->validated());
 
         CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
 
         return redirect()->back()->with('success', 'Unit Kerja berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage permanently.
      */
     public function destroy(string $id)
     {
         $unitKerja = UnitKerja::findOrFail($id);
         $this->authorize('delete', $unitKerja);
 
-        $unitKerja->delete();
-
-        CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
-
-        return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus.');
-    }
-
-    /**
-     * Restore the specified resource from storage.
-     */
-    public function restore(string $id)
-    {
-        $unitKerja = UnitKerja::onlyTrashed()->findOrFail($id);
-        $this->authorize('restore', $unitKerja);
-
-        $unitKerja->restore();
-
-        CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
-
-        return redirect()->back()->with('success', 'Unit Kerja berhasil dipulihkan.');
-    }
-
-    /**
-     * Permanently remove the specified resource from storage.
-     */
-    public function forceDelete(string $id)
-    {
-        $unitKerja = UnitKerja::onlyTrashed()->findOrFail($id);
-        $this->authorize('forceDelete', $unitKerja);
-
         $unitKerja->forceDelete();
 
         CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
 
-        return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus permanen.');
+        return redirect()->back()->with('success', 'Unit Kerja berhasil dihapus.');
     }
 }

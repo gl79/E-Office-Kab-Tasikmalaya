@@ -217,7 +217,7 @@ export default function FormPage({
         <>
             <Head title="Jadwal Tentative" />
 
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-6">
                 <div>
                     <h1 className="text-2xl font-semibold text-text-primary">Form Jadwal Tentative</h1>
                     <p className="mt-1 text-sm text-text-secondary">
@@ -226,12 +226,6 @@ export default function FormPage({
                             : 'Penjadwalan surat masuk untuk tindak lanjut pimpinan.'}
                     </p>
                 </div>
-                <Link href={route('persuratan.surat-masuk.index')}>
-                    <Button variant="secondary">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Kembali
-                    </Button>
-                </Link>
             </div>
 
             <div className="rounded-lg border border-border-default bg-surface p-4 sm:p-6">
@@ -518,7 +512,13 @@ export default function FormPage({
                             <InputError message={form.errors.keterangan} className="mt-1" />
                         </div>
 
-                        <div className="flex justify-end pt-2">
+                        <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                            <Link href={route('persuratan.surat-masuk.index')}>
+                                <Button type="button" variant="secondary" className="w-full sm:w-auto">
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
+                                    Kembali
+                                </Button>
+                            </Link>
                             <Button type="submit" disabled={form.processing}>
                                 <Save className="mr-2 h-4 w-4" />
                                 {form.processing ? 'Menyimpan...' : existingJadwal ? 'Perbarui Jadwal' : 'Simpan Jadwal'}
