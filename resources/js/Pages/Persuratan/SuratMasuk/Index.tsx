@@ -43,6 +43,8 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     const [sifat, setSifat] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [periodeFilter, setPeriodeFilter] = useState('');
+    const [penerimaanFilter, setPenerimaanFilter] = useState('');
+    const [penjadwalanFilter, setPenjadwalanFilter] = useState('');
     const itemsPerPage = 10;
 
     // Delete Modal State
@@ -93,6 +95,20 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
             data = data.filter(item => item.sifat === sifat);
         }
 
+        // Status Penerimaan filter
+        if (penerimaanFilter) {
+            data = data.filter(item => item.penerimaan_status === penerimaanFilter);
+        }
+
+        // Status Penjadwalan filter
+        if (penjadwalanFilter) {
+            if (penjadwalanFilter === 'belum') {
+                data = data.filter(item => !item.penjadwalan_status || item.penjadwalan_status === '-');
+            } else {
+                data = data.filter(item => item.penjadwalan_status === penjadwalanFilter);
+            }
+        }
+
         return data;
     }, [suratMasuk, search, startDate, endDate, sifat]);
 
@@ -110,7 +126,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         setCurrentPage(1);
     };
 
-    const hasActiveFilters = !!(search || startDate || endDate || sifat);
+    const hasActiveFilters = !!(search || startDate || endDate || sifat || penerimaanFilter || penjadwalanFilter);
 
     const handleResetFilters = () => {
         setSearch('');
@@ -118,6 +134,8 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         setEndDate('');
         setSifat('');
         setPeriodeFilter('');
+        setPenerimaanFilter('');
+        setPenjadwalanFilter('');
         setCurrentPage(1);
     };
 
@@ -291,7 +309,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                         {/* Expandable Filters */}
                         {showFilters && (
                             <div className="p-4 bg-surface-hover rounded-lg border border-border-default animate-in fade-in slide-in-from-top-2 space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-text-secondary mb-1">
                                             Periode
@@ -327,6 +345,43 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                 setCurrentPage(1);
                                             }}
                                             placeholder="Semua Sifat"
+                                            className="w-full px-2 text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Status Penerimaan
+                                        </label>
+                                        <FormSelect
+                                            options={[
+                                                { value: 'Diterima', label: 'Diterima' },
+                                                { value: 'Menunggu Penerimaan', label: 'Menunggu Penerimaan' },
+                                            ]}
+                                            value={penerimaanFilter}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                                setPenerimaanFilter(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            placeholder="Semua Status"
+                                            className="w-full px-2 text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Status Penjadwalan
+                                        </label>
+                                        <FormSelect
+                                            options={[
+                                                { value: 'belum', label: 'Belum Dijadwalkan' },
+                                                { value: 'tentatif', label: 'Tentatif' },
+                                                { value: 'definitif', label: 'Definitif' },
+                                            ]}
+                                            value={penjadwalanFilter}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                                setPenjadwalanFilter(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            placeholder="Semua Status"
                                             className="w-full px-2 text-sm"
                                         />
                                     </div>
@@ -532,12 +587,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                                 className="flex items-center gap-2"
                                                             >
                                                                 <CalendarPlus className="h-4 w-4" />
-                                                                <span>{item.can_schedule ? 'Jadwalkan' : 'Lihat Jadwal'}</span>
+                                                                <span>{item.can_schedule ? 'Disposisi' : 'Lihat Disposisi'}</span>
                                                             </Dropdown.Link>
                                                         ) : (
                                                             <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
                                                                 <CalendarPlus className="h-4 w-4" />
-                                                                <span>Penjadwalan (Terima surat dulu)</span>
+                                                                <span>Disposisi (Terima surat dulu)</span>
                                                             </div>
                                                         )
                                                     )}
@@ -635,12 +690,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <p className="text-sm text-text-secondary">Nomor Surat</p>
                                     <p className="font-medium text-text-primary">{detailSurat.nomor_surat}</p>
                                 </div>
-                                {detailSurat.jenis_surat && (
+                                {detailSurat.jenis_surat ? (
                                     <div>
                                         <p className="text-sm text-text-secondary">Jenis Surat</p>
                                         <p className="font-medium text-text-primary">{detailSurat.jenis_surat.nama}</p>
                                     </div>
-                                )}
+                                ) : <div />}
                                 <div>
                                     <p className="text-sm text-text-secondary">Sifat Surat</p>
                                     {getSifatBadge(detailSurat.sifat, sifatOptions)}
@@ -649,11 +704,11 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <p className="text-sm text-text-secondary">Lampiran</p>
                                     <p className="font-medium text-text-primary">{detailSurat.lampiran || 0} berkas</p>
                                 </div>
-                                <div className="sm:col-span-2">
+                                <div>
                                     <p className="text-sm text-text-secondary">Perihal</p>
                                     <p className="font-medium text-text-primary">{detailSurat.perihal}</p>
                                 </div>
-                                <div className="sm:col-span-2">
+                                <div>
                                     <p className="text-sm text-text-secondary">Kepada (Tujuan Surat)</p>
                                     <div className="flex flex-wrap gap-1 mt-1">
                                         {detailSurat.tujuans?.length ? (

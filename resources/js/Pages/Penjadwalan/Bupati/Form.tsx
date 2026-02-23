@@ -11,7 +11,6 @@ import {
     FormTextarea,
     InputError,
     InputLabel,
-    TextInput,
     TimeSelect,
 } from '@/Components/form';
 import { useDeferredDataWithLoading } from '@/hooks';
@@ -215,15 +214,15 @@ export default function FormPage({
 
     return (
         <>
-            <Head title="Jadwal Tentative" />
+            <Head title="Disposisi" />
 
             <div className="mb-6">
                 <div>
-                    <h1 className="text-2xl font-semibold text-text-primary">Form Jadwal Tentative</h1>
+                    <h1 className="text-2xl font-semibold text-text-primary">Form Disposisi</h1>
                     <p className="mt-1 text-sm text-text-secondary">
                         {context.can_finalize_delegated
                             ? 'Finalisasi jadwal surat yang didelegasikan kepada Anda.'
-                            : 'Penjadwalan surat masuk untuk tindak lanjut pimpinan.'}
+                            : 'Disposisi surat masuk untuk tindak lanjut pimpinan.'}
                     </p>
                 </div>
             </div>
@@ -244,35 +243,35 @@ export default function FormPage({
                             <span className="ml-2 font-medium">{surat.asal_surat}</span>
                         </div>
                         <div>
-                            <span className="text-text-secondary">No Surat:</span>
+                            <span className="text-text-secondary">Nomor Surat:</span>
                             <span className="ml-2 font-medium">{surat.nomor_surat}</span>
                         </div>
-                        {surat.jenis_surat && (
+                        {surat.jenis_surat ? (
                             <div>
                                 <span className="text-text-secondary">Jenis Surat:</span>
                                 <span className="ml-2 font-medium">{surat.jenis_surat}</span>
                             </div>
-                        )}
-                        {surat.sifat && (
+                        ) : <div />}
+                        {surat.sifat ? (
                             <div>
                                 <span className="text-text-secondary">Sifat Surat:</span>
                                 <span className="ml-2 font-medium capitalize">{surat.sifat.replace('_', ' ')}</span>
                             </div>
-                        )}
+                        ) : <div />}
                         <div>
                             <span className="text-text-secondary">Lampiran:</span>
                             <span className="ml-2 font-medium">{surat.lampiran ?? 0} berkas</span>
                         </div>
-                        <div className="sm:col-span-2">
+                        <div>
                             <span className="text-text-secondary">Perihal:</span>
                             <span className="ml-2 font-medium">{surat.perihal}</span>
                         </div>
-                        {surat.tujuan_list.length > 0 && (
-                            <div className="sm:col-span-2">
+                        {surat.tujuan_list.length > 0 ? (
+                            <div>
                                 <span className="text-text-secondary">Kepada:</span>
                                 <span className="ml-2 font-medium">{surat.tujuan_list.join(', ')}</span>
                             </div>
-                        )}
+                        ) : <div />}
                         {surat.isi_ringkas && (
                             <div className="sm:col-span-2">
                                 <span className="text-text-secondary">Isi Ringkas:</span>
@@ -336,17 +335,19 @@ export default function FormPage({
                     </div>
                 ) : (
                     <form onSubmit={submit} className="space-y-5">
-                        <div>
-                            <InputLabel htmlFor="dihadiri_oleh_user_id" value="Dihadiri Oleh" required />
-                            <FormSelect
-                                id="dihadiri_oleh_user_id"
-                                options={userSelectOptions}
-                                value={form.data.dihadiri_oleh_user_id}
-                                onChange={(e) => form.setData('dihadiri_oleh_user_id', e.target.value)}
-                                className="mt-1 w-full"
-                                placeholder="Pilih pengguna"
-                            />
-                            <InputError message={form.errors.dihadiri_oleh_user_id} className="mt-1" />
+                        <div className="grid grid-cols-1 md:grid-cols-2">
+                            <div>
+                                <InputLabel htmlFor="dihadiri_oleh_user_id" value="Dihadiri Oleh" required />
+                                <FormSelect
+                                    id="dihadiri_oleh_user_id"
+                                    options={userSelectOptions}
+                                    value={form.data.dihadiri_oleh_user_id}
+                                    onChange={(e) => form.setData('dihadiri_oleh_user_id', e.target.value)}
+                                    className="mt-1 w-full"
+                                    placeholder="Pilih pengguna"
+                                />
+                                <InputError message={form.errors.dihadiri_oleh_user_id} className="mt-1" />
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -400,100 +401,100 @@ export default function FormPage({
                             </label>
                         </div>
 
-                        <div>
-                            <InputLabel htmlFor="lokasi_type" value="Tipe Lokasi" required />
-                            <FormSelect
-                                id="lokasi_type"
-                                options={[
-                                    { value: 'dalam_daerah', label: 'Dalam Daerah' },
-                                    { value: 'luar_daerah', label: 'Luar Daerah' },
-                                ]}
-                                value={form.data.lokasi_type}
-                                onChange={(e) => {
-                                    form.setData('lokasi_type', e.target.value as 'dalam_daerah' | 'luar_daerah');
-                                    form.setData('provinsi_id', '');
-                                    form.setData('kabupaten_id', '');
-                                    form.setData('kecamatan_id', '');
-                                    form.setData('desa_id', '');
-                                }}
-                                className="mt-1 w-full"
-                            />
-                            <InputError message={form.errors.lokasi_type} className="mt-1" />
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div>
+                                <InputLabel htmlFor="lokasi_type" value="Tipe Lokasi" required />
+                                <FormSelect
+                                    id="lokasi_type"
+                                    options={[
+                                        { value: 'dalam_daerah', label: 'Dalam Daerah' },
+                                        { value: 'luar_daerah', label: 'Luar Daerah' },
+                                    ]}
+                                    value={form.data.lokasi_type}
+                                    onChange={(e) => {
+                                        form.setData('lokasi_type', e.target.value as 'dalam_daerah' | 'luar_daerah');
+                                        form.setData('provinsi_id', '');
+                                        form.setData('kabupaten_id', '');
+                                        form.setData('kecamatan_id', '');
+                                        form.setData('desa_id', '');
+                                    }}
+                                    className="mt-1 w-full"
+                                />
+                                <InputError message={form.errors.lokasi_type} className="mt-1" />
+                            </div>
+                            {form.data.lokasi_type === 'dalam_daerah' ? (
+                                <>
+                                    <div>
+                                        <InputLabel htmlFor="kecamatan_id" value="Kecamatan" required />
+                                        <FormSelect
+                                            id="kecamatan_id"
+                                            options={kecamatanSelectOptions}
+                                            value={form.data.kecamatan_id}
+                                            onChange={(e) => {
+                                                form.setData('kecamatan_id', e.target.value);
+                                                form.setData('desa_id', '');
+                                            }}
+                                            className="mt-1 w-full"
+                                            placeholder="Pilih kecamatan"
+                                        />
+                                        <InputError message={form.errors.kecamatan_id} className="mt-1" />
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="desa_id" value="Desa" required />
+                                        <FormSelect
+                                            id="desa_id"
+                                            options={desaSelectOptions}
+                                            value={form.data.desa_id}
+                                            onChange={(e) => form.setData('desa_id', e.target.value)}
+                                            className="mt-1 w-full"
+                                            placeholder="Pilih desa"
+                                            disabled={!form.data.kecamatan_id}
+                                        />
+                                        <InputError message={form.errors.desa_id} className="mt-1" />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div>
+                                        <InputLabel htmlFor="provinsi_id" value="Provinsi" required />
+                                        <FormSelect
+                                            id="provinsi_id"
+                                            options={provinsiSelectOptions}
+                                            value={form.data.provinsi_id}
+                                            onChange={(e) => {
+                                                form.setData('provinsi_id', e.target.value);
+                                                form.setData('kabupaten_id', '');
+                                            }}
+                                            className="mt-1 w-full"
+                                            placeholder="Pilih provinsi"
+                                        />
+                                        <InputError message={form.errors.provinsi_id} className="mt-1" />
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="kabupaten_id" value="Kabupaten" required />
+                                        <FormSelect
+                                            id="kabupaten_id"
+                                            options={kabupatenSelectOptions}
+                                            value={form.data.kabupaten_id}
+                                            onChange={(e) => form.setData('kabupaten_id', e.target.value)}
+                                            className="mt-1 w-full"
+                                            placeholder="Pilih kabupaten"
+                                            disabled={!form.data.provinsi_id}
+                                        />
+                                        <InputError message={form.errors.kabupaten_id} className="mt-1" />
+                                    </div>
+                                </>
+                            )}
                         </div>
-
-                        {form.data.lokasi_type === 'dalam_daerah' && (
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                    <InputLabel htmlFor="kecamatan_id" value="Kecamatan" required />
-                                    <FormSelect
-                                        id="kecamatan_id"
-                                        options={kecamatanSelectOptions}
-                                        value={form.data.kecamatan_id}
-                                        onChange={(e) => {
-                                            form.setData('kecamatan_id', e.target.value);
-                                            form.setData('desa_id', '');
-                                        }}
-                                        className="mt-1 w-full"
-                                        placeholder="Pilih kecamatan"
-                                    />
-                                    <InputError message={form.errors.kecamatan_id} className="mt-1" />
-                                </div>
-                                <div>
-                                    <InputLabel htmlFor="desa_id" value="Desa" required />
-                                    <FormSelect
-                                        id="desa_id"
-                                        options={desaSelectOptions}
-                                        value={form.data.desa_id}
-                                        onChange={(e) => form.setData('desa_id', e.target.value)}
-                                        className="mt-1 w-full"
-                                        placeholder="Pilih desa"
-                                        disabled={!form.data.kecamatan_id}
-                                    />
-                                    <InputError message={form.errors.desa_id} className="mt-1" />
-                                </div>
-                            </div>
-                        )}
-
-                        {form.data.lokasi_type === 'luar_daerah' && (
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                    <InputLabel htmlFor="provinsi_id" value="Provinsi" required />
-                                    <FormSelect
-                                        id="provinsi_id"
-                                        options={provinsiSelectOptions}
-                                        value={form.data.provinsi_id}
-                                        onChange={(e) => {
-                                            form.setData('provinsi_id', e.target.value);
-                                            form.setData('kabupaten_id', '');
-                                        }}
-                                        className="mt-1 w-full"
-                                        placeholder="Pilih provinsi"
-                                    />
-                                    <InputError message={form.errors.provinsi_id} className="mt-1" />
-                                </div>
-                                <div>
-                                    <InputLabel htmlFor="kabupaten_id" value="Kabupaten" required />
-                                    <FormSelect
-                                        id="kabupaten_id"
-                                        options={kabupatenSelectOptions}
-                                        value={form.data.kabupaten_id}
-                                        onChange={(e) => form.setData('kabupaten_id', e.target.value)}
-                                        className="mt-1 w-full"
-                                        placeholder="Pilih kabupaten"
-                                        disabled={!form.data.provinsi_id}
-                                    />
-                                    <InputError message={form.errors.kabupaten_id} className="mt-1" />
-                                </div>
-                            </div>
-                        )}
 
                         <div>
                             <InputLabel htmlFor="tempat" value="Tempat (Alamat Lengkap)" required />
-                            <TextInput
+                            <FormTextarea
                                 id="tempat"
                                 value={form.data.tempat}
                                 onChange={(e) => form.setData('tempat', e.target.value)}
                                 className="mt-1 w-full"
+                                rows={2}
                                 placeholder="Contoh: Pendopo Kabupaten Tasikmalaya"
                             />
                             <InputError message={form.errors.tempat} className="mt-1" />
@@ -521,7 +522,7 @@ export default function FormPage({
                             </Link>
                             <Button type="submit" disabled={form.processing}>
                                 <Save className="mr-2 h-4 w-4" />
-                                {form.processing ? 'Menyimpan...' : existingJadwal ? 'Perbarui Jadwal' : 'Simpan Jadwal'}
+                                {form.processing ? 'Menyimpan...' : existingJadwal ? 'Perbarui Disposisi' : 'Simpan Disposisi'}
                             </Button>
                         </div>
                     </form>

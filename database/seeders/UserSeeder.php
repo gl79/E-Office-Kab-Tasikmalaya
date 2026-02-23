@@ -35,7 +35,6 @@ class UserSeeder extends Seeder
         ];
 
         $modulesMaster = [
-            'master.kepegawaian',
             'master.pengguna',
             'master.unit-kerja',
             'master.indeks-surat',

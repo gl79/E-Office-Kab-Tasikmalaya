@@ -48,11 +48,6 @@ export const menuItems: MenuItem[] = [
                 ],
             },
             {
-                label: 'Kepegawaian',
-                href: '/master/kepegawaian',
-                icon: 'users',
-            },
-            {
                 label: 'Pengguna',
                 href: '/master/pengguna',
                 icon: 'user',

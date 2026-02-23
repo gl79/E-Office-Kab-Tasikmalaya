@@ -447,7 +447,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                 isOpen={detailModalOpen}
                 onClose={() => setDetailModalOpen(false)}
                 title="Detail Surat Keluar"
-                size="lg"
+                size="xl"
             >
                 {detailSurat && (
                     <div className="space-y-6">
@@ -455,6 +455,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                         <div>
                             <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Identitas Surat</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* Tanggal Surat | No Agenda */}
                                 <div>
                                     <p className="text-sm text-text-secondary">Tanggal Surat</p>
                                     <p className="font-medium text-text-primary">{formatDateShort(detailSurat.tanggal_surat)}</p>
@@ -463,25 +464,23 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                     <p className="text-sm text-text-secondary">No Agenda</p>
                                     <p className="font-medium text-text-primary">{detailSurat.no_urut?.toString().padStart(4, '0')}</p>
                                 </div>
-                                {detailSurat.jenis_surat && (
-                                    <div>
-                                        <p className="text-sm text-text-secondary">Jenis Surat</p>
-                                        <p className="font-medium text-text-primary">{detailSurat.jenis_surat.nama}</p>
-                                    </div>
-                                )}
-                                {detailSurat.indeks && (
+
+                                {/* Indeks | Kode */}
+                                {detailSurat.indeks ? (
                                     <div>
                                         <p className="text-sm text-text-secondary">Indeks</p>
                                         <p className="font-medium text-text-primary">{detailSurat.indeks.kode} - {detailSurat.indeks.nama}</p>
                                     </div>
-                                )}
-                                {detailSurat.indeks && (
+                                ) : <div />}
+                                {detailSurat.indeks ? (
                                     <div>
                                         <p className="text-sm text-text-secondary">Kode</p>
                                         <p className="font-medium text-text-primary">{detailSurat.indeks.kode}</p>
                                     </div>
-                                )}
-                                {detailSurat.unit_kerja && (
+                                ) : <div />}
+
+                                {/* Pengolah | Kode Pengolah */}
+                                {detailSurat.unit_kerja ? (
                                     <div>
                                         <p className="text-sm text-text-secondary">Pengolah</p>
                                         <p className="font-medium text-text-primary">
@@ -490,17 +489,27 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                                 : detailSurat.unit_kerja.nama}
                                         </p>
                                     </div>
-                                )}
-                                {detailSurat.kode_pengolah && (
+                                ) : <div />}
+                                {detailSurat.kode_pengolah ? (
                                     <div>
                                         <p className="text-sm text-text-secondary">Kode Pengolah</p>
                                         <p className="font-medium text-text-primary">{detailSurat.kode_pengolah}</p>
                                     </div>
-                                )}
+                                ) : <div />}
+
+                                {/* Jenis Surat | Sifat */}
+                                {detailSurat.jenis_surat ? (
+                                    <div>
+                                        <p className="text-sm text-text-secondary">Jenis Surat</p>
+                                        <p className="font-medium text-text-primary">{detailSurat.jenis_surat.nama}</p>
+                                    </div>
+                                ) : <div />}
                                 <div>
                                     <p className="text-sm text-text-secondary">Sifat</p>
                                     {getSifatBadge(detailSurat.sifat_1, sifat1Options)}
                                 </div>
+
+                                {/* Nomor Surat | Kepada */}
                                 <div>
                                     <p className="text-sm text-text-secondary">Nomor Surat</p>
                                     <p className="font-medium text-text-primary">{detailSurat.nomor_surat}</p>
@@ -509,24 +518,28 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                     <p className="text-sm text-text-secondary">Kepada</p>
                                     <p className="font-medium text-text-primary">{detailSurat.kepada}</p>
                                 </div>
+
+                                {/* Lampiran | Perihal */}
                                 <div>
                                     <p className="text-sm text-text-secondary">Lampiran</p>
                                     <p className="font-medium text-text-primary">{detailSurat.lampiran ?? 0} berkas</p>
                                 </div>
-                                <div className="sm:col-span-2">
+                                <div>
                                     <p className="text-sm text-text-secondary">Perihal</p>
                                     <p className="font-medium text-text-primary">{detailSurat.perihal}</p>
                                 </div>
-                                <div className="sm:col-span-2">
+
+                                {/* Isi Ringkas | Catatan */}
+                                <div>
                                     <p className="text-sm text-text-secondary">Isi Ringkas</p>
                                     <p className="font-medium text-text-primary whitespace-pre-wrap">{detailSurat.isi_ringkas || '-'}</p>
                                 </div>
-                                {detailSurat.catatan && (
-                                    <div className="sm:col-span-2">
+                                {detailSurat.catatan ? (
+                                    <div>
                                         <p className="text-sm text-text-secondary">Catatan</p>
                                         <p className="font-medium text-text-primary">{detailSurat.catatan}</p>
                                     </div>
-                                )}
+                                ) : <div />}
                             </div>
                         </div>
 

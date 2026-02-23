@@ -65,7 +65,6 @@ class User extends Authenticatable
      */
     public const MODULES = [
         'dashboard' => 'Dashboard',
-        'master.kepegawaian' => 'Data Master - Kepegawaian',
         'master.pengguna' => 'Data Master - Pengguna',
         'master.unit-kerja' => 'Data Master - Unit Kerja',
         'master.indeks-surat' => 'Data Master - Indeks Surat',

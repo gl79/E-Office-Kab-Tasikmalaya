@@ -28,17 +28,18 @@ export function exportToPrintWindow<T>({ title, columns, data, filterInfo = [], 
 <title>${title}</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Times New Roman', serif; font-size: 11px; padding: 20px; }
-    .header { text-align: center; margin-bottom: 16px; border-bottom: 3px double #000; padding-bottom: 12px; }
-    .header h1 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-    .header h2 { font-size: 16px; text-transform: uppercase; margin-top: 4px; }
-    .meta { margin-bottom: 12px; font-size: 10px; color: #555; }
+    @page { size: A4 landscape; margin: 1cm; }
+    body { font-family: Arial, sans-serif; font-size: 10px; padding: 16px; }
+    .header { text-align: center; margin-bottom: 14px; border-bottom: 3px double #000; padding-bottom: 10px; }
+    .header h1 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .header h2 { font-size: 14px; text-transform: uppercase; margin-top: 4px; font-weight: bold; }
+    .meta { margin-bottom: 10px; font-size: 9px; color: #555; }
     table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #333; padding: 4px 6px; text-align: left; vertical-align: top; }
-    th { background: #f0f0f0; font-size: 10px; text-transform: uppercase; text-align: center; }
-    td:first-child { text-align: center; width: 30px; }
-    td small { color: #666; }
-    .footer { margin-top: 16px; font-size: 9px; color: #888; display: flex; justify-content: space-between; }
+    th, td { border: 1px solid #555; padding: 5px 7px; text-align: left; vertical-align: top; }
+    th { background: #e8e8e8; font-size: 9px; text-transform: uppercase; text-align: center; font-weight: bold; white-space: nowrap; }
+    td:first-child { text-align: center; width: 28px; }
+    td small { color: #666; font-size: 9px; }
+    .footer { margin-top: 14px; font-size: 9px; color: #888; display: flex; justify-content: space-between; }
     @media print { body { padding: 0; } }
 </style>
 </head><body>
