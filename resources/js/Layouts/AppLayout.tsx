@@ -87,52 +87,88 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
     // Generate Breadcrumbs
     const generateBreadcrumbs = (): BreadcrumbItem[] => {
-        // Use window.location.pathname client-side fallback, but Inertia usePage().url gives us the full path
-        // We will stick to usePage().url which includes query params, so we need to split
         let path = '';
         if (typeof window !== 'undefined') {
-             path = window.location.pathname;
+            path = window.location.pathname;
         } else {
-             // Fallback for SSR if needed, or if generic url from Inertia props is just path
-             // In Inertia, `url` prop typically starts with /
-             path = url?.split('?')[0] || '';
+            path = url?.split('?')[0] || '';
         }
 
         if (path === '/' || path === '/dashboard') return [];
 
-        const segments = path.split('/').filter(Boolean);
-        const crumbs: BreadcrumbItem[] = [];
+        // Segments to skip entirely (no label, no link)
+        const SKIP_SEGMENTS = new Set(['dashboard', 'pengaturan', 'bupati']);
+
+        // Segments shown as label but NOT clickable (no href)
+        const NO_LINK_SEGMENTS = new Set(['master', 'persuratan', 'penjadwalan', 'wilayah']);
+
+        // Label map: URL segment → human-readable label
+        const LABEL_MAP: Record<string, string> = {
+            'master'        : 'Data Master',
+            'persuratan'    : 'Persuratan',
+            'penjadwalan'   : 'Penjadwalan',
+            'wilayah'       : 'Wilayah',
+            'pengguna'      : 'Pengguna',
+            'indeks-surat'  : 'Indeks Surat',
+            'jenis-surat'   : 'Jenis Surat',
+            'unit-kerja'    : 'Unit Kerja',
+            'sifat-surat'   : 'Sifat Surat',
+            'surat-masuk'   : 'Surat Masuk',
+            'surat-keluar'  : 'Surat Keluar',
+            'activity-logs' : 'Activity Logs',
+            'tentatif'      : 'Jadwal Tentatif',
+            'definitif'     : 'Jadwal Definitif',
+            'history'       : 'History Penjadwalan',
+            'jadwal'        : 'Form Jadwal',
+            'create'        : 'Tambah',
+            'edit'          : 'Ubah',
+            'profile'       : 'Profil',
+            'cuti'          : 'Cuti',
+            'provinsi'      : 'Provinsi',
+            'kabupaten'     : 'Kabupaten',
+            'kecamatan'     : 'Kecamatan',
+            'desa'          : 'Desa',
+        };
+
+        // Detect ULID (26-char base32) or numeric ID segments — skip these
+        const isId = (s: string) => /^[0-9A-Za-z]{20,}$/.test(s) || /^\d+$/.test(s);
+
+        const rawSegments = path.split('/').filter(Boolean);
+
+        // Build (segment, cumulativePath) pairs, then filter
+        const segmentPaths: { segment: string; cumPath: string }[] = [];
         let currentPath = '';
+        for (const seg of rawSegments) {
+            currentPath += `/${seg}`;
+            segmentPaths.push({ segment: seg, cumPath: currentPath });
+        }
 
-        segments.forEach((segment, index) => {
-            currentPath += `/${segment}`;
-            const isLast = index === segments.length - 1;
+        // Filter: remove skipped, IDs, and action words following IDs (e.g. edit after a ULID)
+        const filtered: { segment: string; cumPath: string }[] = [];
+        let prevWasId = false;
+        for (const item of segmentPaths) {
+            const seg = item.segment.toLowerCase();
+            if (SKIP_SEGMENTS.has(seg)) { prevWasId = false; continue; }
+            if (isId(item.segment)) { prevWasId = true; continue; }
+            // keep "edit" / "create" that come after an ID — they're meaningful
+            filtered.push(item);
+            prevWasId = false;
+        }
 
-            // Custom mappings
-            let label = segment.replace(/-/g, ' ');
-            
-            // Capitalize First Letters
-            label = label.replace(/\b\w/g, (c) => c.toUpperCase());
-            
-            // Specific overrides
-            if (segment.toLowerCase() === 'master') label = 'Master Data';
-            if (segment.toLowerCase() === 'indeks-surat') label = 'Indeks Surat';
-            if (segment.toLowerCase() === 'unit-kerja') label = 'Unit Kerja';
-            if (segment.toLowerCase() === 'sifat-surat') label = 'Sifat Surat';
-            if (segment.toLowerCase() === 'surat-masuk') label = 'Surat Masuk';
-            if (segment.toLowerCase() === 'surat-keluar') label = 'Surat Keluar';
-            
-            // Skip "Dashboard" segment if it exists to avoid redundancy with Home icon
-            if (segment.toLowerCase() === 'dashboard') return;
+        if (filtered.length === 0) return [];
 
-            crumbs.push({
-                label,
-                href: isLast ? undefined : currentPath,
-                active: isLast,
-            });
+        return filtered.map(({ segment, cumPath }, index) => {
+            const isLast = index === filtered.length - 1;
+            const seg = segment.toLowerCase();
+
+            const label = LABEL_MAP[seg]
+                ?? segment.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+            // No-link segments or last segment have no href
+            const href = isLast || NO_LINK_SEGMENTS.has(seg) ? undefined : cumPath;
+
+            return { label, href, active: isLast };
         });
-
-        return crumbs;
     };
 
     const breadcrumbs = generateBreadcrumbs();

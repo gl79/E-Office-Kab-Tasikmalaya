@@ -50,6 +50,7 @@ class UserSeeder extends Seeder
                 'email'               => 'superadmin@eoffice.test',
                 'password'            => Hash::make('tasik123@'),
                 'role'                => User::ROLE_SUPERADMIN,
+                'nip'                 => '112233445566778899',
                 'jabatan'             => 'Super Administrator',
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
@@ -184,6 +185,5 @@ class UserSeeder extends Seeder
 
         $this->command->info('Berhasil membuat/memperbarui ' . (count($users) + 1) . ' user.');
         $this->command->info('Login default: superadmin / tasik123@');
-        $this->command->info('Foto profil: letakkan potoprofildummy.jpg di storage/app/public/profile-photos/');
     }
 }
