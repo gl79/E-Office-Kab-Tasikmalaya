@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -47,7 +46,7 @@ use Illuminate\Support\Carbon;
  */
 class Penjadwalan extends Model
 {
-    use HasFactory, HasUlids, SoftDeletes, HasAuditTrail;
+    use HasFactory, HasUlids, HasAuditTrail;
 
     protected $table = 'penjadwalan';
 
@@ -306,10 +305,6 @@ class Penjadwalan extends Model
      */
     public function getStatusFormalAttribute(): string
     {
-        if ($this->trashed()) {
-            return self::STATUS_FORMAL_DIBATALKAN;
-        }
-
         if ($this->status === self::STATUS_DEFINITIF) {
             /** @var \Illuminate\Support\Carbon|null $tanggal */
             $tanggal = $this->tanggal_agenda;

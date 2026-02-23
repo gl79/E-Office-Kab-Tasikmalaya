@@ -64,19 +64,6 @@ class DashboardController extends Controller
 
         // Admin/TU get full stats
         if ($isAdmin) {
-            $masterArchiveCount =
-                User::onlyTrashed()->count() +
-                UnitKerja::onlyTrashed()->count() +
-                IndeksSurat::onlyTrashed()->count() +
-                WilayahProvinsi::onlyTrashed()->count() +
-                WilayahKabupaten::onlyTrashed()->count() +
-                WilayahKecamatan::onlyTrashed()->count() +
-                WilayahDesa::onlyTrashed()->count();
-
-            $persuratanArchiveCount =
-                SuratMasuk::onlyTrashed()->count() +
-                SuratKeluar::onlyTrashed()->count();
-
             $stats['wilayah'] = [
                 'provinsi' => WilayahProvinsi::count(),
                 'kabupaten' => WilayahKabupaten::count(),
@@ -87,11 +74,6 @@ class DashboardController extends Controller
                 'pengguna' => User::count(),
                 'unit_kerja' => UnitKerja::count(),
                 'indeks_surat' => IndeksSurat::count(),
-            ];
-            $stats['archive'] = [
-                'master' => $masterArchiveCount,
-                'persuratan' => $persuratanArchiveCount,
-                'total' => $masterArchiveCount + $persuratanArchiveCount,
             ];
         }
 

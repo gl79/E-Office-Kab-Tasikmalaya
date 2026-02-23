@@ -69,7 +69,7 @@ class UnitKerjaController extends Controller
         $unitKerja = UnitKerja::findOrFail($id);
         $this->authorize('delete', $unitKerja);
 
-        $unitKerja->forceDelete();
+        $unitKerja->delete();
 
         CacheHelper::flush(['master_list']);
 

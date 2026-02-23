@@ -75,7 +75,7 @@ class JenisSuratController extends Controller
         $jenisSurat = JenisSurat::findOrFail($id);
         $this->authorize('delete', $jenisSurat);
 
-        $jenisSurat->forceDelete();
+        $jenisSurat->delete();
 
         CacheHelper::flush(['master_list']);
 

@@ -104,7 +104,7 @@ class PenjadwalanFeatureTest extends TestCase
 
         $this->actingAs($superadmin)
             ->put(route('penjadwalan.tentatif.update-kehadiran', $jadwal->id), [
-                'dihadiri_oleh' => 'Bupati',
+                'dihadiri_oleh_custom' => 'Bupati',
                 'status_disposisi' => Penjadwalan::DISPOSISI_BUPATI,
                 'keterangan' => 'Sudah dikonfirmasi',
             ])
@@ -180,20 +180,6 @@ class PenjadwalanFeatureTest extends TestCase
             'status_disposisi' => Penjadwalan::DISPOSISI_MENUNGGU,
         ]);
         $this->assertSame(Penjadwalan::STATUS_FORMAL_DITUNDA, $ditunda->status_formal);
-
-        $dibatalkan = Penjadwalan::create([
-            'surat_masuk_id' => $this->makeSuratMasuk($creator)->id,
-            'tanggal_agenda' => now()->addDays(3)->toDateString(),
-            'waktu_mulai' => '13:00:00',
-            'nama_kegiatan' => 'Dibatalkan',
-            'tempat' => 'Pendopo',
-            'status' => Penjadwalan::STATUS_TENTATIF,
-            'status_disposisi' => Penjadwalan::DISPOSISI_MENUNGGU,
-        ]);
-        $dibatalkan->delete();
-        $dibatalkan = Penjadwalan::withTrashed()->findOrFail($dibatalkan->id);
-
-        $this->assertSame(Penjadwalan::STATUS_FORMAL_DIBATALKAN, $dibatalkan->status_formal);
     }
 
     public function test_superadmin_bisa_menjadwalkan_tanpa_identitas_bupati(): void

@@ -90,7 +90,7 @@ class SifatSuratController extends Controller
             return redirect()->back()->with('error', 'Sifat Surat tidak dapat dihapus karena masih digunakan pada data persuratan.');
         }
 
-        $sifatSurat->forceDelete();
+        $sifatSurat->delete();
 
         CacheHelper::flush(['master_list', 'persuratan_list']);
 

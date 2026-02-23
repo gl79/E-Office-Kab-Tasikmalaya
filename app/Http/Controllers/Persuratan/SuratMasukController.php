@@ -294,7 +294,7 @@ class SuratMasukController extends Controller
             Storage::disk('public')->delete($suratMasuk->file_path);
         }
 
-        $suratMasuk->forceDelete();
+        $suratMasuk->delete();
 
         CacheHelper::flush(['persuratan_list']);
 

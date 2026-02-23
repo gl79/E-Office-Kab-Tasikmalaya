@@ -70,18 +70,5 @@ export interface SuratKeluar {
     created_at: string;
 }
 
-export interface ArchiveItem {
-    id: string;
-    type: 'masuk' | 'keluar';
-    jenis: string;
-    nomor_agenda: string;
-    tanggal_surat: string;
-    nomor_surat: string;
-    sifat: string;
-    asal_surat: string;
-    perihal: string;
-    deleted_at: string;
-    deleted_by?: { name: string } | null;
-}
 
 export type SifatBadgeVariant = 'default' | 'info' | 'warning' | 'danger';

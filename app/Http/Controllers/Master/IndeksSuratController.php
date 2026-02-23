@@ -164,7 +164,7 @@ class IndeksSuratController extends Controller
             return redirect()->back()->with('error', 'Tidak dapat menghapus kode yang masih memiliki sub-kode. Hapus sub-kode terlebih dahulu.');
         }
 
-        $indeksSurat->forceDelete();
+        $indeksSurat->delete();
 
         CacheHelper::flush(['master_list']);
 

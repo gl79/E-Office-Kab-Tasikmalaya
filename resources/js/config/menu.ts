@@ -1,6 +1,6 @@
 /**
  * Menu Configuration for E-Office Sidebar
- * 
+ *
  * Struktur data menu yang akan dirender di sidebar.
  */
 
@@ -77,12 +77,6 @@ export const menuItems: MenuItem[] = [
                 href: '/master/unit-kerja',
                 icon: 'building',
             },
-            {
-                label: 'Archive',
-                href: '/master/archive',
-                icon: 'archive',
-            },
-
         ],
     },
     {
@@ -100,11 +94,6 @@ export const menuItems: MenuItem[] = [
                 label: 'Surat Keluar',
                 href: '/persuratan/surat-keluar',
                 icon: 'send',
-            },
-            {
-                label: 'Archive',
-                href: '/persuratan/archive',
-                icon: 'archive',
             },
         ],
     },
@@ -128,11 +117,6 @@ export const menuItems: MenuItem[] = [
                 href: '/penjadwalan/history',
                 icon: 'history',
             },
-            {
-                label: 'Archive',
-                href: '/penjadwalan/archive',
-                icon: 'archive',
-            },
         ],
     },
     {
@@ -144,15 +128,9 @@ export const menuItems: MenuItem[] = [
                 label: 'Data Cuti',
                 href: '/cuti',
                 icon: 'list',
-                excludePaths: ['/cuti/archive'],
-            },
-            {
-                label: 'Archive',
-                href: '/cuti/archive',
-                icon: 'archive',
             },
         ],
-     },
+    },
     {
         label: 'Activity Logs',
         href: '/pengaturan/activity-logs',

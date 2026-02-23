@@ -88,7 +88,7 @@ class KabupatenController extends Controller
             ->firstOrFail();
         $this->authorize('delete', $kabupaten);
 
-        $kabupaten->forceDelete();
+        $kabupaten->delete();
 
         CacheHelper::flush(['wilayah']);
         WilayahHelper::clearCache();

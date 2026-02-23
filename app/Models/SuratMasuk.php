@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -30,13 +29,11 @@ use Illuminate\Support\Carbon;
  * @property string|null $catatan_tambahan
  * @property string|null $created_by
  * @property string|null $updated_by
- * @property string|null $deleted_by
  * @property Carbon|null $tanggal_diterima
  * @property Carbon|null $tanggal_surat
  * @property Carbon|null $tanggal_diteruskan
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property Carbon|null $deleted_at
  *
  * @property-read string $sifat_label
  * @property-read string $tanggal_diterima_formatted
@@ -58,7 +55,7 @@ use Illuminate\Support\Carbon;
  */
 class SuratMasuk extends Model
 {
-    use HasFactory, HasUlids, SoftDeletes, HasAuditTrail;
+    use HasFactory, HasUlids, HasAuditTrail;
 
     protected $table = 'surat_masuks';
 

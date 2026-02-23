@@ -75,7 +75,7 @@ class ProvinsiController extends Controller
         $provinsi = WilayahProvinsi::findOrFail($kode);
         $this->authorize('delete', $provinsi);
 
-        $provinsi->forceDelete();
+        $provinsi->delete();
 
         CacheHelper::flush(['wilayah']);
         WilayahHelper::clearCache();

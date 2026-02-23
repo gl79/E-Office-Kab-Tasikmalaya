@@ -4,11 +4,10 @@ namespace App\Models;
 
 use Awobaz\Compoships\Compoships;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WilayahKabupaten extends Model
 {
-    use Compoships, SoftDeletes;
+    use Compoships;
     protected $table = 'wilayah_kabupaten';
     public $incrementing = false;
     protected $fillable = ['provinsi_kode', 'kode', 'nama'];

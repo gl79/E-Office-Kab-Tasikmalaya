@@ -26,15 +26,11 @@ class CacheHelper
             'surat_keluar_list',
             'surat_masuk_menunggu_penerimaan_',
         ],
-        'persuratan_archive' => [
-            'persuratan_archive_',
-        ],
         'dashboard' => [
             'dashboard_stats',
         ],
         'cuti' => [
             'cuti_index_',
-            'cuti_archive_',
         ],
     ];
 

@@ -14,27 +14,6 @@ class SecurityAndFlowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_regular_user_cannot_access_bulk_archive_actions(): void
-    {
-        $user = $this->makeUser(role: User::ROLE_USER);
-
-        $this->actingAs($user)
-            ->post(route('persuratan.archive.restore-all'))
-            ->assertForbidden();
-
-        $this->actingAs($user)
-            ->delete(route('persuratan.archive.force-delete-all'))
-            ->assertForbidden();
-
-        $this->actingAs($user)
-            ->post(route('master.archive.restore-all'))
-            ->assertForbidden();
-
-        $this->actingAs($user)
-            ->delete(route('master.archive.force-delete-all'))
-            ->assertForbidden();
-    }
-
     public function test_user_cannot_preview_other_users_surat_keluar(): void
     {
         $owner = $this->makeUser(role: User::ROLE_TU);

@@ -13,9 +13,7 @@ import {
     Send,
     Calendar,
     Clock,
-    Mail,
     CalendarOff,
-    Archive,
     LucideIcon
 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
@@ -34,16 +32,10 @@ interface DashboardStats {
         pengguna: number;
         unit_kerja: number;
         indeks_surat: number;
-        jumblah_surat_masuk?: number; // Adjust if needed
     };
     persuratan: {
         surat_masuk: number;
         surat_keluar: number;
-    };
-    archive: {
-        master: number;
-        persuratan: number;
-        total: number;
     };
 }
 
@@ -181,7 +173,6 @@ const Dashboard = () => {
             cards.push(
                 { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
                 { title: 'Surat Keluar', description: 'Daftar surat keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
-                { title: 'Arsip Persuratan', description: 'Data arsip persuratan', value: stats.archive?.persuratan ?? 0, icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover', href: '/persuratan/archive' },
                 { title: 'Jadwal', description: 'Jadwal kegiatan', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/tentatif' },
                 { title: 'Jadwal Tentatif', description: 'Jadwal tentatif kegiatan', icon: Clock, color: 'text-warning', bg: 'bg-warning-light', href: '/penjadwalan/tentatif' },
             );
@@ -210,28 +201,20 @@ const Dashboard = () => {
         color: string;
         bg: string;
     }> = [
-            { label: 'Surat Masuk', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
-            { label: 'Surat Keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
-            { title: 'Disposisi', description: 'Total disposisi surat', icon: Mail, color: 'text-warning', bg: 'bg-warning-light', comingSoon: true },
-            { label: 'Arsip Persuratan', value: stats.archive?.persuratan ?? 0, icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover', href: '/persuratan/archive' },
-        ];
+        { label: 'Surat Masuk', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
+        { label: 'Surat Keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
+        { title: 'Disposisi', description: 'Total disposisi surat', icon: Send, color: 'text-warning', bg: 'bg-warning-light', comingSoon: true },
+    ];
 
     // Penjadwalan cards - Coming Soon
     const penjadwalanCards = [
         { title: 'Jadwal Bupati', description: 'Jadwal kegiatan Bupati', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light' },
         { title: 'Jadwal Wakil Bupati', description: 'Jadwal kegiatan Wakil Bupati', icon: Clock, color: 'text-warning', bg: 'bg-warning-light' },
-        { title: 'Arsip Penjadwalan', description: 'Data arsip penjadwalan', icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover' },
     ];
 
     // Cuti cards - Coming Soon
     const cutiCards = [
         { title: 'Pengajuan Cuti', description: 'Total pengajuan cuti', icon: CalendarOff, color: 'text-accent', bg: 'bg-accent-light' },
-        { title: 'Arsip Cuti', description: 'Data arsip cuti', icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover' },
-    ];
-
-    // Archive statistics
-    const archiveStats = [
-        { label: 'Arsip Data Master', value: stats.archive?.master ?? 0, icon: Archive, color: 'text-text-secondary', bg: 'bg-surface-hover', href: '/master/archive' },
     ];
 
     const quickCards = getQuickCards();
@@ -412,29 +395,6 @@ const Dashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-                                );
-                            })}
-                            {/* Archive card for Master Data */}
-                            {archiveStats.map((stat) => {
-                                const Icon = stat.icon;
-                                return (
-                                    <Link
-                                        key={stat.label}
-                                        href={stat.href}
-                                        className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md hover:border-primary/20 transition-all"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm text-text-secondary mb-1">{stat.label}</p>
-                                                <p className="text-2xl font-bold text-text-primary">
-                                                    {stat.value.toLocaleString('id-ID')}
-                                                </p>
-                                            </div>
-                                            <div className={`${stat.bg} ${stat.color} p-3 rounded-lg`}>
-                                                <Icon className="w-6 h-6" />
-                                            </div>
-                                        </div>
-                                    </Link>
                                 );
                             })}
                         </div>

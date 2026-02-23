@@ -18,9 +18,6 @@ Route::middleware('auth')->prefix('master')->name('master.')->group(function () 
     Route::post('/pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');
     Route::patch('/pengguna/{pengguna}', [PenggunaController::class, 'update'])->name('pengguna.update');
     Route::delete('/pengguna/{pengguna}', [PenggunaController::class, 'destroy'])->name('pengguna.destroy');
-    Route::get('/pengguna/archive', [PenggunaController::class, 'archive'])->name('pengguna.archive');
-    Route::post('/pengguna/{id}/restore', [PenggunaController::class, 'restore'])->name('pengguna.restore');
-    Route::delete('/pengguna/{id}/force-delete', [PenggunaController::class, 'forceDelete'])->name('pengguna.force-delete');
 
     // Unit Kerja
     Route::resource('unit-kerja', UnitKerjaController::class)->except(['create', 'show', 'edit']);

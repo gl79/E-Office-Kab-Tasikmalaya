@@ -101,7 +101,7 @@ class DesaController extends Controller
             ->firstOrFail();
         $this->authorize('delete', $desa);
 
-        $desa->forceDelete();
+        $desa->delete();
 
         CacheHelper::flush(['wilayah']);
         WilayahHelper::clearCache();

@@ -569,7 +569,7 @@ const Index = ({ data, filters, roles }: Props) => {
             >
                 <p className="text-text-secondary">
                     Apakah Anda yakin ingin menghapus pengguna <strong>{deleteItem?.name}</strong>?
-                    Data akan dipindahkan ke Archive dan akun tidak dapat digunakan untuk login.
+                    Data akan dihapus permanen dan tidak dapat dikembalikan.
                 </p>
                 <div className="mt-6 flex justify-end gap-3">
                     <Button variant="secondary" onClick={() => setDeleteItem(null)}>

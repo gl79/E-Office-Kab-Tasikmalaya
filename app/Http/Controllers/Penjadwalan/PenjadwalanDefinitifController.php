@@ -101,7 +101,7 @@ class PenjadwalanDefinitifController extends Controller
         $penjadwalan = Penjadwalan::findOrFail($id);
         $this->authorize('delete', $penjadwalan);
 
-        $penjadwalan->forceDelete();
+        $penjadwalan->delete();
 
         CacheHelper::flush(['penjadwalan']);
 

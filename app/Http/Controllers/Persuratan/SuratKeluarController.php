@@ -161,7 +161,7 @@ class SuratKeluarController extends Controller
             Storage::disk('public')->delete($suratKeluar->file_path);
         }
 
-        $suratKeluar->forceDelete();
+        $suratKeluar->delete();
 
         CacheHelper::flush(['persuratan_list']);
 

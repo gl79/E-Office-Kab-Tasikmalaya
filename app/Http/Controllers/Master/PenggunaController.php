@@ -107,7 +107,6 @@ class PenggunaController extends Controller
         User::create($validated);
 
         CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
 
         return back()->with('success', 'Pengguna berhasil ditambahkan.');
     }
@@ -162,19 +161,17 @@ class PenggunaController extends Controller
         $pengguna->update($validated);
 
         CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
 
         return back()->with('success', 'Pengguna berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified user (soft delete).
+     * Remove the specified user permanently (hard delete).
      */
     public function destroy(User $pengguna): RedirectResponse
     {
         $this->authorizeUserManagement();
 
-        // Prevent self-deletion
         /** @var User $currentUser */
         $currentUser = \Illuminate\Support\Facades\Auth::user();
 
@@ -186,79 +183,15 @@ class PenggunaController extends Controller
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
         }
 
+        // Hapus foto jika ada
+        if ($pengguna->foto) {
+            Storage::disk('public')->delete($pengguna->foto);
+        }
+
         $pengguna->delete();
 
         CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
 
         return back()->with('success', 'Pengguna berhasil dihapus.');
     }
-
-    /**
-     * Display archived (soft deleted) users.
-     */
-    public function archive(Request $request): Response
-    {
-        $this->authorizeUserManagement();
-
-        /** @var User $currentUser */
-        $currentUser = \Illuminate\Support\Facades\Auth::user();
-
-        $query = User::onlyTrashed()
-            ->when($currentUser->isTU(), fn($q) => $q->where('role', '!=', User::ROLE_SUPERADMIN))
-            ->when(
-                $request->search,
-                fn($q, $search) =>
-                $q->where('name', 'ilike', "%{$search}%")
-            )
-            ->orderBy('deleted_at', 'desc');
-
-        $cacheKey = 'pengguna_archive_' . md5(json_encode($request->query())) . '_' . $currentUser->role;
-
-        return Inertia::render('Master/Pengguna/Archive', [
-            'data' => Inertia::defer(fn() => CacheHelper::tags(['master_archive'])->remember($cacheKey, 60, function () use ($query) {
-                return $query->paginate(10)->withQueryString();
-            })),
-            'filters' => $request->only(['search']),
-        ]);
-    }
-
-    /**
-     * Restore a soft deleted user.
-     */
-    public function restore(string $id): RedirectResponse
-    {
-        $this->authorizeUserManagement();
-
-        $user = User::onlyTrashed()->findOrFail($id);
-        $user->restore();
-
-        CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
-
-        return back()->with('success', 'Pengguna berhasil dipulihkan.');
-    }
-
-    /**
-     * Permanently delete a user.
-     */
-    public function forceDelete(string $id): RedirectResponse
-    {
-        $this->authorizeUserManagement();
-
-        $user = User::onlyTrashed()->findOrFail($id);
-
-        // Delete foto
-        if ($user->foto) {
-            Storage::disk('public')->delete($user->foto);
-        }
-
-        $user->forceDelete();
-
-        CacheHelper::flush(['master_list']);
-        CacheHelper::flush(['master_archive']);
-
-        return back()->with('success', 'Pengguna berhasil dihapus permanen.');
-    }
 }
-

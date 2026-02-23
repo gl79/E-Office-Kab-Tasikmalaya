@@ -33,10 +33,8 @@ class PenjadwalanHistoryController extends Controller
                 60,
                 function () use ($search, $statusFormal) {
                     $query = Penjadwalan::query()
-                        ->withTrashed()
                         ->with([
                             'suratMasuk' => fn($suratQuery) => $suratQuery
-                                ->withTrashed()
                                 ->select(['id', 'nomor_agenda', 'nomor_surat', 'asal_surat', 'perihal']),
                             'creator:id,name',
                             'updater:id,name',

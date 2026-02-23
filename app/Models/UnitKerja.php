@@ -6,11 +6,10 @@ use App\Traits\HasAuditTrail;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UnitKerja extends Model
 {
-    use HasFactory, HasUlids, SoftDeletes, HasAuditTrail;
+    use HasFactory, HasUlids, HasAuditTrail;
 
     protected $table = 'unit_kerja';
 
