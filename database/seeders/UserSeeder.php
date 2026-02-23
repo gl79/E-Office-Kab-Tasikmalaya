@@ -10,16 +10,16 @@ class UserSeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     * 
+     *
      * Membuat user awal untuk testing dan first login.
-     */
-    /**
-     * Run the database seeds.
-     * 
-     * Membuat user awal untuk testing dan first login.
+     * Foto profil dummy: simpan file potoprofildummy.jpg di
+     *   storage/app/public/profile-photos/potoprofildummy.jpg
+     * kemudian jalankan: php artisan storage:link
      */
     public function run(): void
     {
+        $now = now();
+
         // Define Module Access Groups
         $modulesPenjadwalan = [
             'dashboard',
@@ -46,11 +46,15 @@ class UserSeeder extends Seeder
         $superAdmin = User::updateOrCreate(
             ['username' => 'superadmin'],
             [
-                'name' => 'Super Admin',
-                'email' => 'superadmin@eoffice.test',
-                'password' => Hash::make('tasik123@'),
-                'role' => User::ROLE_SUPERADMIN,
-                'module_access' => [],
+                'name'                => 'Super Admin',
+                'email'               => 'superadmin@eoffice.test',
+                'password'            => Hash::make('tasik123@'),
+                'role'                => User::ROLE_SUPERADMIN,
+                'jabatan'             => 'Super Administrator',
+                'jenis_kelamin'       => 'L',
+                'foto'                => 'profile-photos/potoprofildummy.jpg',
+                'module_access'       => [],
+                'password_changed_at' => $now,
             ]
         );
 
@@ -60,14 +64,18 @@ class UserSeeder extends Seeder
         // 2. User lainnya (created_by = Super Admin)
         $users = [
             [
-                'name' => 'Tata Usaha',
-                'username' => 'tatausaha',
-                'email' => 'tatausaha@eoffice.test',
-                'password' => Hash::make('tatausaha123@'),
-                'role' => User::ROLE_TU,
-                'jabatan' => 'Tata Usaha',
-                'created_by' => $superAdmin->id,
-                'module_access' => array_merge(
+                'name'                => 'Tata Usaha',
+                'username'            => 'tatausaha',
+                'email'               => 'tatausaha@eoffice.test',
+                'password'            => Hash::make('tatausaha123@'),
+                'role'                => User::ROLE_TU,
+                'nip'                 => '198507122008012001',
+                'jabatan'             => 'Tata Usaha',
+                'jenis_kelamin'       => 'P',
+                'foto'                => 'profile-photos/potoprofildummy.jpg',
+                'created_by'          => $superAdmin->id,
+                'password_changed_at' => $now,
+                'module_access'       => array_merge(
                     ['dashboard'],
                     $modulesMaster,
                     $modulesPersuratan,
@@ -76,70 +84,94 @@ class UserSeeder extends Seeder
                 ),
             ],
             [
-                'name' => 'Bupati',
-                'username' => 'bupati',
-                'email' => 'bupati@eoffice.test',
-                'password' => Hash::make('bupati123@'),
-                'role' => User::ROLE_PIMPINAN,
-                'jabatan' => 'Bupati',
-                'created_by' => $superAdmin->id,
-                'module_access' => array_merge(
+                'name'                => 'H. Cecep Nurul Yakin, S.Pd., M.A.P.',
+                'username'            => 'bupati',
+                'email'               => 'bupati@eoffice.test',
+                'password'            => Hash::make('bupati123@'),
+                'role'                => User::ROLE_PIMPINAN,
+                'nip'                 => '196806151993031005',
+                'jabatan'             => 'Bupati',
+                'jenis_kelamin'       => 'L',
+                'foto'                => 'profile-photos/potoprofildummy.jpg',
+                'created_by'          => $superAdmin->id,
+                'password_changed_at' => $now,
+                'module_access'       => array_merge(
                     $modulesPersuratan,
                     $modulesPenjadwalan
                 ),
             ],
             [
-                'name' => 'Wakil Bupati',
-                'username' => 'wakilbupati',
-                'email' => 'wakilbupati@eoffice.test',
-                'password' => Hash::make('wakilbupati123@'),
-                'role' => User::ROLE_PIMPINAN,
-                'jabatan' => 'Wakil Bupati',
-                'created_by' => $superAdmin->id,
-                'module_access' => array_merge(
+                'name'                => 'H. Asep Sopari Al-Ayubi S.P., M.I.P.',
+                'username'            => 'wakilbupati',
+                'email'               => 'wakilbupati@eoffice.test',
+                'password'            => Hash::make('wakilbupati123@'),
+                'role'                => User::ROLE_PIMPINAN,
+                'nip'                 => '197203261996031008',
+                'jabatan'             => 'Wakil Bupati',
+                'jenis_kelamin'       => 'L',
+                'foto'                => 'profile-photos/potoprofildummy.jpg',
+                'created_by'          => $superAdmin->id,
+                'password_changed_at' => $now,
+                'module_access'       => array_merge(
                     $modulesPersuratan,
                     $modulesPenjadwalan
                 ),
             ],
             [
-                'name' => 'Sekda',
-                'username' => 'sekda',
-                'email' => 'sekda@eoffice.test',
-                'password' => Hash::make('sekda123@'),
-                'role' => User::ROLE_USER,
-                'jabatan' => 'Sekretaris Daerah',
-                'created_by' => $superAdmin->id,
-                'module_access' => $modulesPersuratan,
+                'name'                => 'Drs. H. Roni Ahmad Sahroni, MM.',
+                'username'            => 'sekda',
+                'email'               => 'sekda@eoffice.test',
+                'password'            => Hash::make('sekda123@'),
+                'role'                => User::ROLE_USER,
+                'nip'                 => '196901151990031001',
+                'jabatan'             => 'Sekretaris Daerah',
+                'jenis_kelamin'       => 'L',
+                'foto'                => 'profile-photos/potoprofildummy.jpg',
+                'created_by'          => $superAdmin->id,
+                'password_changed_at' => $now,
+                'module_access'       => $modulesPersuratan,
             ],
             [
-                'name' => 'Asda 1',
-                'username' => 'asda1',
-                'email' => 'asda1@eoffice.test',
-                'password' => Hash::make('asda1123@'),
-                'role' => User::ROLE_USER,
-                'jabatan' => 'Asisten Daerah 1',
-                'created_by' => $superAdmin->id,
-                'module_access' => $modulesPersuratan,
+                'name'                => 'Asda 1',
+                'username'            => 'asda1',
+                'email'               => 'asda1@eoffice.test',
+                'password'            => Hash::make('asda1123@'),
+                'role'                => User::ROLE_USER,
+                'nip'                 => '197004151995031002',
+                'jabatan'             => 'Asisten Daerah 1',
+                'jenis_kelamin'       => 'L',
+                'foto'                => 'profile-photos/potoprofildummy.jpg',
+                'created_by'          => $superAdmin->id,
+                'password_changed_at' => $now,
+                'module_access'       => $modulesPersuratan,
             ],
             [
-                'name' => 'Asda 2',
-                'username' => 'asda2',
-                'email' => 'asda2@eoffice.test',
-                'password' => Hash::make('asda2123@'),
-                'role' => User::ROLE_USER,
-                'jabatan' => 'Asisten Daerah 2',
-                'created_by' => $superAdmin->id,
-                'module_access' => $modulesPersuratan,
+                'name'                => 'Asda 2',
+                'username'            => 'asda2',
+                'email'               => 'asda2@eoffice.test',
+                'password'            => Hash::make('asda2123@'),
+                'role'                => User::ROLE_USER,
+                'nip'                 => '197105261996031003',
+                'jabatan'             => 'Asisten Daerah 2',
+                'jenis_kelamin'       => 'L',
+                'foto'                => 'profile-photos/potoprofildummy.jpg',
+                'created_by'          => $superAdmin->id,
+                'password_changed_at' => $now,
+                'module_access'       => $modulesPersuratan,
             ],
             [
-                'name' => 'Asda 3',
-                'username' => 'asda3',
-                'email' => 'asda3@eoffice.test',
-                'password' => Hash::make('asda3123@'),
-                'role' => User::ROLE_USER,
-                'jabatan' => 'Asisten Daerah 3',
-                'created_by' => $superAdmin->id,
-                'module_access' => $modulesPersuratan,
+                'name'                => 'Asda 3',
+                'username'            => 'asda3',
+                'email'               => 'asda3@eoffice.test',
+                'password'            => Hash::make('asda3123@'),
+                'role'                => User::ROLE_USER,
+                'nip'                 => '197206072000031004',
+                'jabatan'             => 'Asisten Daerah 3',
+                'jenis_kelamin'       => 'L',
+                'foto'                => 'profile-photos/potoprofildummy.jpg',
+                'created_by'          => $superAdmin->id,
+                'password_changed_at' => $now,
+                'module_access'       => $modulesPersuratan,
             ],
         ];
 
@@ -150,7 +182,8 @@ class UserSeeder extends Seeder
             );
         }
 
-        $this->command->info('Created/updated ' . (count($users) + 1) . ' users.');
-        $this->command->info('Default login: superadmin / tasik123@');
+        $this->command->info('Berhasil membuat/memperbarui ' . (count($users) + 1) . ' user.');
+        $this->command->info('Login default: superadmin / tasik123@');
+        $this->command->info('Foto profil: letakkan potoprofildummy.jpg di storage/app/public/profile-photos/');
     }
 }

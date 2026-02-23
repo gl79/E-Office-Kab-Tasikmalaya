@@ -32,15 +32,15 @@ class DisposisiSurat extends Model
      */
     public const PENANDA_TANGAN_OPTIONS = [
         [
-            'nama' => 'H. Cecep Nurul Yakin, S.PD., M.AP',
+            'nama' => 'H. Cecep Nurul Yakin, S.Pd., M.A.P.',
             'jabatan' => 'Bupati',
         ],
         [
-            'nama' => 'H. Asep Sopari Al Ayubi, S.P., M.I.P.',
+            'nama' => 'H. Asep Sopari Al-Ayubi S.P., M.I.P.',
             'jabatan' => 'Wakil Bupati',
         ],
         [
-            'nama' => 'Drs. H. Roni Ahmad Sahroni, MM',
+            'nama' => 'Drs. H. Roni Ahmad Sahroni, MM.',
             'jabatan' => 'Sekretaris Daerah',
         ],
     ];
