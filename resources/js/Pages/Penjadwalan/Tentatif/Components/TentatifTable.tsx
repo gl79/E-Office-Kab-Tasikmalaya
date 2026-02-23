@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Dropdown, Badge } from '@/Components/ui';
-import { Clock, MapPin, User, MoreVertical, Pencil, CheckCircle, FileText, MessageCircle, Trash2 } from 'lucide-react';
+import { Clock, MapPin, User, MoreVertical, Pencil, CheckCircle, FileText, Trash2 } from 'lucide-react';
 import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
 import type { Agenda } from '@/types/penjadwalan';
 
@@ -9,7 +9,6 @@ interface Props {
     onEditKehadiran: (agenda: Agenda) => void;
     onJadikanDefinitif: (agenda: Agenda) => void;
     onViewDetail: (agenda: Agenda) => void;
-    onExportWhatsApp: (agenda: Agenda) => void;
     onDelete: (agenda: Agenda) => void;
     currentPage: number;
     itemsPerPage: number;
@@ -21,7 +20,6 @@ const TentatifTable: React.FC<Props> = ({
     onEditKehadiran,
     onJadikanDefinitif,
     onViewDetail,
-    onExportWhatsApp,
     onDelete,
     currentPage,
     itemsPerPage,
@@ -136,15 +134,6 @@ const TentatifTable: React.FC<Props> = ({
                                             >
                                                 <FileText className="h-4 w-4" />
                                                 <span>Lihat Detail</span>
-                                            </Dropdown.Link>
-
-                                            <Dropdown.Link
-                                                as="button"
-                                                onClick={() => onExportWhatsApp(item)}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <MessageCircle className="h-4 w-4" />
-                                                <span>Export WhatsApp</span>
                                             </Dropdown.Link>
 
                                             <div className="border-t border-border-default my-1"></div>

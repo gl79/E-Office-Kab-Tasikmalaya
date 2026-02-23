@@ -55,16 +55,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     // Detail Modal State
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailSurat, setDetailSurat] = useState<SuratMasuk | null>(null);
-    // Cetak Disposisi Modal State
-    const [disposisiModalOpen, setDisposisiModalOpen] = useState(false);
-    const [disposisiSurat, setDisposisiSurat] = useState<SuratMasuk | null>(null);
-    const [selectedPenandaTangan, setSelectedPenandaTangan] = useState(0);
-
-    const penandaTanganOptions = [
-        { nama: 'H. Cecep Nurul Yakin, S.PD., M.AP', jabatan: 'Bupati' },
-        { nama: 'H. Asep Sopari Al Ayubi, S.P., M.I.P.', jabatan: 'Wakil Bupati' },
-        { nama: 'Drs. H. Roni Ahmad Sahroni, MM', jabatan: 'Sekretaris Daerah' },
-    ];
+    // Determine penanda tangan index automatically based on current user jabatan
+    const getPenandaTanganIndex = () => {
+        if (isBupatiUser) return 0; // Bupati
+        if (normalizedJabatan.includes('wakil bupati') || normalizedName.includes('wakil bupati')) return 1; // Wakil Bupati
+        return 2; // Sekretaris Daerah
+    };
 
     // Filter data client-side
     const filteredData = useMemo(() => {
@@ -189,13 +185,11 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         });
     };
 
-    const handleCetakDisposisi = () => {
-        if (!disposisiSurat) return;
-
+    const handleCetakDisposisi = (surat: SuratMasuk) => {
         // Use hidden form with target="_blank" to open in new tab
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = route('persuratan.surat-masuk.cetak-disposisi', disposisiSurat.id);
+        form.action = route('persuratan.surat-masuk.cetak-disposisi', surat.id);
         form.target = '_blank';
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -208,14 +202,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         const ptInput = document.createElement('input');
         ptInput.type = 'hidden';
         ptInput.name = 'penanda_tangan_index';
-        ptInput.value = selectedPenandaTangan.toString();
+        ptInput.value = getPenandaTanganIndex().toString();
         form.appendChild(ptInput);
 
         document.body.appendChild(form);
         form.submit();
         document.body.removeChild(form);
-
-        setDisposisiModalOpen(false);
     };
 
     const sifatSelectOptions = Object.entries(sifatOptions || {}).map(([value, label]) => ({
@@ -563,10 +555,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                         item.can_disposisi ? (
                                                             <Dropdown.Link
                                                                 as="button"
-                                                                onClick={() => {
-                                                                    setDisposisiSurat(item);
-                                                                    setDisposisiModalOpen(true);
-                                                                }}
+                                                                onClick={() => handleCetakDisposisi(item)}
                                                                 className="flex items-center gap-2"
                                                             >
                                                                 <FileText className="h-4 w-4" />
@@ -828,79 +817,6 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 )}
             </Modal>
 
-            {/* Cetak Disposisi Modal */}
-            <Modal
-                isOpen={disposisiModalOpen}
-                onClose={() => setDisposisiModalOpen(false)}
-                title="Cetak Lembar Disposisi"
-            >
-                {disposisiSurat && (
-                    <div className="space-y-4">
-                        <div className="bg-surface-hover p-4 rounded-lg border border-border-default">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                                <div>
-                                    <span className="text-text-secondary">Nomor Agenda:</span>
-                                    <span className="ml-2 font-medium text-text-primary">{disposisiSurat.nomor_agenda.split('/')[1] || disposisiSurat.nomor_agenda}</span>
-                                </div>
-                                <div>
-                                    <span className="text-text-secondary">Nomor Surat:</span>
-                                    <span className="ml-2 font-medium text-text-primary">{disposisiSurat.nomor_surat}</span>
-                                </div>
-                                <div className="sm:col-span-2">
-                                    <span className="text-text-secondary">Perihal:</span>
-                                    <span className="ml-2 font-medium text-text-primary">{disposisiSurat.perihal}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <p className="text-sm font-medium text-text-secondary mb-3">
-                                Pilih Penanda Tangan:
-                            </p>
-                            <div className="space-y-2">
-                                {penandaTanganOptions.map((option, index) => (
-                                    <label
-                                        key={index}
-                                        className={`
-                                            flex items-center p-3 rounded-lg border cursor-pointer transition-colors
-                                            ${selectedPenandaTangan === index
-                                                ? 'border-primary bg-primary-light/10 ring-1 ring-primary'
-                                                : 'border-border-default hover:bg-surface-hover'
-                                            }
-                                        `}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="penanda_tangan"
-                                            value={index}
-                                            checked={selectedPenandaTangan === index}
-                                            onChange={() => setSelectedPenandaTangan(index)}
-                                            className="mr-3 text-primary focus:ring-primary"
-                                        />
-                                        <div>
-                                            <p className="font-medium text-text-primary">{option.nama}</p>
-                                            <p className="text-sm text-text-secondary">{option.jabatan}</p>
-                                        </div>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-2 pt-4">
-                            <Button
-                                variant="secondary"
-                                onClick={() => setDisposisiModalOpen(false)}
-                            >
-                                Batal
-                            </Button>
-                            <Button onClick={handleCetakDisposisi}>
-                                <Printer className="h-4 w-4 mr-2" />
-                                Cetak
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </Modal>
         </>
     );
 };

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Search, Copy, ExternalLink } from 'lucide-react';
+import { Copy, ExternalLink, MessageCircle } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Badge, ConfirmDialog } from '@/Components/ui';
 import { TextInput } from '@/Components/form';
@@ -128,22 +128,35 @@ const TentatifIndex = ({
         });
     };
 
-    const handleExportWhatsApp = async (agenda: Agenda) => {
-        setSelectedAgenda(agenda);
-        setIsLoadingTemplate(true);
-        setShowWhatsAppModal(true);
-        setIsCopied(false);
+    const handleBulkExportWhatsApp = () => {
+        if (filteredData.length === 0) return;
 
-        try {
-            const response = await fetch(route('penjadwalan.tentatif.export-wa', agenda.id));
-            const data = await response.json();
-            setWhatsAppTemplate(data.template);
-        } catch (error) {
-            console.error('Failed to fetch WhatsApp template:', error);
-            setWhatsAppTemplate('Gagal memuat template WhatsApp');
-        } finally {
-            setIsLoadingTemplate(false);
-        }
+        const lines: string[] = [
+            '*JADWAL TENTATIF BUPATI TASIKMALAYA*',
+            `Total: ${filteredData.length} jadwal`,
+            '',
+        ];
+
+        filteredData.forEach((item, index) => {
+            const tanggal = item.tanggal_format_indonesia ?? item.tanggal_agenda_formatted;
+            lines.push(`${index + 1}. *${tanggal}*`);
+            lines.push(`   Pukul: ${item.waktu_lengkap} WIB`);
+            lines.push(`   Kegiatan: ${item.nama_kegiatan}`);
+            lines.push(`   Lokasi: ${item.tempat}`);
+            if (item.dihadiri_oleh) {
+                lines.push(`   Dihadiri: ${item.dihadiri_oleh}`);
+            }
+            lines.push(`   Status: ${item.status_disposisi_label}`);
+            if (index < filteredData.length - 1) {
+                lines.push('');
+            }
+        });
+
+        setSelectedAgenda(null);
+        setWhatsAppTemplate(lines.join('\n'));
+        setIsCopied(false);
+        setIsLoadingTemplate(false);
+        setShowWhatsAppModal(true);
     };
 
     const handleCopyTemplate = async () => {
@@ -234,16 +247,25 @@ const TentatifIndex = ({
             <div className="bg-surface rounded-lg border border-border-default">
                 {/* Toolbar */}
                 <div className="p-4 border-b border-border-default">
-                    <div className="flex gap-2 max-w-md">
-                        <TextInput
-                            type="text"
-                            placeholder="Cari kegiatan, nomor surat, perihal, lokasi..."
-                            value={search}
-                            onChange={handleSearchChange}
-                            className="w-full px-3"
-                        />
-                        <Button variant="secondary" disabled>
-                            <Search className="h-4 w-4" />
+                    <div className="flex flex-col sm:flex-row justify-between gap-4">
+                        <div className="flex gap-2 flex-1 max-w-2xl">
+                            <TextInput
+                                type="text"
+                                placeholder="Cari kegiatan, nomor surat, perihal, lokasi..."
+                                value={search}
+                                onChange={handleSearchChange}
+                                className="w-full px-3"
+                            />
+                        </div>
+                        <Button
+                            variant="secondary"
+                            onClick={handleBulkExportWhatsApp}
+                            disabled={filteredData.length === 0}
+                            className="gap-2"
+                            title="Export semua jadwal ke WhatsApp"
+                        >
+                            <MessageCircle className="h-4 w-4" />
+                            <span>Export WhatsApp</span>
                         </Button>
                     </div>
                 </div>
@@ -265,7 +287,6 @@ const TentatifIndex = ({
                             setSelectedAgenda(agenda);
                             setShowDetailModal(true);
                         }}
-                        onExportWhatsApp={handleExportWhatsApp}
                         onDelete={(agenda) => {
                             setSelectedAgenda(agenda);
                             setDeleteModalOpen(true);
