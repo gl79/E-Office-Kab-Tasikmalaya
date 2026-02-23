@@ -382,9 +382,12 @@ class SuratMasukController extends Controller
             return redirect()->back()->with('error', 'File surat tidak ditemukan.');
         }
 
+        $parts = explode('/', $suratMasuk->nomor_agenda);
+        $nomorUrut = count($parts) >= 2 ? $parts[1] : $suratMasuk->nomor_agenda;
+
         return response()->download(
             storage_path('app/public/' . $suratMasuk->file_path),
-            'Surat_Masuk_' . $suratMasuk->nomor_agenda . '.' . pathinfo($suratMasuk->file_path, PATHINFO_EXTENSION)
+            'Surat_Masuk_' . $nomorUrut . '.' . pathinfo($suratMasuk->file_path, PATHINFO_EXTENSION)
         );
     }
     public function cetakIsi(string $id)

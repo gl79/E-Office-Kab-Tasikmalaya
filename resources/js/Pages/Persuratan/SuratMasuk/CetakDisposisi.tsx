@@ -88,7 +88,7 @@ export default function CetakDisposisi({ suratMasuk, penandaTangan }: Props) {
 
     return (
         <>
-            <Head title={`Lembar Disposisi - ${suratMasuk.nomor_agenda}`} />
+            <Head title={`Lembar Disposisi - ${suratMasuk.nomor_agenda.split('/')[1] || suratMasuk.nomor_agenda}`} />
 
             {/* Print Styles */}
             <style>{`
@@ -334,7 +334,7 @@ export default function CetakDisposisi({ suratMasuk, penandaTangan }: Props) {
                         </tr>
                         <tr>
                             <td>Nomor Agenda</td>
-                            <td>: {suratMasuk.nomor_agenda}</td>
+                            <td>: {suratMasuk.nomor_agenda.split('/')[1] || suratMasuk.nomor_agenda}</td>
                         </tr>
                         <tr>
                             <td>Asal Surat</td>

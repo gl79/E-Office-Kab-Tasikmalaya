@@ -603,8 +603,8 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 message={
                     <p>
                         Apakah Anda yakin ingin menghapus surat dengan nomor agenda{' '}
-                        <strong>{selectedSurat?.nomor_agenda}</strong>?
-                        Data akan dipindahkan ke arsip.
+                        <strong>{selectedSurat?.nomor_agenda.split('/')[1] || selectedSurat?.nomor_agenda}</strong>?
+                        Data akan dihapus permanen dan tidak dapat dikembalikan.
                     </p>
                 }
                 isLoading={isDeleting}
@@ -785,7 +785,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                                 <div>
                                     <span className="text-text-secondary">Nomor Agenda:</span>
-                                    <span className="ml-2 font-medium text-text-primary">{disposisiSurat.nomor_agenda}</span>
+                                    <span className="ml-2 font-medium text-text-primary">{disposisiSurat.nomor_agenda.split('/')[1] || disposisiSurat.nomor_agenda}</span>
                                 </div>
                                 <div>
                                     <span className="text-text-secondary">Nomor Surat:</span>

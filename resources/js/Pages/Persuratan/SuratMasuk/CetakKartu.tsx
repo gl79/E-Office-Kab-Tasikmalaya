@@ -77,7 +77,7 @@ export default function CetakKartu({ suratMasuk }: Props) {
 
     return (
         <>
-            <Head title={`Kartu Surat Masuk - ${suratMasuk.nomor_agenda}`} />
+            <Head title={`Kartu Surat Masuk - ${suratMasuk.nomor_agenda.split('/')[1] || suratMasuk.nomor_agenda}`} />
 
             {/* Print Styles */}
             <style>{`
@@ -212,7 +212,7 @@ export default function CetakKartu({ suratMasuk }: Props) {
                     <tbody>
                         <tr>
                             <th>Nomor Agenda</th>
-                            <td>{suratMasuk.nomor_agenda}</td>
+                            <td>{suratMasuk.nomor_agenda.split('/')[1] || suratMasuk.nomor_agenda}</td>
                         </tr>
                         <tr>
                             <th>Tanggal Diterima</th>

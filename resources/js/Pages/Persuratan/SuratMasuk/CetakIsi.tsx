@@ -31,7 +31,7 @@ export default function CetakIsi({ suratMasuk }: Props) {
 
     return (
         <div className="bg-white min-h-screen p-8 font-serif text-black">
-            <Head title={`Cetak Isi Surat - ${suratMasuk.nomor_agenda}`} />
+            <Head title={`Cetak Isi Surat - ${suratMasuk.nomor_agenda.split('/')[1] || suratMasuk.nomor_agenda}`} />
 
             {/* Print Button - Hidden when printing */}
             <div className="print:hidden mb-6 flex justify-end">
@@ -54,7 +54,7 @@ export default function CetakIsi({ suratMasuk }: Props) {
                 <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8 text-sm">
                     <div>
                         <span className="font-bold block uppercase text-xs text-gray-500">Nomor Agenda</span>
-                        <span>{suratMasuk.nomor_agenda}</span>
+                        <span>{suratMasuk.nomor_agenda.split('/')[1] || suratMasuk.nomor_agenda}</span>
                     </div>
                     <div>
                         <span className="font-bold block uppercase text-xs text-gray-500">Tanggal Diterima</span>
