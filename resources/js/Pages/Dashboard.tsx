@@ -9,11 +9,14 @@ import {
     Users,
     Building,
     FileText,
+    FileType,
     Inbox,
     Send,
+    FileOutput,
     Calendar,
     Clock,
     CalendarOff,
+    History,
     LucideIcon
 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
@@ -22,20 +25,27 @@ import { useEffect, useState } from 'react';
 import { useMemoryCache } from '@/hooks/useMemoryCache';
 
 interface DashboardStats {
-    wilayah: {
+    wilayah?: {
         provinsi: number;
         kabupaten: number;
         kecamatan: number;
         desa: number;
     };
-    master: {
+    master?: {
         pengguna: number;
         unit_kerja: number;
         indeks_surat: number;
+        jenis_surat: number;
     };
     persuratan: {
         surat_masuk: number;
         surat_keluar: number;
+        disposisi: number;
+    };
+    penjadwalan?: {
+        jadwal_tentatif: number;
+        jadwal_definitif: number;
+        history_penjadwalan: number;
     };
 }
 
@@ -63,7 +73,7 @@ const WelcomeBanner = ({ fotoUrl, name, nip, jabatan, roleLabel, greeting }: Wel
                 className="h-20 w-20 rounded-full object-cover border-4 border-text-inverse/30 shadow-lg"
             />
             <div className="flex-1">
-                <h1 className="text-2xl font-bold">{greeting}, {name}!</h1>
+                <h1 className="text-2xl font-bold">{greeting}, {name}</h1>
                 <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
                         <span className="text-primary-light text-xs">Nama Lengkap</span>
@@ -162,6 +172,14 @@ const Dashboard = () => {
         { label: 'Pengguna', value: stats.master?.pengguna ?? 0, icon: Users, color: 'text-primary', bg: 'bg-primary-light' },
         { label: 'Unit Kerja', value: stats.master?.unit_kerja ?? 0, icon: Building, color: 'text-secondary', bg: 'bg-secondary-light' },
         { label: 'Indeks Surat', value: stats.master?.indeks_surat ?? 0, icon: FileText, color: 'text-accent', bg: 'bg-accent-light' },
+        { label: 'Jenis Surat', value: stats.master?.jenis_surat ?? 0, icon: FileType, color: 'text-warning', bg: 'bg-warning-light' },
+    ];
+
+    // Penjadwalan statistics cards
+    const penjadwalanStats = [
+        { label: 'Jadwal Tentatif', value: stats.penjadwalan?.jadwal_tentatif ?? 0, icon: Clock, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/tentatif' },
+        { label: 'Jadwal Definitif', value: stats.penjadwalan?.jadwal_definitif ?? 0, icon: Calendar, color: 'text-warning', bg: 'bg-warning-light', href: '/penjadwalan/definitif' },
+        { label: 'History Penjadwalan', value: stats.penjadwalan?.history_penjadwalan ?? 0, icon: History, color: 'text-secondary', bg: 'bg-secondary-light', href: '/penjadwalan/history' },
     ];
 
     // Quick access cards for non-admin roles (with stats)
@@ -172,9 +190,10 @@ const Dashboard = () => {
         if (user.role === 'pimpinan') {
             cards.push(
                 { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
-                { title: 'Surat Keluar', description: 'Daftar surat keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
-                { title: 'Jadwal', description: 'Jadwal kegiatan', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/tentatif' },
-                { title: 'Jadwal Tentatif', description: 'Jadwal tentatif kegiatan', icon: Clock, color: 'text-warning', bg: 'bg-warning-light', href: '/penjadwalan/tentatif' },
+                { title: 'Surat Keluar', description: 'Surat keluar Anda', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
+                { title: 'Jadwal Tentatif', description: 'Jadwal tentatif kegiatan', value: stats.penjadwalan?.jadwal_tentatif ?? 0, icon: Clock, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/tentatif' },
+                { title: 'Jadwal Definitif', description: 'Jadwal definitif kegiatan', value: stats.penjadwalan?.jadwal_definitif ?? 0, icon: Calendar, color: 'text-warning', bg: 'bg-warning-light', href: '/penjadwalan/definitif' },
+                { title: 'History Penjadwalan', description: 'Riwayat perubahan jadwal', value: stats.penjadwalan?.history_penjadwalan ?? 0, icon: History, color: 'text-primary', bg: 'bg-primary-light', href: '/penjadwalan/history' },
             );
         }
 
@@ -182,35 +201,27 @@ const Dashboard = () => {
         if (user.role === 'user') {
             cards.push(
                 { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
-                { title: 'Surat Keluar', description: 'Daftar surat keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
+                { title: 'Surat Keluar', description: 'Surat keluar Anda', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
             );
         }
 
         return cards;
     };
 
-    // Persuratan statistics cards - with actual data
     const persuratanStats: Array<{
-        label?: string;
-        value?: number;
-        href?: string;
-        title?: string;
-        description?: string;
-        comingSoon?: boolean;
+        label: string;
+        value: number;
+        href: string;
         icon: LucideIcon;
         color: string;
         bg: string;
     }> = [
-        { label: 'Surat Masuk', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
-        { label: 'Surat Keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
-        { title: 'Disposisi', description: 'Total disposisi surat', icon: Send, color: 'text-warning', bg: 'bg-warning-light', comingSoon: true },
-    ];
+            { label: 'Surat Masuk', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
+            { label: 'Surat Keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
+            { label: 'Disposisi', value: stats.persuratan?.disposisi ?? 0, icon: FileOutput, color: 'text-warning', bg: 'bg-warning-light', href: '/persuratan/surat-masuk' },
+        ];
 
-    // Penjadwalan cards - Coming Soon
-    const penjadwalanCards = [
-        { title: 'Jadwal Bupati', description: 'Jadwal kegiatan Bupati', icon: Calendar, color: 'text-accent', bg: 'bg-accent-light' },
-        { title: 'Jadwal Wakil Bupati', description: 'Jadwal kegiatan Wakil Bupati', icon: Clock, color: 'text-warning', bg: 'bg-warning-light' },
-    ];
+
 
     // Cuti cards - Coming Soon
     const cutiCards = [
@@ -242,40 +253,19 @@ const Dashboard = () => {
                     <div className="mb-8">
                         <h2 className="text-lg font-semibold text-text-primary mb-4">Persuratan</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {persuratanStats.map((stat, index) => {
+                            {persuratanStats.map((stat) => {
                                 const Icon = stat.icon;
-                                // Check if it's a coming soon card
-                                if (stat.comingSoon) {
-                                    return (
-                                        <div
-                                            key={stat.title || index}
-                                            className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md transition-shadow"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-sm text-text-secondary mb-1">{stat.title}</p>
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-hover text-text-secondary">
-                                                        Coming Soon
-                                                    </span>
-                                                </div>
-                                                <div className={`${stat.bg} ${stat.color} p-3 rounded-lg`}>
-                                                    <Icon className="w-6 h-6" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                }
                                 return (
                                     <Link
-                                        key={stat.label || index}
-                                        href={stat.href || '#'}
+                                        key={stat.label}
+                                        href={stat.href}
                                         className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md hover:border-primary/20 transition-all"
                                     >
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="text-sm text-text-secondary mb-1">{stat.label}</p>
                                                 <p className="text-2xl font-bold text-text-primary">
-                                                    {(stat.value ?? 0).toLocaleString('id-ID')}
+                                                    {stat.value.toLocaleString('id-ID')}
                                                 </p>
                                             </div>
                                             <div className={`${stat.bg} ${stat.color} p-3 rounded-lg`}>
@@ -288,29 +278,30 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Penjadwalan Coming Soon Section */}
+                    {/* Penjadwalan Statistics Section */}
                     <div className="mb-8">
                         <h2 className="text-lg font-semibold text-text-primary mb-4">Penjadwalan</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {penjadwalanCards.map((card) => {
-                                const Icon = card.icon;
+                            {penjadwalanStats.map((stat) => {
+                                const Icon = stat.icon;
                                 return (
-                                    <div
-                                        key={card.title}
-                                        className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md transition-shadow"
+                                    <Link
+                                        key={stat.label}
+                                        href={stat.href}
+                                        className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md hover:border-primary/20 transition-all"
                                     >
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="text-sm text-text-secondary mb-1">{card.title}</p>
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-hover text-text-secondary">
-                                                    Coming Soon
-                                                </span>
+                                                <p className="text-sm text-text-secondary mb-1">{stat.label}</p>
+                                                <p className="text-2xl font-bold text-text-primary">
+                                                    {stat.value.toLocaleString('id-ID')}
+                                                </p>
                                             </div>
-                                            <div className={`${card.bg} ${card.color} p-3 rounded-lg`}>
+                                            <div className={`${stat.bg} ${stat.color} p-3 rounded-lg`}>
                                                 <Icon className="w-6 h-6" />
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 );
                             })}
                         </div>

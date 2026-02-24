@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\DisposisiSurat;
 use App\Models\IndeksSurat;
+use App\Models\JadwalHistory;
+use App\Models\JenisSurat;
+use App\Models\Penjadwalan;
 use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
 use App\Models\UnitKerja;
@@ -53,14 +57,29 @@ class DashboardController extends Controller
             })->count();
         }
 
-        $suratKeluarCount = SuratKeluar::count();
+        // Surat keluar count: superadmin sees all, others see only their own
+        if ($user->isSuperAdmin()) {
+            $suratKeluarCount = SuratKeluar::count();
+        } else {
+            $suratKeluarCount = SuratKeluar::where('created_by', $user->id)->count();
+        }
 
         $stats = [
             'persuratan' => [
                 'surat_masuk' => $suratMasukCount,
                 'surat_keluar' => $suratKeluarCount,
+                'disposisi' => DisposisiSurat::count(),
             ],
         ];
+
+        // Penjadwalan stats — visible to admin, TU, and pimpinan
+        if ($isAdmin || $user->isPimpinan()) {
+            $stats['penjadwalan'] = [
+                'jadwal_tentatif' => Penjadwalan::tentatif()->count(),
+                'jadwal_definitif' => Penjadwalan::definitif()->count(),
+                'history_penjadwalan' => JadwalHistory::count(),
+            ];
+        }
 
         // Admin/TU get full stats
         if ($isAdmin) {
@@ -74,6 +93,7 @@ class DashboardController extends Controller
                 'pengguna' => User::count(),
                 'unit_kerja' => UnitKerja::count(),
                 'indeks_surat' => IndeksSurat::count(),
+                'jenis_surat' => JenisSurat::count(),
             ];
         }
 
