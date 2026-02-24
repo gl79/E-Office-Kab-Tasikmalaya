@@ -24,7 +24,7 @@ class CheckRole
 
         // Check if user has any of the required roles
         if (!in_array($user->role, $roles)) {
-            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+            abort(404);
         }
 
         return $next($request);
