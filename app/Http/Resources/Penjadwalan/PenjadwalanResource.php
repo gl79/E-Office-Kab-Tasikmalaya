@@ -29,22 +29,47 @@ class PenjadwalanResource extends JsonResource
 
             // Surat Masuk Info
             'surat_masuk' => $this->when($this->relationLoaded('suratMasuk'), function () {
+                $sm = $this->suratMasuk;
                 return [
-                    'id' => $this->suratMasuk->id,
-                    'nomor_agenda' => $this->suratMasuk->nomor_agenda,
-                    'nomor_surat' => $this->suratMasuk->nomor_surat,
-                    'tanggal_surat' => $this->suratMasuk->tanggal_surat?->format('Y-m-d'),
-                    'tanggal_surat_formatted' => $this->suratMasuk->tanggal_surat_formatted,
-                    'tanggal_diterima' => $this->suratMasuk->tanggal_diterima?->format('Y-m-d'),
-                    'tanggal_diterima_formatted' => $this->suratMasuk->tanggal_diterima_formatted,
-                    'asal_surat' => $this->suratMasuk->asal_surat,
-                    'perihal' => $this->suratMasuk->perihal,
-                    'sifat' => $this->suratMasuk->sifat,
-                    'sifat_label' => $this->suratMasuk->sifat_label,
-                    'file_path' => $this->suratMasuk->file_path,
-                    'file_url' => $this->suratMasuk->file_path
-                        ? Storage::url($this->suratMasuk->file_path)
+                    'id' => $sm->id,
+                    'nomor_agenda' => $sm->nomor_agenda,
+                    'nomor_surat' => $sm->nomor_surat,
+                    'tanggal_surat' => $sm->tanggal_surat?->format('Y-m-d'),
+                    'tanggal_surat_formatted' => $sm->tanggal_surat_formatted,
+                    'tanggal_diterima' => $sm->tanggal_diterima?->format('Y-m-d'),
+                    'tanggal_diterima_formatted' => $sm->tanggal_diterima_formatted,
+                    'asal_surat' => $sm->asal_surat,
+                    'perihal' => $sm->perihal,
+                    'sifat' => $sm->sifat,
+                    'sifat_label' => $sm->sifat_label,
+                    'file_path' => $sm->file_path,
+                    'file_url' => $sm->file_path
+                        ? Storage::url($sm->file_path)
                         : null,
+                    // Extended fields for full detail view
+                    'isi_ringkas' => $sm->isi_ringkas,
+                    'lampiran' => $sm->lampiran,
+                    'tanggal_diteruskan' => $sm->tanggal_diteruskan?->format('Y-m-d'),
+                    'catatan_tambahan' => $sm->catatan_tambahan,
+                    'tujuans' => $sm->relationLoaded('tujuans')
+                        ? $sm->tujuans->map(fn($t) => ['id' => $t->id, 'tujuan' => $t->tujuan])
+                        : [],
+                    'jenis_surat' => $sm->relationLoaded('jenisSurat') && $sm->jenisSurat
+                        ? ['id' => $sm->jenisSurat->id, 'nama' => $sm->jenisSurat->nama]
+                        : null,
+                    'indeks_berkas' => $sm->relationLoaded('indeksBerkas') && $sm->indeksBerkas
+                        ? ['kode' => $sm->indeksBerkas->kode, 'nama' => $sm->indeksBerkas->nama]
+                        : null,
+                    'kode_klasifikasi' => $sm->relationLoaded('kodeKlasifikasi') && $sm->kodeKlasifikasi
+                        ? ['kode' => $sm->kodeKlasifikasi->kode, 'nama' => $sm->kodeKlasifikasi->nama]
+                        : null,
+                    'staff_pengolah' => $sm->relationLoaded('staffPengolah') && $sm->staffPengolah
+                        ? ['name' => $sm->staffPengolah->name, 'nip' => $sm->staffPengolah->nip]
+                        : null,
+                    'created_by' => $sm->relationLoaded('createdBy') && $sm->createdBy
+                        ? ['name' => $sm->createdBy->name]
+                        : null,
+                    'created_at' => $sm->created_at?->format('Y-m-d H:i:s'),
                 ];
             }),
 

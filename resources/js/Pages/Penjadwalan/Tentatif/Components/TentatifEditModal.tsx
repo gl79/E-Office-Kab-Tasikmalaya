@@ -3,11 +3,26 @@ import { Modal, Button } from '@/Components/ui';
 import { InputLabel, InputError, FormSelect, FormTextarea, FormSearchableSelect } from '@/Components/form';
 import type { Agenda } from '@/types/penjadwalan';
 
+interface TentatifEditFormData {
+    dihadiri_oleh: string;
+    dihadiri_oleh_custom: string;
+    status_disposisi: string;
+    keterangan: string;
+}
+
+interface TentatifEditForm {
+    data: TentatifEditFormData;
+    setData: <K extends keyof TentatifEditFormData>(key: K, value: TentatifEditFormData[K]) => void;
+    processing: boolean;
+    errors: Partial<Record<keyof TentatifEditFormData, string>>;
+    submitHandler: (e: React.FormEvent) => void;
+}
+
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     selectedAgenda: Agenda | null;
-    form: any; // Inertia useForm object
+    form: TentatifEditForm;
     disposisiSelectOptions: { value: string; label: string }[];
     dihadiriOlehSelectOptions: { value: string; label: string }[];
 }
@@ -20,7 +35,7 @@ const TentatifEditModal: React.FC<Props> = ({
     disposisiSelectOptions,
     dihadiriOlehSelectOptions,
 }) => {
-    const { data, setData, processing, errors, submitHandler } = form; // Assuming submitHandler is passed attached to form
+    const { data, setData, processing, errors, submitHandler } = form;
 
     return (
         <Modal

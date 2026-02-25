@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
+import { Head, usePage } from '@inertiajs/react';
 import { Eye, Filter, RotateCcw } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Badge, Button, Modal, Pagination } from '@/Components/ui';
 import { FormSelect, TextInput } from '@/Components/form';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
-import { useDeferredDataWithLoading } from '@/hooks';
+import { useDeferredDataMutable } from '@/hooks';
 import type { PageProps } from '@/types';
 import { getDisposisiLabel, getDisposisiVariant, getPenjadwalanFormalStatusLabel, getPenjadwalanFormalStatusVariant } from '@/utils/badgeVariants';
 
@@ -28,8 +28,12 @@ interface PenjadwalanHistoryItem {
     nama_kegiatan: string;
     tanggal_agenda_formatted: string;
     waktu_lengkap: string;
+    status: string;
+    status_label: string;
     status_formal: string;
+    status_formal_label: string;
     status_disposisi: string;
+    status_disposisi_label: string;
     dihadiri_oleh: string | null;
     surat_masuk: {
         id: string;
@@ -39,29 +43,16 @@ interface PenjadwalanHistoryItem {
         perihal: string;
     } | null;
     created_by: { id: number; name: string } | null;
+    updated_by: { id: number; name: string } | null;
     created_at_formatted: string | null;
     updated_at_formatted: string | null;
     histories: JadwalHistoryItem[];
 }
 
-interface PaginatedHistories {
-    data: PenjadwalanHistoryItem[];
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-}
-
 interface Props extends PageProps {
-    histories?: PaginatedHistories;
+    histories?: PenjadwalanHistoryItem[];
     statusFormalOptions: Record<string, string>;
-    filters: {
-        search?: string;
-        status_formal?: string;
-    };
 }
-
-const CACHE_TTL_MS = 60_000;
 
 const formatNoAgenda = (nomor?: string | null): string => {
     if (!nomor) return '-';
@@ -72,28 +63,26 @@ const formatNoAgenda = (nomor?: string | null): string => {
 export default function Index({
     histories: initialHistories,
     statusFormalOptions,
-    filters,
 }: Props) {
     const { auth } = usePage<PageProps>().props;
-    const cacheKey = `penjadwalan_history_${auth.user.id}_${filters.search ?? ''}_${filters.status_formal ?? ''}_${initialHistories?.current_page ?? 1}`;
+    const cacheKey = `penjadwalan_history_${auth.user.id}`;
+
     const {
-        data: historiesData,
+        data: allData,
         isLoading,
         hasCached,
-    } = useDeferredDataWithLoading<PaginatedHistories>(cacheKey, initialHistories, CACHE_TTL_MS);
+    } = useDeferredDataMutable<PenjadwalanHistoryItem[]>(cacheKey, initialHistories);
 
-    const [search, setSearch] = useState(filters.search ?? '');
-    const [statusFormal, setStatusFormal] = useState(filters.status_formal ?? '');
-    const [showFilters, setShowFilters] = useState(!!(filters.status_formal));
+    // Client-side search & filter state
+    const [search, setSearch] = useState('');
+    const [statusFormal, setStatusFormal] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    // Detail modal state
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<PenjadwalanHistoryItem | null>(null);
-    const [isSyncingSearch, setIsSyncingSearch] = useState(false);
-
-    const rows = historiesData?.data ?? [];
-    const currentPage = historiesData?.current_page ?? 1;
-    const totalPages = historiesData?.last_page ?? 1;
-    const perPage = historiesData?.per_page ?? 10;
-    const total = historiesData?.total ?? 0;
 
     const hasActiveFilters = !!(search || statusFormal);
 
@@ -106,51 +95,53 @@ export default function Index({
         [statusFormalOptions]
     );
 
-    const navigateWithFilters = (nextSearch: string, nextStatusFormal: string, page = 1) => {
-        router.get(
-            route('penjadwalan.history.index'),
-            {
-                search: nextSearch || undefined,
-                status_formal: nextStatusFormal || undefined,
-                page,
-            },
-            { preserveState: true, preserveScroll: true, replace: true }
-        );
-    };
+    // Client-side filtering — instant, no delay, no URL change
+    const filteredData = useMemo(() => {
+        if (!allData) return [];
+        let data = allData;
 
-    useEffect(() => {
-        if (search === (filters.search ?? '')) {
-            return;
+        // Search filter
+        if (search) {
+            const lowerSearch = search.toLowerCase();
+            data = data.filter((item) =>
+                item.nama_kegiatan?.toLowerCase().includes(lowerSearch) ||
+                item.surat_masuk?.nomor_agenda?.toLowerCase().includes(lowerSearch) ||
+                item.surat_masuk?.nomor_surat?.toLowerCase().includes(lowerSearch) ||
+                item.surat_masuk?.asal_surat?.toLowerCase().includes(lowerSearch) ||
+                item.surat_masuk?.perihal?.toLowerCase().includes(lowerSearch)
+            );
         }
 
-        setIsSyncingSearch(true);
+        // Status formal filter
+        if (statusFormal) {
+            data = data.filter((item) => item.status_formal === statusFormal);
+        }
 
-        const timer = window.setTimeout(() => {
-            navigateWithFilters(search, statusFormal, 1);
-        }, 300);
+        return data;
+    }, [allData, search, statusFormal]);
 
-        return () => window.clearTimeout(timer);
-    }, [search, statusFormal, filters.search]);
+    // Client-side pagination
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredData.slice(start, start + itemsPerPage);
+    }, [filteredData, currentPage]);
 
-    useEffect(() => {
-        setSearch(filters.search ?? '');
-        setStatusFormal(filters.status_formal ?? '');
-        setIsSyncingSearch(false);
-    }, [filters.search, filters.status_formal]);
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
-    const handleStatusFormalChange = (value: string) => {
-        setStatusFormal(value);
-        navigateWithFilters(search, value, 1);
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setStatusFormal(e.target.value);
+        setCurrentPage(1);
     };
 
     const resetFilter = () => {
         setSearch('');
         setStatusFormal('');
-        navigateWithFilters('', '', 1);
-    };
-
-    const changePage = (page: number) => {
-        navigateWithFilters(search, statusFormal, page);
+        setCurrentPage(1);
     };
 
     return (
@@ -171,7 +162,7 @@ export default function Index({
                                 <TextInput
                                     type="text"
                                     value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                                    onChange={handleSearchChange}
                                     placeholder="Cari nomor agenda, nomor surat, perihal..."
                                     className="w-full px-3"
                                 />
@@ -198,7 +189,7 @@ export default function Index({
                                         <FormSelect
                                             options={statusFormalSelectOptions}
                                             value={statusFormal}
-                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStatusFormalChange(e.target.value)}
+                                            onChange={handleStatusChange}
                                             placeholder="Semua Status"
                                             className="w-full px-2 text-sm"
                                         />
@@ -213,10 +204,6 @@ export default function Index({
                                     </div>
                                 )}
                             </div>
-                        )}
-
-                        {isSyncingSearch && (
-                            <p className="text-xs text-text-secondary">Mencari data...</p>
                         )}
                     </div>
                 </div>
@@ -241,10 +228,10 @@ export default function Index({
                                 </tr>
                             </thead>
                             <tbody className="bg-surface">
-                                {rows.map((item, index) => (
+                                {paginatedData.map((item, index) => (
                                     <tr key={item.id} className="hover:bg-surface-hover">
                                         <td className="border border-border-default px-4 py-3 text-center text-sm text-text-secondary">
-                                            {(currentPage - 1) * perPage + index + 1}
+                                            {(currentPage - 1) * itemsPerPage + index + 1}
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-sm">
                                             <div className="font-medium text-text-primary">
@@ -291,7 +278,7 @@ export default function Index({
                                     </tr>
                                 ))}
 
-                                {rows.length === 0 && (
+                                {paginatedData.length === 0 && (
                                     <tr>
                                         <td colSpan={7} className="border border-border-default px-4 py-8 text-center text-text-secondary">
                                             {hasActiveFilters ? 'Tidak ada data yang cocok dengan filter.' : 'Tidak ada data history penjadwalan.'}
@@ -304,18 +291,20 @@ export default function Index({
                 )}
 
                 {/* Pagination */}
-                <div className="border-t border-border-default p-4">
-                    <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-                        <p className="text-sm text-text-secondary">
-                            Menampilkan {rows.length} dari {total} data
-                        </p>
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={changePage}
-                        />
+                {!isLoading && (
+                    <div className="border-t border-border-default p-4">
+                        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+                            <p className="text-sm text-text-secondary">
+                                Menampilkan {paginatedData.length} dari {filteredData.length} data
+                            </p>
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* Detail Modal */}

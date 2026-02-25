@@ -7,6 +7,7 @@ use App\Http\Requests\Jadwal\UpdateKehadiranRequest;
 use App\Http\Resources\Penjadwalan\PenjadwalanResource;
 use App\Models\JadwalHistory;
 use App\Models\Penjadwalan;
+use App\Models\SuratMasuk;
 use App\Models\User;
 use App\Support\CacheHelper;
 use App\Support\WilayahHelper;
@@ -31,7 +32,15 @@ class PenjadwalanTentatifController extends Controller
             'tentatif' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember("tentatif_all_{$search}", 60, function () use ($search) {
                 $query = Penjadwalan::query()
                     ->tentatif()
-                    ->with(['suratMasuk', 'creator'])
+                    ->with([
+                        'suratMasuk.tujuans',
+                        'suratMasuk.jenisSurat',
+                        'suratMasuk.indeksBerkas',
+                        'suratMasuk.kodeKlasifikasi',
+                        'suratMasuk.staffPengolah',
+                        'suratMasuk.createdBy',
+                        'creator',
+                    ])
                     ->search($search)
                     ->latest('tanggal_agenda')
                     ->get();
@@ -43,6 +52,7 @@ class PenjadwalanTentatifController extends Controller
                 ->orderBy('name')
                 ->get(),
             'disposisiOptions' => Penjadwalan::DISPOSISI_OPTIONS,
+            'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
             'filters' => $request->only(['search']),
         ]);
     }

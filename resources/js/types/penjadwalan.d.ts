@@ -27,16 +27,22 @@ export interface SuratMasukBase {
     file_path: string | null;
     file_url: string | null;
     tujuan_list: string[];
+    // Extended fields (available when loaded with sub-relations)
+    isi_ringkas?: string | null;
+    lampiran?: number | null;
+    tanggal_diteruskan?: string | null;
+    catatan_tambahan?: string | null;
+    tujuans?: SuratMasukTujuan[];
+    jenis_surat?: { id: string; nama: string } | null;
+    indeks_berkas?: { kode: string; nama: string } | null;
+    kode_klasifikasi?: { kode: string; nama: string } | null;
+    staff_pengolah?: { name: string; nip: string } | null;
+    created_by?: { name: string } | null;
+    created_at?: string;
 }
 
 export interface SuratMasuk extends SuratMasukBase {
     agenda?: Agenda | null;
-    isi_ringkas?: string | null;
-    lampiran?: number | null;
-    tujuans?: SuratMasukTujuan[];
-    indeks_berkas?: { kode: string; nama: string } | null;
-    kode_klasifikasi?: { kode: string; nama: string } | null;
-    staff_pengolah?: { name: string; nip: string } | null;
 }
 
 // ============================================

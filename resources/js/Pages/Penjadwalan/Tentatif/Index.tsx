@@ -24,6 +24,7 @@ interface Props extends PageProps {
     tentatif?: { data: Agenda[] };
     userOptions: UserOption[];
     disposisiOptions: Record<string, string>;
+    sifatOptions: Record<string, string>;
     filters: {
         search?: string;
     };
@@ -33,6 +34,7 @@ const TentatifIndex = ({
     tentatif,
     userOptions,
     disposisiOptions,
+    sifatOptions,
     filters,
 }: Props) => {
     const { auth } = usePage<PageProps>().props;
@@ -273,7 +275,7 @@ const TentatifIndex = ({
                 {/* Table */}
                 {isLoading ? (
                     <div className="p-4">
-                        <TableShimmer columns={6} />
+                        <TableShimmer columns={9} />
                     </div>
                 ) : (
                     <TentatifTable
@@ -294,6 +296,7 @@ const TentatifIndex = ({
                         currentPage={currentPage}
                         itemsPerPage={itemsPerPage}
                         search={search}
+                        sifatOptions={sifatOptions}
                     />
                 )}
 

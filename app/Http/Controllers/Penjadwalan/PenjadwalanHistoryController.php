@@ -17,21 +17,13 @@ class PenjadwalanHistoryController extends Controller
     {
         $this->authorize('viewAny', Penjadwalan::class);
 
-        $search = trim((string) $request->input('search', ''));
-        $statusFormal = trim((string) $request->input('status_formal', ''));
-        $page = max(1, (int) $request->input('page', 1));
-
-        $cacheKey = 'penjadwalan_history_' . md5(json_encode([
-            'search' => $search,
-            'status_formal' => $statusFormal,
-            'page' => $page,
-        ]));
+        $cacheKey = 'penjadwalan_history_all';
 
         return Inertia::render('Penjadwalan/History/Index', [
             'histories' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember(
                 $cacheKey,
                 60,
-                function () use ($search, $statusFormal) {
+                function () {
                     $query = Penjadwalan::query()
                         ->with([
                             'suratMasuk' => fn($suratQuery) => $suratQuery
@@ -40,37 +32,13 @@ class PenjadwalanHistoryController extends Controller
                             'updater:id,name',
                             'histories.changedBy:id,name',
                         ])
-                        ->when($search !== '', function ($q) use ($search) {
-                            $q->where(function ($subQuery) use ($search) {
-                                $subQuery->where('nama_kegiatan', 'ilike', "%{$search}%")
-                                    ->orWhere('tempat', 'ilike', "%{$search}%")
-                                    ->orWhereHas('suratMasuk', function ($suratQuery) use ($search) {
-                                        $suratQuery->where('nomor_agenda', 'ilike', "%{$search}%")
-                                            ->orWhere('nomor_surat', 'ilike', "%{$search}%")
-                                            ->orWhere('asal_surat', 'ilike', "%{$search}%")
-                                            ->orWhere('perihal', 'ilike', "%{$search}%");
-                                    });
-                            });
-                        })
-                        ->when($statusFormal !== '', function (Builder $q) use ($statusFormal) {
-                            $this->applyStatusFormalFilter($q, $statusFormal);
-                        })
-                        ->latest('updated_at');
+                        ->latest('updated_at')
+                        ->get();
 
-                    $paginator = $query->paginate(10)->withQueryString();
-
-                    $paginator->setCollection(
-                        $paginator->getCollection()->map(fn(Penjadwalan $item) => $this->serializePenjadwalan($item))
-                    );
-
-                    return $paginator;
+                    return $query->map(fn(Penjadwalan $item) => $this->serializePenjadwalan($item))->values()->all();
                 }
             )),
             'statusFormalOptions' => Penjadwalan::STATUS_FORMAL_OPTIONS,
-            'filters' => [
-                'search' => $search,
-                'status_formal' => $statusFormal,
-            ],
         ]);
     }
 

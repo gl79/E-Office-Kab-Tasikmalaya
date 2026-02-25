@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Penjadwalan;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Penjadwalan\PenjadwalanResource;
 use App\Models\Penjadwalan;
+use App\Models\SuratMasuk;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,6 +21,7 @@ class PenjadwalanDefinitifController extends Controller
 
         return Inertia::render('Penjadwalan/Definitif/Index', [
             'disposisiOptions' => Penjadwalan::DISPOSISI_OPTIONS,
+            'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
             'filters' => $request->only(['search', 'status_disposisi']),
         ]);
     }
@@ -34,7 +36,15 @@ class PenjadwalanDefinitifController extends Controller
         $events = CacheHelper::tags(['penjadwalan'])->remember($cacheKey, 60, function () use ($request) {
             $query = Penjadwalan::query()
                 ->definitif()
-                ->with(['suratMasuk', 'creator']);
+                ->with([
+                    'suratMasuk.tujuans',
+                    'suratMasuk.jenisSurat',
+                    'suratMasuk.indeksBerkas',
+                    'suratMasuk.kodeKlasifikasi',
+                    'suratMasuk.staffPengolah',
+                    'suratMasuk.createdBy',
+                    'creator',
+                ]);
 
             // Filter by date range (for calendar pagination)
             if ($request->has('start') && $request->has('end')) {
@@ -109,4 +119,3 @@ class PenjadwalanDefinitifController extends Controller
             ->with('success', 'Jadwal berhasil dihapus.');
     }
 }
-
