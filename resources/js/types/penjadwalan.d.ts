@@ -3,14 +3,11 @@
  * Single source of truth for type interfaces
  */
 
+import type { SuratMasukTujuan } from './persuratan';
+
 // ============================================
 // SURAT MASUK TYPES
 // ============================================
-
-export interface SuratMasukTujuan {
-    id: string;
-    tujuan: string;
-}
 
 export interface SuratMasukBase {
     id: string;
@@ -117,16 +114,3 @@ export type PenjadwalanStatusFormal =
     | 'dibatalkan';
 export type SifatSurat = 'biasa' | 'penting' | 'segera' | 'amat_segera';
 
-export const DISPOSISI_LABELS: Record<DisposisiStatus, string> = {
-    menunggu: 'Menunggu',
-    bupati: 'Bupati',
-    wakil_bupati: 'Wakil Bupati',
-    diwakilkan: 'Diwakilkan',
-};
-
-export const SIFAT_LABELS: Record<SifatSurat, string> = {
-    biasa: 'Biasa',
-    penting: 'Penting',
-    segera: 'Segera',
-    amat_segera: 'Amat Segera',
-};

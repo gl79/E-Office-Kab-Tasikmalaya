@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 class FileService
 {
@@ -15,7 +16,7 @@ class FileService
      */
     public static function store(UploadedFile $file, string $directory): string
     {
-        $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+        $filename = Str::ulid() . '.' . $file->getClientOriginalExtension();
         return $file->storeAs($directory, $filename, 'public');
     }
 }

@@ -1,18 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\ActivityLog;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
 
-class ActivityLogService
+/**
+ * Activity logging service with proper DI.
+ *
+ * Usage:
+ *   - Inject via constructor: __construct(private readonly ActivityLogService $logger)
+ *   - Or resolve from container: app(ActivityLogService::class)->logCreate($model)
+ */
+final class ActivityLogService
 {
+    public function __construct(
+        private readonly Request $request
+    ) {}
+
     /**
      * Log an activity.
      */
-    public static function log(
+    public function log(
         string $action,
         string $description,
         ?Model $model = null,
@@ -24,8 +37,8 @@ class ActivityLogService
             'model_type' => $model ? get_class($model) : null,
             'model_id' => $model?->getKey(),
             'description' => $description,
-            'ip_address' => self::getClientIp(),
-            'user_agent' => Request::userAgent(),
+            'ip_address' => $this->getClientIp(),
+            'user_agent' => $this->request->userAgent(),
             'properties' => !empty($properties) ? $properties : null,
             'created_at' => now(),
         ]);
@@ -34,9 +47,9 @@ class ActivityLogService
     /**
      * Log a login event.
      */
-    public static function logLogin(mixed $user): ActivityLog
+    public function logLogin(mixed $user): ActivityLog
     {
-        return self::log(
+        return $this->log(
             ActivityLog::ACTION_LOGIN,
             "Pengguna {$user->name} berhasil login",
             $user instanceof Model ? $user : null
@@ -46,9 +59,9 @@ class ActivityLogService
     /**
      * Log a logout event.
      */
-    public static function logLogout(mixed $user): ActivityLog
+    public function logLogout(mixed $user): ActivityLog
     {
-        return self::log(
+        return $this->log(
             ActivityLog::ACTION_LOGOUT,
             "Pengguna {$user->name} logout dari sistem",
             $user instanceof Model ? $user : null
@@ -58,7 +71,7 @@ class ActivityLogService
     /**
      * Log a failed login attempt.
      */
-    public static function logLoginFailed(string $username): ActivityLog
+    public function logLoginFailed(string $username): ActivityLog
     {
         return ActivityLog::create([
             'user_id' => null,
@@ -66,8 +79,8 @@ class ActivityLogService
             'model_type' => null,
             'model_id' => null,
             'description' => "Percobaan login gagal untuk username: {$username}",
-            'ip_address' => self::getClientIp(),
-            'user_agent' => Request::userAgent(),
+            'ip_address' => $this->getClientIp(),
+            'user_agent' => $this->request->userAgent(),
             'properties' => ['username' => $username],
             'created_at' => now(),
         ]);
@@ -76,10 +89,10 @@ class ActivityLogService
     /**
      * Log a model creation.
      */
-    public static function logCreate(Model $model, ?string $description = null): ActivityLog
+    public function logCreate(Model $model, ?string $description = null): ActivityLog
     {
         $modelName = class_basename($model);
-        return self::log(
+        return $this->log(
             ActivityLog::ACTION_CREATE,
             $description ?? "Membuat data {$modelName} baru",
             $model,
@@ -90,7 +103,7 @@ class ActivityLogService
     /**
      * Log a model update.
      */
-    public static function logUpdate(Model $model, array $oldValues = [], ?string $description = null): ActivityLog
+    public function logUpdate(Model $model, array $oldValues = [], ?string $description = null): ActivityLog
     {
         $modelName = class_basename($model);
         $changes = $model->getChanges();
@@ -101,7 +114,7 @@ class ActivityLogService
             unset($changes[$field], $oldValues[$field]);
         }
 
-        return self::log(
+        return $this->log(
             ActivityLog::ACTION_UPDATE,
             $description ?? "Mengupdate data {$modelName}",
             $model,
@@ -113,12 +126,12 @@ class ActivityLogService
     }
 
     /**
-     * Log a model deletion (soft delete).
+     * Log a model deletion.
      */
-    public static function logDelete(Model $model, ?string $description = null): ActivityLog
+    public function logDelete(Model $model, ?string $description = null): ActivityLog
     {
         $modelName = class_basename($model);
-        return self::log(
+        return $this->log(
             ActivityLog::ACTION_DELETE,
             $description ?? "Menghapus data {$modelName}",
             $model
@@ -126,37 +139,11 @@ class ActivityLogService
     }
 
     /**
-     * Log a model restoration.
-     */
-    public static function logRestore(Model $model, ?string $description = null): ActivityLog
-    {
-        $modelName = class_basename($model);
-        return self::log(
-            ActivityLog::ACTION_RESTORE,
-            $description ?? "Memulihkan data {$modelName}",
-            $model
-        );
-    }
-
-    /**
-     * Log a force delete.
-     */
-    public static function logForceDelete(Model $model, ?string $description = null): ActivityLog
-    {
-        $modelName = class_basename($model);
-        return self::log(
-            ActivityLog::ACTION_FORCE_DELETE,
-            $description ?? "Menghapus permanen data {$modelName}",
-            $model
-        );
-    }
-
-    /**
      * Log a password change.
      */
-    public static function logPasswordChange(mixed $user): ActivityLog
+    public function logPasswordChange(mixed $user): ActivityLog
     {
-        return self::log(
+        return $this->log(
             ActivityLog::ACTION_PASSWORD_CHANGE,
             "Pengguna {$user->name} mengubah password",
             $user instanceof Model ? $user : null
@@ -164,12 +151,10 @@ class ActivityLogService
     }
 
     /**
-     * Get the client IP address.
+     * Get the client IP address, with proxy header support.
      */
-    protected static function getClientIp(): ?string
+    private function getClientIp(): ?string
     {
-        $request = Request::instance();
-
         // Check for proxy headers
         $headers = [
             'HTTP_CF_CONNECTING_IP',     // Cloudflare
@@ -179,8 +164,8 @@ class ActivityLogService
         ];
 
         foreach ($headers as $header) {
-            if ($request->server($header)) {
-                $ip = $request->server($header);
+            if ($this->request->server($header)) {
+                $ip = $this->request->server($header);
                 // X-Forwarded-For can contain multiple IPs, get the first one
                 if (str_contains($ip, ',')) {
                     $ip = trim(explode(',', $ip)[0]);
@@ -189,6 +174,6 @@ class ActivityLogService
             }
         }
 
-        return $request->ip();
+        return $this->request->ip();
     }
 }

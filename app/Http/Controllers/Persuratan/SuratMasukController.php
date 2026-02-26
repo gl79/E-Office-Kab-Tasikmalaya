@@ -7,7 +7,6 @@ use App\Http\Requests\Persuratan\SuratMasukRequest;
 use App\Models\DisposisiSurat;
 use App\Models\IndeksSurat;
 use App\Models\JenisSurat;
-use App\Models\Penjadwalan;
 use App\Models\SifatSurat;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
@@ -16,8 +15,6 @@ use App\Services\Persuratan\SuratMasukService;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -58,17 +55,6 @@ class SuratMasukController extends Controller
     }
 
     /**
-     * Get pengguna options untuk asal surat dropdown.
-     */
-    private function getAsalSuratUsers(): \Illuminate\Database\Eloquent\Collection
-    {
-        return User::select(['id', 'name', 'nip', 'jabatan'])
-            ->where('role', '!=', User::ROLE_SUPERADMIN)
-            ->orderBy('name', 'asc')
-            ->get();
-    }
-
-    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -78,81 +64,11 @@ class SuratMasukController extends Controller
         $user = $request->user();
 
         return Inertia::render('Persuratan/SuratMasuk/Index', [
-            'suratMasuk' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember('surat_masuk_list_' . $user->id, 60, function () use ($user) {
-                $query = SuratMasuk::query()
-                    ->with(['tujuans.user', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy', 'jenisSurat', 'penjadwalan'])
-                    ->latest();
-
-                // SuperAdmin sees all
-                // TU sees: surat they created manually OR surat addressed to them (excluding auto-created from Surat Keluar)
-                // Others only see surat addressed to them
-                if (!$user->isSuperAdmin()) {
-                    if ($user->isTU()) {
-                        $query->where(function ($q) use ($user) {
-                            // Surat addressed to TU
-                            $q->whereIn('id', function ($subq) use ($user) {
-                                $subq->select('surat_masuk_id')
-                                    ->from('surat_masuk_tujuans')
-                                    ->where('tujuan_id', $user->id);
-                            })
-                                // OR surat created by TU (excluding auto-created from Surat Keluar)
-                                ->orWhere(function ($subq) use ($user) {
-                                    $subq->where('created_by', $user->id)
-                                        // Exclude auto-created: check if nomor_surat exists in surat_keluars with same created_by
-                                        ->whereNotExists(function ($existsQuery) use ($user) {
-                                            $existsQuery->select(DB::raw(1))
-                                                ->from('surat_keluars')
-                                                ->whereColumn('surat_keluars.nomor_surat', 'surat_masuks.nomor_surat')
-                                                ->where('surat_keluars.created_by', $user->id)
-                                                ->whereNull('surat_keluars.deleted_at');
-                                        });
-                                });
-                        });
-                    } else {
-                        // Regular users only see surat addressed to them
-                        $query->whereIn('id', function ($q) use ($user) {
-                            $q->select('surat_masuk_id')
-                                ->from('surat_masuk_tujuans')
-                                ->where('tujuan_id', $user->id);
-                        });
-                    }
-                }
-
-                // Resolve nomor_agenda per-user:
-                // Jika user adalah penerima, gunakan nomor_agenda dari tujuan record
-                return $query->get()->map(function (SuratMasuk $surat) use ($user) {
-                    $tujuan = $surat->tujuans->firstWhere('tujuan_id', $user->id);
-                    if ($tujuan && $tujuan->nomor_agenda) {
-                        $surat->nomor_agenda = $tujuan->nomor_agenda;
-                    }
-
-                    $isPimpinanRecipient = (bool) $tujuan
-                        && $user->isPimpinan()
-                        && ($user->isBupati() || $user->isWakilBupati());
-                    $isBupatiRecipient = $isPimpinanRecipient && $user->isBupati();
-                    $isAcceptedByCurrentUser = $tujuan?->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA;
-
-                    $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
-                    $hasSchedule = (bool) $surat->penjadwalan;
-
-                    $surat->penerimaan_status = $this->resolvePenerimaanStatusForDisplay($surat, $tujuan);
-                    $surat->penerimaan_diterima_at = $tujuan?->diterima_at?->toDateTimeString();
-                    $surat->can_accept = $isPimpinanRecipient && !$isAcceptedByCurrentUser;
-                    $surat->can_disposisi = Gate::forUser($user)->check('disposisiByBupati', $surat);
-                    $surat->can_disposisi_disabled = $isBupatiRecipient && !$isAcceptedByCurrentUser;
-
-                    // Satu surat hanya bisa dijadwalkan sekali (khusus Bupati).
-                    $surat->can_schedule = $canScheduleByBupati && !$hasSchedule;
-                    $surat->can_finalize_schedule = false;
-                    $surat->can_view_schedule = $hasSchedule
-                        && $canScheduleByBupati;
-                    $surat->penjadwalan_status = $this->resolvePenjadwalanStatusKey($surat->penjadwalan);
-                    $surat->penjadwalan_status_label = $this->resolvePenjadwalanStatusLabel($surat->penjadwalan);
-                    $surat->penjadwalan_status_variant = $this->resolvePenjadwalanStatusVariant($surat->penjadwalan);
-
-                    return $surat;
-                });
-            })),
+            'suratMasuk' => Inertia::defer(fn() => CacheHelper::tags(['persuratan_list'])->remember(
+                'surat_masuk_list_' . $user->id,
+                60,
+                fn() => $this->service->getListForUser($user)
+            )),
             'sifatOptions' => SifatSurat::getOptions(),
         ]);
     }
@@ -170,7 +86,7 @@ class SuratMasukController extends Controller
             'jenisSuratOptions' => JenisSurat::orderBy('nama', 'asc')->get(['id', 'nama']),
             'users' => $this->getUserOptions(),
             'staffPengolahUsers' => $this->getStaffPengolahOptions(),
-            'asalSuratUsers' => $this->getAsalSuratUsers(),
+            'asalSuratUsers' => $this->getStaffPengolahOptions(),
             'sifatOptions' => SifatSurat::getOptions(),
             'nextNomorAgenda' => SuratMasuk::generateNomorAgenda((string) Auth::id()),
         ]);
@@ -219,7 +135,7 @@ class SuratMasukController extends Controller
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 2)->orderBy('kode', 'asc')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'users' => $this->getUserOptions(),
             'staffPengolahUsers' => $this->getStaffPengolahOptions(),
-            'asalSuratUsers' => $this->getAsalSuratUsers(),
+            'asalSuratUsers' => $this->getStaffPengolahOptions(),
             'sifatOptions' => SifatSurat::getOptions(),
         ]);
     }
@@ -398,68 +314,5 @@ class SuratMasukController extends Controller
         return Inertia::render('Persuratan/SuratMasuk/CetakIsi', [
             'suratMasuk' => $suratMasuk,
         ]);
-    }
-
-    private function resolvePenjadwalanStatusKey(?Penjadwalan $penjadwalan): string
-    {
-        if (!$penjadwalan) {
-            return '-';
-        }
-
-        return $penjadwalan->status;
-    }
-
-    private function resolvePenjadwalanStatusLabel(?Penjadwalan $penjadwalan): string
-    {
-        if (!$penjadwalan) {
-            return '-';
-        }
-
-        return $penjadwalan->status_label;
-    }
-
-    private function resolvePenjadwalanStatusVariant(?Penjadwalan $penjadwalan): string
-    {
-        if (!$penjadwalan) {
-            return 'default';
-        }
-
-        return match ($penjadwalan->status) {
-            Penjadwalan::STATUS_TENTATIF => 'warning',
-            Penjadwalan::STATUS_DEFINITIF => 'success',
-            default => 'default',
-        };
-    }
-
-    private function resolvePenerimaanStatusForDisplay(
-        SuratMasuk $surat,
-        ?SuratMasukTujuan $currentUserTujuan
-    ): string {
-        if ($currentUserTujuan) {
-            return $currentUserTujuan->status_penerimaan ?? '-';
-        }
-
-        $pimpinanTujuans = $surat->tujuans->filter(function (SuratMasukTujuan $tujuan) {
-            $recipient = $tujuan->user;
-
-            if (!$recipient) {
-                return false;
-            }
-
-            return $recipient->isPimpinan()
-                && ($recipient->isBupati() || $recipient->isWakilBupati());
-        });
-
-        if ($pimpinanTujuans->isEmpty()) {
-            return '-';
-        }
-
-        $allAccepted = $pimpinanTujuans->every(
-            fn(SuratMasukTujuan $tujuan) => $tujuan->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA
-        );
-
-        return $allAccepted
-            ? SuratMasukTujuan::STATUS_DITERIMA
-            : SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN;
     }
 }

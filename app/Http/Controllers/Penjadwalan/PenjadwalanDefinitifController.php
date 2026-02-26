@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Penjadwalan;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Penjadwalan\PenjadwalanResource;
 use App\Models\Penjadwalan;
+use App\Models\SifatSurat;
 use App\Models\SuratMasuk;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class PenjadwalanDefinitifController extends Controller
 
         return Inertia::render('Penjadwalan/Definitif/Index', [
             'disposisiOptions' => Penjadwalan::DISPOSISI_OPTIONS,
-            'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
+            'sifatOptions' => SifatSurat::getOptions(),
             'filters' => $request->only(['search', 'status_disposisi']),
         ]);
     }

@@ -2,18 +2,38 @@
 
 namespace App\Services\Persuratan;
 
+use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
 use App\Models\User;
 use App\Services\FileService;
 use App\Support\CacheHelper;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class SuratMasukService
 {
+    /**
+     * Get the surat masuk list for a specific user, with permission flags resolved.
+     *
+     * @param User $user The authenticated user
+     * @return Collection<int, SuratMasuk>
+     */
+    public function getListForUser(User $user): Collection
+    {
+        $query = SuratMasuk::query()
+            ->with(['tujuans.user', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy', 'jenisSurat', 'penjadwalan'])
+            ->latest();
+
+        $this->applyVisibilityScope($query, $user);
+
+        return $query->get()->map(fn(SuratMasuk $surat) => $this->enrichWithPermissions($surat, $user));
+    }
+
     /**
      * Store a new surat masuk with tujuan records and optional file upload.
      */
@@ -84,13 +104,139 @@ class SuratMasukService
     }
 
     /**
-     * Soft-delete a surat masuk.
+     * Hard-delete a surat masuk.
      */
     public function delete(SuratMasuk $suratMasuk): void
     {
         $suratMasuk->delete();
         CacheHelper::flush(['persuratan_list']);
     }
+
+    // ==================== PRIVATE: INDEX HELPERS ====================
+
+    /**
+     * Apply role-based visibility filters to the query.
+     */
+    private function applyVisibilityScope($query, User $user): void
+    {
+        if ($user->isSuperAdmin()) {
+            return; // SuperAdmin sees all
+        }
+
+        if ($user->isTU()) {
+            // TU sees: surat they created manually OR surat addressed to them
+            // (excluding auto-created from Surat Keluar)
+            $query->where(function ($q) use ($user) {
+                $q->whereIn('id', function ($subq) use ($user) {
+                    $subq->select('surat_masuk_id')
+                        ->from('surat_masuk_tujuans')
+                        ->where('tujuan_id', $user->id);
+                })
+                    ->orWhere(function ($subq) use ($user) {
+                        $subq->where('created_by', $user->id)
+                            ->whereNotExists(function ($existsQuery) use ($user) {
+                                $existsQuery->select(DB::raw(1))
+                                    ->from('surat_keluars')
+                                    ->whereColumn('surat_keluars.nomor_surat', 'surat_masuks.nomor_surat')
+                                    ->where('surat_keluars.created_by', $user->id)
+                                    ->whereNull('surat_keluars.deleted_at');
+                            });
+                    });
+            });
+        } else {
+            // Regular users only see surat addressed to them
+            $query->whereIn('id', function ($q) use ($user) {
+                $q->select('surat_masuk_id')
+                    ->from('surat_masuk_tujuans')
+                    ->where('tujuan_id', $user->id);
+            });
+        }
+    }
+
+    /**
+     * Enrich a SuratMasuk with computed permission flags for the given user.
+     */
+    private function enrichWithPermissions(SuratMasuk $surat, User $user): SuratMasuk
+    {
+        $tujuan = $surat->tujuans->firstWhere('tujuan_id', $user->id);
+
+        // Resolve per-user nomor_agenda
+        if ($tujuan && $tujuan->nomor_agenda) {
+            $surat->nomor_agenda = $tujuan->nomor_agenda;
+        }
+
+        $isPimpinanRecipient = (bool) $tujuan
+            && $user->isPimpinan()
+            && ($user->isBupati() || $user->isWakilBupati());
+        $isBupatiRecipient = $isPimpinanRecipient && $user->isBupati();
+        $isAcceptedByCurrentUser = $tujuan?->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA;
+
+        $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
+        $hasSchedule = (bool) $surat->penjadwalan;
+
+        $surat->penerimaan_status = $this->resolvePenerimaanStatus($surat, $tujuan);
+        $surat->penerimaan_diterima_at = $tujuan?->diterima_at?->toDateTimeString();
+        $surat->can_accept = $isPimpinanRecipient && !$isAcceptedByCurrentUser;
+        $surat->can_disposisi = Gate::forUser($user)->check('disposisiByBupati', $surat);
+        $surat->can_disposisi_disabled = $isBupatiRecipient && !$isAcceptedByCurrentUser;
+        $surat->can_schedule = $canScheduleByBupati && !$hasSchedule;
+        $surat->can_finalize_schedule = false;
+        $surat->can_view_schedule = $hasSchedule && $canScheduleByBupati;
+        $surat->penjadwalan_status = $surat->penjadwalan?->status ?? '-';
+        $surat->penjadwalan_status_label = $surat->penjadwalan?->status_label ?? '-';
+        $surat->penjadwalan_status_variant = $this->resolvePenjadwalanVariant($surat->penjadwalan);
+
+        return $surat;
+    }
+
+    /**
+     * Resolve the penerimaan status for display.
+     */
+    private function resolvePenerimaanStatus(SuratMasuk $surat, ?SuratMasukTujuan $currentUserTujuan): string
+    {
+        if ($currentUserTujuan) {
+            return $currentUserTujuan->status_penerimaan ?? '-';
+        }
+
+        $pimpinanTujuans = $surat->tujuans->filter(function (SuratMasukTujuan $tujuan) {
+            $recipient = $tujuan->user;
+            if (!$recipient) {
+                return false;
+            }
+            return $recipient->isPimpinan()
+                && ($recipient->isBupati() || $recipient->isWakilBupati());
+        });
+
+        if ($pimpinanTujuans->isEmpty()) {
+            return '-';
+        }
+
+        $allAccepted = $pimpinanTujuans->every(
+            fn(SuratMasukTujuan $tujuan) => $tujuan->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA
+        );
+
+        return $allAccepted
+            ? SuratMasukTujuan::STATUS_DITERIMA
+            : SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN;
+    }
+
+    /**
+     * Resolve the penjadwalan badge variant.
+     */
+    private function resolvePenjadwalanVariant(?Penjadwalan $penjadwalan): string
+    {
+        if (!$penjadwalan) {
+            return 'default';
+        }
+
+        return match ($penjadwalan->status) {
+            Penjadwalan::STATUS_TENTATIF => 'warning',
+            Penjadwalan::STATUS_DEFINITIF => 'success',
+            default => 'default',
+        };
+    }
+
+    // ==================== PRIVATE: TUJUAN SYNC ====================
 
     /**
      * Create tujuan records for a surat masuk.

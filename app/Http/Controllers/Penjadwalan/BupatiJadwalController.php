@@ -2,21 +2,16 @@
 
 namespace App\Http\Controllers\Penjadwalan;
 
-use App\Events\JadwalCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Jadwal\BupatiJadwalRequest;
-use App\Models\JadwalHistory;
-use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
-use App\Models\SuratMasukTujuan;
 use App\Models\User;
 use App\Models\WilayahKecamatan;
 use App\Models\WilayahProvinsi;
+use App\Services\Penjadwalan\PenjadwalanService;
 use App\Support\CacheHelper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,6 +20,8 @@ class BupatiJadwalController extends Controller
 {
     private const TASIKMALAYA_PROVINSI_KODE = '32';
     private const TASIKMALAYA_KABUPATEN_KODE = '06';
+
+    public function __construct(private readonly PenjadwalanService $service) {}
 
     /**
      * Show scheduling form for Bupati or delegated finalizer.
@@ -39,7 +36,7 @@ class BupatiJadwalController extends Controller
 
         abort_unless($canScheduleByBupati || $canFinalizeDelegated, 403);
 
-        $bupati = $this->resolveBupatiUser();
+        $bupati = $this->service->resolveBupatiUser();
         $existing = $surat->penjadwalan?->load('dihadiriOlehUser');
         $tujuanForUser = $surat->tujuans->firstWhere('tujuan_id', $user?->id);
         $displayNomorAgenda = $tujuanForUser?->nomor_agenda ?: $surat->nomor_agenda;
@@ -134,11 +131,9 @@ class BupatiJadwalController extends Controller
             return redirect()->back()->with('error', 'Surat ini sudah memiliki jadwal.');
         }
 
-        return $this->saveSchedule(
-            $request,
-            $surat,
-            null
-        );
+        $result = $this->service->createSchedule($surat, $request->validated(), $request->user());
+
+        return $this->buildRedirectResponse($result);
     }
 
     /**
@@ -147,11 +142,6 @@ class BupatiJadwalController extends Controller
     public function update(BupatiJadwalRequest $request, SuratMasuk $surat): RedirectResponse
     {
         $surat->load(['tujuans', 'penjadwalan']);
-        $jadwal = $surat->penjadwalan;
-
-        if (!$jadwal) {
-            return redirect()->back()->with('error', 'Data jadwal tidak ditemukan untuk surat ini.');
-        }
 
         $user = $request->user();
         $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
@@ -159,252 +149,33 @@ class BupatiJadwalController extends Controller
 
         abort_unless($canScheduleByBupati || $canFinalizeDelegated, 403);
 
-        return $this->saveSchedule(
-            $request,
-            $surat,
-            $jadwal
-        );
+        $result = $this->service->updateSchedule($surat, $request->validated(), $user);
+
+        return $this->buildRedirectResponse($result);
     }
 
-    private function saveSchedule(
-        BupatiJadwalRequest $request,
-        SuratMasuk $surat,
-        ?Penjadwalan $existingJadwal
-    ): RedirectResponse {
-        $validated = $request->validated();
-        $attendee = User::query()->findOrFail($validated['dihadiri_oleh_user_id']);
-        $bupati = $this->resolveBupatiUser();
-        $attendedByBupati = $bupati && (int) $attendee->id === (int) $bupati->id;
-
-        $payload = [
-            'surat_masuk_id' => $surat->id,
-            'nama_kegiatan' => $surat->perihal,
-            'tanggal_agenda' => $validated['tanggal_agenda'],
-            'waktu_mulai' => $validated['waktu_mulai'],
-            'waktu_selesai' => $validated['waktu_selesai'] ?? null,
-            'sampai_selesai' => (bool) ($validated['sampai_selesai'] ?? false),
-            'lokasi_type' => $validated['lokasi_type'],
-            'kode_wilayah' => $this->buildKodeWilayah($validated),
-            'tempat' => $validated['tempat'],
-            'keterangan' => $validated['keterangan'] ?? null,
-            'dihadiri_oleh' => $attendee->name,
-            'dihadiri_oleh_user_id' => $attendee->id,
-            // Sesuai kebutuhan terbaru: semua jadwal baru/ubah tetap masuk Tentatif.
-            'status' => Penjadwalan::STATUS_TENTATIF,
-            'status_disposisi' => $this->resolveDisposisiStatus($attendee),
-        ];
-
-        $conflictCount = $this->detectConflictCount(
-            (int) $attendee->id,
-            $payload['tanggal_agenda'],
-            $payload['waktu_mulai'],
-            $payload['waktu_selesai'],
-            $payload['sampai_selesai'],
-            $existingJadwal?->id
-        );
-        $hasConflict = $conflictCount > 0;
-
-        try {
-            DB::transaction(function () use (
-                $payload,
-                $existingJadwal,
-                $surat,
-                $attendee,
-                $attendedByBupati,
-                $request
-            ) {
-                if (!$existingJadwal) {
-                    $alreadyScheduled = Penjadwalan::query()
-                        ->where('surat_masuk_id', '=', $surat->id, 'and')
-                        ->lockForUpdate()
-                        ->exists();
-
-                    if ($alreadyScheduled) {
-                        throw new \RuntimeException('SURAT_ALREADY_SCHEDULED');
-                    }
-                }
-
-                if ($existingJadwal) {
-                    $oldData = $existingJadwal->only([
-                        'surat_masuk_id',
-                        'tanggal_agenda',
-                        'waktu_mulai',
-                        'waktu_selesai',
-                        'sampai_selesai',
-                        'lokasi_type',
-                        'kode_wilayah',
-                        'tempat',
-                        'status',
-                        'status_disposisi',
-                        'dihadiri_oleh',
-                        'dihadiri_oleh_user_id',
-                        'keterangan',
-                    ]);
-
-                    $existingJadwal->update($payload);
-
-                    JadwalHistory::create([
-                        'jadwal_id' => $existingJadwal->id,
-                        'old_data' => $oldData,
-                        'new_data' => $existingJadwal->fresh()->only([
-                            'surat_masuk_id',
-                            'tanggal_agenda',
-                            'waktu_mulai',
-                            'waktu_selesai',
-                            'sampai_selesai',
-                            'lokasi_type',
-                            'kode_wilayah',
-                            'tempat',
-                            'status',
-                            'status_disposisi',
-                            'dihadiri_oleh',
-                            'dihadiri_oleh_user_id',
-                            'keterangan',
-                        ]),
-                        'changed_by' => $request->user()?->id,
-                    ]);
-
-                    $saved = $existingJadwal->fresh();
-                } else {
-                    $saved = Penjadwalan::create($payload);
-                }
-
-                if (!$attendedByBupati) {
-                    $this->ensureRecipientTujuan($surat, $attendee);
-                }
-
-                CacheHelper::flush(['penjadwalan', 'persuratan_list']);
-
-                // Reuse one event for create and reschedule notifications.
-                event(new JadwalCreated($saved->id, (int) $attendee->id, (int) $request->user()->id));
-            });
-        } catch (\RuntimeException $e) {
-            if ($e->getMessage() === 'SURAT_ALREADY_SCHEDULED') {
-                return redirect()->back()->with('error', 'Surat ini sudah memiliki jadwal aktif.');
-            }
-
-            throw $e;
-        } catch (QueryException $e) {
-            $sqlState = $e->errorInfo[0] ?? null;
-            $isDuplicateSuratSchedule = str_contains(strtolower($e->getMessage()), 'penjadwalan_surat_masuk_unique');
-
-            if ($sqlState === '23505' && $isDuplicateSuratSchedule) {
-                return redirect()->back()->with('error', 'Surat ini sudah memiliki jadwal aktif.');
-            }
-
-            throw $e;
+    /**
+     * Build redirect response from service result.
+     */
+    private function buildRedirectResponse(array $result): RedirectResponse
+    {
+        if (!$result['success']) {
+            return redirect()->back()->with('error', $result['message']);
         }
-
-        $successMessage = $existingJadwal
-            ? 'Jadwal berhasil diperbarui.'
-            : 'Jadwal berhasil disimpan.';
 
         $response = redirect()
             ->route('persuratan.surat-masuk.index')
-            ->with('success', $successMessage)
-            ->with('has_conflict', $hasConflict);
+            ->with('success', $result['message'])
+            ->with('has_conflict', $result['has_conflict']);
 
-        if ($hasConflict) {
+        if ($result['has_conflict']) {
             $response->with(
                 'warning',
-                "Jadwal tersimpan dengan peringatan: ditemukan {$conflictCount} konflik waktu pada tanggal yang sama."
+                "Jadwal tersimpan dengan peringatan: ditemukan {$result['conflict_count']} konflik waktu pada tanggal yang sama."
             );
         }
 
         return $response;
-    }
-
-    private function resolveBupatiUser(): ?User
-    {
-        return User::query()
-            ->where('role', '=', User::ROLE_PIMPINAN, 'and')
-            ->where(function ($query) {
-                $query->whereRaw('LOWER(jabatan) = ?', ['bupati'])
-                    ->orWhereRaw('LOWER(name) = ?', ['bupati']);
-            })
-            ->first();
-    }
-
-    private function resolveDisposisiStatus(User $attendee): string
-    {
-        if ($attendee->isBupati()) {
-            return Penjadwalan::DISPOSISI_BUPATI;
-        }
-
-        if ($attendee->isWakilBupati()) {
-            return Penjadwalan::DISPOSISI_WAKIL_BUPATI;
-        }
-
-        return Penjadwalan::DISPOSISI_DIWAKILKAN;
-    }
-
-    private function buildKodeWilayah(array $validated): ?string
-    {
-        if ($validated['lokasi_type'] !== Penjadwalan::LOKASI_DALAM_DAERAH) {
-            return null;
-        }
-
-        return implode('.', [
-            self::TASIKMALAYA_PROVINSI_KODE,
-            self::TASIKMALAYA_KABUPATEN_KODE,
-            $validated['kecamatan_id'],
-            $validated['desa_id'],
-        ]);
-    }
-
-    private function ensureRecipientTujuan(SuratMasuk $surat, User $attendee): void
-    {
-        $alreadyExists = $surat->tujuans()
-            ->where('tujuan_id', '=', $attendee->id, 'and')
-            ->exists();
-
-        if ($alreadyExists) {
-            return;
-        }
-
-        SuratMasukTujuan::create([
-            'surat_masuk_id' => $surat->id,
-            'tujuan_id' => $attendee->id,
-            'tujuan' => $attendee->name,
-            'nomor_agenda' => SuratMasukTujuan::generateNomorAgendaForRecipient((string) $attendee->id),
-            ...SuratMasukTujuan::initialPenerimaanState($attendee),
-        ]);
-    }
-
-    private function detectConflictCount(
-        int $attendeeUserId,
-        string $tanggal,
-        string $waktuMulai,
-        ?string $waktuSelesai,
-        bool $sampaiSelesai,
-        ?string $ignoreJadwalId = null
-    ): int {
-        $newStart = $this->normalizeTime($waktuMulai);
-        $newEnd = $sampaiSelesai
-            ? '23:59:59'
-            : $this->normalizeTime((string) $waktuSelesai);
-
-        $query = Penjadwalan::query()
-            ->whereDate('tanggal_agenda', '=', $tanggal, 'and')
-            ->where('dihadiri_oleh_user_id', '=', $attendeeUserId, 'and');
-
-        if ($ignoreJadwalId) {
-            $query->where('id', '!=', $ignoreJadwalId);
-        }
-
-        return $query->get()->filter(function (Penjadwalan $jadwal) use ($newStart, $newEnd) {
-            $existingStart = $this->normalizeTime((string) $jadwal->waktu_mulai);
-            $existingEnd = $jadwal->sampai_selesai
-                ? '23:59:59'
-                : $this->normalizeTime((string) ($jadwal->waktu_selesai ?? '23:59:59'));
-
-            return $newStart < $existingEnd && $newEnd > $existingStart;
-        })->count();
-    }
-
-    private function normalizeTime(string $time): string
-    {
-        return strlen($time) === 5 ? "{$time}:00" : $time;
     }
 
     private function trimTime(string $time): string

@@ -57,7 +57,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             // Log failed login attempt
-            ActivityLogService::logLoginFailed($this->input('username'));
+            app(ActivityLogService::class)->logLoginFailed($this->input('username'));
 
             throw ValidationException::withMessages([
                 'username' => __('auth.failed'),

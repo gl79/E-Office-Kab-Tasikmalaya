@@ -5,20 +5,21 @@ namespace App\Http\Controllers\Penjadwalan;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Jadwal\UpdateKehadiranRequest;
 use App\Http\Resources\Penjadwalan\PenjadwalanResource;
-use App\Models\JadwalHistory;
 use App\Models\Penjadwalan;
+use App\Models\SifatSurat;
 use App\Models\SuratMasuk;
 use App\Models\User;
+use App\Services\Penjadwalan\PenjadwalanService;
 use App\Support\CacheHelper;
 use App\Support\WilayahHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class PenjadwalanTentatifController extends Controller
 {
+    public function __construct(private readonly PenjadwalanService $service) {}
+
     /**
      * Display a listing of tentatif penjadwalan (semua status disposisi dalam 1 tabel).
      */
@@ -52,7 +53,7 @@ class PenjadwalanTentatifController extends Controller
                 ->orderBy('name')
                 ->get(),
             'disposisiOptions' => Penjadwalan::DISPOSISI_OPTIONS,
-            'sifatOptions' => SuratMasuk::SIFAT_OPTIONS,
+            'sifatOptions' => SifatSurat::getOptions(),
             'filters' => $request->only(['search']),
         ]);
     }
@@ -65,43 +66,12 @@ class PenjadwalanTentatifController extends Controller
         $penjadwalan = Penjadwalan::findOrFail($id);
         $this->authorize('update', $penjadwalan);
 
-        DB::beginTransaction();
         try {
-            $data = $request->validated();
-            $oldData = $this->captureHistorySnapshot($penjadwalan);
-            $selectedUser = null;
-
-            if (!empty($data['dihadiri_oleh'])) {
-                $selectedUser = User::query()
-                    ->select(['id', 'name'])
-                    ->find((int) $data['dihadiri_oleh']);
-            }
-
-            $customAttendance = trim((string) ($data['dihadiri_oleh_custom'] ?? ''));
-            $attendanceName = $selectedUser?->name ?: ($customAttendance !== '' ? $customAttendance : null);
-
-            $penjadwalan->update([
-                'dihadiri_oleh' => $attendanceName,
-                'dihadiri_oleh_user_id' => $selectedUser?->id,
-                'status_disposisi' => $data['status_disposisi'],
-                'keterangan' => $data['keterangan'] ?? $penjadwalan->keterangan,
-            ]);
-
-            JadwalHistory::create([
-                'jadwal_id' => $penjadwalan->id,
-                'old_data' => $oldData,
-                'new_data' => $this->captureHistorySnapshot($penjadwalan->fresh()),
-                'changed_by' => $request->user()?->id,
-            ]);
-
-            DB::commit();
-
-            CacheHelper::flush(['penjadwalan']);
+            $this->service->updateKehadiran($penjadwalan, $request->validated(), $request->user());
 
             return redirect()->back()
                 ->with('success', 'Kehadiran berhasil diperbarui.');
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Gagal memperbarui kehadiran', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -119,35 +89,12 @@ class PenjadwalanTentatifController extends Controller
         $penjadwalan = Penjadwalan::findOrFail($id);
         $this->authorize('update', $penjadwalan);
 
-        // Validasi: hanya penjadwalan yang sudah ditinjau yang bisa jadi definitif
-        if ($penjadwalan->status_disposisi === Penjadwalan::DISPOSISI_MENUNGGU) {
-            return redirect()->back()
-                ->with('error', 'Jadwal masih menunggu peninjauan. Harap perbarui status disposisi terlebih dahulu.');
-        }
-
-        DB::beginTransaction();
         try {
-            $oldData = $this->captureHistorySnapshot($penjadwalan);
-
-            $penjadwalan->update([
-                'status' => Penjadwalan::STATUS_DEFINITIF,
-            ]);
-
-            JadwalHistory::create([
-                'jadwal_id' => $penjadwalan->id,
-                'old_data' => $oldData,
-                'new_data' => $this->captureHistorySnapshot($penjadwalan->fresh()),
-                'changed_by' => Auth::id(),
-            ]);
-
-            DB::commit();
-
-            CacheHelper::flush(['penjadwalan']);
+            $result = $this->service->promoteToDefinitif($penjadwalan, request()->user());
 
             return redirect()->back()
-                ->with('success', 'Jadwal berhasil dijadikan definitif.');
+                ->with($result['success'] ? 'success' : 'error', $result['message']);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('Gagal mengubah status', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -197,7 +144,6 @@ class PenjadwalanTentatifController extends Controller
         $asalSurat = '-';
         $perihal = '-';
         if ($suratMasuk) {
-            // nomor_agenda format: "SM/0001/2024" → ekstrak "0001"
             $naParts = explode('/', $suratMasuk->nomor_agenda ?? '');
             $noAgenda = count($naParts) >= 2 ? $naParts[1] : ($suratMasuk->nomor_agenda ?? '-');
             $noSurat = $suratMasuk->nomor_surat ?? '-';
@@ -250,30 +196,9 @@ class PenjadwalanTentatifController extends Controller
         $penjadwalan = Penjadwalan::findOrFail($id);
         $this->authorize('delete', $penjadwalan);
 
-        $penjadwalan->delete();
-
-        CacheHelper::flush(['penjadwalan']);
+        $this->service->delete($penjadwalan);
 
         return redirect()->back()
             ->with('success', 'Jadwal berhasil dihapus.');
-    }
-
-    private function captureHistorySnapshot(Penjadwalan $penjadwalan): array
-    {
-        return $penjadwalan->only([
-            'surat_masuk_id',
-            'tanggal_agenda',
-            'waktu_mulai',
-            'waktu_selesai',
-            'sampai_selesai',
-            'lokasi_type',
-            'kode_wilayah',
-            'tempat',
-            'status',
-            'status_disposisi',
-            'dihadiri_oleh',
-            'dihadiri_oleh_user_id',
-            'keterangan',
-        ]);
     }
 }

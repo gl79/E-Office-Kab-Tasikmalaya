@@ -79,7 +79,6 @@ class SuratMasuk extends Model
         'file_path',
         'created_by',
         'updated_by',
-        'deleted_by',
     ];
 
     protected $casts = [
@@ -89,20 +88,6 @@ class SuratMasuk extends Model
         'lampiran' => 'integer',
     ];
 
-    /**
-     * Konstanta untuk nilai sifat surat
-     */
-    public const SIFAT_BIASA = 'biasa';
-    public const SIFAT_TERBATAS = 'terbatas';
-    public const SIFAT_RAHASIA = 'rahasia';
-    public const SIFAT_SANGAT_RAHASIA = 'sangat_rahasia';
-
-    public const SIFAT_OPTIONS = [
-        self::SIFAT_BIASA => 'Biasa',
-        self::SIFAT_TERBATAS => 'Terbatas',
-        self::SIFAT_RAHASIA => 'Rahasia',
-        self::SIFAT_SANGAT_RAHASIA => 'Sangat Rahasia',
-    ];
 
     /**
      * Generate nomor agenda otomatis dengan format SM/{number}/{year}.

@@ -23,7 +23,7 @@ trait HasAuditTrail
         });
 
         static::deleting(function (Model $model) {
-            if (in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses($model))) {
+            if (method_exists($model, 'trashed')) {
                 if (Auth::check()) {
                     $model->deleted_by = Auth::id();
                     $model->save();

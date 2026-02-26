@@ -3,39 +3,27 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\PenggunaRequest;
 use App\Models\User;
 use App\Support\CacheHelper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PenggunaController extends Controller
 {
     /**
-     * Check if current user can manage users
-     */
-    private function authorizeUserManagement(): void
-    {
-        /** @var User|null $user */
-        $user = \Illuminate\Support\Facades\Auth::user();
-        if (!$user || !$user->canManageUsers()) {
-            abort(403, 'Anda tidak memiliki akses untuk mengelola pengguna.');
-        }
-    }
-
-    /**
      * Display a listing of users.
      */
     public function index(Request $request): Response
     {
-        $this->authorizeUserManagement();
-
         /** @var User $currentUser */
-        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        $currentUser = Auth::user();
+        abort_unless($currentUser->canManageUsers(), 403, 'Anda tidak memiliki akses untuk mengelola pengguna.');
+
         $isTU = $currentUser->isTU();
 
         $query = User::query()
@@ -71,30 +59,9 @@ class PenggunaController extends Controller
     /**
      * Store a newly created user.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(PenggunaRequest $request): RedirectResponse
     {
-        $this->authorizeUserManagement();
-
-        // TU tidak boleh membuat akun Super Admin
-        /** @var User $currentUser */
-        $currentUser = \Illuminate\Support\Facades\Auth::user();
-        $allowedRoles = $currentUser->isTU()
-            ? array_diff(User::ROLES, [User::ROLE_SUPERADMIN, User::ROLE_PIMPINAN])
-            : User::ROLES;
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:50', 'unique:users,username'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', Password::defaults()],
-            'role' => ['required', Rule::in($allowedRoles)],
-            'nip' => ['nullable', 'string', 'max:30'],
-            'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
-            'jabatan' => ['nullable', 'string', 'max:255'],
-            'module_access' => ['nullable', 'array'],
-            'module_access.*' => ['string'],
-            'foto' => ['nullable', 'image', 'max:2048'], // Max 2MB
-        ]);
+        $validated = $request->validated();
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
@@ -102,7 +69,7 @@ class PenggunaController extends Controller
         }
 
         // Catat siapa yang menambahkan pengguna ini
-        $validated['created_by'] = \Illuminate\Support\Facades\Auth::id();
+        $validated['created_by'] = Auth::id();
 
         User::create($validated);
 
@@ -114,35 +81,17 @@ class PenggunaController extends Controller
     /**
      * Update the specified user.
      */
-    public function update(Request $request, User $pengguna): RedirectResponse
+    public function update(PenggunaRequest $request, User $pengguna): RedirectResponse
     {
-        $this->authorizeUserManagement();
+        /** @var User $currentUser */
+        $currentUser = Auth::user();
 
         // TU cannot edit SuperAdmin accounts
-        /** @var User $currentUser */
-        $currentUser = \Illuminate\Support\Facades\Auth::user();
         if ($currentUser->isTU() && $pengguna->isSuperAdmin()) {
             abort(403, 'Tata Usaha tidak dapat mengedit akun Super Admin.');
         }
 
-        // TU tidak boleh mengubah role ke Super Admin
-        $allowedRoles = $currentUser->isTU()
-            ? array_diff(User::ROLES, [User::ROLE_SUPERADMIN, User::ROLE_PIMPINAN])
-            : User::ROLES;
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:50', Rule::unique('users')->ignore($pengguna->id)],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($pengguna->id)],
-            'password' => ['nullable', Password::defaults()],
-            'role' => ['required', Rule::in($allowedRoles)],
-            'nip' => ['nullable', 'string', 'max:30'],
-            'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
-            'jabatan' => ['nullable', 'string', 'max:255'],
-            'module_access' => ['nullable', 'array'],
-            'module_access.*' => ['string'],
-            'foto' => ['nullable', 'image', 'max:2048'],
-        ]);
+        $validated = $request->validated();
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
@@ -170,10 +119,9 @@ class PenggunaController extends Controller
      */
     public function destroy(User $pengguna): RedirectResponse
     {
-        $this->authorizeUserManagement();
-
         /** @var User $currentUser */
-        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        $currentUser = Auth::user();
+        abort_unless($currentUser->canManageUsers(), 403);
 
         // TU cannot delete SuperAdmin accounts
         if ($currentUser->isTU() && $pengguna->isSuperAdmin()) {

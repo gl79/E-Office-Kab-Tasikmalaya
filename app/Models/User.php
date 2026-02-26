@@ -248,4 +248,22 @@ class User extends Authenticatable
         $access = $this->module_access ?? [];
         return in_array($module, $access);
     }
+
+    // ==================== SCOPES ====================
+
+    /**
+     * Scope: Selectable users for dropdowns (non-superadmin, ordered by name).
+     * Consolidates the duplicated user query pattern from controllers.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param array $columns Columns to select (default: id, name, nip, jabatan)
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSelectableUsers($query, array $columns = ['id', 'name', 'nip', 'jabatan'])
+    {
+        return $query
+            ->select($columns)
+            ->where('role', '!=', self::ROLE_SUPERADMIN)
+            ->orderBy('name');
+    }
 }
