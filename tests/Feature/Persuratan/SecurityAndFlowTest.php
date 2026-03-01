@@ -34,7 +34,7 @@ class SecurityAndFlowTest extends TestCase
 
         $this->actingAs($otherUser)
             ->get(route('persuratan.surat-keluar.preview', $surat->id))
-            ->assertForbidden();
+            ->assertNotFound();
     }
 
     public function test_store_surat_keluar_ignores_tampered_no_urut_from_request(): void
