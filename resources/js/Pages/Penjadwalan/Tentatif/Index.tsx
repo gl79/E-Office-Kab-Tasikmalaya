@@ -487,7 +487,11 @@ const TentatifIndex = ({
                                         </Badge>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-text-secondary w-28 shrink-0">Disposisi</span>
+                                        <span className="text-sm text-text-secondary w-28 shrink-0">
+                                            {selectedAgenda.sumber_jadwal && selectedAgenda.sumber_jadwal !== 'disposisi'
+                                                ? 'Kehadiran'
+                                                : 'Disposisi'}
+                                        </span>
                                         {renderDisposisiBadge(selectedAgenda.status_disposisi)}
                                     </div>
                                     {selectedAgenda.dihadiri_oleh && (
@@ -567,11 +571,28 @@ const TentatifIndex = ({
                 type="warning"
                 title="Jadikan Definitif"
                 message={
-                    <p>
-                        Apakah Anda yakin ingin menjadikan jadwal{' '}
-                        <strong>{selectedAgenda?.nama_kegiatan}</strong> sebagai definitif?
-                        Jadwal akan dipindahkan ke menu Definitif.
-                    </p>
+                    <div className="space-y-2">
+                        <p>Apakah Anda yakin ingin menjadikan jadwal berikut sebagai definitif?</p>
+                        <div className="bg-surface-hover rounded-md p-3 text-sm space-y-1">
+                            {selectedAgenda?.surat_masuk?.nomor_agenda && (
+                                <div className="flex gap-2">
+                                    <span className="text-text-secondary w-24 shrink-0">No. Agenda</span>
+                                    <span className="font-medium text-text-primary">
+                                        {formatNoAgenda(selectedAgenda.surat_masuk.nomor_agenda)}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="flex gap-2">
+                                <span className="text-text-secondary w-24 shrink-0">Perihal</span>
+                                <span className="font-medium text-text-primary">
+                                    {selectedAgenda?.surat_masuk?.perihal ?? selectedAgenda?.nama_kegiatan ?? '-'}
+                                </span>
+                            </div>
+                        </div>
+                        <p className="text-text-secondary text-xs">
+                            Jadwal akan dipindahkan ke menu Definitif.
+                        </p>
+                    </div>
                 }
                 confirmText="Ya, Jadikan Definitif"
                 isLoading={isUpdatingDefinitif}

@@ -185,7 +185,7 @@ const Index = ({ data, filters, roles }: Props) => {
                             <div className="flex gap-2 w-full sm:w-2/4">
                                 <TextInput
                                     type="text"
-                                    placeholder="Cari nama, username, NIP..."
+                                    placeholder="Cari nama, username, jabatan..."
                                     value={search}
                                     onChange={handleSearchChange}
                                     className="w-full px-2"
@@ -218,70 +218,70 @@ const Index = ({ data, filters, roles }: Props) => {
                         <TableShimmer columns={7} />
                     </div>
                 ) : (
-                <table className="min-w-full border-collapse border border-border-default">
-                    <thead className="bg-surface-hover">
-                        <tr>
-                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase w-16">No</th>
-                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Foto</th>
-                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Nama</th>
-                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Jabatan</th>
-                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Username</th>
-                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Role</th>
-                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-surface">
-                        {paginatedData.map((item, index) => (
-                            <tr key={item.id} className="hover:bg-surface-hover">
-                                <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-sm">
-                                    {(currentPage - 1) * itemsPerPage + index + 1}
-                                </td>
-                                <td className="px-4 py-3 border border-border-default text-center">
-                                    <div className="flex justify-center">
-                                        <img
-                                            src={item.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=6366f1&color=fff`}
-                                            alt={item.name}
-                                            className="h-10 w-10 rounded-full object-cover border border-border-default"
-                                        />
-                                    </div>
-                                </td>
-                                <td className="px-4 py-3 border border-border-default font-medium text-text-primary">{item.name}</td>
-                                <td className="px-4 py-3 border border-border-default text-text-secondary">{item.jabatan || '-'}</td>
-                                <td className="px-4 py-3 border border-border-default text-text-primary">{item.username}</td>
-                                <td className="px-4 py-3 border border-border-default text-center">
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
-                                        {item.role_label || item.role}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 border border-border-default text-center">
-                                    <div className="flex justify-center gap-2">
-                                        <Button size="sm" variant="secondary" onClick={() => setDetailItem(item)} title="Lihat Detail">
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
-                                        {/* TU cannot edit/delete SuperAdmin accounts */}
-                                        {!(auth.user.role === 'tu' && item.role === 'superadmin') && (
-                                            <Button size="sm" variant="secondary" onClick={() => openEdit(item)} title="Edit">
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                        {item.id !== auth.user.id && !(auth.user.role === 'tu' && item.role === 'superadmin') && (
-                                            <Button size="sm" variant="danger" onClick={() => setDeleteItem(item)} title="Hapus">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {paginatedData.length === 0 && (
+                    <table className="min-w-full border-collapse border border-border-default">
+                        <thead className="bg-surface-hover">
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 border border-border-default text-center text-text-secondary">
-                                    {search || roleFilter ? 'Tidak ada data yang cocok dengan filter' : 'Tidak ada data pengguna'}
-                                </td>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase w-16">No</th>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Foto</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Nama</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Jabatan</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Username</th>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Role</th>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Aksi</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-surface">
+                            {paginatedData.map((item, index) => (
+                                <tr key={item.id} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-sm">
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
+                                    </td>
+                                    <td className="px-4 py-3 border border-border-default text-center">
+                                        <div className="flex justify-center">
+                                            <img
+                                                src={item.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=6366f1&color=fff`}
+                                                alt={item.name}
+                                                className="h-10 w-10 rounded-full object-cover border border-border-default"
+                                            />
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 border border-border-default font-medium text-text-primary">{item.name}</td>
+                                    <td className="px-4 py-3 border border-border-default text-text-secondary">{item.jabatan || '-'}</td>
+                                    <td className="px-4 py-3 border border-border-default text-text-primary">{item.username}</td>
+                                    <td className="px-4 py-3 border border-border-default text-center">
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
+                                            {item.role_label || item.role}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 border border-border-default text-center">
+                                        <div className="flex justify-center gap-2">
+                                            <Button size="sm" variant="secondary" onClick={() => setDetailItem(item)} title="Lihat Detail">
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
+                                            {/* TU cannot edit/delete SuperAdmin accounts */}
+                                            {!(auth.user.role === 'tu' && item.role === 'superadmin') && (
+                                                <Button size="sm" variant="secondary" onClick={() => openEdit(item)} title="Edit">
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                            {item.id !== auth.user.id && !(auth.user.role === 'tu' && item.role === 'superadmin') && (
+                                                <Button size="sm" variant="danger" onClick={() => setDeleteItem(item)} title="Hapus">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {paginatedData.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-8 border border-border-default text-center text-text-secondary">
+                                        {search || roleFilter ? 'Tidak ada data yang cocok dengan filter' : 'Tidak ada data pengguna'}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 )}
 
                 {/* Pagination */}
@@ -391,7 +391,7 @@ const Index = ({ data, filters, roles }: Props) => {
 
                             {/* Jenis Kelamin */}
                             <div className="min-h-[76px] ml-2">
-                                <InputLabel value="Jenis Kelamin" />
+                                <InputLabel value="Jenis Kelamin" required />
                                 <div className="mt-2 flex gap-4">
                                     <label className="flex items-center cursor-pointer">
                                         <input

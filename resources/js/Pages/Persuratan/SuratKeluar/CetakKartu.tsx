@@ -310,13 +310,13 @@ export default function CetakKartu({ suratKeluar }: Props) {
                     <div className="sign-box">
                         <p>Dikirim oleh:</p>
                         <div className="sign-line"></div>
-                        <p>Nama / NIP</p>
+                        <p>Nama / Jabatan</p>
                     </div>
                     <div className="sign-box">
                         <p>Tasikmalaya, {formatDateShort(suratKeluar.tanggal_surat)}</p>
                         <p>Petugas Tata Usaha</p>
                         <div className="sign-line"></div>
-                        <p>Nama / NIP</p>
+                        <p>Nama / Jabatan</p>
                     </div>
                 </div>
             </div>

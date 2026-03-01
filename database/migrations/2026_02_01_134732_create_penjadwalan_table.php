@@ -15,10 +15,11 @@ return new class extends Migration
             // Primary Key - ULID
             $table->ulid('id')->primary();
 
-            // Foreign Key ke surat_masuk
+            // Foreign Key ke surat_masuk (nullable untuk jadwal custom)
             $table->foreignUlid('surat_masuk_id')
+                ->nullable()
                 ->constrained('surat_masuks')
-                ->cascadeOnDelete();
+                ->nullOnDelete();
 
             // Informasi Jadwal
             $table->date('tanggal_agenda');
@@ -32,9 +33,10 @@ return new class extends Migration
             $table->string('kode_wilayah', 20)->nullable()->comment('Format: xx.xx.xx.xxxx untuk dalam daerah');
             $table->string('tempat', 500)->comment('Detail lokasi atau nama tempat');
 
-            // Status & Disposisi
             $table->enum('status', ['definitif', 'tentatif'])->default('tentatif');
             $table->enum('status_disposisi', ['menunggu', 'bupati', 'wakil_bupati', 'diwakilkan'])->default('menunggu');
+            $table->enum('sumber_jadwal', ['self', 'disposisi', 'sekretaris'])->default('disposisi')
+                ->comment('Asal jadwal: self=dijadwalkan sendiri, disposisi=didisposisikan, sekretaris=oleh sekretaris');
             $table->string('dihadiri_oleh')->nullable();
             $table->foreignId('dihadiri_oleh_user_id')
                 ->nullable()

@@ -29,6 +29,60 @@ final class PenjadwalanService
     }
 
     /**
+     * Buat jadwal custom (tanpa surat masuk), langsung berstatus definitif.
+     *
+     * @param array $validated Data dari CustomJadwalRequest
+     * @param User $requestUser User yang membuat jadwal
+     * @return array{success: bool, message: string, has_conflict: bool, conflict_count: int}
+     */
+    public function createCustomSchedule(array $validated, User $requestUser): array
+    {
+        return DB::transaction(function () use ($validated, $requestUser) {
+            $payload = [
+                'surat_masuk_id' => null,
+                'nama_kegiatan' => $validated['nama_kegiatan'],
+                'tanggal_agenda' => $validated['tanggal_agenda'],
+                'waktu_mulai' => $validated['waktu_mulai'],
+                'waktu_selesai' => $validated['waktu_selesai'] ?? null,
+                'sampai_selesai' => (bool) ($validated['sampai_selesai'] ?? false),
+                'lokasi_type' => $validated['lokasi_type'],
+                'kode_wilayah' => $this->buildKodeWilayah($validated),
+                'tempat' => $validated['tempat'],
+                'keterangan' => $validated['keterangan'] ?? null,
+                'dihadiri_oleh' => $requestUser->name,
+                'dihadiri_oleh_user_id' => $requestUser->id,
+                'status' => Penjadwalan::STATUS_DEFINITIF,
+                'status_disposisi' => $this->resolveDisposisiStatus($requestUser),
+                'sumber_jadwal' => Penjadwalan::SUMBER_SELF,
+                'created_by' => $requestUser->id,
+                'updated_by' => $requestUser->id,
+            ];
+
+            // Deteksi konflik jadwal pada tanggal yang sama
+            $conflictCount = $this->detectConflictCount(
+                $requestUser->id,
+                $validated['tanggal_agenda'],
+                $validated['waktu_mulai'],
+                $validated['waktu_selesai'] ?? null,
+                (bool) ($validated['sampai_selesai'] ?? false),
+            );
+
+            $penjadwalan = Penjadwalan::create($payload);
+
+            event(new JadwalCreated($penjadwalan->id, $requestUser->id, $requestUser->id));
+
+            CacheHelper::flush(['penjadwalan']);
+
+            return [
+                'success' => true,
+                'message' => 'Jadwal custom berhasil dibuat dan langsung definitif.',
+                'has_conflict' => $conflictCount > 0,
+                'conflict_count' => $conflictCount,
+            ];
+        });
+    }
+
+    /**
      * Update an existing schedule.
      *
      * @param SuratMasuk $surat Must have tujuans and penjadwalan loaded
@@ -49,6 +103,7 @@ final class PenjadwalanService
             ];
         }
 
+        // Preserve sumber_jadwal from existing record unless explicitly changing
         return $this->saveSchedule($surat, $validated, $requestUser, $existingJadwal);
     }
 
@@ -188,6 +243,7 @@ final class PenjadwalanService
             'tempat',
             'status',
             'status_disposisi',
+            'sumber_jadwal',
             'dihadiri_oleh',
             'dihadiri_oleh_user_id',
             'keterangan',
@@ -314,6 +370,7 @@ final class PenjadwalanService
             'dihadiri_oleh_user_id' => $attendee->id,
             'status' => Penjadwalan::STATUS_TENTATIF,
             'status_disposisi' => $this->resolveDisposisiStatus($attendee),
+            'sumber_jadwal' => $validated['sumber_jadwal'] ?? Penjadwalan::SUMBER_DISPOSISI,
         ];
     }
 

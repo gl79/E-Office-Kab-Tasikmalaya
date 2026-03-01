@@ -56,6 +56,8 @@ class PenjadwalanHistoryController extends Controller
             'status_formal_label' => $penjadwalan->status_formal_label,
             'status_disposisi' => $penjadwalan->status_disposisi,
             'status_disposisi_label' => $penjadwalan->status_disposisi_label,
+            'sumber_jadwal' => $penjadwalan->sumber_jadwal,
+            'sumber_jadwal_label' => $penjadwalan->sumber_jadwal_label,
             'dihadiri_oleh' => $penjadwalan->dihadiri_oleh,
             'surat_masuk' => $penjadwalan->suratMasuk ? [
                 'id' => $penjadwalan->suratMasuk->id,
@@ -110,6 +112,7 @@ class PenjadwalanHistoryController extends Controller
             'lokasi_type' => 'Tipe Lokasi',
             'status' => 'Status Jadwal',
             'status_disposisi' => 'Status Disposisi',
+            'sumber_jadwal' => 'Sumber Jadwal',
             'dihadiri_oleh' => 'Dihadiri Oleh',
             'keterangan' => 'Keterangan',
         ];
@@ -145,6 +148,7 @@ class PenjadwalanHistoryController extends Controller
             'sampai_selesai' => (bool) $value ? 'Ya' : 'Tidak',
             'status' => Penjadwalan::STATUS_OPTIONS[$value] ?? (string) $value,
             'status_disposisi' => Penjadwalan::DISPOSISI_OPTIONS[$value] ?? (string) $value,
+            'sumber_jadwal' => Penjadwalan::SUMBER_JADWAL_OPTIONS[$value] ?? (string) $value,
             'lokasi_type' => Penjadwalan::LOKASI_TYPE_OPTIONS[$value] ?? (string) $value,
             default => (string) $value,
         };

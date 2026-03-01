@@ -28,7 +28,7 @@ export interface SuratMasuk {
     jenis_surat?: { id: string; nama: string } | null;
     indeks_berkas?: { kode: string; nama: string } | null;
     kode_klasifikasi?: { kode: string; nama: string } | null;
-    staff_pengolah?: { name: string; nip: string } | null;
+    staff_pengolah?: { name: string; jabatan: string } | null;
     created_by?: { name: string } | null;
     created_at: string;
     penerimaan_status?: string;

@@ -97,6 +97,9 @@ class PenjadwalanResource extends JsonResource
             'status_formal_label' => $this->status_formal_label,
             'status_disposisi' => $this->status_disposisi,
             'status_disposisi_label' => $this->status_disposisi_label,
+            'sumber_jadwal' => $this->sumber_jadwal,
+            'sumber_jadwal_label' => $this->sumber_jadwal_label,
+            'status_kehadiran_column_label' => $this->status_kehadiran_column_label,
             'dihadiri_oleh' => $this->dihadiri_oleh,
             'dihadiri_oleh_user_id' => $this->dihadiri_oleh_user_id,
 

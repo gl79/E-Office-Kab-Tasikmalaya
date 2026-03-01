@@ -28,7 +28,7 @@ class SuratMasukController extends Controller
      */
     private function getUserOptions(): \Illuminate\Database\Eloquent\Collection
     {
-        return User::select(['id', 'name', 'nip', 'jabatan'])
+        return User::select(['id', 'name', 'jabatan'])
             ->where('role', '!=', User::ROLE_SUPERADMIN)
             ->orderByRaw("CASE
                 WHEN name = 'Tata Usaha' THEN 1
@@ -48,7 +48,7 @@ class SuratMasukController extends Controller
      */
     private function getStaffPengolahOptions(): \Illuminate\Database\Eloquent\Collection
     {
-        return User::select(['id', 'name', 'nip', 'jabatan'])
+        return User::select(['id', 'name', 'jabatan'])
             ->where('role', '!=', User::ROLE_SUPERADMIN)
             ->orderBy('name', 'asc')
             ->get();

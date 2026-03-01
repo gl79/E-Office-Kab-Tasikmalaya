@@ -58,7 +58,5 @@ class UnitKerjaSeeder extends Seeder
         foreach ($units as $unit) {
             UnitKerja::firstOrCreate(['singkatan' => $unit['singkatan']], $unit);
         }
-
-        $this->command->info('10 data Unit Kerja berhasil dibuat.');
     }
 }

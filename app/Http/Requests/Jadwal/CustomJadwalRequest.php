@@ -5,7 +5,7 @@ namespace App\Http\Requests\Jadwal;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
-class BupatiJadwalRequest extends FormRequest
+class CustomJadwalRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,7 +23,7 @@ class BupatiJadwalRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'dihadiri_oleh_user_id' => ['required', 'integer', 'exists:users,id'],
+            'nama_kegiatan' => ['required', 'string', 'max:500'],
             'tanggal_agenda' => ['required', 'date'],
             'waktu_mulai' => ['required', 'date_format:H:i'],
             'waktu_selesai' => ['nullable', 'date_format:H:i', 'after:waktu_mulai'],
@@ -35,15 +35,13 @@ class BupatiJadwalRequest extends FormRequest
             'desa_id' => ['nullable', 'string', 'max:4'],
             'tempat' => ['required', 'string', 'max:500'],
             'keterangan' => ['nullable', 'string'],
-            'sumber_jadwal' => ['nullable', 'string', 'in:self,disposisi,sekretaris'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'dihadiri_oleh_user_id.required' => 'Field Dihadiri Oleh wajib dipilih.',
-            'dihadiri_oleh_user_id.exists' => 'Pengguna yang dipilih tidak ditemukan.',
+            'nama_kegiatan.required' => 'Nama kegiatan wajib diisi.',
             'tanggal_agenda.required' => 'Tanggal wajib diisi.',
             'waktu_mulai.required' => 'Waktu mulai wajib diisi.',
             'waktu_selesai.after' => 'Waktu selesai harus setelah waktu mulai.',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Penjadwalan;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Jadwal\BupatiJadwalRequest;
+use App\Http\Requests\Jadwal\CustomJadwalRequest;
 use App\Models\SuratMasuk;
 use App\Models\User;
 use App\Models\WilayahKecamatan;
@@ -83,6 +84,7 @@ class BupatiJadwalController extends Controller
                 'default_dihadiri_oleh_user_id' => $existing?->dihadiri_oleh_user_id
                     ?? $bupati?->id
                     ?? $user?->id,
+                'schedule_type' => $request->query('type', $existing?->sumber_jadwal ?? 'disposisi'),
             ],
             'users' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember(
                 'bupati_jadwal_user_options',
@@ -152,6 +154,64 @@ class BupatiJadwalController extends Controller
         $result = $this->service->updateSchedule($surat, $request->validated(), $user);
 
         return $this->buildRedirectResponse($result);
+    }
+
+    /**
+     * Show the form for creating a custom schedule (not tied to surat masuk).
+     */
+    public function customForm(Request $request): Response
+    {
+        $user = $request->user();
+        abort_unless($user->isBupati() || $user->isSuperAdmin(), 403);
+
+        return Inertia::render('Penjadwalan/Bupati/CustomForm', [
+            'provinsiOptions' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember(
+                'bupati_jadwal_provinsi_options',
+                60,
+                fn() => WilayahProvinsi::query()
+                    ->select(['kode', 'nama'])
+                    ->orderBy('nama')
+                    ->get()
+            )),
+            'kecamatanTasikmalayaOptions' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember(
+                'bupati_jadwal_kecamatan_tasik',
+                60,
+                fn() => WilayahKecamatan::query()
+                    ->select(['kode', 'nama'])
+                    ->where('provinsi_kode', self::TASIKMALAYA_PROVINSI_KODE)
+                    ->where('kabupaten_kode', self::TASIKMALAYA_KABUPATEN_KODE)
+                    ->orderBy('nama')
+                    ->get()
+            )),
+        ]);
+    }
+
+    /**
+     * Store a custom schedule (langsung definitif, tanpa surat masuk).
+     */
+    public function storeCustom(CustomJadwalRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user->isBupati() || $user->isSuperAdmin(), 403);
+
+        $result = $this->service->createCustomSchedule($request->validated(), $request->user());
+
+        if (!$result['success']) {
+            return redirect()->back()->with('error', $result['message']);
+        }
+
+        $response = redirect()
+            ->route('penjadwalan.definitif.index')
+            ->with('success', $result['message']);
+
+        if ($result['has_conflict']) {
+            $response->with(
+                'warning',
+                "Jadwal tersimpan dengan peringatan: ditemukan {$result['conflict_count']} konflik waktu pada tanggal yang sama."
+            );
+        }
+
+        return $response;
     }
 
     /**

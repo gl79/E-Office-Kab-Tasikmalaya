@@ -36,7 +36,6 @@ interface UnitKerja {
 interface User {
     id: string;
     name: string;
-    nip: string | null;
     jabatan: string | null;
 }
 

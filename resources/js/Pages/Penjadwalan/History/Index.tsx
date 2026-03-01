@@ -34,6 +34,8 @@ interface PenjadwalanHistoryItem {
     status_formal_label: string;
     status_disposisi: string;
     status_disposisi_label: string;
+    sumber_jadwal: string | null;
+    sumber_jadwal_label: string | null;
     dihadiri_oleh: string | null;
     surat_masuk: {
         id: string;
@@ -259,6 +261,9 @@ export default function Index({
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-sm">
                                             <div className="font-medium text-text-primary">{item.created_by?.name ?? '-'}</div>
+                                            {item.sumber_jadwal_label && item.sumber_jadwal !== 'disposisi' && (
+                                                <div className="text-[10px] text-text-muted italic mt-0.5">{item.sumber_jadwal_label}</div>
+                                            )}
                                             <div className="text-xs text-text-secondary mt-0.5">Dibuat: {item.created_at_formatted ?? '-'}</div>
                                             <div className="text-xs text-text-secondary">Diubah: {item.updated_at_formatted ?? '-'}</div>
                                         </td>
@@ -372,7 +377,11 @@ export default function Index({
                                     </div>
                                 </div>
                                 <div>
-                                    <p className="text-text-secondary">Status Disposisi</p>
+                                    <p className="text-text-secondary">
+                                        {selectedItem.sumber_jadwal && selectedItem.sumber_jadwal !== 'disposisi'
+                                            ? 'Status Kehadiran'
+                                            : 'Status Disposisi'}
+                                    </p>
                                     <div className="mt-1">
                                         <Badge variant={getDisposisiVariant(selectedItem.status_disposisi)}>
                                             {getDisposisiLabel(selectedItem.status_disposisi)}
@@ -383,6 +392,9 @@ export default function Index({
                                     <p className="text-text-secondary">Penjadwal</p>
                                     <p className="font-medium text-text-primary mt-0.5">
                                         {selectedItem.created_by?.name ?? '-'}
+                                        {selectedItem.sumber_jadwal_label && (
+                                            <span className="text-text-muted font-normal text-xs ml-2">({selectedItem.sumber_jadwal_label})</span>
+                                        )}
                                         {selectedItem.created_at_formatted && (
                                             <span className="text-text-secondary font-normal ml-2">pada {selectedItem.created_at_formatted}</span>
                                         )}

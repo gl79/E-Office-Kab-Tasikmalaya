@@ -33,7 +33,7 @@ export interface SuratMasukBase {
     jenis_surat?: { id: string; nama: string } | null;
     indeks_berkas?: { kode: string; nama: string } | null;
     kode_klasifikasi?: { kode: string; nama: string } | null;
-    staff_pengolah?: { name: string; nip: string } | null;
+    staff_pengolah?: { name: string; jabatan: string } | null;
     created_by?: { name: string } | null;
     created_at?: string;
 }
@@ -64,6 +64,9 @@ export interface AgendaBase {
     status_formal_label?: string;
     status_disposisi: string;
     status_disposisi_label: string;
+    sumber_jadwal?: SumberJadwal;
+    sumber_jadwal_label?: string;
+    status_kehadiran_column_label?: string;
 }
 
 export interface Agenda extends AgendaBase {
@@ -105,6 +108,7 @@ export interface CalendarEvent {
 
 export type DisposisiStatus = 'menunggu' | 'bupati' | 'wakil_bupati' | 'diwakilkan';
 export type PenjadwalanStatus = 'tentatif' | 'definitif';
+export type SumberJadwal = 'self' | 'disposisi' | 'sekretaris';
 export type PenjadwalanStatusFormal =
     | 'terjadwal'
     | 'dalam_proses'

@@ -488,124 +488,124 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                         <span>Terima</span>
                                                     </button>
                                                 )}
-                                            <Dropdown
-                                                align="right"
-                                                width="48"
-                                                trigger={
-                                                    <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
-                                                        <MoreVertical className="h-5 w-5" />
-                                                    </button>
-                                                }
-                                            >
-                                                <div className="py-1">
+                                                <Dropdown
+                                                    align="right"
+                                                    width="48"
+                                                    trigger={
+                                                        <button className="p-1 hover:bg-surface-hover rounded-full transition-colors text-text-secondary">
+                                                            <MoreVertical className="h-5 w-5" />
+                                                        </button>
+                                                    }
+                                                >
+                                                    <div className="py-1">
 
 
-                                                    {!['user', 'pimpinan'].includes(auth.user.role) && (
-                                                        <Dropdown.Link
-                                                            href={route('persuratan.surat-masuk.edit', item.id)}
-                                                            className="flex items-center gap-2"
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                            <span>Edit</span>
-                                                        </Dropdown.Link>
-                                                    )}
+                                                        {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                                            <Dropdown.Link
+                                                                href={route('persuratan.surat-masuk.edit', item.id)}
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                                <span>Edit</span>
+                                                            </Dropdown.Link>
+                                                        )}
 
-                                                    <Dropdown.Link
-                                                        as="button"
-                                                        onClick={() => {
-                                                            setDetailSurat(item);
-                                                            setDetailModalOpen(true);
-                                                        }}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                        <span>Lihat Detail</span>
-                                                    </Dropdown.Link>
-
-                                                    {item.file_path && (
                                                         <Dropdown.Link
                                                             as="button"
-                                                            onClick={() => window.open(route('persuratan.surat-masuk.preview', item.id), '_blank')}
+                                                            onClick={() => {
+                                                                setDetailSurat(item);
+                                                                setDetailModalOpen(true);
+                                                            }}
                                                             className="flex items-center gap-2"
                                                         >
                                                             <Eye className="h-4 w-4" />
-                                                            <span>Lihat File</span>
+                                                            <span>Lihat Detail</span>
                                                         </Dropdown.Link>
-                                                    )}
 
-                                                    <Dropdown.Link
-                                                        as="button"
-                                                        onClick={() => window.open(route('persuratan.surat-masuk.cetak-kartu', item.id), '_blank')}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <Printer className="h-4 w-4" />
-                                                        <span>Cetak Kartu</span>
-                                                    </Dropdown.Link>
-
-                                                    <Dropdown.Link
-                                                        as="button"
-                                                        onClick={() => window.open(route('persuratan.surat-masuk.cetak-isi', item.id), '_blank')}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <FileText className="h-4 w-4" />
-                                                        <span>Cetak Kartu Hanya Isi</span>
-                                                    </Dropdown.Link>
-
-                                                    {(item.can_disposisi || item.can_disposisi_disabled) && (
-                                                        item.can_disposisi ? (
+                                                        {item.file_path && (
                                                             <Dropdown.Link
                                                                 as="button"
-                                                                onClick={() => handleCetakDisposisi(item)}
+                                                                onClick={() => window.open(route('persuratan.surat-masuk.preview', item.id), '_blank')}
                                                                 className="flex items-center gap-2"
                                                             >
-                                                                <FileText className="h-4 w-4" />
-                                                                <span>Cetak Disposisi</span>
+                                                                <Eye className="h-4 w-4" />
+                                                                <span>Lihat File</span>
                                                             </Dropdown.Link>
-                                                        ) : (
-                                                            <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
-                                                                <FileText className="h-4 w-4" />
-                                                                <span>Cetak Disposisi (Terima surat dulu)</span>
-                                                            </div>
-                                                        )
-                                                    )}
+                                                        )}
 
-                                                    {(item.can_schedule || item.can_view_schedule || item.can_disposisi_disabled) && (
-                                                        (item.can_schedule || item.can_view_schedule) ? (
-                                                            <Dropdown.Link
-                                                                href={route('bupati.jadwal.form', item.id)}
-                                                                className="flex items-center gap-2"
-                                                            >
-                                                                <CalendarPlus className="h-4 w-4" />
-                                                                <span>{item.can_schedule ? 'Disposisi' : 'Lihat Disposisi'}</span>
-                                                            </Dropdown.Link>
-                                                        ) : (
-                                                            <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
-                                                                <CalendarPlus className="h-4 w-4" />
-                                                                <span>Disposisi (Terima surat dulu)</span>
-                                                            </div>
-                                                        )
-                                                    )}
+                                                        <Dropdown.Link
+                                                            as="button"
+                                                            onClick={() => window.open(route('persuratan.surat-masuk.cetak-kartu', item.id), '_blank')}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <Printer className="h-4 w-4" />
+                                                            <span>Cetak Kartu</span>
+                                                        </Dropdown.Link>
+
+                                                        <Dropdown.Link
+                                                            as="button"
+                                                            onClick={() => window.open(route('persuratan.surat-masuk.cetak-isi', item.id), '_blank')}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <FileText className="h-4 w-4" />
+                                                            <span>Cetak Kartu Hanya Isi</span>
+                                                        </Dropdown.Link>
+
+                                                        {(item.can_disposisi || item.can_disposisi_disabled) && (
+                                                            item.can_disposisi ? (
+                                                                <Dropdown.Link
+                                                                    as="button"
+                                                                    onClick={() => handleCetakDisposisi(item)}
+                                                                    className="flex items-center gap-2"
+                                                                >
+                                                                    <FileText className="h-4 w-4" />
+                                                                    <span>Cetak Disposisi</span>
+                                                                </Dropdown.Link>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
+                                                                    <FileText className="h-4 w-4" />
+                                                                    <span>Cetak Disposisi (Terima surat dulu)</span>
+                                                                </div>
+                                                            )
+                                                        )}
+
+                                                        {(item.can_schedule || item.can_view_schedule || item.can_disposisi_disabled) && (
+                                                            (item.can_schedule || item.can_view_schedule) ? (
+                                                                <Dropdown.Link
+                                                                    href={route('bupati.jadwal.form', item.id)}
+                                                                    className="flex items-center gap-2"
+                                                                >
+                                                                    <CalendarPlus className="h-4 w-4" />
+                                                                    <span>{item.can_schedule ? 'Disposisi' : 'Lihat Disposisi'}</span>
+                                                                </Dropdown.Link>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
+                                                                    <CalendarPlus className="h-4 w-4" />
+                                                                    <span>Disposisi (Terima surat dulu)</span>
+                                                                </div>
+                                                            )
+                                                        )}
 
 
 
-                                                    {!['user', 'pimpinan'].includes(auth.user.role) && (
-                                                        <>
-                                                            <div className="border-t border-border-default my-1"></div>
-                                                            <Dropdown.Link
-                                                                as="button"
-                                                                onClick={() => {
-                                                                    setSelectedSurat(item);
-                                                                    setDeleteModalOpen(true);
-                                                                }}
-                                                                className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                                <span>Hapus</span>
-                                                            </Dropdown.Link>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </Dropdown>
+                                                        {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                                            <>
+                                                                <div className="border-t border-border-default my-1"></div>
+                                                                <Dropdown.Link
+                                                                    as="button"
+                                                                    onClick={() => {
+                                                                        setSelectedSurat(item);
+                                                                        setDeleteModalOpen(true);
+                                                                    }}
+                                                                    className="flex items-center gap-2 text-danger hover:bg-danger-light focus:bg-danger-light"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                    <span>Hapus</span>
+                                                                </Dropdown.Link>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </Dropdown>
                                             </div>
                                         </td>
                                     </tr>

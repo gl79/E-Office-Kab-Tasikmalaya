@@ -15,7 +15,6 @@ interface IndeksSurat {
 interface User {
     id: number;
     name: string;
-    nip: string | null;
     jabatan: string | null;
 }
 
@@ -285,7 +284,7 @@ export default function CetakKartu({ suratMasuk }: Props) {
                             <th>Staff Pengolah</th>
                             <td>
                                 {suratMasuk.staff_pengolah
-                                    ? `${suratMasuk.staff_pengolah.name}${suratMasuk.staff_pengolah.nip ? ` (${suratMasuk.staff_pengolah.nip})` : ''}`
+                                    ? `${suratMasuk.staff_pengolah.name}${suratMasuk.staff_pengolah.jabatan ? ` - ${suratMasuk.staff_pengolah.jabatan}` : ''}`
                                     : '-'}
                             </td>
                         </tr>
@@ -305,13 +304,13 @@ export default function CetakKartu({ suratMasuk }: Props) {
                     <div className="sign-box">
                         <p>Diterima oleh:</p>
                         <div className="sign-line"></div>
-                        <p>Nama / NIP</p>
+                        <p>Nama / Jabatan</p>
                     </div>
                     <div className="sign-box">
                         <p>Tasikmalaya, {formatDateShort(suratMasuk.tanggal_diterima)}</p>
                         <p>Petugas Tata Usaha</p>
                         <div className="sign-line"></div>
-                        <p>Nama / NIP</p>
+                        <p>Nama / Jabatan</p>
                     </div>
                 </div>
             </div>

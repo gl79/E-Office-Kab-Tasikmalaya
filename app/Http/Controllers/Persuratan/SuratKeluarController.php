@@ -61,7 +61,7 @@ class SuratKeluarController extends Controller
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 1)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'jenisSuratOptions' => JenisSurat::orderBy('nama')->get(['id', 'nama']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
-            'users' => User::select(['id', 'name', 'nip', 'jabatan'])
+            'users' => User::select(['id', 'name', 'jabatan'])
                 ->where('role', '!=', User::ROLE_SUPERADMIN)
                 ->orderBy('name')
                 ->get(),
@@ -112,7 +112,7 @@ class SuratKeluarController extends Controller
             'indeksBerkasOptions' => IndeksSurat::where('level', 1)->orderBy('kode')->get(['id', 'kode', 'nama']),
             'indeksKlasifikasiOptions' => IndeksSurat::where('level', '>', 1)->orderBy('kode')->get(['id', 'kode', 'nama', 'level', 'parent_id']),
             'unitKerja' => UnitKerja::orderBy('nama')->get(['id', 'nama', 'singkatan']),
-            'users' => User::select(['id', 'name', 'nip', 'jabatan'])
+            'users' => User::select(['id', 'name', 'jabatan'])
                 ->where('role', '!=', User::ROLE_SUPERADMIN)
                 ->orderBy('name')
                 ->get(),
@@ -245,5 +245,4 @@ class SuratKeluarController extends Controller
             'Surat_Keluar_' . $suratKeluar->nomor_surat . '.' . pathinfo($suratKeluar->file_path, PATHINFO_EXTENSION)
         );
     }
-
 }

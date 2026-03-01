@@ -1,7 +1,6 @@
 interface UserLike {
     id?: string | number;
     name: string;
-    nip?: string | null;
     jabatan?: string | null;
 }
 
@@ -12,7 +11,7 @@ export function buildInternalUserOptions(users: UserLike[]) {
         .filter((user) => !EXCLUDED_USER_NAMES.has(user.name))
         .map((user) => ({
             value: String(user.id ?? ''),
-            label: user.nip ? `${user.name} (${user.nip})` : user.name,
+            label: user.jabatan ? `${user.name} - ${user.jabatan}` : user.name,
         }));
 }
 

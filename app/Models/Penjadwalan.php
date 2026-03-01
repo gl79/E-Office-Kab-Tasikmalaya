@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $tempat
  * @property string|null $status
  * @property string|null $status_disposisi
+ * @property string|null $sumber_jadwal
  * @property string|null $dihadiri_oleh
  * @property int|null $dihadiri_oleh_user_id
  * @property string|null $keterangan
@@ -41,6 +42,8 @@ use Illuminate\Support\Carbon;
  * @property-read string $status_formal
  * @property-read string $status_formal_label
  * @property-read string $status_disposisi_label
+ * @property-read string $sumber_jadwal_label
+ * @property-read string $status_kehadiran_column_label
  * @property-read string $lokasi_type_label
  * @property-read string $hari
  */
@@ -62,6 +65,7 @@ class Penjadwalan extends Model
         'tempat',
         'status',
         'status_disposisi',
+        'sumber_jadwal',
         'dihadiri_oleh',
         'dihadiri_oleh_user_id',
         'keterangan',
@@ -122,6 +126,19 @@ class Penjadwalan extends Model
         self::DISPOSISI_BUPATI => 'Bupati',
         self::DISPOSISI_WAKIL_BUPATI => 'Wakil Bupati',
         self::DISPOSISI_DIWAKILKAN => 'Diwakilkan',
+    ];
+
+    /**
+     * Konstanta untuk sumber jadwal
+     */
+    public const SUMBER_SELF = 'self';
+    public const SUMBER_DISPOSISI = 'disposisi';
+    public const SUMBER_SEKRETARIS = 'sekretaris';
+
+    public const SUMBER_JADWAL_OPTIONS = [
+        self::SUMBER_SELF => 'Dijadwalkan Sendiri',
+        self::SUMBER_DISPOSISI => 'Didisposisikan',
+        self::SUMBER_SEKRETARIS => 'Dijadwalkan oleh Sekretaris',
     ];
 
     /**
@@ -342,6 +359,27 @@ class Penjadwalan extends Model
     public function getStatusDisposisiLabelAttribute(): string
     {
         return self::DISPOSISI_OPTIONS[$this->status_disposisi] ?? $this->status_disposisi;
+    }
+
+    /**
+     * Get label sumber jadwal
+     */
+    public function getSumberJadwalLabelAttribute(): string
+    {
+        return self::SUMBER_JADWAL_OPTIONS[$this->sumber_jadwal] ?? $this->sumber_jadwal ?? '-';
+    }
+
+    /**
+     * Get label kolom status kehadiran yang kontekstual.
+     * Untuk self/sekretaris: "Status Kehadiran"
+     * Untuk disposisi: "Status Disposisi"
+     */
+    public function getStatusKehadiranColumnLabelAttribute(): string
+    {
+        return match ($this->sumber_jadwal) {
+            self::SUMBER_SELF, self::SUMBER_SEKRETARIS => 'Status Kehadiran',
+            default => 'Status Disposisi',
+        };
     }
 
     /**

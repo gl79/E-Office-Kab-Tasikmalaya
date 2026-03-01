@@ -89,6 +89,7 @@ export const menuItems: MenuItem[] = [
                 label: 'Surat Keluar',
                 href: '/persuratan/surat-keluar',
                 icon: 'send',
+                roles: ['superadmin', 'tu'],
             },
         ],
     },

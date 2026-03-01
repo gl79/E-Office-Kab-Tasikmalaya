@@ -37,11 +37,15 @@ const TentatifEditModal: React.FC<Props> = ({
 }) => {
     const { data, setData, processing, errors, submitHandler } = form;
 
+    const statusLabel = selectedAgenda?.sumber_jadwal && selectedAgenda.sumber_jadwal !== 'disposisi'
+        ? 'Status Kehadiran'
+        : 'Status Disposisi';
+
     return (
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Edit Kehadiran"
+            title={selectedAgenda?.sumber_jadwal === 'disposisi' ? 'Edit Kehadiran / Disposisi' : 'Edit Kehadiran'}
             size="md"
         >
             {selectedAgenda && (
@@ -73,9 +77,9 @@ const TentatifEditModal: React.FC<Props> = ({
 
                     {/* Form Fields */}
                     <div className="space-y-4">
-                        {/* Status Disposisi */}
+                        {/* Status Disposisi / Kehadiran */}
                         <div>
-                            <InputLabel htmlFor="status_disposisi" value="Status Disposisi *" />
+                            <InputLabel htmlFor="status_disposisi" value={`${statusLabel} *`} />
                             <FormSelect
                                 id="status_disposisi"
                                 options={disposisiSelectOptions}

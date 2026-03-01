@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { formatDateShort } from '@/utils';
 import { ArrowLeft, Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button } from '@/Components/ui';
@@ -11,52 +10,12 @@ import {
     FormTextarea,
     InputError,
     InputLabel,
+    TextInput,
     TimeSelect,
 } from '@/Components/form';
 import { useDeferredDataWithLoading } from '@/hooks';
 import wilayahService from '@/services/wilayahService';
 import type { PageProps } from '@/types';
-
-interface SuratDetail {
-    id: string;
-    nomor_agenda: string;
-    nomor_surat: string;
-    tanggal_surat: string;
-    tanggal_surat_formatted: string;
-    asal_surat: string;
-    jenis_surat?: string | null;
-    sifat?: string | null;
-    lampiran?: number | null;
-    perihal: string;
-    isi_ringkas?: string | null;
-    tujuan_list: string[];
-    tanggal_diterima?: string | null;
-    indeks_berkas?: string | null;
-    kode_klasifikasi?: string | null;
-    staff_pengolah?: string | null;
-    tanggal_diteruskan?: string | null;
-}
-
-interface JadwalExisting {
-    id: string;
-    tanggal_agenda: string;
-    waktu_mulai: string;
-    waktu_selesai: string | null;
-    sampai_selesai: boolean;
-    lokasi_type: 'dalam_daerah' | 'luar_daerah';
-    kode_wilayah: string | null;
-    tempat: string;
-    keterangan: string | null;
-    dihadiri_oleh_user_id: number | null;
-}
-
-interface UserOption {
-    id: number;
-    name: string;
-    nip: string | null;
-    jabatan: string | null;
-    role: string;
-}
 
 interface WilayahOption {
     kode: string;
@@ -64,15 +23,6 @@ interface WilayahOption {
 }
 
 interface Props extends PageProps {
-    surat: SuratDetail;
-    existingJadwal?: JadwalExisting | null;
-    context: {
-        can_schedule_by_bupati: boolean;
-        can_finalize_delegated: boolean;
-        default_dihadiri_oleh_user_id: number;
-        schedule_type: 'self' | 'disposisi';
-    };
-    users?: UserOption[];
     provinsiOptions?: WilayahOption[];
     kecamatanTasikmalayaOptions?: WilayahOption[];
 }
@@ -80,70 +30,37 @@ interface Props extends PageProps {
 const TASIKMALAYA_PROVINSI = '32';
 const TASIKMALAYA_KABUPATEN = '06';
 
-export default function FormPage({
-    surat,
-    existingJadwal = null,
-    context,
-    users: initialUsers,
+export default function CustomForm({
     provinsiOptions: initialProvinsi,
     kecamatanTasikmalayaOptions: initialKecamatanTasik,
 }: Props) {
     const { auth } = usePage<PageProps>().props;
 
-    const isSelfSchedule = context.schedule_type === 'self';
-    const pageTitle = isSelfSchedule ? 'Penjadwalan' : 'Disposisi';
-    const formTitle = isSelfSchedule ? 'Form Penjadwalan' : 'Form Disposisi';
-
-    const { data: users, isLoading: usersLoading } = useDeferredDataWithLoading<UserOption[]>(
-        `bupati_jadwal_users_${auth.user.id}_${surat.id}`,
-        initialUsers
-    );
     const { data: provinsiOptions, isLoading: provinsiLoading } = useDeferredDataWithLoading<WilayahOption[]>(
-        `bupati_jadwal_provinsi_${auth.user.id}_${surat.id}`,
+        `bupati_jadwal_custom_provinsi_${auth.user.id}`,
         initialProvinsi
     );
     const { data: kecamatanTasikOptions, isLoading: kecamatanLoading } = useDeferredDataWithLoading<WilayahOption[]>(
-        `bupati_jadwal_kecamatan_${auth.user.id}_${surat.id}`,
+        `bupati_jadwal_custom_kecamatan_${auth.user.id}`,
         initialKecamatanTasik
     );
 
     const [kabupatenOptions, setKabupatenOptions] = useState<WilayahOption[]>([]);
     const [desaOptions, setDesaOptions] = useState<WilayahOption[]>([]);
 
-    const parsedKodeWilayah = useMemo(() => {
-        if (!existingJadwal?.kode_wilayah) {
-            return null;
-        }
-
-        const parts = existingJadwal.kode_wilayah.split('.');
-        if (parts.length !== 4) {
-            return null;
-        }
-
-        return {
-            provinsi: parts[0],
-            kabupaten: parts[1],
-            kecamatan: parts[2],
-            desa: parts[3],
-        };
-    }, [existingJadwal?.kode_wilayah]);
-
     const form = useForm({
-        dihadiri_oleh_user_id: String(
-            existingJadwal?.dihadiri_oleh_user_id ?? context.default_dihadiri_oleh_user_id
-        ),
-        tanggal_agenda: existingJadwal?.tanggal_agenda ?? '',
-        waktu_mulai: existingJadwal?.waktu_mulai ?? '',
-        waktu_selesai: existingJadwal?.waktu_selesai ?? '',
-        sampai_selesai: existingJadwal?.sampai_selesai ?? false,
-        lokasi_type: existingJadwal?.lokasi_type ?? 'dalam_daerah',
-        provinsi_id: parsedKodeWilayah?.provinsi ?? '',
-        kabupaten_id: parsedKodeWilayah?.kabupaten ?? '',
-        kecamatan_id: parsedKodeWilayah?.kecamatan ?? '',
-        desa_id: parsedKodeWilayah?.desa ?? '',
-        tempat: existingJadwal?.tempat ?? '',
-        keterangan: existingJadwal?.keterangan ?? '',
-        sumber_jadwal: isSelfSchedule ? 'self' : 'disposisi',
+        nama_kegiatan: '',
+        tanggal_agenda: '',
+        waktu_mulai: '',
+        waktu_selesai: '',
+        sampai_selesai: false,
+        lokasi_type: 'dalam_daerah' as 'dalam_daerah' | 'luar_daerah',
+        provinsi_id: '',
+        kabupaten_id: '',
+        kecamatan_id: '',
+        desa_id: '',
+        tempat: '',
+        keterangan: '',
     });
 
     useEffect(() => {
@@ -182,14 +99,8 @@ export default function FormPage({
             .catch(() => setDesaOptions([]));
     }, [form.data.lokasi_type, form.data.kecamatan_id]);
 
-    const loadingDeferred = usersLoading || provinsiLoading || kecamatanLoading;
+    const loadingDeferred = provinsiLoading || kecamatanLoading;
 
-    const userSelectOptions = (users ?? []).map((item) => ({
-        value: String(item.id),
-        label: item.jabatan
-            ? `${item.name} - ${item.jabatan}${item.nip ? ` (${item.nip})` : ''}`
-            : `${item.name}${item.nip ? ` (${item.nip})` : ''}`,
-    }));
     const provinsiSelectOptions = (provinsiOptions ?? []).map((item) => ({
         value: item.kode,
         label: item.nama,
@@ -209,129 +120,23 @@ export default function FormPage({
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (existingJadwal) {
-            form.put(route('bupati.jadwal.update', surat.id));
-            return;
-        }
-
-        form.post(route('bupati.jadwal.store', surat.id));
+        form.post(route('bupati.jadwal.custom.store'));
     };
 
     return (
         <>
-            <Head title={pageTitle} />
+            <Head title="Jadwal Custom" />
 
             <div className="mb-6">
                 <div>
-                    <h1 className="text-2xl font-semibold text-text-primary">{formTitle}</h1>
+                    <h1 className="text-2xl font-semibold text-text-primary">Jadwal Custom</h1>
                     <p className="mt-1 text-sm text-text-secondary">
-                        {isSelfSchedule
-                            ? 'Jadwalkan kegiatan untuk dihadiri oleh Bupati.'
-                            : context.can_finalize_delegated
-                                ? 'Finalisasi jadwal surat yang didelegasikan kepada Anda.'
-                                : 'Disposisi surat masuk untuk tindak lanjut pimpinan.'}
+                        Buat jadwal kegiatan yang tidak berasal dari surat masuk. Jadwal akan langsung berstatus definitif.
                     </p>
                 </div>
             </div>
 
             <div className="rounded-lg border border-border-default bg-surface p-4 sm:p-6">
-                <div className="mb-6 rounded-lg border border-border-default bg-surface-hover p-4">
-                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-primary">Ringkasan Surat</h3>
-
-                    {/* Identitas Surat */}
-                    <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Identitas Surat</p>
-                    <div className="grid grid-cols-1 gap-2 text-sm text-text-primary sm:grid-cols-2 mb-4">
-                        <div>
-                            <span className="text-text-secondary">Tanggal Surat:</span>
-                            <span className="ml-2 font-medium">{surat.tanggal_surat_formatted}</span>
-                        </div>
-                        <div>
-                            <span className="text-text-secondary">Asal Surat:</span>
-                            <span className="ml-2 font-medium">{surat.asal_surat}</span>
-                        </div>
-                        <div>
-                            <span className="text-text-secondary">Nomor Surat:</span>
-                            <span className="ml-2 font-medium">{surat.nomor_surat}</span>
-                        </div>
-                        {surat.jenis_surat ? (
-                            <div>
-                                <span className="text-text-secondary">Jenis Surat:</span>
-                                <span className="ml-2 font-medium">{surat.jenis_surat}</span>
-                            </div>
-                        ) : <div />}
-                        {surat.sifat ? (
-                            <div>
-                                <span className="text-text-secondary">Sifat Surat:</span>
-                                <span className="ml-2 font-medium capitalize">{surat.sifat.replace('_', ' ')}</span>
-                            </div>
-                        ) : <div />}
-                        <div>
-                            <span className="text-text-secondary">Lampiran:</span>
-                            <span className="ml-2 font-medium">{surat.lampiran ?? 0} berkas</span>
-                        </div>
-                        <div>
-                            <span className="text-text-secondary">Perihal:</span>
-                            <span className="ml-2 font-medium">{surat.perihal}</span>
-                        </div>
-                        {surat.tujuan_list.length > 0 ? (
-                            <div>
-                                <span className="text-text-secondary">Kepada:</span>
-                                <span className="ml-2 font-medium">{surat.tujuan_list.join(', ')}</span>
-                            </div>
-                        ) : <div />}
-                        {surat.isi_ringkas && (
-                            <div className="sm:col-span-2">
-                                <span className="text-text-secondary">Isi Ringkas:</span>
-                                <span className="ml-2 font-medium">{surat.isi_ringkas}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Identitas Agenda */}
-                    <div className="border-t border-border-default pt-3">
-                        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Identitas Agenda</p>
-                        <div className="grid grid-cols-1 gap-2 text-sm text-text-primary sm:grid-cols-2">
-                            {surat.tanggal_diterima && (
-                                <div>
-                                    <span className="text-text-secondary">Tanggal Diterima:</span>
-                                    <span className="ml-2 font-medium">{formatDateShort(surat.tanggal_diterima)}</span>
-                                </div>
-                            )}
-                            <div>
-                                <span className="text-text-secondary">No Agenda:</span>
-                                <span className="ml-2 font-medium">
-                                    {surat.nomor_agenda.split('/')[1] || surat.nomor_agenda}
-                                </span>
-                            </div>
-                            {surat.indeks_berkas && (
-                                <div>
-                                    <span className="text-text-secondary">Indeks Surat:</span>
-                                    <span className="ml-2 font-medium">{surat.indeks_berkas}</span>
-                                </div>
-                            )}
-                            {surat.kode_klasifikasi && (
-                                <div>
-                                    <span className="text-text-secondary">Kode Klasifikasi:</span>
-                                    <span className="ml-2 font-medium">{surat.kode_klasifikasi}</span>
-                                </div>
-                            )}
-                            {surat.staff_pengolah && (
-                                <div>
-                                    <span className="text-text-secondary">Staff Pengolah:</span>
-                                    <span className="ml-2 font-medium">{surat.staff_pengolah}</span>
-                                </div>
-                            )}
-                            {surat.tanggal_diteruskan && (
-                                <div>
-                                    <span className="text-text-secondary">Tanggal Diteruskan:</span>
-                                    <span className="ml-2 font-medium">{formatDateShort(surat.tanggal_diteruskan)}</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
                 {loadingDeferred ? (
                     <div className="space-y-3">
                         <div className="h-10 animate-pulse rounded-md bg-surface-hover" />
@@ -343,25 +148,21 @@ export default function FormPage({
                     </div>
                 ) : (
                     <form onSubmit={submit} className="space-y-5">
-                        <div className="grid grid-cols-1 md:grid-cols-2">
-                            <div>
-                                <InputLabel htmlFor="dihadiri_oleh_user_id" value="Dihadiri Oleh" required />
-                                <FormSelect
-                                    id="dihadiri_oleh_user_id"
-                                    options={userSelectOptions}
-                                    value={form.data.dihadiri_oleh_user_id}
-                                    onChange={(e) => form.setData('dihadiri_oleh_user_id', e.target.value)}
-                                    className="mt-1 w-full"
-                                    placeholder="Pilih pengguna"
-                                    disabled={isSelfSchedule}
-                                />
-                                {isSelfSchedule && (
-                                    <p className="mt-1 text-xs text-text-muted">Otomatis diisi sebagai penjadwal sendiri.</p>
-                                )}
-                                <InputError message={form.errors.dihadiri_oleh_user_id} className="mt-1" />
-                            </div>
+                        {/* Nama Kegiatan */}
+                        <div>
+                            <InputLabel htmlFor="nama_kegiatan" value="Nama Kegiatan" required />
+                            <TextInput
+                                id="nama_kegiatan"
+                                type="text"
+                                value={form.data.nama_kegiatan}
+                                onChange={(e) => form.setData('nama_kegiatan', e.target.value)}
+                                className="mt-1 w-full"
+                                placeholder="Contoh: Undangan Pernikahan, Rapat Koordinasi, dll."
+                            />
+                            <InputError message={form.errors.nama_kegiatan} className="mt-1" />
                         </div>
 
+                        {/* Tanggal & Waktu */}
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div>
                                 <InputLabel htmlFor="tanggal_agenda" value="Tanggal" required />
@@ -413,6 +214,7 @@ export default function FormPage({
                             </label>
                         </div>
 
+                        {/* Lokasi */}
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div>
                                 <InputLabel htmlFor="lokasi_type" value="Tipe Lokasi" required />
@@ -526,7 +328,7 @@ export default function FormPage({
                         </div>
 
                         <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-                            <Link href={route('persuratan.surat-masuk.index')}>
+                            <Link href={route('penjadwalan.definitif.index')}>
                                 <Button type="button" variant="secondary" className="w-full sm:w-auto">
                                     <ArrowLeft className="mr-2 h-4 w-4" />
                                     Kembali
@@ -534,9 +336,7 @@ export default function FormPage({
                             </Link>
                             <Button type="submit" disabled={form.processing}>
                                 <Save className="mr-2 h-4 w-4" />
-                                {form.processing ? 'Menyimpan...' : existingJadwal
-                                    ? (isSelfSchedule ? 'Perbarui Jadwal' : 'Perbarui Disposisi')
-                                    : (isSelfSchedule ? 'Simpan Jadwal' : 'Simpan Disposisi')}
+                                {form.processing ? 'Menyimpan...' : 'Simpan Jadwal'}
                             </Button>
                         </div>
                     </form>
@@ -546,4 +346,4 @@ export default function FormPage({
     );
 }
 
-FormPage.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
+CustomForm.layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;

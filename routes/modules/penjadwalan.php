@@ -28,6 +28,8 @@ Route::middleware('auth')->prefix('penjadwalan')->name('penjadwalan.')->group(fu
 });
 
 Route::middleware('auth')->prefix('bupati')->name('bupati.')->group(function () {
+    Route::get('/jadwal/custom', [BupatiJadwalController::class, 'customForm'])->name('jadwal.custom');
+    Route::post('/jadwal/custom', [BupatiJadwalController::class, 'storeCustom'])->name('jadwal.custom.store');
     Route::get('/jadwal/{surat}', [BupatiJadwalController::class, 'form'])->name('jadwal.form');
     Route::post('/jadwal/{surat}', [BupatiJadwalController::class, 'store'])->name('jadwal.store');
     Route::put('/jadwal/{surat}', [BupatiJadwalController::class, 'update'])->name('jadwal.update');

@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage, Link } from '@inertiajs/react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { EventInput } from '@fullcalendar/core';
-import { Trash2, ExternalLink, Filter, RotateCcw } from 'lucide-react';
+import { Trash2, ExternalLink, Filter, RotateCcw, CalendarPlus } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Badge, ConfirmDialog } from '@/Components/ui';
 import { TextInput, FormSelect } from '@/Components/form';
@@ -204,6 +204,14 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                             </div>
 
                             <div className="flex gap-2 w-full md:w-auto">
+                                {(auth.user?.role === 'pimpinan' || auth.user?.role === 'superadmin') && (
+                                    <Link href={route('bupati.jadwal.custom')}>
+                                        <Button className="flex items-center gap-2 whitespace-nowrap">
+                                            <CalendarPlus className="h-4 w-4" />
+                                            Jadwal Custom
+                                        </Button>
+                                    </Link>
+                                )}
                                 <Button
                                     variant="secondary"
                                     onClick={() => setShowFilters(!showFilters)}

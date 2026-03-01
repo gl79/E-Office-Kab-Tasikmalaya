@@ -31,7 +31,6 @@ interface IndeksSurat {
 interface User {
     id: number;
     name: string;
-    nip: string | null;
     jabatan: string | null;
 }
 
@@ -114,9 +113,7 @@ export default function Create({
 
     const asalSuratOptions = asalSuratUsers.map((user) => ({
         value: user.jabatan ? `${user.name} - ${user.jabatan}` : user.name,
-        label: user.jabatan
-            ? (user.nip ? `${user.name} - ${user.jabatan} (${user.nip})` : `${user.name} - ${user.jabatan}`)
-            : (user.nip ? `${user.name} (${user.nip})` : user.name),
+        label: user.jabatan ? `${user.name} - ${user.jabatan}` : user.name,
     }));
 
     const jenisSuratSelectOptions = jenisSuratOptions.map((item) => ({

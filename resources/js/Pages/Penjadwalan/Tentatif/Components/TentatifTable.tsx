@@ -50,7 +50,7 @@ const TentatifTable: React.FC<Props> = ({
                         <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Asal Surat</th>
                         <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Perihal</th>
                         <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Sifat</th>
-                        <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Status Disposisi</th>
+                        <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Status</th>
                         <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-56">Aksi</th>
                     </tr>
                 </thead>
@@ -95,6 +95,11 @@ const TentatifTable: React.FC<Props> = ({
                                     {item.dihadiri_oleh && (
                                         <div className="text-xs text-text-secondary">
                                             {item.dihadiri_oleh}
+                                        </div>
+                                    )}
+                                    {item.sumber_jadwal && item.sumber_jadwal !== 'disposisi' && (
+                                        <div className="text-[10px] text-text-muted italic">
+                                            {item.sumber_jadwal_label}
                                         </div>
                                     )}
                                 </div>
