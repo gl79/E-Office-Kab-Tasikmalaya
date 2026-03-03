@@ -72,8 +72,8 @@ class DashboardController extends Controller
             ],
         ];
 
-        // Penjadwalan stats — visible to admin, TU, and pimpinan
-        if ($isAdmin || $user->isPimpinan()) {
+        // Penjadwalan stats — visible to admin, TU, and pejabat
+        if ($isAdmin || $user->isPejabat()) {
             $stats['penjadwalan'] = [
                 'jadwal_tentatif' => Penjadwalan::tentatif()->count(),
                 'jadwal_definitif' => Penjadwalan::definitif()->count(),

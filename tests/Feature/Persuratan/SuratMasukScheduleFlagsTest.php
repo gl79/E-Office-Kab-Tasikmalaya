@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Persuratan;
 
+use App\Models\Jabatan;
 use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
@@ -18,7 +19,7 @@ class SuratMasukScheduleFlagsTest extends TestCase
 
     public function test_bupati_melihat_can_schedule_true_untuk_surat_target_yang_belum_dijadwalkan(): void
     {
-        $bupati = $this->makeUser(User::ROLE_PIMPINAN, 'Bupati', 'Bupati');
+        $bupati = $this->makeUser(User::ROLE_PEJABAT, 'Bupati', 'Bupati');
         $creator = $this->makeUser(User::ROLE_TU, 'TU', 'Tata Usaha');
 
         $surat = $this->makeSuratMasuk($creator);
@@ -46,7 +47,7 @@ class SuratMasukScheduleFlagsTest extends TestCase
 
     public function test_bupati_melihat_can_view_schedule_true_setelah_surat_sudah_dijadwalkan(): void
     {
-        $bupati = $this->makeUser(User::ROLE_PIMPINAN, 'Bupati', 'Bupati');
+        $bupati = $this->makeUser(User::ROLE_PEJABAT, 'Bupati', 'Bupati');
         $delegasi = $this->makeUser(User::ROLE_USER, 'Delegasi', 'Staf');
         $creator = $this->makeUser(User::ROLE_TU, 'TU', 'Tata Usaha');
 
@@ -170,7 +171,7 @@ class SuratMasukScheduleFlagsTest extends TestCase
 
     public function test_form_jadwal_bupati_menggunakan_nomor_agenda_dari_tujuan_user(): void
     {
-        $bupati = $this->makeUser(User::ROLE_PIMPINAN, 'Bupati', 'Bupati');
+        $bupati = $this->makeUser(User::ROLE_PEJABAT, 'Bupati', 'Bupati');
         $creator = $this->makeUser(User::ROLE_TU, 'TU', 'Tata Usaha');
 
         $surat = $this->makeSuratMasuk($creator, [
@@ -203,7 +204,7 @@ class SuratMasukScheduleFlagsTest extends TestCase
 
     public function test_bupati_melihat_can_view_schedule_true_pada_jadwal_definitif(): void
     {
-        $bupati = $this->makeUser(User::ROLE_PIMPINAN, 'Bupati', 'Bupati');
+        $bupati = $this->makeUser(User::ROLE_PEJABAT, 'Bupati', 'Bupati');
         $creator = $this->makeUser(User::ROLE_TU, 'TU', 'Tata Usaha');
 
         $surat = $this->makeSuratMasuk($creator);
@@ -288,13 +289,22 @@ class SuratMasukScheduleFlagsTest extends TestCase
         return $response->json('props.suratMasuk') ?? [];
     }
 
-    private function makeUser(string $role, string $name, ?string $jabatan = null): User
+    private function makeUser(string $role, string $name, ?string $jabatanNama = null): User
     {
+        $jabatanId = null;
+        if ($jabatanNama) {
+            $jabatan = Jabatan::firstOrCreate(
+                ['nama' => $jabatanNama],
+                ['level' => 1, 'can_dispose' => true, 'is_system' => true]
+            );
+            $jabatanId = $jabatan->id;
+        }
+
         return User::factory()->create([
             'name' => $name,
             'username' => Str::slug($name) . '_' . Str::lower(Str::random(4)),
             'role' => $role,
-            'jabatan' => $jabatan,
+            'jabatan_id' => $jabatanId,
             'password_changed_at' => now(),
         ]);
     }

@@ -23,19 +23,7 @@ interface Props extends PageProps {
 const CACHE_TTL_MS = 60_000;
 const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     const { auth } = usePage<PageProps>().props;
-    const normalizedName = (auth.user?.name || '').trim().toLowerCase();
-    const normalizedJabatan = (auth.user?.jabatan || '').trim().toLowerCase();
-
-    const isBupatiUser = auth.user?.role === 'pimpinan'
-        && (normalizedJabatan === 'bupati' || normalizedName === 'bupati');
-
-    const isWakilBupatiUser = auth.user?.role === 'pimpinan'
-        && (normalizedJabatan === 'wakil bupati' || normalizedName === 'wakil bupati');
-
-    const isSekdaUser = normalizedJabatan === 'sekda' || normalizedName === 'sekda'
-        || normalizedJabatan.includes('sekretaris daerah') || normalizedName.includes('sekretaris daerah');
-
-    const isEligiblePimpinanOrSekda = isBupatiUser || isWakilBupatiUser || isSekdaUser;
+    const isEligiblePejabat = auth.user?.can_dispose === true;
 
     // Use custom hook for deferred data with mutable state
     const { data: suratMasuk, updateAndCache, isLoading, hasCached } = useDeferredDataMutable<SuratMasuk[]>(
@@ -64,11 +52,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     // Detail Modal State
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailSurat, setDetailSurat] = useState<SuratMasuk | null>(null);
-    // Determine penanda tangan index automatically based on current user jabatan
+    // Determine penanda tangan index automatically based on current user jabatan level
     const getPenandaTanganIndex = () => {
-        if (isBupatiUser) return 0; // Bupati
-        if (isWakilBupatiUser) return 1; // Wakil Bupati
-        return 2; // Sekretaris Daerah
+        const level = auth.user?.jabatan_level;
+        if (level === 1) return 0; // Bupati
+        if (level === 2) return 1; // Wakil Bupati
+        return 2; // Sekretaris Daerah / lainnya
     };
 
     // Filter data client-side
@@ -184,10 +173,10 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                         penerimaan_status: 'Diterima',
                         penerimaan_diterima_at: new Date().toISOString(),
                         can_accept: false,
-                        can_disposisi: isEligiblePimpinanOrSekda,
+                        can_disposisi: isEligiblePejabat,
                         can_disposisi_disabled: false,
-                        can_schedule: isEligiblePimpinanOrSekda && !hasSchedule,
-                        can_view_schedule: isEligiblePimpinanOrSekda && hasSchedule,
+                        can_schedule: isEligiblePejabat && !hasSchedule,
+                        can_view_schedule: isEligiblePejabat && hasSchedule,
                     };
                 }));
             },
@@ -296,7 +285,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <Download className="h-4 w-4 mr-2" />
                                     Export
                                 </Button>
-                                {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                {!['user', 'pejabat'].includes(auth.user.role) && (
                                     <Link href={route('persuratan.surat-masuk.create')}>
                                         <Button>
                                             <Plus className="h-4 w-4 mr-2" />
@@ -500,7 +489,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                     <div className="py-1">
 
 
-                                                        {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                                        {!['user', 'pejabat'].includes(auth.user.role) && (
                                                             <Dropdown.Link
                                                                 href={route('persuratan.surat-masuk.edit', item.id)}
                                                                 className="flex items-center gap-2"
@@ -616,7 +605,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
 
 
 
-                                                        {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                                        {!['user', 'pejabat'].includes(auth.user.role) && (
                                                             <>
                                                                 <div className="border-t border-border-default my-1"></div>
                                                                 <Dropdown.Link

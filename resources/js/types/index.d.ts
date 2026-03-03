@@ -1,15 +1,28 @@
+export interface Jabatan {
+    id: number;
+    nama: string;
+    level: number;
+    can_dispose: boolean;
+    is_system: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface User {
     id: number;
     name: string;
     username: string;
     email: string | null;
-    role: 'superadmin' | 'pimpinan' | 'tu' | 'user';
+    role: 'superadmin' | 'pejabat' | 'tu' | 'user';
     role_label?: string;
     email_verified_at?: string;
     foto?: string | null;
     foto_url?: string | null;
     nip?: string | null;
-    jabatan?: string | null;
+    jabatan_id?: number | null;
+    jabatan_nama?: string | null;
+    jabatan_level?: number | null;
+    can_dispose?: boolean;
     jenis_kelamin?: 'L' | 'P' | null;
     module_access?: string[] | null;
     can_manage_users?: boolean;
@@ -20,6 +33,7 @@ export interface User {
         role: string;
         role_label?: string;
     } | null;
+    jabatan_relasi?: Jabatan | null;
     password_changed_at?: string | null;
     created_at?: string;
     deleted_at?: string | null;

@@ -54,7 +54,7 @@ interface UserOption {
     id: number;
     name: string;
     nip: string | null;
-    jabatan: string | null;
+    jabatan_nama: string | null;
     role: string;
 }
 
@@ -186,8 +186,8 @@ export default function FormPage({
 
     const userSelectOptions = (users ?? []).map((item) => ({
         value: String(item.id),
-        label: item.jabatan
-            ? `${item.name} - ${item.jabatan}${item.nip ? ` (${item.nip})` : ''}`
+        label: item.jabatan_nama
+            ? `${item.name} - ${item.jabatan_nama}${item.nip ? ` (${item.nip})` : ''}`
             : `${item.name}${item.nip ? ` (${item.nip})` : ''}`,
     }));
     const provinsiSelectOptions = (provinsiOptions ?? []).map((item) => ({
@@ -230,7 +230,7 @@ export default function FormPage({
                             ? 'Jadwalkan kegiatan untuk dihadiri oleh Bupati.'
                             : context.can_finalize_delegated
                                 ? 'Finalisasi jadwal surat yang didelegasikan kepada Anda.'
-                                : 'Disposisi surat masuk untuk tindak lanjut pimpinan.'}
+                                : 'Disposisi surat masuk untuk tindak lanjut pejabat.'}
                     </p>
                 </div>
             </div>

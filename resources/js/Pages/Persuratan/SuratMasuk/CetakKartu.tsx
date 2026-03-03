@@ -15,7 +15,7 @@ interface IndeksSurat {
 interface User {
     id: number;
     name: string;
-    jabatan: string | null;
+    jabatan_nama: string | null;
 }
 
 interface SuratMasuk {
@@ -284,7 +284,7 @@ export default function CetakKartu({ suratMasuk }: Props) {
                             <th>Staff Pengolah</th>
                             <td>
                                 {suratMasuk.staff_pengolah
-                                    ? `${suratMasuk.staff_pengolah.name}${suratMasuk.staff_pengolah.jabatan ? ` - ${suratMasuk.staff_pengolah.jabatan}` : ''}`
+                                    ? `${suratMasuk.staff_pengolah.name}${suratMasuk.staff_pengolah.jabatan_nama ? ` - ${suratMasuk.staff_pengolah.jabatan_nama}` : ''}`
                                     : '-'}
                             </td>
                         </tr>

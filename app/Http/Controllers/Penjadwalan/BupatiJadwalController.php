@@ -90,15 +90,13 @@ class BupatiJadwalController extends Controller
                 'bupati_jadwal_user_options',
                 60,
                 fn() => User::query()
-                    ->select(['id', 'name', 'nip', 'jabatan', 'role'])
-                    ->where('role', '!=', User::ROLE_SUPERADMIN)
-                    ->orderByRaw("CASE
-                        WHEN jabatan = 'Bupati' THEN 1
-                        WHEN jabatan = 'Wakil Bupati' THEN 2
-                        ELSE 3
-                    END")
-                    ->orderBy('name')
-                    ->get()
+                    ->select(['users.id', 'users.name', 'users.nip', 'users.jabatan_id', 'users.role'])
+                    ->with('jabatanRelasi:id,nama,level')
+                    ->where('users.role', '!=', User::ROLE_SUPERADMIN)
+                    ->leftJoin('jabatans', 'users.jabatan_id', '=', 'jabatans.id')
+                    ->orderBy('jabatans.level')
+                    ->orderBy('users.name')
+                    ->get(['users.id', 'users.name', 'users.nip', 'users.jabatan_id', 'users.role'])
             )),
             'provinsiOptions' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember(
                 'bupati_jadwal_provinsi_options',
@@ -162,7 +160,7 @@ class BupatiJadwalController extends Controller
     public function customForm(Request $request): Response
     {
         $user = $request->user();
-        abort_unless($user->isBupati() || $user->isSuperAdmin(), 403);
+        abort_unless($user->canDispose() || $user->isSuperAdmin(), 403);
 
         return Inertia::render('Penjadwalan/Bupati/CustomForm', [
             'provinsiOptions' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember(
@@ -192,7 +190,7 @@ class BupatiJadwalController extends Controller
     public function storeCustom(CustomJadwalRequest $request): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->isBupati() || $user->isSuperAdmin(), 403);
+        abort_unless($user->canDispose() || $user->isSuperAdmin(), 403);
 
         $result = $this->service->createCustomSchedule($request->validated(), $request->user());
 

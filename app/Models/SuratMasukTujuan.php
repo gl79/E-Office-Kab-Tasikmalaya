@@ -31,15 +31,15 @@ class SuratMasukTujuan extends Model
     public const STATUS_DITERIMA = 'Diterima';
 
     /**
-     * Resolve status penerimaan awal berdasarkan jenis user tujuan.
+     * Resolve status penerimaan awal berdasarkan jabatan user tujuan.
+     * User dengan jabatan can_dispose harus menunggu penerimaan (terima surat dulu).
+     * User lainnya langsung diterima.
      *
      * @return array{status_penerimaan: string, diterima_at: Carbon|null}
      */
     public static function initialPenerimaanState(?User $tujuanUser): array
     {
-        $shouldWaitAcceptance = $tujuanUser
-            && $tujuanUser->isPimpinan()
-            && ($tujuanUser->isBupati() || $tujuanUser->isWakilBupati());
+        $shouldWaitAcceptance = $tujuanUser && $tujuanUser->canDispose();
 
         return [
             'status_penerimaan' => $shouldWaitAcceptance

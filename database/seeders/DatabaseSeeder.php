@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             IndeksSuratSeeder::class,
             JenisSuratSeeder::class,
             SifatSuratSeeder::class,
+            JabatanSeeder::class,
             UserSeeder::class,
             WilayahProvinsiSeeder::class,
             WilayahKabupatenSeeder::class,

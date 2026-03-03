@@ -54,7 +54,7 @@ interface SuratKeluarData {
 interface User {
     id: string;
     name: string;
-    jabatan: string | null;
+    jabatan_nama: string | null;
 }
 
 interface Props extends PageProps {

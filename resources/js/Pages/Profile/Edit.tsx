@@ -11,7 +11,7 @@ interface ProfileUser {
     username: string;
     email: string | null;
     nip: string | null;
-    jabatan: string | null;
+    jabatan_nama: string | null;
     jenis_kelamin: 'L' | 'P' | null;
     foto_url: string | null;
 }
@@ -24,7 +24,7 @@ interface Props {
 const ROLE_LABELS: Record<string, string> = {
     superadmin: 'Super Admin',
     tu: 'Tata Usaha',
-    pimpinan: 'Pimpinan',
+    pejabat: 'Pejabat',
     user: 'User',
 };
 
@@ -43,7 +43,6 @@ const Edit = ({ user }: Props) => {
         email: user.email || '',
         nip: user.nip || '',
         jenis_kelamin: user.jenis_kelamin || '',
-        jabatan: user.jabatan || '',
         foto: null as File | null,
         current_password: '',
         new_password: '',
@@ -124,8 +123,8 @@ const Edit = ({ user }: Props) => {
                         {/* Informasi singkat user */}
                         <div className="min-w-0">
                             <h2 className="text-xl font-bold text-white truncate">{data.name || user.name}</h2>
-                            {user.jabatan && (
-                                <p className="text-white/80 text-sm mt-0.5">{user.jabatan}</p>
+                            {user.jabatan_nama && (
+                                <p className="text-white/80 text-sm mt-0.5">{user.jabatan_nama}</p>
                             )}
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                                 <span className="inline-flex items-center rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium text-white">
@@ -242,7 +241,7 @@ const Edit = ({ user }: Props) => {
                                     {errors.nip && <p className="mt-1 text-xs text-danger">{errors.nip}</p>}
                                 </div>
 
-                                {/* Jabatan */}
+                                {/* Jabatan (Read-Only) */}
                                 <div>
                                     <label htmlFor="jabatan" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-text-secondary">
                                         Jabatan
@@ -251,13 +250,13 @@ const Edit = ({ user }: Props) => {
                                         <Briefcase className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
                                         <input
                                             id="jabatan"
-                                            className={fieldWithIcon}
-                                            value={data.jabatan}
-                                            onChange={(e) => setData('jabatan', e.target.value)}
-                                            placeholder="Jabatan atau posisi"
+                                            className={`${fieldWithIcon} bg-surface-hover cursor-not-allowed`}
+                                            value={user.jabatan_nama || '-'}
+                                            disabled
+                                            readOnly
                                         />
                                     </div>
-                                    {errors.jabatan && <p className="mt-1 text-xs text-danger">{errors.jabatan}</p>}
+                                    <p className="mt-1 text-xs text-text-muted">Jabatan dikelola oleh administrator via Data Master Pengguna.</p>
                                 </div>
 
                                 {/* Jenis Kelamin */}

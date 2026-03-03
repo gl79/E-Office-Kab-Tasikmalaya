@@ -19,13 +19,13 @@ class SuratMasukPolicy
 
     /**
      * Determine whether the user can view the model.
-     * Superadmin, TU, and Pimpinan can view all.
+     * Superadmin, TU, and Pejabat can view all.
      * Regular users can only view letters where they are recipients.
      */
     public function view(User $user, SuratMasuk $suratMasuk): bool
     {
-        // Superadmin, TU, and Pimpinan can view all letters
-        if ($user->isSuperAdmin() || $user->isTU() || $user->isPimpinan()) {
+        // Superadmin, TU, and Pejabat can view all letters
+        if ($user->isSuperAdmin() || $user->isTU() || $user->isPejabat()) {
             return true;
         }
 
@@ -81,7 +81,8 @@ class SuratMasukPolicy
     }
 
     /**
-     * Determine whether Bupati / Wakil Bupati / Sekda can open scheduling form for this surat.
+     * Determine whether user can open scheduling form for this surat.
+     * User harus punya jabatan yang can_dispose dan surat sudah diterima.
      */
     public function scheduleByBupati(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -89,7 +90,7 @@ class SuratMasukPolicy
             return true;
         }
 
-        if (!$user->isBupati() && !$user->isWakilBupati() && !$user->isSekda()) {
+        if (!$user->canDispose()) {
             return false;
         }
 
@@ -108,7 +109,8 @@ class SuratMasukPolicy
     }
 
     /**
-     * Determine whether recipient can accept surat (Bupati / Wakil / Sekda only).
+     * Determine whether recipient can accept surat.
+     * Hanya pejabat dengan jabatan can_dispose yang perlu menerima surat.
      */
     public function acceptByRecipient(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -116,9 +118,7 @@ class SuratMasukPolicy
             return true;
         }
 
-        $isEligible = $user->isBupati() || $user->isWakilBupati() || $user->isSekda();
-
-        if (!$isEligible) {
+        if (!$user->canDispose()) {
             return false;
         }
 
@@ -128,7 +128,8 @@ class SuratMasukPolicy
     }
 
     /**
-     * Determine whether Bupati / Wakil Bupati / Sekda can create disposisi.
+     * Determine whether user can create disposisi.
+     * User harus punya jabatan yang can_dispose dan surat sudah diterima.
      */
     public function disposisiByBupati(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -136,7 +137,7 @@ class SuratMasukPolicy
             return true;
         }
 
-        if (!$user->isBupati() && !$user->isWakilBupati() && !$user->isSekda()) {
+        if (!$user->canDispose()) {
             return false;
         }
 

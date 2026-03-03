@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Penjadwalan;
 
+use App\Models\Jabatan;
 use App\Models\JadwalHistory;
 use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
@@ -18,7 +19,7 @@ class PenjadwalanFeatureTest extends TestCase
 
     public function test_form_jadwal_memakai_data_surat_terpilih_dan_nomor_agenda_tujuan_pengguna(): void
     {
-        $bupati = $this->makeUser(User::ROLE_PIMPINAN, 'Bupati', 'Bupati');
+        $bupati = $this->makeUser(User::ROLE_PEJABAT, 'Bupati', 'Bupati');
         $creator = $this->makeUser(User::ROLE_TU);
 
         $surat = $this->makeSuratMasuk($creator, 'SM/0001/' . date('Y'));
@@ -34,20 +35,21 @@ class PenjadwalanFeatureTest extends TestCase
         $this->actingAs($bupati)
             ->get(route('bupati.jadwal.form', $surat->id))
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->component('Penjadwalan/Bupati/Form')
-                ->where('surat.id', $surat->id)
-                ->where('surat.nomor_agenda', 'SM/0099/' . date('Y'))
-                ->where('surat.nomor_surat', $surat->nomor_surat)
-                ->where('surat.asal_surat', $surat->asal_surat)
-                ->where('surat.perihal', $surat->perihal)
-                ->where('surat.isi_ringkas', $surat->isi_ringkas)
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('Penjadwalan/Bupati/Form')
+                    ->where('surat.id', $surat->id)
+                    ->where('surat.nomor_agenda', 'SM/0099/' . date('Y'))
+                    ->where('surat.nomor_surat', $surat->nomor_surat)
+                    ->where('surat.asal_surat', $surat->asal_surat)
+                    ->where('surat.perihal', $surat->perihal)
+                    ->where('surat.isi_ringkas', $surat->isi_ringkas)
             );
     }
 
     public function test_surat_hanya_bisa_dijadwalkan_satu_kali(): void
     {
-        $bupati = $this->makeUser(User::ROLE_PIMPINAN, 'Bupati', 'Bupati');
+        $bupati = $this->makeUser(User::ROLE_PEJABAT, 'Bupati', 'Bupati');
         $attendee = $this->makeUser(User::ROLE_USER, 'Delegasi');
         $creator = $this->makeUser(User::ROLE_TU);
 
@@ -200,12 +202,21 @@ class PenjadwalanFeatureTest extends TestCase
         ]);
     }
 
-    private function makeUser(string $role, ?string $name = null, ?string $jabatan = null): User
+    private function makeUser(string $role, ?string $name = null, ?string $jabatanNama = null): User
     {
+        $jabatanId = null;
+        if ($jabatanNama) {
+            $jabatan = Jabatan::firstOrCreate(
+                ['nama' => $jabatanNama],
+                ['level' => 1, 'can_dispose' => true, 'is_system' => true]
+            );
+            $jabatanId = $jabatan->id;
+        }
+
         return User::factory()->create([
             'name' => $name ?? fake()->name(),
             'role' => $role,
-            'jabatan' => $jabatan,
+            'jabatan_id' => $jabatanId,
             'password_changed_at' => now(),
         ]);
     }

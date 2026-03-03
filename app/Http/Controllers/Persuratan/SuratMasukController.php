@@ -24,23 +24,17 @@ class SuratMasukController extends Controller
     public function __construct(private readonly SuratMasukService $service) {}
 
     /**
-     * Get user options for tujuan select, ordered by priority.
+     * Get user options for tujuan select, ordered by jabatan level.
      */
     private function getUserOptions(): \Illuminate\Database\Eloquent\Collection
     {
-        return User::select(['id', 'name', 'jabatan'])
-            ->where('role', '!=', User::ROLE_SUPERADMIN)
-            ->orderByRaw("CASE
-                WHEN name = 'Tata Usaha' THEN 1
-                WHEN name = 'Bupati' THEN 2
-                WHEN name = 'Wakil Bupati' THEN 3
-                WHEN name = 'Sekda' THEN 4
-                WHEN name = 'Asda 1' THEN 5
-                WHEN name = 'Asda 2' THEN 6
-                WHEN name = 'Asda 3' THEN 7
-                ELSE 8
-            END")
-            ->get();
+        return User::select(['users.id', 'users.name', 'users.jabatan_id'])
+            ->with('jabatanRelasi:id,nama,level')
+            ->where('users.role', '!=', User::ROLE_SUPERADMIN)
+            ->leftJoin('jabatans', 'users.jabatan_id', '=', 'jabatans.id')
+            ->orderBy('jabatans.level')
+            ->orderBy('users.name')
+            ->get(['users.id', 'users.name', 'users.jabatan_id']);
     }
 
     /**
@@ -48,8 +42,9 @@ class SuratMasukController extends Controller
      */
     private function getStaffPengolahOptions(): \Illuminate\Database\Eloquent\Collection
     {
-        return User::select(['id', 'name', 'jabatan'])
-            ->where('role', '!=', User::ROLE_SUPERADMIN)
+        return User::select(['users.id', 'users.name', 'users.jabatan_id'])
+            ->with('jabatanRelasi:id,nama,level')
+            ->where('users.role', '!=', User::ROLE_SUPERADMIN)
             ->orderBy('name', 'asc')
             ->get();
     }
@@ -170,7 +165,7 @@ class SuratMasukController extends Controller
     }
 
     /**
-     * Tandai surat sebagai diterima oleh penerima (Bupati/Wakil Bupati/Sekda).
+     * Tandai surat sebagai diterima oleh penerima.
      */
     public function terima(Request $request, string $id)
     {
@@ -194,7 +189,7 @@ class SuratMasukController extends Controller
         ]);
 
         // Secara otomatis sinkronkan status untuk tujuan TU dari surat ini
-        // agar status TU tidak 'menunggu' setelah Pimpinan/Sekda menerima surat.
+        // agar status TU tidak 'menunggu' setelah Pejabat menerima surat.
         $tuTujuans = $suratMasuk->tujuans->filter(function ($tujuanItem) {
             return $tujuanItem->user && $tujuanItem->user->isTU();
         });
@@ -241,7 +236,7 @@ class SuratMasukController extends Controller
             'tujuans',
             'indeksBerkas',
             'kodeKlasifikasi',
-            'staffPengolah',
+            'staffPengolah.jabatanRelasi',
         ])->findOrFail($id);
 
         $this->authorize('view', $suratMasuk);
@@ -252,18 +247,21 @@ class SuratMasukController extends Controller
     }
 
     /**
-     * Generate PDF for Cetak Lembar Disposisi
+     * Generate PDF for Cetak Lembar Disposisi.
+     * Penanda tangan diambil dari user yang login (bukan hardcoded).
      */
     public function cetakDisposisi(Request $request, string $id)
     {
         $suratMasuk = SuratMasuk::with(['tujuans'])->findOrFail($id);
         $this->authorize('disposisiByBupati', $suratMasuk);
 
-        $request->validate([
-            'penanda_tangan_index' => 'required|integer|min:0|max:2',
-        ]);
+        /** @var User $user */
+        $user = Auth::user();
 
-        $penandaTangan = DisposisiSurat::PENANDA_TANGAN_OPTIONS[$request->penanda_tangan_index];
+        $penandaTangan = [
+            'nama' => $user->name,
+            'jabatan' => $user->jabatan_nama ?? '-',
+        ];
 
         // Record disposisi history
         DisposisiSurat::create([
@@ -323,7 +321,7 @@ class SuratMasukController extends Controller
     }
     public function cetakIsi(string $id)
     {
-        $suratMasuk = SuratMasuk::with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy'])->findOrFail($id);
+        $suratMasuk = SuratMasuk::with(['tujuans', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah.jabatanRelasi', 'createdBy'])->findOrFail($id);
         $this->authorize('view', $suratMasuk);
 
         return Inertia::render('Persuratan/SuratMasuk/CetakIsi', [

@@ -17,7 +17,7 @@ interface UserOption {
     id: number;
     name: string;
     nip: string | null;
-    jabatan: string | null;
+    jabatan_nama: string | null;
 }
 
 interface Props extends PageProps {

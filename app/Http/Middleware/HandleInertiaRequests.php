@@ -44,7 +44,9 @@ class HandleInertiaRequests extends Middleware
                     'role_label' => $user->role_label,
                     'foto_url' => $user->foto_url,
                     'nip' => $user->nip,
-                    'jabatan' => $user->jabatan,
+                    'jabatan_nama' => $user->jabatan_nama,
+                    'jabatan_level' => $user->getJabatanLevel(),
+                    'can_dispose' => $user->canDispose(),
                     'password_changed_at' => $user->password_changed_at,
                 ] : null,
             ],
@@ -68,7 +70,8 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        if (!$user || !$user->isPimpinan() || (!$user->isBupati() && !$user->isWakilBupati())) {
+        // Hanya user dengan jabatan can_dispose yang perlu notifikasi surat menunggu
+        if (!$user || !$user->canDispose()) {
             return [
                 'surat_masuk_menunggu_penerimaan' => 0,
             ];

@@ -5,7 +5,7 @@ const DashboardShimmer = () => {
     const { auth } = usePage<PageProps>().props;
     const user = auth.user;
     const isAdmin = user.role === 'superadmin' || user.role === 'tu';
-    const isPimpinan = user.role === 'pimpinan';
+    const isPimpinan = user.role === 'pejabat';
 
     return (
         <div className="animate-pulse">

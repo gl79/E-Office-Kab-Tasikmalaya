@@ -59,12 +59,12 @@ interface WelcomeBannerProps {
     fotoUrl?: string | null;
     name: string;
     nip?: string | null;
-    jabatan?: string | null;
+    jabatan_nama?: string | null;
     roleLabel: string;
     greeting: string;
 }
 
-const WelcomeBanner = ({ fotoUrl, name, nip, jabatan, roleLabel, greeting }: WelcomeBannerProps) => (
+const WelcomeBanner = ({ fotoUrl, name, nip, jabatan_nama, roleLabel, greeting }: WelcomeBannerProps) => (
     <div className="bg-gradient-to-r from-primary to-primary-dark rounded-xl p-6 text-text-inverse">
         <div className="flex items-center gap-5">
             <img
@@ -85,7 +85,7 @@ const WelcomeBanner = ({ fotoUrl, name, nip, jabatan, roleLabel, greeting }: Wel
                     </div>
                     <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
                         <span className="text-primary-light text-xs">Jabatan</span>
-                        <p className="text-text-inverse font-medium text-sm">{jabatan || '-'}</p>
+                        <p className="text-text-inverse font-medium text-sm">{jabatan_nama || '-'}</p>
                     </div>
                     <div className="bg-text-inverse/10 rounded-lg px-3 py-2">
                         <span className="text-primary-light text-xs">Role</span>
@@ -117,7 +117,7 @@ const Dashboard = () => {
     // Role labels for display
     const roleLabels: Record<string, string> = {
         superadmin: 'Super Admin',
-        pimpinan: 'Pimpinan',
+        pejabat: 'Pejabat',
         tu: 'Tata Usaha',
         user: 'User',
     };
@@ -148,7 +148,7 @@ const Dashboard = () => {
                         fotoUrl={user.foto_url}
                         name={user.name}
                         nip={user.nip}
-                        jabatan={user.jabatan}
+                        jabatan_nama={user.jabatan_nama}
                         roleLabel={roleLabels[user.role] || user.role}
                         greeting={getGreeting()}
                     />
@@ -186,8 +186,8 @@ const Dashboard = () => {
     const getQuickCards = () => {
         const cards: Array<{ title: string; description: string; value?: number; icon: LucideIcon; color: string; bg: string; href?: string }> = [];
 
-        // Pimpinan: persuratan (read-only) + penjadwalan
-        if (user.role === 'pimpinan') {
+        // Pejabat: persuratan (read-only) + penjadwalan
+        if (user.role === 'pejabat') {
             cards.push(
                 { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
                 { title: 'Surat Keluar', description: 'Surat keluar Anda', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
@@ -240,7 +240,7 @@ const Dashboard = () => {
                     fotoUrl={user.foto_url}
                     name={user.name}
                     nip={user.nip}
-                    jabatan={user.jabatan}
+                    jabatan_nama={user.jabatan_nama}
                     roleLabel={roleLabels[user.role] || user.role}
                     greeting={getGreeting()}
                 />

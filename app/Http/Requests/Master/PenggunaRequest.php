@@ -28,7 +28,7 @@ class PenggunaRequest extends FormRequest
         $currentUser = Auth::user();
 
         $allowedRoles = $currentUser->isTU()
-            ? array_diff(User::ROLES, [User::ROLE_SUPERADMIN, User::ROLE_PIMPINAN])
+            ? array_diff(User::ROLES, [User::ROLE_SUPERADMIN, User::ROLE_PEJABAT])
             : User::ROLES;
 
         $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
@@ -59,10 +59,27 @@ class PenggunaRequest extends FormRequest
             'role' => ['required', Rule::in($allowedRoles)],
             'nip' => ['nullable', 'string', 'max:30'],
             'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
-            'jabatan' => ['nullable', 'string', 'max:255'],
+            'jabatan_id' => [
+                Rule::when(
+                    $this->input('role') === User::ROLE_SUPERADMIN,
+                    ['nullable'],
+                    ['required', 'exists:jabatans,id']
+                ),
+            ],
             'module_access' => ['nullable', 'array'],
             'module_access.*' => ['string'],
             'foto' => ['nullable', 'image', 'max:2048'],
+        ];
+    }
+
+    /**
+     * Custom validation messages.
+     */
+    public function messages(): array
+    {
+        return [
+            'jabatan_id.required' => 'Jabatan wajib diisi untuk role selain Super Admin.',
+            'jabatan_id.exists' => 'Jabatan yang dipilih tidak valid.',
         ];
     }
 }

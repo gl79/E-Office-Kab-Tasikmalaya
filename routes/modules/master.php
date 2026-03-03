@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Master\JabatanController;
 use App\Http\Controllers\Master\JenisSuratController;
 use App\Http\Controllers\Master\PenggunaController;
 use App\Http\Controllers\Master\SifatSuratController;
@@ -18,6 +19,12 @@ Route::middleware('auth')->prefix('master')->name('master.')->group(function () 
     Route::post('/pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');
     Route::patch('/pengguna/{pengguna}', [PenggunaController::class, 'update'])->name('pengguna.update');
     Route::delete('/pengguna/{pengguna}', [PenggunaController::class, 'destroy'])->name('pengguna.destroy');
+
+    // Jabatan CRUD
+    Route::get('/jabatans', [JabatanController::class, 'index'])->name('jabatans.index');
+    Route::post('/jabatans', [JabatanController::class, 'store'])->name('jabatans.store');
+    Route::patch('/jabatans/{jabatan}', [JabatanController::class, 'update'])->name('jabatans.update');
+    Route::delete('/jabatans/{jabatan}', [JabatanController::class, 'destroy'])->name('jabatans.destroy');
 
     // Unit Kerja
     Route::resource('unit-kerja', UnitKerjaController::class)->except(['create', 'show', 'edit']);

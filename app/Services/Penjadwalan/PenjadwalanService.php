@@ -185,11 +185,8 @@ final class PenjadwalanService
     public function resolveBupatiUser(): ?User
     {
         return User::query()
-            ->where('role', '=', User::ROLE_PIMPINAN, 'and')
-            ->where(function ($query) {
-                $query->whereRaw('LOWER(jabatan) = ?', ['bupati'])
-                    ->orWhereRaw('LOWER(name) = ?', ['bupati']);
-            })
+            ->where('role', '=', User::ROLE_PEJABAT)
+            ->whereHas('jabatanRelasi', fn($q) => $q->where('level', 1))
             ->first();
     }
 
@@ -379,11 +376,13 @@ final class PenjadwalanService
      */
     private function resolveDisposisiStatus(User $attendee): string
     {
-        if ($attendee->isBupati()) {
+        $level = $attendee->getJabatanLevel();
+
+        if ($level === 1) {
             return Penjadwalan::DISPOSISI_BUPATI;
         }
 
-        if ($attendee->isWakilBupati()) {
+        if ($level === 2) {
             return Penjadwalan::DISPOSISI_WAKIL_BUPATI;
         }
 

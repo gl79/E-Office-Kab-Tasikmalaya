@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\PenggunaRequest;
+use App\Models\Jabatan;
 use App\Models\User;
 use App\Support\CacheHelper;
 use Illuminate\Http\RedirectResponse;
@@ -27,7 +28,7 @@ class PenggunaController extends Controller
         $isTU = $currentUser->isTU();
 
         $query = User::query()
-            ->with('creator:id,name,role')
+            ->with(['creator:id,name,role', 'jabatanRelasi:id,nama,level'])
             ->when($isTU, fn($q) => $q->where('role', '!=', User::ROLE_SUPERADMIN))
             ->when(
                 $request->search,
@@ -35,16 +36,17 @@ class PenggunaController extends Controller
                 $q->where(function ($q) use ($search) {
                     $q->where('name', 'ilike', "%{$search}%")
                         ->orWhere('username', 'ilike', "%{$search}%")
-                        ->orWhere('nip', 'ilike', "%{$search}%");
+                        ->orWhere('nip', 'ilike', "%{$search}%")
+                        ->orWhereHas('jabatanRelasi', fn($jq) => $jq->where('nama', 'ilike', "%{$search}%"));
                 })
             )
             ->when($request->role, fn($q, $role) => $q->where('role', $role))
             ->orderBy('name');
 
-        // Filter role labels: TU tidak bisa melihat opsi Super Admin & Pimpinan
+        // Filter role labels: TU tidak bisa melihat opsi Super Admin & Pejabat
         $roles = User::ROLE_LABELS;
         if ($isTU) {
-            unset($roles[User::ROLE_SUPERADMIN], $roles[User::ROLE_PIMPINAN]);
+            unset($roles[User::ROLE_SUPERADMIN], $roles[User::ROLE_PEJABAT]);
         }
 
         return Inertia::render('Master/Pengguna/Index', [
@@ -53,6 +55,7 @@ class PenggunaController extends Controller
             })),
             'filters' => $request->only(['search', 'role']),
             'roles' => $roles,
+            'jabatans' => Jabatan::ordered()->get(['id', 'nama', 'level']),
         ]);
     }
 
@@ -70,6 +73,11 @@ class PenggunaController extends Controller
 
         // Catat siapa yang menambahkan pengguna ini
         $validated['created_by'] = Auth::id();
+
+        // SuperAdmin tidak boleh punya jabatan
+        if (($validated['role'] ?? '') === User::ROLE_SUPERADMIN) {
+            $validated['jabatan_id'] = null;
+        }
 
         User::create($validated);
 
@@ -105,6 +113,11 @@ class PenggunaController extends Controller
         // Only update password if provided
         if (empty($validated['password'])) {
             unset($validated['password']);
+        }
+
+        // SuperAdmin tidak boleh punya jabatan
+        if (($validated['role'] ?? $pengguna->role) === User::ROLE_SUPERADMIN) {
+            $validated['jabatan_id'] = null;
         }
 
         $pengguna->update($validated);

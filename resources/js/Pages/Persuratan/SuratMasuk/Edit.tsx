@@ -33,7 +33,7 @@ interface IndeksSurat {
 interface User {
     id: number;
     name: string;
-    jabatan: string | null;
+    jabatan_nama: string | null;
 }
 
 interface SuratMasukTujuan {
@@ -139,8 +139,8 @@ export default function Edit({
     const staffPengolahOptions = buildInternalUserOptions(staffPengolahUsers);
 
     const asalSuratOptions = asalSuratUsers.map((user) => ({
-        value: user.jabatan ? `${user.name} - ${user.jabatan}` : user.name,
-        label: user.jabatan ? `${user.name} - ${user.jabatan}` : user.name,
+        value: user.jabatan_nama ? `${user.name} - ${user.jabatan_nama}` : user.name,
+        label: user.jabatan_nama ? `${user.name} - ${user.jabatan_nama}` : user.name,
     }));
 
     const jenisSuratSelectOptions = jenisSuratOptions.map((item) => ({

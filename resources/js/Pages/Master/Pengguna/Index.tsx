@@ -15,11 +15,12 @@ interface Props extends PageProps {
         role?: string;
     };
     roles: Record<string, string>;
+    jabatans: { id: number; nama: string; level: number }[];
 }
 
 const CACHE_TTL_MS = 60_000;
 
-const Index = ({ data, filters, roles }: Props) => {
+const Index = ({ data, filters, roles, jabatans }: Props) => {
     const { auth } = usePage<PageProps>().props;
     const { showToast } = useToast();
     const { data: users, isLoading, hasCached } = useDeferredDataMutable<User[]>(
@@ -52,7 +53,7 @@ const Index = ({ data, filters, roles }: Props) => {
                 item.name.toLowerCase().includes(searchLower) ||
                 item.username.toLowerCase().includes(searchLower) ||
                 (item.nip && item.nip.toLowerCase().includes(searchLower)) ||
-                (item.jabatan && item.jabatan.toLowerCase().includes(searchLower))
+                (item.jabatan_nama && item.jabatan_nama.toLowerCase().includes(searchLower))
             );
         }
 
@@ -95,7 +96,7 @@ const Index = ({ data, filters, roles }: Props) => {
         role: 'tu' as string,
         nip: '',
         jenis_kelamin: '' as 'L' | 'P' | '',
-        jabatan: '',
+        jabatan_id: '' as string | number,
         foto: null as File | null,
     });
 
@@ -116,7 +117,7 @@ const Index = ({ data, filters, roles }: Props) => {
             role: item.role,
             nip: item.nip || '',
             jenis_kelamin: item.jenis_kelamin || '',
-            jabatan: item.jabatan || '',
+            jabatan_id: item.jabatan_id || '',
             foto: null,
         });
         form.clearErrors();
@@ -246,7 +247,7 @@ const Index = ({ data, filters, roles }: Props) => {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 border border-border-default font-medium text-text-primary">{item.name}</td>
-                                    <td className="px-4 py-3 border border-border-default text-text-secondary">{item.jabatan || '-'}</td>
+                                    <td className="px-4 py-3 border border-border-default text-text-secondary">{item.jabatan_nama || '-'}</td>
                                     <td className="px-4 py-3 border border-border-default text-text-primary">{item.username}</td>
                                     <td className="px-4 py-3 border border-border-default text-center">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
@@ -379,14 +380,21 @@ const Index = ({ data, filters, roles }: Props) => {
 
                             {/* Jabatan */}
                             <div className="min-h-[76px]">
-                                <InputLabel htmlFor="jabatan" value="Jabatan" />
-                                <TextInput
-                                    id="jabatan"
-                                    value={form.data.jabatan}
-                                    onChange={(e) => form.setData('jabatan', e.target.value)}
-                                    className="mt-1 w-full px-2"
-                                />
-                                <InputError message={form.errors.jabatan} className="mt-1" />
+                                <InputLabel htmlFor="jabatan_id" value="Jabatan" />
+                                <select
+                                    id="jabatan_id"
+                                    value={form.data.jabatan_id}
+                                    onChange={(e) => form.setData('jabatan_id', e.target.value ? Number(e.target.value) : '')}
+                                    className="mt-1 w-full px-2 rounded-md border-border-default bg-bg-default text-text-primary shadow-sm focus:border-primary focus:ring-primary text-sm"
+                                >
+                                    <option value="">Pilih Jabatan</option>
+                                    {jabatans.map((j) => (
+                                        <option key={j.id} value={j.id}>
+                                            {j.nama} (Level {j.level})
+                                        </option>
+                                    ))}
+                                </select>
+                                <InputError message={form.errors.jabatan_id} className="mt-1" />
                             </div>
 
                             {/* Jenis Kelamin */}
@@ -495,7 +503,7 @@ const Index = ({ data, filters, roles }: Props) => {
                             />
                             <div>
                                 <h3 className="text-lg font-semibold text-text-primary">{detailItem.name}</h3>
-                                <p className="text-sm text-text-secondary">{detailItem.jabatan || '-'}</p>
+                                <p className="text-sm text-text-secondary">{detailItem.jabatan_nama || '-'}</p>
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark mt-1">
                                     {detailItem.role_label || detailItem.role}
                                 </span>
@@ -516,7 +524,7 @@ const Index = ({ data, filters, roles }: Props) => {
                             </div>
                             <div>
                                 <p className="text-xs text-text-secondary">Jabatan</p>
-                                <p className="text-sm font-medium text-text-primary">{detailItem.jabatan || '-'}</p>
+                                <p className="text-sm font-medium text-text-primary">{detailItem.jabatan_nama || '-'}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-text-secondary">Jenis Kelamin</p>

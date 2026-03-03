@@ -182,7 +182,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                     <Download className="h-4 w-4 mr-2" />
                                     Export
                                 </Button>
-                                {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                {!['user', 'pejabat'].includes(auth.user.role) && (
                                     <Link href={route('persuratan.surat-keluar.create')}>
                                         <Button>
                                             <Plus className="h-4 w-4 mr-2" />
@@ -329,7 +329,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                                 }
                                             >
                                                 <div className="py-1">
-                                                    {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                                    {!['user', 'pejabat'].includes(auth.user.role) && (
                                                         <Dropdown.Link
                                                             href={route('persuratan.surat-keluar.edit', item.id)}
                                                             className="flex items-center gap-2"
@@ -380,7 +380,7 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                                         <span>Cetak Kartu Hanya Isi</span>
                                                     </Dropdown.Link>
 
-                                                    {!['user', 'pimpinan'].includes(auth.user.role) && (
+                                                    {!['user', 'pejabat'].includes(auth.user.role) && (
                                                         <>
                                                             <div className="border-t border-border-default my-1"></div>
                                                             <Dropdown.Link

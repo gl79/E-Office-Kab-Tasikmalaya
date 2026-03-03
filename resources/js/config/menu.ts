@@ -53,6 +53,12 @@ export const menuItems: MenuItem[] = [
                 icon: 'user',
             },
             {
+                label: 'Jabatan',
+                href: '/master/jabatans',
+                icon: 'briefcase',
+                roles: ['superadmin'],
+            },
+            {
                 label: 'Indeks Surat',
                 href: '/master/indeks-surat',
                 icon: 'file-text',
@@ -77,7 +83,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Persuratan',
         icon: 'mail',
-        roles: ['superadmin', 'tu', 'pimpinan', 'user'],
+        roles: ['superadmin', 'tu', 'pejabat', 'user'],
         children: [
             {
                 label: 'Surat Masuk',
@@ -96,7 +102,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Penjadwalan',
         icon: 'calendar',
-        roles: ['superadmin', 'tu', 'pimpinan'],
+        roles: ['superadmin', 'tu', 'pejabat'],
         children: [
             {
                 label: 'Jadwal Tentatif',

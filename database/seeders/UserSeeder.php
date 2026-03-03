@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Jabatan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +13,7 @@ class UserSeeder extends Seeder
      * Run the database seeds.
      *
      * Membuat user awal untuk testing dan first login.
+     * Setiap user diasosiasikan ke jabatan struktural via jabatan_id.
      * Foto profil dummy: simpan file potoprofildummy.jpg di
      *   storage/app/public/profile-photos/potoprofildummy.jpg
      * kemudian jalankan: php artisan storage:link
@@ -19,6 +21,9 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $now = now();
+
+        // Ambil jabatan IDs
+        $jabatanIds = Jabatan::pluck('id', 'nama');
 
         // Define Module Access Groups
         $modulesPenjadwalan = [
@@ -36,6 +41,7 @@ class UserSeeder extends Seeder
 
         $modulesMaster = [
             'master.pengguna',
+            'master.jabatans',
             'master.unit-kerja',
             'master.indeks-surat',
         ];
@@ -51,7 +57,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('tasik123@'),
                 'role'                => User::ROLE_SUPERADMIN,
                 'nip'                 => null,
-                'jabatan'             => 'Super Administrator',
+                'jabatan_id'          => null, // SuperAdmin tidak punya jabatan
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'module_access'       => [],
@@ -71,7 +77,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('tatausaha123@'),
                 'role'                => User::ROLE_TU,
                 'nip'                 => null,
-                'jabatan'             => 'Tata Usaha',
+                'jabatan_id'          => $jabatanIds['Staf'] ?? null,
                 'jenis_kelamin'       => 'P',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -89,9 +95,9 @@ class UserSeeder extends Seeder
                 'username'            => 'bupati',
                 'email'               => 'bupati@eoffice.test',
                 'password'            => Hash::make('bupati123@'),
-                'role'                => User::ROLE_PIMPINAN,
+                'role'                => User::ROLE_PEJABAT,
                 'nip'                 => null,
-                'jabatan'             => 'Bupati',
+                'jabatan_id'          => $jabatanIds['Bupati'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -106,9 +112,9 @@ class UserSeeder extends Seeder
                 'username'            => 'wakilbupati',
                 'email'               => 'wakilbupati@eoffice.test',
                 'password'            => Hash::make('wakilbupati123@'),
-                'role'                => User::ROLE_PIMPINAN,
+                'role'                => User::ROLE_PEJABAT,
                 'nip'                 => null,
-                'jabatan'             => 'Wakil Bupati',
+                'jabatan_id'          => $jabatanIds['Wakil Bupati'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -123,9 +129,9 @@ class UserSeeder extends Seeder
                 'username'            => 'sekda',
                 'email'               => 'sekda@eoffice.test',
                 'password'            => Hash::make('sekda123@'),
-                'role'                => User::ROLE_USER,
+                'role'                => User::ROLE_PEJABAT,
                 'nip'                 => null,
-                'jabatan'             => 'Sekretaris Daerah',
+                'jabatan_id'          => $jabatanIds['Sekretaris Daerah'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -137,9 +143,9 @@ class UserSeeder extends Seeder
                 'username'            => 'asda1',
                 'email'               => 'asda1@eoffice.test',
                 'password'            => Hash::make('asda1123@'),
-                'role'                => User::ROLE_USER,
+                'role'                => User::ROLE_PEJABAT,
                 'nip'                 => null,
-                'jabatan'             => 'Asisten Daerah 1',
+                'jabatan_id'          => $jabatanIds['Asisten Daerah I'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -151,9 +157,9 @@ class UserSeeder extends Seeder
                 'username'            => 'asda2',
                 'email'               => 'asda2@eoffice.test',
                 'password'            => Hash::make('asda2123@'),
-                'role'                => User::ROLE_USER,
+                'role'                => User::ROLE_PEJABAT,
                 'nip'                 => null,
-                'jabatan'             => 'Asisten Daerah 2',
+                'jabatan_id'          => $jabatanIds['Asisten Daerah II'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -165,16 +171,16 @@ class UserSeeder extends Seeder
                 'username'            => 'asda3',
                 'email'               => 'asda3@eoffice.test',
                 'password'            => Hash::make('asda3123@'),
-                'role'                => User::ROLE_USER,
+                'role'                => User::ROLE_PEJABAT,
                 'nip'                 => null,
-                'jabatan'             => 'Asisten Daerah 3',
+                'jabatan_id'          => $jabatanIds['Asisten Daerah III'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
                 'password_changed_at' => $now,
                 'module_access'       => $modulesPersuratan,
             ],
-            // === Kabag (Ketua Bagian) ===
+            // === Kabag (Kepala Bagian) ===
             [
                 'name'                => 'Kabag Kesejahteraan Rakyat',
                 'username'            => 'kabagkesra',
@@ -182,7 +188,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('kabagkesra123@'),
                 'role'                => User::ROLE_USER,
                 'nip'                 => null,
-                'jabatan'             => 'Ketua Bagian Kesejahteraan Rakyat',
+                'jabatan_id'          => $jabatanIds['Kepala Bagian'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -196,7 +202,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('kabagorganisasi123@'),
                 'role'                => User::ROLE_USER,
                 'nip'                 => null,
-                'jabatan'             => 'Ketua Bagian Organisasi',
+                'jabatan_id'          => $jabatanIds['Kepala Bagian'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -210,7 +216,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('kabagumum123@'),
                 'role'                => User::ROLE_USER,
                 'nip'                 => null,
-                'jabatan'             => 'Ketua Bagian Umum',
+                'jabatan_id'          => $jabatanIds['Kepala Bagian'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -224,7 +230,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('kabaghukum123@'),
                 'role'                => User::ROLE_USER,
                 'nip'                 => null,
-                'jabatan'             => 'Ketua Bagian Hukum',
+                'jabatan_id'          => $jabatanIds['Kepala Bagian'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -238,7 +244,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('kabagekbang123@'),
                 'role'                => User::ROLE_USER,
                 'nip'                 => null,
-                'jabatan'             => 'Ketua Bagian Ekonomi Pembangunan',
+                'jabatan_id'          => $jabatanIds['Kepala Bagian'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -252,7 +258,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('kabagbarjas123@'),
                 'role'                => User::ROLE_USER,
                 'nip'                 => null,
-                'jabatan'             => 'Ketua Bagian Barang & Jasa',
+                'jabatan_id'          => $jabatanIds['Kepala Bagian'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -266,7 +272,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('kabagtapem123@'),
                 'role'                => User::ROLE_USER,
                 'nip'                 => null,
-                'jabatan'             => 'Ketua Bagian Tata Pemerintahan',
+                'jabatan_id'          => $jabatanIds['Kepala Bagian'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,
@@ -280,7 +286,7 @@ class UserSeeder extends Seeder
                 'password'            => Hash::make('kabagprokompim123@'),
                 'role'                => User::ROLE_USER,
                 'nip'                 => null,
-                'jabatan'             => 'Ketua Bagian Prokompim',
+                'jabatan_id'          => $jabatanIds['Kepala Bagian'] ?? null,
                 'jenis_kelamin'       => 'L',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,

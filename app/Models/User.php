@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
  * @property string|null $foto
  * @property string|null $nip
  * @property string|null $jenis_kelamin
- * @property string|null $jabatan
+ * @property int|null $jabatan_id
  * @property array|null $module_access
  * @property int|null $created_by
  * @property \Illuminate\Support\Carbon|null $password_changed_at
@@ -26,27 +26,28 @@ use Illuminate\Support\Str;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read string|null $foto_url
  * @property-read string $role_label
+ * @property-read string|null $jabatan_nama
+ * @property-read Jabatan|null $jabatanRelasi
  */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
     /**
-     * Role Constants
+     * Role Constants — hanya untuk hak akses sistem.
      */
-    // Updated Roles
     public const ROLE_SUPERADMIN = 'superadmin';
-    public const ROLE_PIMPINAN = 'pimpinan'; // Bupati & Wakil Bupati
     public const ROLE_TU = 'tu';
-    public const ROLE_USER = 'user'; // Sekda, Asda, dll
+    public const ROLE_PEJABAT = 'pejabat';
+    public const ROLE_USER = 'user';
 
     /**
      * Available roles
      */
     public const ROLES = [
         self::ROLE_SUPERADMIN,
-        self::ROLE_PIMPINAN,
         self::ROLE_TU,
+        self::ROLE_PEJABAT,
         self::ROLE_USER,
     ];
 
@@ -55,8 +56,8 @@ class User extends Authenticatable
      */
     public const ROLE_LABELS = [
         self::ROLE_SUPERADMIN => 'Super Admin',
-        self::ROLE_PIMPINAN => 'Pimpinan',
         self::ROLE_TU => 'Tata Usaha',
+        self::ROLE_PEJABAT => 'Pejabat',
         self::ROLE_USER => 'User',
     ];
 
@@ -66,6 +67,7 @@ class User extends Authenticatable
     public const MODULES = [
         'dashboard' => 'Dashboard',
         'master.pengguna' => 'Data Master - Pengguna',
+        'master.jabatans' => 'Data Master - Jabatan',
         'master.unit-kerja' => 'Data Master - Unit Kerja',
         'master.indeks-surat' => 'Data Master - Indeks Surat',
         'master.sifat-surat' => 'Data Master - Sifat Surat',
@@ -90,7 +92,7 @@ class User extends Authenticatable
         'foto',
         'nip',
         'jenis_kelamin',
-        'jabatan',
+        'jabatan_id',
         'module_access',
         'created_by',
         'password_changed_at',
@@ -110,6 +112,7 @@ class User extends Authenticatable
     protected $appends = [
         'foto_url',
         'role_label',
+        'jabatan_nama',
     ];
 
     /**
@@ -122,8 +125,29 @@ class User extends Authenticatable
             'password' => 'hashed',
             'module_access' => 'array',
             'password_changed_at' => 'datetime',
+            'jabatan_id' => 'integer',
         ];
     }
+
+    // ==================== RELATIONSHIPS ====================
+
+    /**
+     * Relasi ke jabatan struktural.
+     */
+    public function jabatanRelasi(): BelongsTo
+    {
+        return $this->belongsTo(Jabatan::class, 'jabatan_id');
+    }
+
+    /**
+     * Get the user who created this user.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    // ==================== ACCESSORS ====================
 
     /**
      * Get the display label for the user's role.
@@ -148,12 +172,14 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user who created this user.
+     * Get nama jabatan dari relasi.
      */
-    public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function getJabatanNamaAttribute(): ?string
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->jabatanRelasi?->nama;
     }
+
+    // ==================== ROLE CHECKS ====================
 
     /**
      * Check if user has a specific role.
@@ -172,53 +198,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is Pimpinan.
+     * Check if user is Pejabat.
      */
-    public function isPimpinan(): bool
+    public function isPejabat(): bool
     {
-        return $this->role === self::ROLE_PIMPINAN;
-    }
-
-    /**
-     * Check if user is specifically Bupati account.
-     */
-    public function isBupati(): bool
-    {
-        if (!$this->isPimpinan()) {
-            return false;
-        }
-
-        $jabatan = Str::lower(trim((string) $this->jabatan));
-        $name = Str::lower(trim((string) $this->name));
-
-        return $jabatan === 'bupati' || $name === 'bupati';
-    }
-
-    /**
-     * Check if user is specifically Wakil Bupati account.
-     */
-    public function isWakilBupati(): bool
-    {
-        if (!$this->isPimpinan()) {
-            return false;
-        }
-
-        $jabatan = Str::lower(trim((string) $this->jabatan));
-        $name = Str::lower(trim((string) $this->name));
-
-        return $jabatan === 'wakil bupati' || $name === 'wakil bupati';
-    }
-
-    /**
-     * Check if user is specifically Sekda account.
-     */
-    public function isSekda(): bool
-    {
-        // Sekda is usually under ROLE_USER or ROLE_PIMPINAN, so we check directly
-        $jabatan = Str::lower(trim((string) $this->jabatan));
-        $name = Str::lower(trim((string) $this->name));
-
-        return $jabatan === 'sekda' || $name === 'sekda' || Str::contains($jabatan, 'sekretaris daerah') || Str::contains($name, 'sekretaris daerah');
+        return $this->role === self::ROLE_PEJABAT;
     }
 
     /**
@@ -245,6 +229,51 @@ class User extends Authenticatable
         return $this->isSuperAdmin() || $this->isTU();
     }
 
+    // ==================== JABATAN / DISPOSISI CHECKS ====================
+
+    /**
+     * Get level jabatan user (null jika tidak punya jabatan).
+     */
+    public function getJabatanLevel(): ?int
+    {
+        return $this->jabatanRelasi?->level;
+    }
+
+    /**
+     * Cek apakah user ini bisa melakukan disposisi.
+     * Berdasarkan jabatan.can_dispose.
+     */
+    public function canDispose(): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return false; // SuperAdmin tidak ikut alur disposisi
+        }
+
+        return (bool) $this->jabatanRelasi?->can_dispose;
+    }
+
+    /**
+     * Cek apakah user ini bisa disposisi ke user target.
+     * User hanya dapat disposisi ke jabatan dengan level lebih besar (lebih rendah).
+     */
+    public function canDisposeToUser(User $target): bool
+    {
+        if (!$this->canDispose()) {
+            return false;
+        }
+
+        $myLevel = $this->getJabatanLevel();
+        $targetLevel = $target->getJabatanLevel();
+
+        if ($myLevel === null || $targetLevel === null) {
+            return false;
+        }
+
+        return $myLevel < $targetLevel;
+    }
+
+    // ==================== MODULE ACCESS ====================
+
     /**
      * Check if user has access to a specific module.
      */
@@ -263,18 +292,22 @@ class User extends Authenticatable
     // ==================== SCOPES ====================
 
     /**
-     * Scope: Selectable users for dropdowns (non-superadmin, ordered by name).
+     * Scope: Selectable users for dropdowns (non-superadmin, ordered by jabatan level then name).
      * Consolidates the duplicated user query pattern from controllers.
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param array $columns Columns to select (default: id, name, nip, jabatan)
+     * @param array $columns Columns to select (default: id, name, nip, jabatan_id)
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function scopeSelectableUsers($query, array $columns = ['id', 'name', 'nip', 'jabatan'])
+    public function scopeSelectableUsers($query, array $columns = ['id', 'name', 'nip', 'jabatan_id'])
     {
         return $query
             ->select($columns)
+            ->with('jabatanRelasi:id,nama,level')
             ->where('role', '!=', self::ROLE_SUPERADMIN)
-            ->orderBy('name');
+            ->leftJoin('jabatans', 'users.jabatan_id', '=', 'jabatans.id')
+            ->orderBy('jabatans.level')
+            ->orderBy('users.name')
+            ->select($columns); // re-select after join
     }
 }

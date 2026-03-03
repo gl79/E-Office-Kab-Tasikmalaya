@@ -159,24 +159,25 @@ class PenjadwalanResource extends JsonResource
             return true;
         }
 
+        $jabatanLevel = $user->getJabatanLevel();
+
         // 3. Otorisasi berdasarkan status delegasi disposisi
         if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_BUPATI) {
-            return $user->isBupati();
+            return $jabatanLevel === 1; // Level 1 = Bupati
         }
 
         if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_WAKIL_BUPATI) {
-            return $user->isWakilBupati();
+            return $jabatanLevel === 2; // Level 2 = Wakil Bupati
         }
 
         if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_DIWAKILKAN) {
-            // Jika diwakilkan kebawah/sekda, bisa dicek lebih spesifik,
-            // saat ini kita beri izin untuk sekda atau user yang dituju secara spesifik
-            return $user->isSekda() || $this->dihadiri_oleh_user_id === $user->id;
+            // Jika diwakilkan, izinkan Sekda (level 3) atau user yang dituju secara spesifik
+            return $jabatanLevel === 3 || $this->dihadiri_oleh_user_id === $user->id;
         }
 
-        // 4. Default rules jika sedang menunggu: Bupati dan Sekda sering jadi origin pembuat disposisi.
+        // 4. Default rules jika sedang menunggu: pejabat can_dispose atau creator
         if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_MENUNGGU) {
-            return $user->isBupati() || $user->isWakilBupati() || $user->isSekda() || $this->created_by === $user->id;
+            return $user->canDispose() || $this->created_by === $user->id;
         }
 
         return false;

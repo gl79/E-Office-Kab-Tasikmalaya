@@ -1,7 +1,7 @@
 interface UserLike {
     id?: string | number;
     name: string;
-    jabatan?: string | null;
+    jabatan_nama?: string | null;
 }
 
 const EXCLUDED_USER_NAMES = new Set(['Sekpri Bupati', 'Sekpri Wakil Bupati']);
@@ -11,7 +11,7 @@ export function buildInternalUserOptions(users: UserLike[]) {
         .filter((user) => !EXCLUDED_USER_NAMES.has(user.name))
         .map((user) => ({
             value: String(user.id ?? ''),
-            label: user.jabatan ? `${user.name} - ${user.jabatan}` : user.name,
+            label: user.jabatan_nama ? `${user.name} - ${user.jabatan_nama}` : user.name,
         }));
 }
 
@@ -20,7 +20,7 @@ export function buildKepadaUserOptions(users: UserLike[]) {
         .filter((user) => !EXCLUDED_USER_NAMES.has(user.name))
         .map((user) => ({
             value: user.name,
-            label: user.jabatan ? `${user.name} - ${user.jabatan}` : user.name,
+            label: user.jabatan_nama ? `${user.name} - ${user.jabatan_nama}` : user.name,
         }));
 }
 

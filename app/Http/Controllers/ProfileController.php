@@ -18,6 +18,7 @@ class ProfileController extends Controller
     public function edit(Request $request): Response
     {
         $user = $request->user();
+        $user->load('jabatanRelasi:id,nama,level');
 
         return Inertia::render('Profile/Edit', [
             'status' => session('status'),
@@ -27,7 +28,7 @@ class ProfileController extends Controller
                 'username' => $user->username,
                 'email' => $user->email,
                 'nip' => $user->nip,
-                'jabatan' => $user->jabatan,
+                'jabatan_nama' => $user->jabatan_nama,
                 'jenis_kelamin' => $user->jenis_kelamin,
                 'foto_url' => $user->foto_url,
             ],
@@ -36,6 +37,7 @@ class ProfileController extends Controller
 
     /**
      * Update the user's profile information.
+     * Jabatan tidak bisa diubah di sini — hanya via Data Master Pengguna.
      */
     public function update(Request $request): RedirectResponse
     {
@@ -47,7 +49,6 @@ class ProfileController extends Controller
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'nip' => 'nullable|string|max:30',
             'jenis_kelamin' => 'nullable|in:L,P',
-            'jabatan' => 'nullable|string|max:255',
             'current_password' => 'nullable|required_with:new_password|current_password',
             'new_password' => 'nullable|min:8|confirmed',
         ], [

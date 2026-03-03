@@ -165,10 +165,7 @@ class SuratMasukService
             $surat->nomor_agenda = $tujuan->nomor_agenda;
         }
 
-        $isPimpinanRecipient = (bool) $tujuan
-            && $user->isPimpinan()
-            && ($user->isBupati() || $user->isWakilBupati());
-        $isBupatiRecipient = $isPimpinanRecipient && $user->isBupati();
+        $isDisposeRecipient = (bool) $tujuan && $user->canDispose();
         $isAcceptedByCurrentUser = $tujuan?->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA;
 
         $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
@@ -176,9 +173,9 @@ class SuratMasukService
 
         $surat->penerimaan_status = $this->resolvePenerimaanStatus($surat, $tujuan);
         $surat->penerimaan_diterima_at = $tujuan?->diterima_at?->toDateTimeString();
-        $surat->can_accept = $isPimpinanRecipient && !$isAcceptedByCurrentUser;
+        $surat->can_accept = $isDisposeRecipient && !$isAcceptedByCurrentUser;
         $surat->can_disposisi = Gate::forUser($user)->check('disposisiByBupati', $surat);
-        $surat->can_disposisi_disabled = $isBupatiRecipient && !$isAcceptedByCurrentUser;
+        $surat->can_disposisi_disabled = $isDisposeRecipient && !$isAcceptedByCurrentUser;
         $surat->can_schedule = $canScheduleByBupati && !$hasSchedule;
         $surat->can_finalize_schedule = false;
         $surat->can_view_schedule = $hasSchedule && $canScheduleByBupati;
@@ -198,20 +195,19 @@ class SuratMasukService
             return $currentUserTujuan->status_penerimaan ?? '-';
         }
 
-        $pimpinanTujuans = $surat->tujuans->filter(function (SuratMasukTujuan $tujuan) {
+        $disposableTujuans = $surat->tujuans->filter(function (SuratMasukTujuan $tujuan) {
             $recipient = $tujuan->user;
             if (!$recipient) {
                 return false;
             }
-            return $recipient->isPimpinan()
-                && ($recipient->isBupati() || $recipient->isWakilBupati());
+            return $recipient->canDispose();
         });
 
-        if ($pimpinanTujuans->isEmpty()) {
+        if ($disposableTujuans->isEmpty()) {
             return '-';
         }
 
-        $allAccepted = $pimpinanTujuans->every(
+        $allAccepted = $disposableTujuans->every(
             fn(SuratMasukTujuan $tujuan) => $tujuan->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA
         );
 

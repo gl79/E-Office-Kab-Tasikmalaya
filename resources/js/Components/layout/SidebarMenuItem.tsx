@@ -8,6 +8,7 @@ import {
     Database,
     Users,
     User,
+    Briefcase,
     Building2,
     FileText,
     Mail,
@@ -71,6 +72,7 @@ const iconMap: Record<string, LucideIcon> = {
     'history': History,
     'tag': Tag,
     'shield': Shield,
+    'briefcase': Briefcase,
 };
 
 /**

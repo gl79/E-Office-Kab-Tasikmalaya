@@ -15,11 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('username')->unique();
-            $table->string('role')->default('tu');
+            $table->string('role')->default('user');
             $table->string('foto')->nullable();
             $table->string('nip', 30)->nullable();
             $table->enum('jenis_kelamin', ['L', 'P'])->nullable();
-            $table->string('jabatan')->nullable();
+            $table->foreignId('jabatan_id')
+                ->nullable()
+                ->constrained('jabatans')
+                ->nullOnDelete();
             $table->json('module_access')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('email')->unique()->nullable();
@@ -28,7 +31,6 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
-            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

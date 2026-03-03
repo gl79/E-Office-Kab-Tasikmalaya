@@ -204,7 +204,7 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                             </div>
 
                             <div className="flex gap-2 w-full md:w-auto">
-                                {(auth.user?.role === 'pimpinan' || auth.user?.role === 'superadmin') && (
+                                {(auth.user?.role === 'pejabat' || auth.user?.role === 'superadmin') && (
                                     <Link href={route('bupati.jadwal.custom')}>
                                         <Button className="flex items-center gap-2 whitespace-nowrap">
                                             <CalendarPlus className="h-4 w-4" />
