@@ -209,6 +209,17 @@ class User extends Authenticatable
         return $jabatan === 'wakil bupati' || $name === 'wakil bupati';
     }
 
+    /**
+     * Check if user is specifically Sekda account.
+     */
+    public function isSekda(): bool
+    {
+        // Sekda is usually under ROLE_USER or ROLE_PIMPINAN, so we check directly
+        $jabatan = Str::lower(trim((string) $this->jabatan));
+        $name = Str::lower(trim((string) $this->name));
+
+        return $jabatan === 'sekda' || $name === 'sekda' || Str::contains($jabatan, 'sekretaris daerah') || Str::contains($name, 'sekretaris daerah');
+    }
 
     /**
      * Check if user is TU.

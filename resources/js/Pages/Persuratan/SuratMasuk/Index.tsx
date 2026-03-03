@@ -25,8 +25,17 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     const { auth } = usePage<PageProps>().props;
     const normalizedName = (auth.user?.name || '').trim().toLowerCase();
     const normalizedJabatan = (auth.user?.jabatan || '').trim().toLowerCase();
+
     const isBupatiUser = auth.user?.role === 'pimpinan'
         && (normalizedJabatan === 'bupati' || normalizedName === 'bupati');
+
+    const isWakilBupatiUser = auth.user?.role === 'pimpinan'
+        && (normalizedJabatan === 'wakil bupati' || normalizedName === 'wakil bupati');
+
+    const isSekdaUser = normalizedJabatan === 'sekda' || normalizedName === 'sekda'
+        || normalizedJabatan.includes('sekretaris daerah') || normalizedName.includes('sekretaris daerah');
+
+    const isEligiblePimpinanOrSekda = isBupatiUser || isWakilBupatiUser || isSekdaUser;
 
     // Use custom hook for deferred data with mutable state
     const { data: suratMasuk, updateAndCache, isLoading, hasCached } = useDeferredDataMutable<SuratMasuk[]>(
@@ -58,7 +67,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     // Determine penanda tangan index automatically based on current user jabatan
     const getPenandaTanganIndex = () => {
         if (isBupatiUser) return 0; // Bupati
-        if (normalizedJabatan.includes('wakil bupati') || normalizedName.includes('wakil bupati')) return 1; // Wakil Bupati
+        if (isWakilBupatiUser) return 1; // Wakil Bupati
         return 2; // Sekretaris Daerah
     };
 
@@ -175,10 +184,10 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                         penerimaan_status: 'Diterima',
                         penerimaan_diterima_at: new Date().toISOString(),
                         can_accept: false,
-                        can_disposisi: isBupatiUser,
+                        can_disposisi: isEligiblePimpinanOrSekda,
                         can_disposisi_disabled: false,
-                        can_schedule: isBupatiUser && !hasSchedule,
-                        can_view_schedule: isBupatiUser && hasSchedule,
+                        can_schedule: isEligiblePimpinanOrSekda && !hasSchedule,
+                        can_view_schedule: isEligiblePimpinanOrSekda && hasSchedule,
                     };
                 }));
             },
@@ -478,16 +487,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
                                             <div className="flex items-center justify-center gap-1">
-                                                {item.can_accept && (
-                                                    <button
-                                                        onClick={() => handleTerima(item)}
-                                                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
-                                                        title="Terima Surat"
-                                                    >
-                                                        <Check className="h-3.5 w-3.5" />
-                                                        <span>Terima</span>
-                                                    </button>
-                                                )}
+
                                                 <Dropdown
                                                     align="right"
                                                     width="48"
@@ -551,6 +551,18 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                             <span>Cetak Kartu Hanya Isi</span>
                                                         </Dropdown.Link>
 
+                                                        {/* Terima Button inside Dropdown */}
+                                                        {item.can_accept && (
+                                                            <Dropdown.Link
+                                                                as="button"
+                                                                onClick={() => handleTerima(item)}
+                                                                className="flex items-center gap-2 text-success"
+                                                            >
+                                                                <Check className="h-4 w-4" />
+                                                                <span>Terima</span>
+                                                            </Dropdown.Link>
+                                                        )}
+
                                                         {(item.can_disposisi || item.can_disposisi_disabled) && (
                                                             item.can_disposisi ? (
                                                                 <Dropdown.Link
@@ -571,18 +583,34 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
 
                                                         {(item.can_schedule || item.can_view_schedule || item.can_disposisi_disabled) && (
                                                             (item.can_schedule || item.can_view_schedule) ? (
-                                                                <Dropdown.Link
-                                                                    href={route('bupati.jadwal.form', item.id)}
-                                                                    className="flex items-center gap-2"
-                                                                >
-                                                                    <CalendarPlus className="h-4 w-4" />
-                                                                    <span>{item.can_schedule ? 'Disposisi' : 'Lihat Disposisi'}</span>
-                                                                </Dropdown.Link>
+                                                                <>
+                                                                    <Dropdown.Link
+                                                                        href={route('bupati.jadwal.form', { surat: item.id, type: 'self' })}
+                                                                        className="flex items-center gap-2"
+                                                                    >
+                                                                        <CalendarPlus className="h-4 w-4" />
+                                                                        <span>{item.can_schedule ? 'Jadwalkan' : 'Lihat Jadwal'}</span>
+                                                                    </Dropdown.Link>
+
+                                                                    <Dropdown.Link
+                                                                        href={route('bupati.jadwal.form', { surat: item.id, type: 'disposisi' })}
+                                                                        className="flex items-center gap-2"
+                                                                    >
+                                                                        <CalendarPlus className="h-4 w-4" />
+                                                                        <span>{item.can_schedule ? 'Disposisi' : 'Lihat Disposisi'}</span>
+                                                                    </Dropdown.Link>
+                                                                </>
                                                             ) : (
-                                                                <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
-                                                                    <CalendarPlus className="h-4 w-4" />
-                                                                    <span>Disposisi (Terima surat dulu)</span>
-                                                                </div>
+                                                                <>
+                                                                    <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
+                                                                        <CalendarPlus className="h-4 w-4" />
+                                                                        <span>Jadwalkan (Terima surat dulu)</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
+                                                                        <CalendarPlus className="h-4 w-4" />
+                                                                        <span>Disposisi (Terima surat dulu)</span>
+                                                                    </div>
+                                                                </>
                                                             )
                                                         )}
 

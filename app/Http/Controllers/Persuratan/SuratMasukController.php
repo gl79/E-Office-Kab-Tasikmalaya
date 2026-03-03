@@ -170,11 +170,11 @@ class SuratMasukController extends Controller
     }
 
     /**
-     * Tandai surat sebagai diterima oleh penerima (Bupati/Wakil Bupati).
+     * Tandai surat sebagai diterima oleh penerima (Bupati/Wakil Bupati/Sekda).
      */
     public function terima(Request $request, string $id)
     {
-        $suratMasuk = SuratMasuk::with('tujuans')->findOrFail($id);
+        $suratMasuk = SuratMasuk::with('tujuans.user')->findOrFail($id);
         $this->authorize('acceptByRecipient', $suratMasuk);
 
         $user = $request->user();
@@ -192,6 +192,21 @@ class SuratMasukController extends Controller
             'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
             'diterima_at' => now(),
         ]);
+
+        // Secara otomatis sinkronkan status untuk tujuan TU dari surat ini
+        // agar status TU tidak 'menunggu' setelah Pimpinan/Sekda menerima surat.
+        $tuTujuans = $suratMasuk->tujuans->filter(function ($tujuanItem) {
+            return $tujuanItem->user && $tujuanItem->user->isTU();
+        });
+
+        foreach ($tuTujuans as $tuTujuan) {
+            if ($tuTujuan->status_penerimaan !== SuratMasukTujuan::STATUS_DITERIMA) {
+                $tuTujuan->update([
+                    'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
+                    'diterima_at' => now(),
+                ]);
+            }
+        }
 
         CacheHelper::flush(['persuratan_list']);
 

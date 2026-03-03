@@ -120,7 +120,7 @@ const TentatifTable: React.FC<Props> = ({
                                             </Button>
                                         )}
 
-                                        {item.status_disposisi !== 'menunggu' && (
+                                        {item.can_edit_kehadiran && item.status_disposisi !== 'menunggu' && (
                                             <Button
                                                 size="sm"
                                                 variant="success"

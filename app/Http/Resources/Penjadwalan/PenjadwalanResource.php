@@ -133,7 +133,52 @@ class PenjadwalanResource extends JsonResource
             'deleted_at_formatted' => $this->deleted_at?->format('d/m/Y H:i'),
 
             // Permission flag untuk frontend
-            'can_edit_kehadiran' => Auth::check() && $this->created_by === Auth::id(),
+            'can_edit_kehadiran' => $this->determineEditKehadiranPermission(),
         ];
+    }
+
+    /**
+     * Tentukan apakah user saat ini berhak mengatur kehadiran atau menjadikan jadwal definitif.
+     */
+    private function determineEditKehadiranPermission(): bool
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $user = Auth::user();
+
+        // 1. Superadmin dan TU bebas mengelola keseluruhan jadwal
+        if ($user->isSuperAdmin() || $user->isTU()) {
+            return true;
+        }
+
+        // 2. Pemilik yang membuat jadwal juga diijinkan (jika belum didelegasikan)
+        // Kita berikan creator hak akses jika status masih 'menunggu'
+        if ($this->created_by === $user->id && $this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_MENUNGGU) {
+            return true;
+        }
+
+        // 3. Otorisasi berdasarkan status delegasi disposisi
+        if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_BUPATI) {
+            return $user->isBupati();
+        }
+
+        if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_WAKIL_BUPATI) {
+            return $user->isWakilBupati();
+        }
+
+        if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_DIWAKILKAN) {
+            // Jika diwakilkan kebawah/sekda, bisa dicek lebih spesifik,
+            // saat ini kita beri izin untuk sekda atau user yang dituju secara spesifik
+            return $user->isSekda() || $this->dihadiri_oleh_user_id === $user->id;
+        }
+
+        // 4. Default rules jika sedang menunggu: Bupati dan Sekda sering jadi origin pembuat disposisi.
+        if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_MENUNGGU) {
+            return $user->isBupati() || $user->isWakilBupati() || $user->isSekda() || $this->created_by === $user->id;
+        }
+
+        return false;
     }
 }

@@ -81,7 +81,7 @@ class SuratMasukPolicy
     }
 
     /**
-     * Determine whether Bupati can open scheduling form for this surat.
+     * Determine whether Bupati / Wakil Bupati / Sekda can open scheduling form for this surat.
      */
     public function scheduleByBupati(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -89,7 +89,7 @@ class SuratMasukPolicy
             return true;
         }
 
-        if (!$user->isBupati()) {
+        if (!$user->isBupati() && !$user->isWakilBupati() && !$user->isSekda()) {
             return false;
         }
 
@@ -108,7 +108,7 @@ class SuratMasukPolicy
     }
 
     /**
-     * Determine whether recipient can accept surat (Bupati / Wakil only).
+     * Determine whether recipient can accept surat (Bupati / Wakil / Sekda only).
      */
     public function acceptByRecipient(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -116,10 +116,9 @@ class SuratMasukPolicy
             return true;
         }
 
-        $isEligiblePimpinan = $user->isPimpinan()
-            && ($user->isBupati() || $user->isWakilBupati());
+        $isEligible = $user->isBupati() || $user->isWakilBupati() || $user->isSekda();
 
-        if (!$isEligiblePimpinan) {
+        if (!$isEligible) {
             return false;
         }
 
@@ -129,7 +128,7 @@ class SuratMasukPolicy
     }
 
     /**
-     * Determine whether Bupati can create disposisi.
+     * Determine whether Bupati / Wakil Bupati / Sekda can create disposisi.
      */
     public function disposisiByBupati(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -137,7 +136,7 @@ class SuratMasukPolicy
             return true;
         }
 
-        if (!$user->isBupati()) {
+        if (!$user->isBupati() && !$user->isWakilBupati() && !$user->isSekda()) {
             return false;
         }
 
