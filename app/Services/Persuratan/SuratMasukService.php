@@ -2,9 +2,11 @@
 
 namespace App\Services\Persuratan;
 
+use App\Models\DisposisiSurat;
 use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
+use App\Models\TimelineSurat;
 use App\Models\User;
 use App\Services\FileService;
 use App\Support\CacheHelper;
@@ -52,6 +54,25 @@ class SuratMasukService
             $suratMasuk = SuratMasuk::create($data);
 
             $this->syncTujuan($suratMasuk, $tujuanList);
+
+            // Catat timeline: surat diinput
+            TimelineSurat::record(
+                $suratMasuk->id,
+                Auth::id(),
+                TimelineSurat::AKSI_INPUT,
+                'Surat diinput oleh Tata Usaha'
+            );
+
+            // Catat timeline: surat dikirim ke penerima
+            $tujuanNames = $suratMasuk->fresh()?->tujuans->pluck('tujuan')->join(', ');
+            if ($tujuanNames) {
+                TimelineSurat::record(
+                    $suratMasuk->id,
+                    Auth::id(),
+                    TimelineSurat::AKSI_KIRIM,
+                    "Surat dikirim ke {$tujuanNames}"
+                );
+            }
 
             CacheHelper::flush(['persuratan_list']);
 
@@ -167,18 +188,22 @@ class SuratMasukService
 
         $isDisposeRecipient = (bool) $tujuan && $user->canDispose();
         $isAcceptedByCurrentUser = $tujuan?->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA;
+        $isTembusan = (bool) $tujuan?->is_tembusan;
 
         $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
         $hasSchedule = (bool) $surat->penjadwalan;
 
+        // Cek apakah user bisa melakukan aksi (primary recipient / disposisi penerima)
+        $canDoAction = Gate::forUser($user)->check('disposisi', $surat);
+
         $surat->penerimaan_status = $this->resolvePenerimaanStatus($surat, $tujuan);
         $surat->penerimaan_diterima_at = $tujuan?->diterima_at?->toDateTimeString();
-        $surat->can_accept = $isDisposeRecipient && !$isAcceptedByCurrentUser;
-        $surat->can_disposisi = Gate::forUser($user)->check('disposisiByBupati', $surat);
-        $surat->can_disposisi_disabled = $isDisposeRecipient && !$isAcceptedByCurrentUser;
-        $surat->can_schedule = $canScheduleByBupati && !$hasSchedule;
+        $surat->can_accept = $isDisposeRecipient && !$isAcceptedByCurrentUser && !$isTembusan;
+        $surat->can_disposisi = $canDoAction && !$isTembusan;
+        $surat->can_disposisi_disabled = $isDisposeRecipient && !$isAcceptedByCurrentUser && !$isTembusan;
+        $surat->can_schedule = $canScheduleByBupati && !$hasSchedule && !$isTembusan;
         $surat->can_finalize_schedule = false;
-        $surat->can_view_schedule = $hasSchedule && $canScheduleByBupati;
+        $surat->can_view_schedule = $hasSchedule && ($canScheduleByBupati || $isDisposeRecipient);
         $surat->penjadwalan_status = $surat->penjadwalan?->status ?? '-';
         $surat->penjadwalan_status_label = $surat->penjadwalan?->status_label ?? '-';
         $surat->penjadwalan_status_variant = $this->resolvePenjadwalanVariant($surat->penjadwalan);
@@ -251,11 +276,25 @@ class SuratMasukService
             return;
         }
 
-        // Batch load all users to avoid N+1 queries
+        // Batch load all users with jabatan to avoid N+1 queries
         $numericIds = array_filter($tujuanList, 'is_numeric');
         $users = !empty($numericIds)
-            ? User::whereIn('id', $numericIds)->get()->keyBy('id')
+            ? User::with('jabatanRelasi')->whereIn('id', $numericIds)->get()->keyBy('id')
             : collect();
+
+        // Tentukan primary recipient: user dengan level jabatan terendah (angka terkecil)
+        $primaryUserId = null;
+        $lowestLevel = PHP_INT_MAX;
+        foreach ($tujuanList as $tujuan) {
+            if (!is_numeric($tujuan)) continue;
+            $userData = $users->get($tujuan);
+            if (!$userData) continue;
+            $level = $userData->getJabatanLevel() ?? PHP_INT_MAX;
+            if ($level < $lowestLevel) {
+                $lowestLevel = $level;
+                $primaryUserId = $userData->id;
+            }
+        }
 
         foreach ($tujuanList as $tujuan) {
             $userData = is_numeric($tujuan) ? $users->get($tujuan) : null;
@@ -275,11 +314,17 @@ class SuratMasukService
                 ]
                 : SuratMasukTujuan::initialPenerimaanState($userData);
 
+            // Auto-determine primary vs tembusan
+            $isPrimary = $userData && $userData->id === $primaryUserId;
+            $isTembusan = $userData && !$isPrimary && count($tujuanList) > 1;
+
             SuratMasukTujuan::create([
                 'surat_masuk_id' => $suratMasuk->id,
                 'tujuan_id' => $userData?->id ?? null,
                 'tujuan' => $userData?->name ?? $tujuan,
                 'nomor_agenda' => $nomorAgenda,
+                'is_primary' => $isPrimary,
+                'is_tembusan' => $isTembusan,
                 'status_penerimaan' => $penerimaanState['status_penerimaan'],
                 'diterima_at' => $penerimaanState['diterima_at'],
             ]);

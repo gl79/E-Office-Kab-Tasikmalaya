@@ -50,6 +50,8 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('pemilik_jadwal_id')->nullable()->constrained('users')->nullOnDelete()
+                ->comment('User yang berhak ubah tentatif → definitif');
 
             // Timestamps
             $table->timestamps();

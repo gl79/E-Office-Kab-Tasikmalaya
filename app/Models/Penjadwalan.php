@@ -69,6 +69,7 @@ class Penjadwalan extends Model
         'dihadiri_oleh',
         'dihadiri_oleh_user_id',
         'keterangan',
+        'pemilik_jadwal_id',
         'created_by',
         'updated_by',
         'deleted_by',
@@ -200,6 +201,22 @@ class Penjadwalan extends Model
     public function histories(): HasMany
     {
         return $this->hasMany(JadwalHistory::class, 'jadwal_id')->latest('created_at');
+    }
+
+    /**
+     * Relasi ke user pemilik jadwal (yang berhak ubah ke definitif).
+     */
+    public function pemilikJadwal(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'pemilik_jadwal_id');
+    }
+
+    /**
+     * Cek apakah jadwal sudah definitif (terkunci).
+     */
+    public function isLockedDefinitif(): bool
+    {
+        return $this->status === self::STATUS_DEFINITIF;
     }
 
     // ==================== SCOPES ====================

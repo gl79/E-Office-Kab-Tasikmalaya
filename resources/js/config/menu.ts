@@ -18,7 +18,7 @@ export interface MenuItem {
     /** Roles allowed to view this menu item */
     roles?: string[];
     /** Shared prop key for menu badge counter */
-    badgeKey?: 'surat_masuk_menunggu_penerimaan';
+    badgeKey?: 'surat_masuk_menunggu_penerimaan' | 'disposisi_belum_diproses' | 'jadwal_tentatif_pending';
     /** Whether this is a logout action (requires special handling) */
     isLogout?: boolean;
 }
@@ -108,6 +108,7 @@ export const menuItems: MenuItem[] = [
                 label: 'Jadwal Tentatif',
                 href: '/penjadwalan/tentatif',
                 icon: 'calendar-clock',
+                badgeKey: 'jadwal_tentatif_pending',
             },
             {
                 label: 'Jadwal Definitif',

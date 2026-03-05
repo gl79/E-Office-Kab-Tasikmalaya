@@ -28,6 +28,8 @@ class PenjadwalanFeatureTest extends TestCase
             'tujuan_id' => $bupati->id,
             'tujuan' => $bupati->name,
             'nomor_agenda' => 'SM/0099/' . date('Y'),
+            'is_primary' => true,
+            'is_tembusan' => false,
             'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
             'diterima_at' => now(),
         ]);
@@ -59,6 +61,8 @@ class PenjadwalanFeatureTest extends TestCase
             'tujuan_id' => $bupati->id,
             'tujuan' => $bupati->name,
             'nomor_agenda' => 'SM/0100/' . date('Y'),
+            'is_primary' => true,
+            'is_tembusan' => false,
             'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
             'diterima_at' => now(),
         ]);

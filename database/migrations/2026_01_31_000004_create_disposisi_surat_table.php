@@ -8,36 +8,42 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * Tabel disposisi_surat menyimpan rantai disposisi surat masuk.
+     * Setiap baris merepresentasikan 1 langkah disposisi dari satu pejabat ke pejabat lain.
+     * Rantai: TU → Bupati → Wakil → Asda → dst.
      */
     public function up(): void
     {
         Schema::create('disposisi_surat', function (Blueprint $table) {
             $table->ulid('id')->primary();
+
+            // Surat yang didisposisi
             $table->ulid('surat_masuk_id');
 
-            // Penanda Tangan
-            $table->string('penanda_tangan', 100);
-            $table->string('jabatan_penanda_tangan', 100);
+            // Rantai disposisi: dari siapa ke siapa
+            $table->foreignId('dari_user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('ke_user_id')->constrained('users')->cascadeOnDelete();
 
-            // Detail Disposisi
-            $table->text('tujuan_disposisi')->nullable(); // JSON atau text
-            $table->text('instruksi')->nullable();
-            $table->date('tanggal_disposisi');
+            // Detail disposisi
+            $table->text('catatan')->nullable()->comment('Catatan/instruksi disposisi');
 
-            // Audit Trail
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            // Status baca
+            $table->timestamp('dibaca_at')->nullable()->comment('Kapan penerima membuka disposisi');
 
             $table->timestamps();
 
-            // Foreign Key dengan CASCADE delete
+            // Foreign Key ke surat masuk dengan CASCADE delete
             $table->foreign('surat_masuk_id')
-                  ->references('id')
-                  ->on('surat_masuks')
-                  ->cascadeOnDelete();
+                ->references('id')
+                ->on('surat_masuks')
+                ->cascadeOnDelete();
 
-            // Index
+            // Indexes
             $table->index('surat_masuk_id');
-            $table->index('tanggal_disposisi');
+            $table->index('dari_user_id');
+            $table->index('ke_user_id');
+            $table->index('dibaca_at');
         });
     }
 

@@ -38,6 +38,7 @@ return new class extends Migration
             $table->date('tanggal_diteruskan')->nullable();
             $table->text('catatan_tambahan')->nullable();
             $table->string('file_path', 255)->nullable();
+            $table->enum('status', ['baru', 'diproses', 'selesai'])->default('baru')->comment('Status alur surat');
 
             // Audit Trail
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

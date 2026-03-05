@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Head, router, Link, usePage } from '@inertiajs/react';
-import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw, CalendarPlus, Check } from 'lucide-react';
+import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw, CalendarPlus, Check, Send, Clock, CheckCircle2 } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
@@ -9,6 +9,9 @@ import FormSelect from '@/Components/form/FormSelect';
 import FormDatePicker from '@/Components/form/FormDatePicker';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
+import TimelineModal from '@/Components/persuratan/TimelineModal';
+import DisposisiModal from '@/Components/persuratan/DisposisiModal';
+import JadwalkanModal from '@/Components/persuratan/JadwalkanModal';
 import { PageProps } from '@/types';
 import type { SuratMasuk } from '@/types/persuratan';
 import { useDeferredDataMutable } from '@/hooks';
@@ -52,6 +55,21 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     // Detail Modal State
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailSurat, setDetailSurat] = useState<SuratMasuk | null>(null);
+
+    // Timeline Modal State
+    const [timelineModalOpen, setTimelineModalOpen] = useState(false);
+    const [timelineSuratId, setTimelineSuratId] = useState<string | null>(null);
+    const [timelinePerihal, setTimelinePerihal] = useState('');
+
+    // Disposisi Modal State
+    const [disposisiModalOpen, setDisposisiModalOpen] = useState(false);
+    const [disposisiSuratId, setDisposisiSuratId] = useState<string | null>(null);
+    const [disposisiPerihal, setDisposisiPerihal] = useState('');
+
+    // Jadwalkan Modal State
+    const [jadwalkanModalOpen, setJadwalkanModalOpen] = useState(false);
+    const [jadwalkanSuratId, setJadwalkanSuratId] = useState<string | null>(null);
+    const [jadwalkanPerihal, setJadwalkanPerihal] = useState('');
     // Determine penanda tangan index automatically based on current user jabatan level
     const getPenandaTanganIndex = () => {
         const level = auth.user?.jabatan_level;
@@ -181,6 +199,38 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 }));
             },
         });
+    };
+
+    const handleTerimaDisketahui = (surat: SuratMasuk) => {
+        router.post(route('persuratan.surat-masuk.terima-diketahui', surat.id), {}, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                updateAndCache(prev => prev.map(item =>
+                    item.id === surat.id
+                        ? { ...item, status: 'selesai' as const, can_disposisi: false, can_schedule: false }
+                        : item
+                ));
+            },
+        });
+    };
+
+    const handleOpenDisposisi = (surat: SuratMasuk) => {
+        setDisposisiSuratId(surat.id);
+        setDisposisiPerihal(surat.perihal);
+        setDisposisiModalOpen(true);
+    };
+
+    const handleOpenJadwalkan = (surat: SuratMasuk) => {
+        setJadwalkanSuratId(surat.id);
+        setJadwalkanPerihal(surat.perihal);
+        setJadwalkanModalOpen(true);
+    };
+
+    const handleOpenTimeline = (surat: SuratMasuk) => {
+        setTimelineSuratId(surat.id);
+        setTimelinePerihal(surat.perihal);
+        setTimelineModalOpen(true);
     };
 
     const handleCetakDisposisi = (surat: SuratMasuk) => {
@@ -540,7 +590,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                             <span>Cetak Kartu Hanya Isi</span>
                                                         </Dropdown.Link>
 
-                                                        {/* Terima Button inside Dropdown */}
+                                                        {/* Terima (penerimaan awal) */}
                                                         {item.can_accept && (
                                                             <Dropdown.Link
                                                                 as="button"
@@ -548,60 +598,98 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                                 className="flex items-center gap-2 text-success"
                                                             >
                                                                 <Check className="h-4 w-4" />
-                                                                <span>Terima</span>
+                                                                <span>Terima Surat</span>
                                                             </Dropdown.Link>
                                                         )}
 
-                                                        {(item.can_disposisi || item.can_disposisi_disabled) && (
-                                                            item.can_disposisi ? (
-                                                                <Dropdown.Link
-                                                                    as="button"
-                                                                    onClick={() => handleCetakDisposisi(item)}
-                                                                    className="flex items-center gap-2"
-                                                                >
-                                                                    <FileText className="h-4 w-4" />
-                                                                    <span>Cetak Disposisi</span>
-                                                                </Dropdown.Link>
-                                                            ) : (
+                                                        {/* Separator sebelum aksi disposisi/jadwal */}
+                                                        {(item.can_disposisi || item.can_schedule || item.can_view_schedule) && (
+                                                            <div className="border-t border-border-default my-1" />
+                                                        )}
+
+                                                        {/* Terima/Diketahui */}
+                                                        {item.can_disposisi && (
+                                                            <Dropdown.Link
+                                                                as="button"
+                                                                onClick={() => handleTerimaDisketahui(item)}
+                                                                className="flex items-center gap-2 text-secondary"
+                                                            >
+                                                                <CheckCircle2 className="h-4 w-4" />
+                                                                <span>Terima / Diketahui</span>
+                                                            </Dropdown.Link>
+                                                        )}
+
+                                                        {/* Disposisi ke bawahan */}
+                                                        {item.can_disposisi && (
+                                                            <Dropdown.Link
+                                                                as="button"
+                                                                onClick={() => handleOpenDisposisi(item)}
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <Send className="h-4 w-4" />
+                                                                <span>Disposisi</span>
+                                                            </Dropdown.Link>
+                                                        )}
+
+                                                        {/* Jadwalkan */}
+                                                        {item.can_schedule && (
+                                                            <Dropdown.Link
+                                                                as="button"
+                                                                onClick={() => handleOpenJadwalkan(item)}
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <CalendarPlus className="h-4 w-4" />
+                                                                <span>Jadwalkan</span>
+                                                            </Dropdown.Link>
+                                                        )}
+
+                                                        {/* Lihat Jadwal */}
+                                                        {item.can_view_schedule && item.penjadwalan && (
+                                                            <Dropdown.Link
+                                                                href={route('bupati.jadwal.form', { surat: item.id, type: 'self' })}
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <CalendarPlus className="h-4 w-4" />
+                                                                <span>Lihat Jadwal</span>
+                                                            </Dropdown.Link>
+                                                        )}
+
+                                                        {/* Disabled state: belum terima surat */}
+                                                        {item.can_disposisi_disabled && !item.can_disposisi && (
+                                                            <>
                                                                 <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
-                                                                    <FileText className="h-4 w-4" />
-                                                                    <span>Cetak Disposisi (Terima surat dulu)</span>
+                                                                    <Send className="h-4 w-4" />
+                                                                    <span>Disposisi (Terima surat dulu)</span>
                                                                 </div>
-                                                            )
+                                                                <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
+                                                                    <CalendarPlus className="h-4 w-4" />
+                                                                    <span>Jadwalkan (Terima surat dulu)</span>
+                                                                </div>
+                                                            </>
                                                         )}
 
-                                                        {(item.can_schedule || item.can_view_schedule || item.can_disposisi_disabled) && (
-                                                            (item.can_schedule || item.can_view_schedule) ? (
-                                                                <>
-                                                                    <Dropdown.Link
-                                                                        href={route('bupati.jadwal.form', { surat: item.id, type: 'self' })}
-                                                                        className="flex items-center gap-2"
-                                                                    >
-                                                                        <CalendarPlus className="h-4 w-4" />
-                                                                        <span>{item.can_schedule ? 'Jadwalkan' : 'Lihat Jadwal'}</span>
-                                                                    </Dropdown.Link>
-
-                                                                    <Dropdown.Link
-                                                                        href={route('bupati.jadwal.form', { surat: item.id, type: 'disposisi' })}
-                                                                        className="flex items-center gap-2"
-                                                                    >
-                                                                        <CalendarPlus className="h-4 w-4" />
-                                                                        <span>{item.can_schedule ? 'Disposisi' : 'Lihat Disposisi'}</span>
-                                                                    </Dropdown.Link>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
-                                                                        <CalendarPlus className="h-4 w-4" />
-                                                                        <span>Jadwalkan (Terima surat dulu)</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
-                                                                        <CalendarPlus className="h-4 w-4" />
-                                                                        <span>Disposisi (Terima surat dulu)</span>
-                                                                    </div>
-                                                                </>
-                                                            )
+                                                        {/* Cetak Disposisi */}
+                                                        {(item.can_disposisi || item.can_view_schedule) && (
+                                                            <Dropdown.Link
+                                                                as="button"
+                                                                onClick={() => handleCetakDisposisi(item)}
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <FileText className="h-4 w-4" />
+                                                                <span>Cetak Disposisi</span>
+                                                            </Dropdown.Link>
                                                         )}
+
+                                                        {/* Timeline */}
+                                                        <div className="border-t border-border-default my-1" />
+                                                        <Dropdown.Link
+                                                            as="button"
+                                                            onClick={() => handleOpenTimeline(item)}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            <Clock className="h-4 w-4" />
+                                                            <span>Lihat Timeline</span>
+                                                        </Dropdown.Link>
 
 
 
@@ -669,6 +757,37 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                     </p>
                 }
                 isLoading={isDeleting}
+            />
+
+            {/* Timeline Modal */}
+            <TimelineModal
+                isOpen={timelineModalOpen}
+                onClose={() => setTimelineModalOpen(false)}
+                suratMasukId={timelineSuratId}
+                suratPerihal={timelinePerihal}
+            />
+
+            {/* Disposisi Modal */}
+            <DisposisiModal
+                isOpen={disposisiModalOpen}
+                onClose={() => setDisposisiModalOpen(false)}
+                suratMasukId={disposisiSuratId}
+                suratPerihal={disposisiPerihal}
+                onSuccess={() => {
+                    // Refresh data setelah disposisi berhasil
+                    router.reload({ only: ['suratMasuk'] });
+                }}
+            />
+
+            {/* Jadwalkan Modal */}
+            <JadwalkanModal
+                isOpen={jadwalkanModalOpen}
+                onClose={() => setJadwalkanModalOpen(false)}
+                suratMasukId={jadwalkanSuratId}
+                suratPerihal={jadwalkanPerihal}
+                onSuccess={() => {
+                    router.reload({ only: ['suratMasuk'] });
+                }}
             />
 
             {/* Detail Modal */}

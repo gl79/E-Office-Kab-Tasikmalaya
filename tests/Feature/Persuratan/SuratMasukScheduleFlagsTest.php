@@ -28,6 +28,8 @@ class SuratMasukScheduleFlagsTest extends TestCase
             'tujuan_id' => $bupati->id,
             'tujuan' => $bupati->name,
             'nomor_agenda' => 'SM/0099/' . date('Y'),
+            'is_primary' => true,
+            'is_tembusan' => false,
             'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
             'diterima_at' => now(),
         ]);
@@ -57,6 +59,8 @@ class SuratMasukScheduleFlagsTest extends TestCase
             'tujuan_id' => $bupati->id,
             'tujuan' => $bupati->name,
             'nomor_agenda' => 'SM/0100/' . date('Y'),
+            'is_primary' => true,
+            'is_tembusan' => false,
             'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
             'diterima_at' => now(),
         ]);
@@ -124,7 +128,8 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $this->assertNotNull($item);
         $this->assertFalse((bool) ($item['can_schedule'] ?? false));
         $this->assertFalse((bool) ($item['can_finalize_schedule'] ?? false));
-        $this->assertFalse((bool) ($item['can_view_schedule'] ?? false));
+        // Delegasi yang ada di tujuan bisa lihat jadwal (isDisposeRecipient=true)
+        $this->assertTrue((bool) ($item['can_view_schedule'] ?? false));
     }
 
     public function test_superadmin_melihat_flag_penjadwalan_sesuai_kondisi_surat(): void
@@ -183,6 +188,8 @@ class SuratMasukScheduleFlagsTest extends TestCase
             'tujuan_id' => $bupati->id,
             'tujuan' => $bupati->name,
             'nomor_agenda' => 'SM/0999/' . date('Y'),
+            'is_primary' => true,
+            'is_tembusan' => false,
             'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
             'diterima_at' => now(),
         ]);
@@ -213,6 +220,8 @@ class SuratMasukScheduleFlagsTest extends TestCase
             'tujuan_id' => $bupati->id,
             'tujuan' => $bupati->name,
             'nomor_agenda' => 'SM/0102/' . date('Y'),
+            'is_primary' => true,
+            'is_tembusan' => false,
             'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
             'diterima_at' => now(),
         ]);
@@ -266,7 +275,8 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $this->assertNotNull($item);
         $this->assertFalse((bool) ($item['can_schedule'] ?? false));
         $this->assertFalse((bool) ($item['can_finalize_schedule'] ?? false));
-        $this->assertFalse((bool) ($item['can_view_schedule'] ?? false));
+        // Delegasi yang ada di tujuan bisa lihat jadwal
+        $this->assertTrue((bool) ($item['can_view_schedule'] ?? false));
     }
 
     private function fetchSuratMasukItems(User $user): array

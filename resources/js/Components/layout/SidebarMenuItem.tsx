@@ -93,9 +93,8 @@ export default function SidebarMenuItem({
 }: SidebarMenuItemProps) {
     const { url, props } = usePage<PageProps>();
     const userRole = props.auth.user?.role;
-    const pendingSuratMasuk = props.notifications?.surat_masuk_menunggu_penerimaan ?? 0;
-    const badgeCount = item.badgeKey === 'surat_masuk_menunggu_penerimaan'
-        ? pendingSuratMasuk
+    const badgeCount = item.badgeKey
+        ? (props.notifications?.[item.badgeKey] ?? 0)
         : 0;
 
     // Filter children based on role

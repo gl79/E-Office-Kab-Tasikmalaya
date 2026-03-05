@@ -20,6 +20,8 @@ return new class extends Migration
                 ->nullOnDelete();
             $table->string('tujuan', 255);
             $table->string('nomor_agenda', 50)->nullable();
+            $table->boolean('is_primary')->default(false)->comment('Penerima utama berdasarkan level jabatan terendah');
+            $table->boolean('is_tembusan')->default(false)->comment('Penerima tembusan, hanya bisa lihat');
             $table->string('status_penerimaan', 50)->default('Menunggu Penerimaan');
             $table->timestamp('diterima_at')->nullable();
 
@@ -27,9 +29,9 @@ return new class extends Migration
 
             // Foreign Key dengan CASCADE delete
             $table->foreign('surat_masuk_id')
-                  ->references('id')
-                  ->on('surat_masuks')
-                  ->cascadeOnDelete();
+                ->references('id')
+                ->on('surat_masuks')
+                ->cascadeOnDelete();
 
             // Index
             $table->index('surat_masuk_id');

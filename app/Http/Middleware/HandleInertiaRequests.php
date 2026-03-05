@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\DisposisiSurat;
+use App\Models\Penjadwalan;
 use App\Models\SuratMasukTujuan;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
@@ -70,23 +72,48 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        // Hanya user dengan jabatan can_dispose yang perlu notifikasi surat menunggu
-        if (!$user || !$user->canDispose()) {
+        if (!$user) {
             return [
                 'surat_masuk_menunggu_penerimaan' => 0,
+                'disposisi_belum_diproses' => 0,
+                'jadwal_tentatif_pending' => 0,
             ];
         }
 
-        $cacheKey = 'surat_masuk_menunggu_penerimaan_' . $user->id;
+        $cacheKey = 'notif_sidebar_' . $user->id;
 
-        return [
-            'surat_masuk_menunggu_penerimaan' => CacheHelper::tags(['persuratan_list'])->remember($cacheKey, 60, function () use ($user) {
-                return SuratMasukTujuan::query()
+        return CacheHelper::tags(['persuratan_list', 'penjadwalan'])->remember($cacheKey, 60, function () use ($user) {
+            $suratMenunggu = 0;
+            $disposisiBelumDiproses = 0;
+            $jadwalTentatifPending = 0;
+
+            if ($user->canDispose()) {
+                // Surat masuk menunggu penerimaan
+                $suratMenunggu = SuratMasukTujuan::query()
                     ->where('tujuan_id', $user->id)
                     ->where('status_penerimaan', SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN)
                     ->whereHas('suratMasuk', fn($q) => $q->whereNull('deleted_at'))
                     ->count();
-            }),
-        ];
+
+                // Disposisi yang ditujukan ke user ini dan belum dibaca
+                $disposisiBelumDiproses = DisposisiSurat::query()
+                    ->where('ke_user_id', $user->id)
+                    ->whereNull('dibaca_at')
+                    ->count();
+
+                // Jadwal tentatif di mana user adalah pemilik jadwal
+                $jadwalTentatifPending = Penjadwalan::query()
+                    ->where('pemilik_jadwal_id', $user->id)
+                    ->where('status', Penjadwalan::STATUS_TENTATIF)
+                    ->whereNull('deleted_at')
+                    ->count();
+            }
+
+            return [
+                'surat_masuk_menunggu_penerimaan' => $suratMenunggu,
+                'disposisi_belum_diproses' => $disposisiBelumDiproses,
+                'jadwal_tentatif_pending' => $jadwalTentatifPending,
+            ];
+        });
     }
 }

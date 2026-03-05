@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Carbon;
 
 /**
@@ -57,6 +58,19 @@ class SuratMasuk extends Model
 {
     use HasFactory, HasUlids, HasAuditTrail;
 
+    /**
+     * Konstanta status alur surat
+     */
+    public const STATUS_BARU = 'baru';
+    public const STATUS_DIPROSES = 'diproses';
+    public const STATUS_SELESAI = 'selesai';
+
+    public const STATUS_OPTIONS = [
+        self::STATUS_BARU => 'Baru',
+        self::STATUS_DIPROSES => 'Diproses',
+        self::STATUS_SELESAI => 'Selesai',
+    ];
+
     protected $table = 'surat_masuks';
 
     protected $fillable = [
@@ -77,6 +91,7 @@ class SuratMasuk extends Model
         'tanggal_diteruskan',
         'catatan_tambahan',
         'file_path',
+        'status',
         'created_by',
         'updated_by',
     ];
@@ -139,6 +154,14 @@ class SuratMasuk extends Model
     public function disposisis(): HasMany
     {
         return $this->hasMany(DisposisiSurat::class, 'surat_masuk_id');
+    }
+
+    /**
+     * Relasi ke timeline surat (one to many)
+     */
+    public function timelines(): HasMany
+    {
+        return $this->hasMany(TimelineSurat::class, 'surat_masuk_id')->orderBy('created_at');
     }
 
     /**
@@ -213,6 +236,36 @@ class SuratMasuk extends Model
         return $this->penjadwalan()->exists();
     }
 
+    /**
+     * Dapatkan penerima primer (level jabatan terendah / angka terkecil)
+     * dari daftar tujuan surat.
+     */
+    public function getPrimaryRecipient(): ?SuratMasukTujuan
+    {
+        return $this->tujuans
+            ->filter(fn(SuratMasukTujuan $t) => $t->tujuan_id !== null)
+            ->sortBy(fn(SuratMasukTujuan $t) => $t->user?->getJabatanLevel() ?? 999)
+            ->first();
+    }
+
+    /**
+     * Dapatkan penerima disposisi terakhir dalam rantai disposisi.
+     */
+    public function getLastDisposisiRecipient(): ?User
+    {
+        $lastDisposisi = $this->disposisis()->latest()->first();
+        return $lastDisposisi?->keUser;
+    }
+
+    /**
+     * Cek apakah surat sudah selesai (status = selesai ATAU jadwal definitif).
+     */
+    public function isSelesai(): bool
+    {
+        return $this->status === self::STATUS_SELESAI
+            || ($this->penjadwalan && $this->penjadwalan->status === Penjadwalan::STATUS_DEFINITIF);
+    }
+
     // ==================== SCOPES ====================
 
     /**
@@ -280,6 +333,14 @@ class SuratMasuk extends Model
     public function getSifatLabelAttribute(): string
     {
         return SifatSurat::getOptions()[$this->sifat] ?? $this->sifat;
+    }
+
+    /**
+     * Get label status alur surat
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return self::STATUS_OPTIONS[$this->status] ?? $this->status ?? '-';
     }
 
     /**

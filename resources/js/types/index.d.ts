@@ -53,6 +53,8 @@ export type PageProps<
     };
     notifications?: {
         surat_masuk_menunggu_penerimaan: number;
+        disposisi_belum_diproses: number;
+        jadwal_tentatif_pending: number;
     };
     url?: string;
 };

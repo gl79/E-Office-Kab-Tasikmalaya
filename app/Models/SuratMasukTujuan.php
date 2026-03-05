@@ -19,12 +19,16 @@ class SuratMasukTujuan extends Model
         'tujuan_id',
         'tujuan',
         'nomor_agenda',
+        'is_primary',
+        'is_tembusan',
         'status_penerimaan',
         'diterima_at',
     ];
 
     protected $casts = [
         'diterima_at' => 'datetime',
+        'is_primary' => 'boolean',
+        'is_tembusan' => 'boolean',
     ];
 
     public const STATUS_MENUNGGU_PENERIMAAN = 'Menunggu Penerimaan';
@@ -57,6 +61,22 @@ class SuratMasukTujuan extends Model
     public function isMenungguPenerimaan(): bool
     {
         return $this->status_penerimaan === self::STATUS_MENUNGGU_PENERIMAAN;
+    }
+
+    /**
+     * Cek apakah penerima ini adalah penerima utama (bukan tembusan).
+     */
+    public function isPrimary(): bool
+    {
+        return (bool) $this->is_primary;
+    }
+
+    /**
+     * Cek apakah penerima ini adalah tembusan.
+     */
+    public function isTembusan(): bool
+    {
+        return (bool) $this->is_tembusan;
     }
 
     // ==================== STATIC METHODS ====================

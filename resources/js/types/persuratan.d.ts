@@ -6,6 +6,8 @@ export interface SuratMasukTujuan {
     id: string;
     tujuan_id?: number | null;
     tujuan: string;
+    is_primary?: boolean;
+    is_tembusan?: boolean;
     status_penerimaan?: string;
     diterima_at?: string | null;
 }
@@ -22,6 +24,7 @@ export interface SuratMasuk {
     isi_ringkas: string | null;
     lampiran: number | null;
     file_path: string | null;
+    status?: 'baru' | 'diproses' | 'selesai';
     tanggal_diteruskan: string | null;
     catatan_tambahan: string | null;
     tujuans: SuratMasukTujuan[];
@@ -47,6 +50,22 @@ export interface SuratMasuk {
         status: string;
         dihadiri_oleh_user_id?: number | null;
     } | null;
+}
+
+export interface TimelineEntry {
+    id: string;
+    aksi: string;
+    aksi_label: string;
+    keterangan: string;
+    user_name: string;
+    user_jabatan: string;
+    created_at: string;
+}
+
+export interface DisposisiTarget {
+    id: number;
+    name: string;
+    jabatan: string;
 }
 
 export interface SuratKeluar {

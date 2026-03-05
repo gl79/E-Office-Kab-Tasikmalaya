@@ -5,6 +5,9 @@ use App\Http\Controllers\Persuratan\SuratMasukController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->prefix('persuratan')->name('persuratan.')->group(function () {
+    // Static route must come before resource wildcard routes
+    Route::get('surat-masuk/disposisi-targets', [SuratMasukController::class, 'disposisiTargets'])->name('surat-masuk.disposisi-targets');
+
     // Surat Masuk Routes
     Route::resource('surat-masuk', SuratMasukController::class)->except(['show']);
     Route::get('surat-masuk/{id}/cetak-kartu', [SuratMasukController::class, 'cetakKartu'])->name('surat-masuk.cetak-kartu');
@@ -13,6 +16,12 @@ Route::middleware('auth')->prefix('persuratan')->name('persuratan.')->group(func
     Route::get('surat-masuk/{id}/cetak-isi', [SuratMasukController::class, 'cetakIsi'])->name('surat-masuk.cetak-isi');
     Route::get('surat-masuk/{id}/preview', [SuratMasukController::class, 'previewFile'])->name('surat-masuk.preview');
     Route::get('surat-masuk/{id}/download', [SuratMasukController::class, 'downloadFile'])->name('surat-masuk.download');
+
+    // Aksi Disposisi & Penjadwalan - Surat Masuk
+    Route::post('surat-masuk/{id}/terima-diketahui', [SuratMasukController::class, 'terimaDisketahui'])->name('surat-masuk.terima-diketahui');
+    Route::post('surat-masuk/{id}/disposisi', [SuratMasukController::class, 'disposisi'])->name('surat-masuk.disposisi');
+    Route::post('surat-masuk/{id}/jadwalkan', [SuratMasukController::class, 'jadwalkan'])->name('surat-masuk.jadwalkan');
+    Route::get('surat-masuk/{id}/timeline', [SuratMasukController::class, 'timeline'])->name('surat-masuk.timeline');
 
     // Surat Keluar Routes
     Route::resource('surat-keluar', SuratKeluarController::class)->except(['show']);

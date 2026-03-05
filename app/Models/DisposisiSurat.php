@@ -7,6 +7,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Model untuk rantai disposisi surat masuk.
+ *
+ * @property string $id
+ * @property string $surat_masuk_id
+ * @property int $dari_user_id
+ * @property int $ke_user_id
+ * @property string|null $catatan
+ * @property \Illuminate\Support\Carbon|null $dibaca_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class DisposisiSurat extends Model
 {
     use HasFactory, HasUlids;
@@ -15,16 +27,14 @@ class DisposisiSurat extends Model
 
     protected $fillable = [
         'surat_masuk_id',
-        'penanda_tangan',
-        'jabatan_penanda_tangan',
-        'tujuan_disposisi',
-        'instruksi',
-        'tanggal_disposisi',
-        'created_by',
+        'dari_user_id',
+        'ke_user_id',
+        'catatan',
+        'dibaca_at',
     ];
 
     protected $casts = [
-        'tanggal_disposisi' => 'date',
+        'dibaca_at' => 'datetime',
     ];
 
     // ==================== RELATIONSHIPS ====================
@@ -38,20 +48,38 @@ class DisposisiSurat extends Model
     }
 
     /**
-     * Relasi ke user yang membuat disposisi
+     * User yang mengirim disposisi
      */
-    public function createdBy(): BelongsTo
+    public function dariUser(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'dari_user_id');
     }
 
-    // ==================== ACCESSORS ====================
+    /**
+     * User yang menerima disposisi
+     */
+    public function keUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ke_user_id');
+    }
+
+    // ==================== HELPERS ====================
 
     /**
-     * Get formatted tanggal disposisi
+     * Cek apakah disposisi sudah dibaca oleh penerima.
      */
-    public function getTanggalDisposisiFormattedAttribute(): string
+    public function isRead(): bool
     {
-        return $this->tanggal_disposisi?->format('d/m/Y') ?? '-';
+        return $this->dibaca_at !== null;
+    }
+
+    /**
+     * Tandai disposisi sebagai sudah dibaca.
+     */
+    public function markAsRead(): void
+    {
+        if (!$this->isRead()) {
+            $this->update(['dibaca_at' => now()]);
+        }
     }
 }

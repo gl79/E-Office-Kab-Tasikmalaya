@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Persuratan;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Persuratan\DisposisiRequest;
+use App\Http\Requests\Persuratan\JadwalkanSuratRequest;
 use App\Http\Requests\Persuratan\SuratMasukRequest;
-use App\Models\DisposisiSurat;
 use App\Models\IndeksSurat;
 use App\Models\JenisSurat;
 use App\Models\SifatSurat;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
+use App\Models\TimelineSurat;
 use App\Models\User;
+use App\Services\Persuratan\DisposisiService;
 use App\Services\Persuratan\SuratMasukService;
 use App\Support\CacheHelper;
 use Illuminate\Http\Request;
@@ -21,7 +24,10 @@ use Inertia\Inertia;
 
 class SuratMasukController extends Controller
 {
-    public function __construct(private readonly SuratMasukService $service) {}
+    public function __construct(
+        private readonly SuratMasukService $service,
+        private readonly DisposisiService $disposisiService,
+    ) {}
 
     /**
      * Get user options for tujuan select, ordered by jabatan level.
@@ -203,6 +209,14 @@ class SuratMasukController extends Controller
             }
         }
 
+        // Record timeline
+        TimelineSurat::record(
+            $suratMasuk->id,
+            $user->id,
+            TimelineSurat::AKSI_TERIMA,
+            "Surat diterima oleh {$user->name}"
+        );
+
         CacheHelper::flush(['persuratan_list']);
 
         return redirect()->back()->with('success', 'Surat berhasil diterima.');
@@ -253,7 +267,7 @@ class SuratMasukController extends Controller
     public function cetakDisposisi(Request $request, string $id)
     {
         $suratMasuk = SuratMasuk::with(['tujuans'])->findOrFail($id);
-        $this->authorize('disposisiByBupati', $suratMasuk);
+        $this->authorize('disposisi', $suratMasuk);
 
         /** @var User $user */
         $user = Auth::user();
@@ -263,18 +277,111 @@ class SuratMasukController extends Controller
             'jabatan' => $user->jabatan_nama ?? '-',
         ];
 
-        // Record disposisi history
-        DisposisiSurat::create([
-            'surat_masuk_id' => $suratMasuk->id,
-            'penanda_tangan' => $penandaTangan['nama'],
-            'jabatan_penanda_tangan' => $penandaTangan['jabatan'],
-            'tanggal_disposisi' => now(),
-            'created_by' => Auth::id(),
-        ]);
-
         return Inertia::render('Persuratan/SuratMasuk/CetakDisposisi', [
             'suratMasuk' => $suratMasuk,
             'penandaTangan' => $penandaTangan,
+        ]);
+    }
+
+    // ==================== AKSI DISPOSISI & PENJADWALAN ====================
+
+    /**
+     * Terima / Diketahui — surat cukup diketahui, status → selesai.
+     */
+    public function terimaDisketahui(string $id)
+    {
+        $suratMasuk = SuratMasuk::findOrFail($id);
+        $this->authorize('terimaDisketahui', $suratMasuk);
+
+        $result = $this->disposisiService->terimaDisketahui($suratMasuk, Auth::user());
+
+        return redirect()->back()->with(
+            $result['success'] ? 'success' : 'error',
+            $result['message']
+        );
+    }
+
+    /**
+     * Disposisi surat ke pejabat bawahan.
+     */
+    public function disposisi(DisposisiRequest $request, string $id)
+    {
+        $suratMasuk = SuratMasuk::findOrFail($id);
+        $this->authorize('disposisi', $suratMasuk);
+
+        $keUser = User::findOrFail($request->validated()['ke_user_id']);
+        $result = $this->disposisiService->disposisi(
+            $suratMasuk,
+            Auth::user(),
+            $keUser,
+            $request->validated()['catatan'] ?? null
+        );
+
+        return redirect()->back()->with(
+            $result['success'] ? 'success' : 'error',
+            $result['message']
+        );
+    }
+
+    /**
+     * Jadwalkan surat masuk sebagai kegiatan tentatif.
+     */
+    public function jadwalkan(JadwalkanSuratRequest $request, string $id)
+    {
+        $suratMasuk = SuratMasuk::findOrFail($id);
+        $this->authorize('jadwalkan', $suratMasuk);
+
+        $result = $this->disposisiService->jadwalkan(
+            $suratMasuk,
+            Auth::user(),
+            $request->validated()
+        );
+
+        return redirect()->back()->with(
+            $result['success'] ? 'success' : 'error',
+            $result['message']
+        );
+    }
+
+    /**
+     * Ambil data timeline surat masuk.
+     */
+    public function timeline(string $id)
+    {
+        $suratMasuk = SuratMasuk::findOrFail($id);
+        $this->authorize('viewTimeline', $suratMasuk);
+
+        $timelines = TimelineSurat::where('surat_masuk_id', $suratMasuk->id)
+            ->with('user:id,name,jabatan_id')
+            ->with('user.jabatanRelasi:id,nama')
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn(TimelineSurat $t) => [
+                'id' => $t->id,
+                'aksi' => $t->aksi,
+                'aksi_label' => $t->aksi_label,
+                'keterangan' => $t->keterangan,
+                'user_name' => $t->user?->name ?? 'Sistem',
+                'user_jabatan' => $t->user?->jabatan_nama ?? '-',
+                'created_at' => $t->created_at?->toISOString(),
+            ]);
+
+        return response()->json(['timelines' => $timelines]);
+    }
+
+    /**
+     * Mengambil daftar user target disposisi untuk modal.
+     */
+    public function disposisiTargets()
+    {
+        $targets = $this->disposisiService->getDisposisiTargets(Auth::user());
+
+        return response()->json([
+            'targets' => $targets->map(fn(User $u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'jabatan' => $u->jabatan_nama ?? '-',
+            ]),
         ]);
     }
 

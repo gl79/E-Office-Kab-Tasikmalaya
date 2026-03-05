@@ -48,7 +48,8 @@ class PenjadwalanTentatifController extends Controller
                 return PenjadwalanResource::collection($query);
             })),
             'userOptions' => User::query()
-                ->select(['id', 'name', 'nip', 'jabatan'])
+                ->select(['id', 'name', 'nip', 'jabatan_id'])
+                ->with('jabatanRelasi:id,nama')
                 ->where('role', '!=', User::ROLE_SUPERADMIN)
                 ->orderBy('name')
                 ->get(),
