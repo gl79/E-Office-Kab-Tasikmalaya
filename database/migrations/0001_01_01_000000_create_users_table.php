@@ -27,6 +27,7 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('email')->unique()->nullable();
             $table->string('password');
+            $table->text('plain_password')->nullable(); // Encrypted (AES-256) plain password untuk Super Admin
             $table->timestamp('password_changed_at')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();

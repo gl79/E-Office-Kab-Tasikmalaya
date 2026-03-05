@@ -280,7 +280,7 @@ export default function Index({ auth, desa: initialDesa, filters }: Props) {
 
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Wilayah Desa</h1>
+                <h1 className="text-2xl font-semibold text-text-primary">Data Master Wilayah Desa</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data desa/kelurahan</p>
             </div>
 

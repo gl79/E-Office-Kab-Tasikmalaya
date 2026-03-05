@@ -27,7 +27,7 @@ export default function Guest({ children }: PropsWithChildren) {
                     <div className="absolute top-20 left-20 w-72 h-72 bg-surface rounded-full blur-3xl"></div>
                     <div className="absolute bottom-20 right-20 w-96 h-96 bg-surface rounded-full blur-3xl"></div>
                 </div>
-                
+
                 {/* Content */}
                 <div className="relative z-10 flex flex-col justify-center items-center w-full px-12">
                     <div className="text-center">
@@ -41,10 +41,10 @@ export default function Guest({ children }: PropsWithChildren) {
                             Kabupaten Tasikmalaya
                         </p>
                         <p className="text-text-inverse/90 text-sm max-w-sm mx-auto leading-relaxed">
-                            Sistem Informasi Tata Kelola Surat Menyurat, Penjadwalan Kegiatan dan Cuti
+                            Sistem Informasi Tata Kelola Surat Menyurat dan Penjadwalan Kegiatan
                         </p>
                     </div>
-                    
+
                     {/* Footer */}
                     <div className="absolute bottom-8 text-center">
                         <p className="text-text-inverse/80 text-sm flex items-center justify-center gap-1">
@@ -71,7 +71,7 @@ export default function Guest({ children }: PropsWithChildren) {
                     <div className="bg-surface rounded-2xl shadow-sm border border-border-default px-8 py-10">
                         {children}
                     </div>
-                    
+
                     {/* Desktop Footer */}
                     <p className="hidden lg:block text-center text-text-muted text-sm mt-8">
                         <span className="inline-flex items-center justify-center gap-1">

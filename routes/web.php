@@ -19,6 +19,5 @@ require __DIR__ . '/modules/pengaturan.php';
 require __DIR__ . '/modules/master.php';
 require __DIR__ . '/modules/persuratan.php';
 require __DIR__ . '/modules/penjadwalan.php';
-require __DIR__ . '/modules/cuti.php';
 
 require __DIR__ . '/auth.php';

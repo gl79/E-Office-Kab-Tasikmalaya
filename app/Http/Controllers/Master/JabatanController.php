@@ -21,7 +21,7 @@ class JabatanController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        abort_unless($user->isSuperAdmin(), 403, 'Hanya Super Admin yang dapat mengelola jabatan.');
+        abort_unless($user->canManageUsers(), 403, 'Anda tidak memiliki akses untuk mengelola jabatan.');
 
         return Inertia::render('Master/Jabatan/Index', [
             'data' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember(
@@ -71,7 +71,7 @@ class JabatanController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        abort_unless($user->isSuperAdmin(), 403);
+        abort_unless($user->canManageUsers(), 403);
 
         if ($jabatan->is_system) {
             return back()->with('error', 'Jabatan sistem tidak dapat dihapus.');

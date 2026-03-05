@@ -262,7 +262,7 @@ const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
 
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Master Indeks Surat</h1>
+                <h1 className="text-2xl font-semibold text-text-primary">Data Master Indeks Surat</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data kode referensi indeks surat</p>
             </div>
 

@@ -15,7 +15,6 @@ import {
     FileOutput,
     Calendar,
     Clock,
-    CalendarOff,
     History,
     LucideIcon
 } from 'lucide-react';
@@ -222,12 +221,6 @@ const Dashboard = () => {
         ];
 
 
-
-    // Cuti cards - Coming Soon
-    const cutiCards = [
-        { title: 'Pengajuan Cuti', description: 'Total pengajuan cuti', icon: CalendarOff, color: 'text-accent', bg: 'bg-accent-light' },
-    ];
-
     const quickCards = getQuickCards();
 
     return (
@@ -302,34 +295,6 @@ const Dashboard = () => {
                                             </div>
                                         </div>
                                     </Link>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Cuti Coming Soon Section */}
-                    <div className="mb-8">
-                        <h2 className="text-lg font-semibold text-text-primary mb-4">Cuti</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {cutiCards.map((card) => {
-                                const Icon = card.icon;
-                                return (
-                                    <div
-                                        key={card.title}
-                                        className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md transition-shadow"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm text-text-secondary mb-1">{card.title}</p>
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-hover text-text-secondary">
-                                                    Coming Soon
-                                                </span>
-                                            </div>
-                                            <div className={`${card.bg} ${card.color} p-3 rounded-lg`}>
-                                                <Icon className="w-6 h-6" />
-                                            </div>
-                                        </div>
-                                    </div>
                                 );
                             })}
                         </div>

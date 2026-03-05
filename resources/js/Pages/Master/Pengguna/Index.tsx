@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, useToast } from '@/Components/ui';
 import { InputLabel, TextInput, InputError } from '@/Components/form';
 import { User, PageProps } from '@/types';
-import { Search, Pencil, Trash2, Plus, Eye } from 'lucide-react';
+import { Search, Pencil, Trash2, Plus, Eye, EyeOff } from 'lucide-react';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { useDeferredDataMutable } from '@/hooks';
 
@@ -32,6 +32,7 @@ const Index = ({ data, filters, roles, jabatans }: Props) => {
     const [editItem, setEditItem] = useState<User | null>(null);
     const [deleteItem, setDeleteItem] = useState<User | null>(null);
     const [detailItem, setDetailItem] = useState<User | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
     const [previewFoto, setPreviewFoto] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,7 +174,7 @@ const Index = ({ data, filters, roles, jabatans }: Props) => {
 
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Data Pengguna</h1>
+                <h1 className="text-2xl font-semibold text-text-primary">Data Master Pengguna</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data pengguna sistem</p>
             </div>
 
@@ -256,7 +257,7 @@ const Index = ({ data, filters, roles, jabatans }: Props) => {
                                     </td>
                                     <td className="px-4 py-3 border border-border-default text-center">
                                         <div className="flex justify-center gap-2">
-                                            <Button size="sm" variant="secondary" onClick={() => setDetailItem(item)} title="Lihat Detail">
+                                            <Button size="sm" variant="secondary" onClick={() => { setShowPassword(false); setDetailItem(item); }} title="Lihat Detail">
                                                 <Eye className="h-4 w-4" />
                                             </Button>
                                             {/* TU cannot edit/delete SuperAdmin accounts */}
@@ -540,6 +541,30 @@ const Index = ({ data, filters, roles, jabatans }: Props) => {
                                     </span>
                                 </p>
                             </div>
+                            {/* Password - Hanya untuk Super Admin */}
+                            {auth.user.role === 'superadmin' && (
+                                <div className="col-span-2">
+                                    <p className="text-xs text-text-secondary">Password</p>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <p className="text-sm font-medium text-text-primary font-mono">
+                                            {showPassword
+                                                ? (detailItem.plain_password || 'Tidak tersedia')
+                                                : '••••••••••'}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="text-text-muted hover:text-text-primary transition-colors"
+                                            title={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+                                        >
+                                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
+                                    {!detailItem.plain_password && (
+                                        <p className="text-xs text-text-muted mt-0.5 italic">Password diubah sebelum fitur ini aktif</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                         {/* Info Pembuat */}
                         {detailItem.created_at && (

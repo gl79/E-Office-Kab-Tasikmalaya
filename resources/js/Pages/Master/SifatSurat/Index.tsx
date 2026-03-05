@@ -127,7 +127,7 @@ const Index = ({ auth, sifatSurat: initialSifatSurat }: Props) => {
             <Head title="Master Sifat Surat" />
 
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Master Sifat Surat</h1>
+                <h1 className="text-2xl font-semibold text-text-primary">Data Master Sifat Surat</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data referensi sifat surat</p>
             </div>
 

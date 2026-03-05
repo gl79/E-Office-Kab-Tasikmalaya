@@ -73,7 +73,6 @@ class User extends Authenticatable
         'master.sifat-surat' => 'Data Master - Sifat Surat',
         'persuratan.surat-masuk' => 'Persuratan - Surat Masuk',
         'persuratan.surat-keluar' => 'Persuratan - Surat Keluar',
-        'cuti' => 'Cuti',
         'penjadwalan.jadwal' => 'Penjadwalan - Jadwal',
         'penjadwalan.tentatif' => 'Penjadwalan - Tentatif',
         'penjadwalan.definitif' => 'Penjadwalan - Definitif',
@@ -88,6 +87,7 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
+        'plain_password',
         'role',
         'foto',
         'nip',
@@ -103,6 +103,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'plain_password',
         'remember_token',
     ];
 
@@ -123,6 +124,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'plain_password' => 'encrypted',
             'module_access' => 'array',
             'password_changed_at' => 'datetime',
             'jabatan_id' => 'integer',

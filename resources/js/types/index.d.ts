@@ -35,6 +35,7 @@ export interface User {
     } | null;
     jabatan_relasi?: Jabatan | null;
     password_changed_at?: string | null;
+    plain_password?: string | null;
     created_at?: string;
     deleted_at?: string | null;
 }

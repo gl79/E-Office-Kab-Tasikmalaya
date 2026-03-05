@@ -255,7 +255,7 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
 
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Wilayah Kecamatan</h1>
+                <h1 className="text-2xl font-semibold text-text-primary">Data Master Wilayah Kecamatan</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data kecamatan</p>
             </div>
 

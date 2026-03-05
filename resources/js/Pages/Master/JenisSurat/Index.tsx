@@ -135,7 +135,7 @@ const Index = ({ auth, jenisSurat: initialJenisSurat, filters }: Props) => {
 
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Master Jenis Surat</h1>
+                <h1 className="text-2xl font-semibold text-text-primary">Data Master Jenis Surat</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data referensi jenis surat</p>
             </div>
 

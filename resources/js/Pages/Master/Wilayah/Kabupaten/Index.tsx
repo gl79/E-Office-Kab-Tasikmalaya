@@ -213,7 +213,7 @@ export default function Index({ auth, kabupaten: initialKabupaten, filters }: Pr
 
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Wilayah Kabupaten</h1>
+                <h1 className="text-2xl font-semibold text-text-primary">Data Master Wilayah Kabupaten</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data kabupaten/kota</p>
             </div>
 
@@ -259,7 +259,7 @@ export default function Index({ auth, kabupaten: initialKabupaten, filters }: Pr
 
                 {/* Table */}
                 {isLoading && !hasCached ? (
-                     <div className="p-4">
+                    <div className="p-4">
                         <TableShimmer columns={5} />
                     </div>
                 ) : (

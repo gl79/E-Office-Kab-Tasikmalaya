@@ -142,7 +142,7 @@ const Index = ({ auth, unitKerja: initialUnitKerja, filters }: Props) => {
 
             {/* Page Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Data Unit Kerja</h1>
+                <h1 className="text-2xl font-semibold text-text-primary">Data Master Unit Kerja</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data unit kerja / OPD</p>
             </div>
 
@@ -178,58 +178,58 @@ const Index = ({ auth, unitKerja: initialUnitKerja, filters }: Props) => {
                         <TableShimmer columns={4} />
                     </div>
                 ) : (
-                <table className="min-w-full border-collapse border border-border-default">
-                    <thead className="bg-surface-hover">
-                        <tr>
-                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase w-16">No</th>
-                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Nama Unit Kerja</th>
-                            <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Singkatan</th>
-                            <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-surface">
-                        {paginatedData.map((unit, index) => (
-                            <tr key={unit.id} className="hover:bg-surface-hover">
-                                <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-sm">
-                                    {(currentPage - 1) * itemsPerPage + index + 1}
-                                </td>
-                                <td className="px-4 py-3 border border-border-default font-medium text-text-primary">
-                                    {unit.nama}
-                                </td>
-                                <td className="px-4 py-3 border border-border-default text-text-secondary">
-                                    {unit.singkatan || '-'}
-                                </td>
-                                <td className="px-4 py-3 border border-border-default text-center">
-                                    <div className="flex justify-center gap-2">
-                                        <Button 
-                                            variant="secondary" 
-                                            size="sm" 
-                                            onClick={() => openEditModal(unit)}
-                                            title="Edit"
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button 
-                                            variant="danger" 
-                                            size="sm" 
-                                            onClick={() => openDeleteModal(unit)}
-                                            title="Hapus"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {paginatedData.length === 0 && (
+                    <table className="min-w-full border-collapse border border-border-default">
+                        <thead className="bg-surface-hover">
                             <tr>
-                                <td colSpan={4} className="px-4 py-8 border border-border-default text-center text-text-secondary">
-                                    {search ? 'Tidak ada unit kerja yang cocok dengan pencarian' : 'Tidak ada data unit kerja'}
-                                </td>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase w-16">No</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Nama Unit Kerja</th>
+                                <th className="px-4 py-3 border border-border-default text-left text-xs font-bold text-text-secondary uppercase">Singkatan</th>
+                                <th className="px-4 py-3 border border-border-default text-center text-xs font-bold text-text-secondary uppercase">Aksi</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-surface">
+                            {paginatedData.map((unit, index) => (
+                                <tr key={unit.id} className="hover:bg-surface-hover">
+                                    <td className="px-4 py-3 border border-border-default text-center text-text-secondary text-sm">
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
+                                    </td>
+                                    <td className="px-4 py-3 border border-border-default font-medium text-text-primary">
+                                        {unit.nama}
+                                    </td>
+                                    <td className="px-4 py-3 border border-border-default text-text-secondary">
+                                        {unit.singkatan || '-'}
+                                    </td>
+                                    <td className="px-4 py-3 border border-border-default text-center">
+                                        <div className="flex justify-center gap-2">
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => openEditModal(unit)}
+                                                title="Edit"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => openDeleteModal(unit)}
+                                                title="Hapus"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {paginatedData.length === 0 && (
+                                <tr>
+                                    <td colSpan={4} className="px-4 py-8 border border-border-default text-center text-text-secondary">
+                                        {search ? 'Tidak ada unit kerja yang cocok dengan pencarian' : 'Tidak ada data unit kerja'}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 )}
 
                 {/* Pagination */}

@@ -13,6 +13,11 @@ class JenisSuratSeeder extends Seeder
     public function run(): void
     {
         $jenisSurat = [
+            'Surat Dinas',
+            'Surat Tugas',
+            'Surat Perintah',
+            'Surat Keputusan',
+            'Nota Dinas',
             'Instruksi',
             'Surat Edaran',
             'Surat Kuasa',

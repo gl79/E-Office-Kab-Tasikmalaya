@@ -47,8 +47,8 @@ export default function Index({ auth, provinsi: initialProvinsi, filters }: Prop
         let data = provinsi;
         if (search) {
             const lowerSearch = search.toLowerCase();
-            data = data.filter(item => 
-                item.nama.toLowerCase().includes(lowerSearch) || 
+            data = data.filter(item =>
+                item.nama.toLowerCase().includes(lowerSearch) ||
                 item.kode.toLowerCase().includes(lowerSearch)
             );
         }
@@ -152,7 +152,7 @@ export default function Index({ auth, provinsi: initialProvinsi, filters }: Prop
             <Head title="Wilayah Provinsi" />
 
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Wilayah Provinsi</h1>
+                <h1 className="text-2xl font-semibold text-text-primary">Data Master Wilayah Provinsi</h1>
                 <p className="text-text-secondary text-sm mt-1">Kelola data provinsi</p>
             </div>
 

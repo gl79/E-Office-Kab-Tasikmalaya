@@ -56,7 +56,7 @@ export const menuItems: MenuItem[] = [
                 label: 'Jabatan',
                 href: '/master/jabatans',
                 icon: 'briefcase',
-                roles: ['superadmin'],
+                roles: ['superadmin', 'tu'],
             },
             {
                 label: 'Indeks Surat',
@@ -119,18 +119,6 @@ export const menuItems: MenuItem[] = [
                 label: 'History Penjadwalan',
                 href: '/penjadwalan/history',
                 icon: 'history',
-            },
-        ],
-    },
-    {
-        label: 'Cuti',
-        icon: 'calendar-off',
-        roles: ['superadmin', 'tu'],
-        children: [
-            {
-                label: 'Data Cuti',
-                href: '/cuti',
-                icon: 'list',
             },
         ],
     },

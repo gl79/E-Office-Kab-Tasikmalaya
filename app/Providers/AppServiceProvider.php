@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Events\JadwalCreated;
 use App\Listeners\SendJadwalCreatedNotification;
 use App\Models\ActivityLog;
-use App\Models\Cuti;
 use App\Models\User;
 use App\Models\IndeksSurat;
 use App\Models\JenisSurat;
@@ -19,7 +18,6 @@ use App\Models\WilayahKabupaten;
 use App\Models\WilayahKecamatan;
 use App\Models\WilayahProvinsi;
 use App\Policies\ActivityLogPolicy;
-use App\Policies\CutiPolicy;
 use App\Policies\IndeksSuratPolicy;
 use App\Policies\JenisSuratPolicy;
 use App\Policies\PenjadwalanPolicy;
@@ -80,8 +78,5 @@ class AppServiceProvider extends ServiceProvider
 
         // Penjadwalan Policy
         Gate::policy(Penjadwalan::class, PenjadwalanPolicy::class);
-
-        // Cuti Policy
-        Gate::policy(Cuti::class, CutiPolicy::class);
     }
 }

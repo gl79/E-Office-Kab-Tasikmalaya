@@ -1,5 +1,5 @@
 import { Head, useForm, Link } from '@inertiajs/react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
@@ -70,6 +70,9 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
         file: null as File | null,
     });
 
+    // State untuk format nomor surat (khusus Surat Dinas)
+    const [formatNomorSurat, setFormatNomorSurat] = useState<'1' | '2'>('1');
+
     // Indeks: hanya level Primer (level 1) dengan fitur search
     const indeksSelectOptions = indeksBerkasOptions.map((item) => ({
         value: item.id,
@@ -110,8 +113,16 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
     const selectedIndeks = indeksBerkasOptions.find(item => item.id === data.indeks_id);
     const selectedKode = indeksKlasifikasiOptions.find(item => item.id === data.kode_klasifikasi_id);
 
+    // Resolve nama jenis surat yang dipilih
+    const selectedJenisSurat = jenisSuratOptions.find(item => item.id === data.jenis_surat_id);
+    const namaJenisSurat = selectedJenisSurat?.nama?.toLowerCase() || '';
+
+    // Cek kategori jenis surat
+    const isSuratDinas = namaJenisSurat === 'surat dinas';
+    const isIndexFormat = ['surat tugas', 'surat keputusan', 'surat perintah', 'nota dinas'].includes(namaJenisSurat);
+    const isNomorTahunFormat = ['instruksi', 'surat edaran'].includes(namaJenisSurat);
+
     // Auto-generate nomor_surat when dependencies change
-    // Gunakan kode dari Kode Klasifikasi jika ada, kalau tidak gunakan kode dari Indeks
     useEffect(() => {
         const sifatCode = data.sifat_1 ? getSifatCode(data.sifat_1) : '';
         const noUrut = data.no_urut || '';
@@ -119,14 +130,40 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
         const pengolah = data.kode_pengolah || '';
         const year = data.tanggal_surat ? new Date(data.tanggal_surat).getFullYear().toString() : '';
 
-        // Only generate if we have at least sifat and no_urut
-        if (sifatCode && noUrut) {
-            const parts = [sifatCode, noUrut, kode, pengolah, year].filter(part => part !== '');
-            const generatedNomor = parts.join('/');
+        let generatedNomor = '';
 
-            setData('nomor_surat', generatedNomor);
+        if (isNomorTahunFormat) {
+            // Instruksi & Surat Edaran: Nomor {NoUrut} Tahun {Tahun}
+            if (noUrut && year) {
+                generatedNomor = `Nomor ${parseInt(noUrut, 10)} Tahun ${year}`;
+            }
+        } else if (isSuratDinas) {
+            // Surat Dinas: 2 pilihan format
+            if (formatNomorSurat === '1' && sifatCode && noUrut) {
+                // Format 1: Sifat/Index/NoUrut/Pengolah/Tahun
+                const parts = [sifatCode, kode, noUrut, pengolah, year].filter(p => p !== '');
+                generatedNomor = parts.join('/');
+            } else if (formatNomorSurat === '2' && noUrut) {
+                // Format 2: Index/NoUrut/Pengolah/Tahun
+                const parts = [kode, noUrut, pengolah, year].filter(p => p !== '');
+                generatedNomor = parts.join('/');
+            }
+        } else if (isIndexFormat) {
+            // Surat Tugas, SK, Surat Perintah, Nota Dinas: Index/NoUrut/Pengolah/Tahun
+            if (noUrut) {
+                const parts = [kode, noUrut, pengolah, year].filter(p => p !== '');
+                generatedNomor = parts.join('/');
+            }
+        } else {
+            // Default (dan lainnya): Index/NoUrut/Pengolah/Tahun (sama dengan Surat Tugas)
+            if (noUrut) {
+                const parts = [kode, noUrut, pengolah, year].filter(p => p !== '');
+                generatedNomor = parts.join('/');
+            }
         }
-    }, [data.sifat_1, data.no_urut, data.indeks_id, data.kode_klasifikasi_id, data.kode_pengolah, data.tanggal_surat]);
+
+        setData('nomor_surat', generatedNomor);
+    }, [data.sifat_1, data.no_urut, data.indeks_id, data.kode_klasifikasi_id, data.kode_pengolah, data.tanggal_surat, data.jenis_surat_id, formatNomorSurat]);
 
     const handleIndeksChange = (value: string) => {
         setData(prev => ({
@@ -282,11 +319,49 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             id="nomor_surat"
                                             value={data.nomor_surat}
                                             readOnly
-                                            placeholder="Otomatis terisi berdasarkan Sifat/NoUrut/Kode/Pengolah/Tahun"
+                                            placeholder={
+                                                isNomorTahunFormat
+                                                    ? 'Nomor ... Tahun ...'
+                                                    : isSuratDinas
+                                                        ? (formatNomorSurat === '1' ? 'Sifat/Index/NoUrut/Pengolah/Tahun' : 'Index/NoUrut/Pengolah/Tahun')
+                                                        : isIndexFormat
+                                                            ? 'Index/NoUrut/Pengolah/Tahun'
+                                                            : 'Index/NoUrut/Pengolah/Tahun'
+                                            }
                                             className="w-full bg-surface-hover cursor-not-allowed"
                                         />
                                     </div>
-                                    <p className="text-xs text-text-secondary mt-1">Nomor surat digenerate otomatis oleh sistem</p>
+                                    {isSuratDinas && (
+                                        <div className="mt-2 flex gap-4">
+                                            <label className="flex items-center cursor-pointer text-sm">
+                                                <input
+                                                    type="radio"
+                                                    name="format_nomor"
+                                                    value="1"
+                                                    checked={formatNomorSurat === '1'}
+                                                    onChange={() => setFormatNomorSurat('1')}
+                                                    className="mr-2 text-primary focus:ring-primary"
+                                                />
+                                                Sifat/Index/NoUrut/Pengolah/Tahun
+                                            </label>
+                                            <label className="flex items-center cursor-pointer text-sm">
+                                                <input
+                                                    type="radio"
+                                                    name="format_nomor"
+                                                    value="2"
+                                                    checked={formatNomorSurat === '2'}
+                                                    onChange={() => setFormatNomorSurat('2')}
+                                                    className="mr-2 text-primary focus:ring-primary"
+                                                />
+                                                Index/NoUrut/Pengolah/Tahun
+                                            </label>
+                                        </div>
+                                    )}
+                                    <p className="text-xs text-text-secondary mt-1">
+                                        {isNomorTahunFormat
+                                            ? 'Format: Nomor {NoUrut} Tahun {Tahun}'
+                                            : 'Nomor surat digenerate otomatis oleh sistem'}
+                                    </p>
                                     <InputError message={errors.nomor_surat} className="mt-1" />
                                 </div>
 

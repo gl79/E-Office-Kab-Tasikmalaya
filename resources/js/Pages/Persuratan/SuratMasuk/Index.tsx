@@ -339,7 +339,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <Link href={route('persuratan.surat-masuk.create')}>
                                         <Button>
                                             <Plus className="h-4 w-4 mr-2" />
-                                            Tambah Surat
+                                            Tambah Surat Masuk
                                         </Button>
                                     </Link>
                                 )}

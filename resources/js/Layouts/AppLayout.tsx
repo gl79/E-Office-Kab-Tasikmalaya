@@ -104,30 +104,29 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
         // Label map: URL segment → human-readable label
         const LABEL_MAP: Record<string, string> = {
-            'master'        : 'Data Master',
-            'persuratan'    : 'Persuratan',
-            'penjadwalan'   : 'Penjadwalan',
-            'wilayah'       : 'Wilayah',
-            'pengguna'      : 'Pengguna',
-            'indeks-surat'  : 'Indeks Surat',
-            'jenis-surat'   : 'Jenis Surat',
-            'unit-kerja'    : 'Unit Kerja',
-            'sifat-surat'   : 'Sifat Surat',
-            'surat-masuk'   : 'Surat Masuk',
-            'surat-keluar'  : 'Surat Keluar',
-            'activity-logs' : 'Activity Logs',
-            'tentatif'      : 'Jadwal Tentatif',
-            'definitif'     : 'Jadwal Definitif',
-            'history'       : 'History Penjadwalan',
-            'jadwal'        : 'Form Jadwal',
-            'create'        : 'Tambah',
-            'edit'          : 'Ubah',
-            'profile'       : 'Profil',
-            'cuti'          : 'Cuti',
-            'provinsi'      : 'Provinsi',
-            'kabupaten'     : 'Kabupaten',
-            'kecamatan'     : 'Kecamatan',
-            'desa'          : 'Desa',
+            'master': 'Data Master',
+            'persuratan': 'Persuratan',
+            'penjadwalan': 'Penjadwalan',
+            'wilayah': 'Wilayah',
+            'pengguna': 'Pengguna',
+            'indeks-surat': 'Indeks Surat',
+            'jenis-surat': 'Jenis Surat',
+            'unit-kerja': 'Unit Kerja',
+            'sifat-surat': 'Sifat Surat',
+            'surat-masuk': 'Surat Masuk',
+            'surat-keluar': 'Surat Keluar',
+            'activity-logs': 'Activity Logs',
+            'tentatif': 'Jadwal Tentatif',
+            'definitif': 'Jadwal Definitif',
+            'history': 'History Penjadwalan',
+            'jadwal': 'Form Jadwal',
+            'create': 'Tambah',
+            'edit': 'Ubah',
+            'profile': 'Profil',
+            'provinsi': 'Provinsi',
+            'kabupaten': 'Kabupaten',
+            'kecamatan': 'Kecamatan',
+            'desa': 'Desa',
         };
 
         // Detect ULID (26-char base32) or numeric ID segments — skip these
@@ -182,7 +181,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
                         <img src="/images/pemkabtasik.png" alt="Logo Kabupaten Tasikmalaya" className="w-8 h-8 object-contain" />
                         <span className="font-bold text-text-primary">E-Office</span>
                     </Link>
-                    <button 
+                    <button
                         onClick={() => setIsMobileSidebarOpen(true)}
                         className="p-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface-hover"
                     >
@@ -242,14 +241,14 @@ function AppLayoutInner({ children }: AppLayoutProps) {
                         Apakah Anda yakin ingin keluar?
                     </p>
                     <div className="flex gap-3 justify-center">
-                        <Button 
-                            variant="secondary" 
+                        <Button
+                            variant="secondary"
                             onClick={() => setShowLogoutModal(false)}
                         >
                             Batal
                         </Button>
-                        <Button 
-                            variant="danger" 
+                        <Button
+                            variant="danger"
                             onClick={handleLogout}
                         >
                             Ya, Keluar
@@ -262,7 +261,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
             <Modal
                 isOpen={showPasswordModal}
                 title="Wajib Ganti Password"
-                onClose={() => {}} // Prevent closing
+                onClose={() => { }} // Prevent closing
                 size="md"
             >
                 <div className="p-4">
