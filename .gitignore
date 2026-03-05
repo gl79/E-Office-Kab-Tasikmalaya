@@ -21,6 +21,7 @@
 /storage/pail
 /dump.rdb
 /vendor
+/dev-tools
 Homestead.json
 Homestead.yaml
 Thumbs.db
