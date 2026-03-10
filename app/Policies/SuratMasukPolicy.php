@@ -27,7 +27,6 @@ class SuratMasukPolicy
             return true;
         }
 
-        // User biasa: hanya kalau ada di tujuan ATAU di rantai disposisi
         return $this->isInvolvedInSurat($user, $suratMasuk);
     }
 
@@ -71,26 +70,7 @@ class SuratMasukPolicy
     // ==================== AKSI SURAT MASUK ====================
 
     /**
-     * Terima / Diketahui — hanya primary recipient yang sudah menerima surat
-     * ATAU penerima disposisi yang surat didisposisi ke mereka.
-     */
-    public function terimaDisketahui(User $user, SuratMasuk $suratMasuk): bool
-    {
-        if ($user->isSuperAdmin()) {
-            return true;
-        }
-
-        // Tidak bisa jika surat sudah selesai
-        if ($suratMasuk->status === SuratMasuk::STATUS_SELESAI) {
-            return false;
-        }
-
-        return $this->isActionableRecipient($user, $suratMasuk);
-    }
-
-    /**
-     * Disposisi — hanya penerima primer/disposisi yang sudah terima surat & bisa disposisi.
-     * Surat tidak boleh sudah selesai.
+     * Disposisi - hanya penerima primer/disposisi yang sudah menerima surat dan bisa disposisi.
      */
     public function disposisi(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -102,7 +82,6 @@ class SuratMasukPolicy
             return false;
         }
 
-        // Surat sudah selesai atau jadwal sudah definitif
         if ($suratMasuk->isSelesai()) {
             return false;
         }
@@ -111,7 +90,7 @@ class SuratMasukPolicy
     }
 
     /**
-     * Jadwalkan — sama seperti disposisi, tapi buat jadwal tentatif langsung.
+     * Jadwalkan - sama seperti disposisi, tapi buat jadwal tentatif langsung.
      */
     public function jadwalkan(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -123,7 +102,26 @@ class SuratMasukPolicy
             return false;
         }
 
-        // Surat sudah selesai atau jadwal sudah ada
+        if ($suratMasuk->isSelesai() || $suratMasuk->hasPenjadwalan()) {
+            return false;
+        }
+
+        return $this->isActionableRecipient($user, $suratMasuk);
+    }
+
+    /**
+     * Masukkan ke jadwal - sama seperti jadwalkan.
+     */
+    public function masukkanJadwal(User $user, SuratMasuk $suratMasuk): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$user->canDispose()) {
+            return false;
+        }
+
         if ($suratMasuk->isSelesai() || $suratMasuk->hasPenjadwalan()) {
             return false;
         }
@@ -145,12 +143,12 @@ class SuratMasukPolicy
         }
 
         return $suratMasuk->tujuans()
-            ->where('tujuan_id', $user->id)
+            ->where('tujuan_id', '=', $user->id)
             ->exists();
     }
 
     /**
-     * Lihat timeline — semua pihak yang terlibat dalam surat.
+     * Lihat timeline - semua pihak yang terlibat dalam surat.
      */
     public function viewTimeline(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -171,7 +169,7 @@ class SuratMasukPolicy
     }
 
     /**
-     * Backward compatibility: disposisiByBupati → redirect ke disposisi
+     * Backward compatibility: disposisiByBupati
      */
     public function disposisiByBupati(User $user, SuratMasuk $suratMasuk): bool
     {
@@ -189,48 +187,54 @@ class SuratMasukPolicy
     // ==================== PRIVATE HELPERS ====================
 
     /**
-     * Cek apakah user ini adalah "actionable recipient":
-     * - Primary recipient yang sudah diterima, ATAU
-     * - Penerima disposisi terakhir dalam rantai yang sudah dibaca
+     * Cek apakah user ini actionable recipient:
+     * - primary recipient yang sudah menerima, atau
+     * - penerima disposisi terakhir yang sudah menerima.
      */
     private function isActionableRecipient(User $user, SuratMasuk $suratMasuk): bool
     {
-        // Cek 1: Apakah user adalah primary recipient yang sudah diterima?
-        $tujuan = $suratMasuk->tujuans()
-            ->where('tujuan_id', $user->id)
-            ->where('is_primary', true)
-            ->where('is_tembusan', false)
-            ->where('status_penerimaan', SuratMasukTujuan::STATUS_DITERIMA)
+        $tujuanPrimary = $suratMasuk->tujuans()
+            ->where('tujuan_id', '=', $user->id)
+            ->where('is_primary', '=', true)
+            ->where('is_tembusan', '=', false)
             ->first();
 
-        if ($tujuan) {
-            // Cek apakah user BELUM mendisposisi surat ini (belum diteruskan)
-            $hasDisposed = DisposisiSurat::where('surat_masuk_id', $suratMasuk->id)
-                ->where('dari_user_id', $user->id)
+        if ($tujuanPrimary) {
+            if ($tujuanPrimary->status_penerimaan !== SuratMasukTujuan::STATUS_DITERIMA) {
+                return false;
+            }
+
+            $hasDisposed = DisposisiSurat::where('surat_masuk_id', '=', $suratMasuk->id)
+                ->where('dari_user_id', '=', $user->id)
                 ->exists();
 
-            // Primary yang belum disposisi = bisa aksi
             if (!$hasDisposed) {
                 return true;
             }
         }
 
-        // Cek 2: Apakah user adalah penerima disposisi terakhir?
-        $lastDisposisiToUser = DisposisiSurat::where('surat_masuk_id', $suratMasuk->id)
-            ->where('ke_user_id', $user->id)
+        $lastDisposisiToUser = DisposisiSurat::where('surat_masuk_id', '=', $suratMasuk->id)
+            ->where('ke_user_id', '=', $user->id)
             ->latest()
             ->first();
 
-        if ($lastDisposisiToUser) {
-            // User sudah menerima disposisi — cek belum diteruskan lagi
-            $hasRedisposed = DisposisiSurat::where('surat_masuk_id', $suratMasuk->id)
-                ->where('dari_user_id', $user->id)
-                ->exists();
-
-            return !$hasRedisposed;
+        if (!$lastDisposisiToUser) {
+            return false;
         }
 
-        return false;
+        $tujuanDisposisi = $suratMasuk->tujuans()
+            ->where('tujuan_id', '=', $user->id)
+            ->first();
+
+        if (!$tujuanDisposisi || $tujuanDisposisi->status_penerimaan !== SuratMasukTujuan::STATUS_DITERIMA) {
+            return false;
+        }
+
+        $hasRedisposed = DisposisiSurat::where('surat_masuk_id', '=', $suratMasuk->id)
+            ->where('dari_user_id', '=', $user->id)
+            ->exists();
+
+        return !$hasRedisposed;
     }
 
     /**
@@ -238,21 +242,18 @@ class SuratMasukPolicy
      */
     private function isInvolvedInSurat(User $user, SuratMasuk $suratMasuk): bool
     {
-        // Penerima (primer atau tembusan)
-        if ($suratMasuk->tujuans()->where('tujuan_id', $user->id)->exists()) {
+        if ($suratMasuk->tujuans()->where('tujuan_id', '=', $user->id)->exists()) {
             return true;
         }
 
-        // Staff pengolah
         if ($suratMasuk->staff_pengolah_id === $user->id) {
             return true;
         }
 
-        // Dalam rantai disposisi (pengirim atau penerima)
-        return DisposisiSurat::where('surat_masuk_id', $suratMasuk->id)
+        return DisposisiSurat::where('surat_masuk_id', '=', $suratMasuk->id)
             ->where(function ($q) use ($user) {
-                $q->where('dari_user_id', $user->id)
-                    ->orWhere('ke_user_id', $user->id);
+                $q->where('dari_user_id', '=', $user->id)
+                    ->orWhere('ke_user_id', '=', $user->id);
             })
             ->exists();
     }

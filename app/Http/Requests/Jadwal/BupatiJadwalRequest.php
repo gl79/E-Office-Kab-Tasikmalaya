@@ -34,6 +34,8 @@ class BupatiJadwalRequest extends FormRequest
             'kecamatan_id' => ['nullable', 'string', 'max:2'],
             'desa_id' => ['nullable', 'string', 'max:4'],
             'tempat' => ['required', 'string', 'max:500'],
+            'status_kehadiran' => ['nullable', 'string', 'in:Dihadiri,Diwakilkan,Tidak Dihadiri'],
+            'nama_yang_mewakili' => ['nullable', 'string', 'max:255', 'required_if:status_kehadiran,Diwakilkan'],
             'keterangan' => ['nullable', 'string'],
             'sumber_jadwal' => ['nullable', 'string', 'in:self,disposisi,sekretaris'],
         ];

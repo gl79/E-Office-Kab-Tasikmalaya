@@ -11,12 +11,8 @@ import {
     FileText,
     FileType,
     Inbox,
-    Send,
-    FileOutput,
     Calendar,
     Clock,
-    History,
-    LucideIcon
 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import DashboardShimmer from '@/Components/shimmer/DashboardShimmer';
@@ -36,15 +32,11 @@ interface DashboardStats {
         indeks_surat: number;
         jenis_surat: number;
     };
-    persuratan: {
-        surat_masuk: number;
-        surat_keluar: number;
-        disposisi: number;
-    };
-    penjadwalan?: {
-        jadwal_tentatif: number;
-        jadwal_definitif: number;
-        history_penjadwalan: number;
+    metrics?: {
+        surat_masuk_hari_ini: number;
+        menunggu_tindak_lanjut: number;
+        agenda_hari_ini: number;
+        agenda_mendatang: number;
     };
 }
 
@@ -64,7 +56,7 @@ interface WelcomeBannerProps {
 }
 
 const WelcomeBanner = ({ fotoUrl, name, nip, jabatan_nama, roleLabel, greeting }: WelcomeBannerProps) => (
-    <div className="bg-gradient-to-r from-primary to-primary-dark rounded-xl p-6 text-text-inverse">
+    <div className="bg-linear-to-r from-primary to-primary-dark rounded-xl p-6 text-text-inverse">
         <div className="flex items-center gap-5">
             <img
                 src={fotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=ffffff&color=2563eb&size=128`}
@@ -174,54 +166,13 @@ const Dashboard = () => {
         { label: 'Jenis Surat', value: stats.master?.jenis_surat ?? 0, icon: FileType, color: 'text-warning', bg: 'bg-warning-light' },
     ];
 
-    // Penjadwalan statistics cards
-    const penjadwalanStats = [
-        { label: 'Jadwal Tentatif', value: stats.penjadwalan?.jadwal_tentatif ?? 0, icon: Clock, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/tentatif' },
-        { label: 'Jadwal Definitif', value: stats.penjadwalan?.jadwal_definitif ?? 0, icon: Calendar, color: 'text-warning', bg: 'bg-warning-light', href: '/penjadwalan/definitif' },
-        { label: 'History Penjadwalan', value: stats.penjadwalan?.history_penjadwalan ?? 0, icon: History, color: 'text-secondary', bg: 'bg-secondary-light', href: '/penjadwalan/history' },
+    // Dashboard metrics cards for all users
+    const metricsCards = [
+        { label: 'Surat Masuk Hari Ini', value: stats.metrics?.surat_masuk_hari_ini ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
+        { label: 'Menunggu Tindak Lanjut', value: stats.metrics?.menunggu_tindak_lanjut ?? 0, icon: Clock, color: 'text-warning', bg: 'bg-warning-light', href: '/persuratan/surat-masuk' },
+        { label: 'Agenda Hari Ini', value: stats.metrics?.agenda_hari_ini ?? 0, icon: Calendar, color: 'text-secondary', bg: 'bg-secondary-light', href: '/penjadwalan/definitif' },
+        { label: 'Agenda Mendatang', value: stats.metrics?.agenda_mendatang ?? 0, icon: Calendar, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/definitif' },
     ];
-
-    // Quick access cards for non-admin roles (with stats)
-    const getQuickCards = () => {
-        const cards: Array<{ title: string; description: string; value?: number; icon: LucideIcon; color: string; bg: string; href?: string }> = [];
-
-        // Pejabat: persuratan (read-only) + penjadwalan
-        if (user.role === 'pejabat') {
-            cards.push(
-                { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
-                { title: 'Surat Keluar', description: 'Surat keluar Anda', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
-                { title: 'Jadwal Tentatif', description: 'Jadwal tentatif kegiatan', value: stats.penjadwalan?.jadwal_tentatif ?? 0, icon: Clock, color: 'text-accent', bg: 'bg-accent-light', href: '/penjadwalan/tentatif' },
-                { title: 'Jadwal Definitif', description: 'Jadwal definitif kegiatan', value: stats.penjadwalan?.jadwal_definitif ?? 0, icon: Calendar, color: 'text-warning', bg: 'bg-warning-light', href: '/penjadwalan/definitif' },
-                { title: 'History Penjadwalan', description: 'Riwayat perubahan jadwal', value: stats.penjadwalan?.history_penjadwalan ?? 0, icon: History, color: 'text-primary', bg: 'bg-primary-light', href: '/penjadwalan/history' },
-            );
-        }
-
-        // User: persuratan only (filtered)
-        if (user.role === 'user') {
-            cards.push(
-                { title: 'Surat Masuk', description: 'Surat masuk untuk Anda', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
-                { title: 'Surat Keluar', description: 'Surat keluar Anda', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
-            );
-        }
-
-        return cards;
-    };
-
-    const persuratanStats: Array<{
-        label: string;
-        value: number;
-        href: string;
-        icon: LucideIcon;
-        color: string;
-        bg: string;
-    }> = [
-            { label: 'Surat Masuk', value: stats.persuratan?.surat_masuk ?? 0, icon: Inbox, color: 'text-primary', bg: 'bg-primary-light', href: '/persuratan/surat-masuk' },
-            { label: 'Surat Keluar', value: stats.persuratan?.surat_keluar ?? 0, icon: Send, color: 'text-secondary', bg: 'bg-secondary-light', href: '/persuratan/surat-keluar' },
-            { label: 'Disposisi', value: stats.persuratan?.disposisi ?? 0, icon: FileOutput, color: 'text-warning', bg: 'bg-warning-light', href: '/persuratan/surat-masuk' },
-        ];
-
-
-    const quickCards = getQuickCards();
 
     return (
         <>
@@ -242,40 +193,11 @@ const Dashboard = () => {
             {/* Content based on role */}
             {isAdmin ? (
                 <>
-                    {/* Persuratan Statistics Section - Admin/TU - FIRST */}
+                    {/* System Metrics Section */}
                     <div className="mb-8">
-                        <h2 className="text-lg font-semibold text-text-primary mb-4">Persuratan</h2>
+                        <h2 className="text-lg font-semibold text-text-primary mb-4">Statistik E-Office</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {persuratanStats.map((stat) => {
-                                const Icon = stat.icon;
-                                return (
-                                    <Link
-                                        key={stat.label}
-                                        href={stat.href}
-                                        className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md hover:border-primary/20 transition-all"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm text-text-secondary mb-1">{stat.label}</p>
-                                                <p className="text-2xl font-bold text-text-primary">
-                                                    {stat.value.toLocaleString('id-ID')}
-                                                </p>
-                                            </div>
-                                            <div className={`${stat.bg} ${stat.color} p-3 rounded-lg`}>
-                                                <Icon className="w-6 h-6" />
-                                            </div>
-                                        </div>
-                                    </Link>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Penjadwalan Statistics Section */}
-                    <div className="mb-8">
-                        <h2 className="text-lg font-semibold text-text-primary mb-4">Penjadwalan</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {penjadwalanStats.map((stat) => {
+                            {metricsCards.map((stat) => {
                                 const Icon = stat.icon;
                                 return (
                                     <Link
@@ -357,23 +279,19 @@ const Dashboard = () => {
                     </div>
                 </>
             ) : (
-                /* Quick access cards for non-admin roles with stats */
+                /* Metrics for non-admin roles */
                 <div className="mb-8">
-                    <h2 className="text-lg font-semibold text-text-primary mb-4">Ringkasan</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {quickCards.map((card) => {
+                    <h2 className="text-lg font-semibold text-text-primary mb-4">Statistik E-Office</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {metricsCards.map((card) => {
                             const Icon = card.icon;
                             const content = (
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-text-secondary mb-1">{card.title}</p>
-                                        {card.value !== undefined ? (
-                                            <p className="text-2xl font-bold text-text-primary">
-                                                {card.value.toLocaleString('id-ID')}
-                                            </p>
-                                        ) : (
-                                            <p className="text-sm text-text-secondary">{card.description}</p>
-                                        )}
+                                        <p className="text-sm text-text-secondary mb-1">{card.label}</p>
+                                        <p className="text-2xl font-bold text-text-primary">
+                                            {card.value.toLocaleString('id-ID')}
+                                        </p>
                                     </div>
                                     <div className={`${card.bg} ${card.color} p-3 rounded-lg`}>
                                         <Icon className="w-6 h-6" />
@@ -383,7 +301,7 @@ const Dashboard = () => {
                             if (card.href) {
                                 return (
                                     <Link
-                                        key={card.title}
+                                        key={card.label}
                                         href={card.href}
                                         className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md hover:border-primary/20 transition-all"
                                     >
@@ -393,7 +311,7 @@ const Dashboard = () => {
                             }
                             return (
                                 <div
-                                    key={card.title}
+                                    key={card.label}
                                     className="bg-surface rounded-xl border border-border-default p-5 hover:shadow-md transition-shadow"
                                 >
                                     {content}

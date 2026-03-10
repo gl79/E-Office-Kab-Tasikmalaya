@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Penjadwalan;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Jadwal\UpdateKehadiranRequest;
+use App\Http\Requests\Jadwal\TindakLanjutRequest;
 use App\Http\Resources\Penjadwalan\PenjadwalanResource;
 use App\Models\Penjadwalan;
 use App\Models\SifatSurat;
-use App\Models\SuratMasuk;
+use App\Models\SuratMasukTujuan;
 use App\Models\User;
 use App\Services\Penjadwalan\PenjadwalanService;
 use App\Support\CacheHelper;
-use App\Support\WilayahHelper;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -27,18 +27,39 @@ class PenjadwalanTentatifController extends Controller
     {
         $this->authorize('viewAny', Penjadwalan::class);
 
+        /** @var User $user */
+        $user = $request->user();
         $search = $request->input('search');
+        $cacheKey = sprintf(
+            'tentatif_all_%d_%s',
+            $user->id,
+            md5((string) $search)
+        );
 
         return Inertia::render('Penjadwalan/Tentatif/Index', [
-            'tentatif' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember("tentatif_all_{$search}", 60, function () use ($search) {
+            'tentatif' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember($cacheKey, 60, function () use ($search, $user) {
                 $query = Penjadwalan::query()
-                    ->tentatif()
+                    ->where(function ($statusQuery) {
+                        $statusQuery
+                            ->where('status', Penjadwalan::STATUS_TENTATIF)
+                            // Tetap tampilkan jadwal yang sudah menjadi definitif agar bisa dimonitor dari menu Tentatif.
+                            ->orWhere(function ($definitifQuery) {
+                                $definitifQuery
+                                    ->where('status', Penjadwalan::STATUS_DEFINITIF)
+                                    ->whereNotNull('surat_masuk_id');
+                            });
+                    })
+                    ->when(
+                        !($user->isSuperAdmin() || $this->isBupati($user)),
+                        fn(Builder $builder) => $this->applyUserScope($builder, $user)
+                    )
                     ->with([
                         'suratMasuk.tujuans',
                         'suratMasuk.jenisSurat',
                         'suratMasuk.indeksBerkas',
                         'suratMasuk.kodeKlasifikasi',
                         'suratMasuk.staffPengolah',
+                        'suratMasuk.disposisis',
                         'suratMasuk.createdBy',
                         'creator',
                     ])
@@ -47,146 +68,32 @@ class PenjadwalanTentatifController extends Controller
                     ->get();
                 return PenjadwalanResource::collection($query);
             })),
-            'userOptions' => User::query()
-                ->select(['id', 'name', 'nip', 'jabatan_id'])
-                ->with('jabatanRelasi:id,nama')
-                ->where('role', '!=', User::ROLE_SUPERADMIN)
-                ->orderBy('name')
-                ->get(),
-            'disposisiOptions' => Penjadwalan::DISPOSISI_OPTIONS,
             'sifatOptions' => SifatSurat::getOptions(),
             'filters' => $request->only(['search']),
         ]);
     }
 
     /**
-     * Update kehadiran/disposisi (only by creator)
+     * Update data jadwal dan jadikan definitif
      */
-    public function updateKehadiran(UpdateKehadiranRequest $request, string $id)
+    public function tindakLanjut(TindakLanjutRequest $request, string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
         $this->authorize('update', $penjadwalan);
 
         try {
-            $this->service->updateKehadiran($penjadwalan, $request->validated(), $request->user());
+            $this->service->tindakLanjut($penjadwalan, $request->validated(), $request->user());
 
             return redirect()->back()
-                ->with('success', 'Kehadiran berhasil diperbarui.');
+                ->with('success', 'Jadwal berhasil ditindaklanjuti dan menjadi definitif.');
         } catch (\Exception $e) {
-            Log::error('Gagal memperbarui kehadiran', [
+            Log::error('Gagal menindaklanjuti jadwal', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             return redirect()->back()
-                ->with('error', 'Gagal memperbarui kehadiran. Silakan coba lagi atau hubungi administrator.');
+                ->with('error', 'Gagal menindaklanjuti jadwal. Silakan coba lagi atau hubungi administrator.');
         }
-    }
-
-    /**
-     * Change status from tentatif to definitif
-     */
-    public function jadikanDefinitif(string $id)
-    {
-        $penjadwalan = Penjadwalan::findOrFail($id);
-        $this->authorize('update', $penjadwalan);
-
-        try {
-            $result = $this->service->promoteToDefinitif($penjadwalan, request()->user());
-
-            return redirect()->back()
-                ->with($result['success'] ? 'success' : 'error', $result['message']);
-        } catch (\Exception $e) {
-            Log::error('Gagal mengubah status', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()
-                ->with('error', 'Gagal mengubah status. Silakan coba lagi atau hubungi administrator.');
-        }
-    }
-
-    /**
-     * Generate WhatsApp template for export
-     */
-    public function exportWhatsApp(string $id)
-    {
-        $penjadwalan = Penjadwalan::with(['suratMasuk'])->findOrFail($id);
-        $this->authorize('view', $penjadwalan);
-
-        $template = $this->generateWhatsAppTemplate($penjadwalan);
-
-        return response()->json([
-            'template' => $template,
-        ]);
-    }
-
-    /**
-     * Generate formatted WhatsApp message template
-     */
-    private function generateWhatsAppTemplate(Penjadwalan $penjadwalan): string
-    {
-        $hari = $penjadwalan->tanggal_agenda?->translatedFormat('l');
-        $tanggal = $penjadwalan->tanggal_agenda?->translatedFormat('d F Y');
-        $waktu = $penjadwalan->waktu_lengkap;
-        $kegiatan = $penjadwalan->nama_kegiatan;
-        $tempat = $penjadwalan->tempat;
-
-        // Build wilayah info if dalam daerah (using cached helper to avoid N+1)
-        $wilayahInfo = '';
-        if ($penjadwalan->lokasi_type === Penjadwalan::LOKASI_DALAM_DAERAH && $penjadwalan->kode_wilayah) {
-            $wilayahInfo = WilayahHelper::getWilayahText($penjadwalan->kode_wilayah);
-        }
-
-        // Surat masuk identifiers
-        $suratMasuk = $penjadwalan->suratMasuk;
-        $noAgenda = '-';
-        $noSurat = '-';
-        $tanggalSurat = '-';
-        $asalSurat = '-';
-        $perihal = '-';
-        if ($suratMasuk) {
-            $naParts = explode('/', $suratMasuk->nomor_agenda ?? '');
-            $noAgenda = count($naParts) >= 2 ? $naParts[1] : ($suratMasuk->nomor_agenda ?? '-');
-            $noSurat = $suratMasuk->nomor_surat ?? '-';
-            $tanggalSurat = $suratMasuk->tanggal_surat_formatted ?? '-';
-            $asalSurat = $suratMasuk->asal_surat ?? '-';
-            $perihal = $suratMasuk->perihal ?? '-';
-        }
-
-        $kehadiran = $penjadwalan->dihadiri_oleh ?: 'Menunggu Konfirmasi';
-        $statusDisposisi = $penjadwalan->status_disposisi_label;
-        $keterangan = $penjadwalan->keterangan;
-
-        $template = "*RENCANA KEGIATAN BUPATI*\n\n";
-        $template .= "*Hari/Tanggal :* {$hari}, {$tanggal}\n";
-        $template .= "*Waktu        :* {$waktu} WIB\n";
-        $template .= "*Kegiatan     :* {$kegiatan}\n";
-        $template .= "*Tempat       :* {$tempat}";
-
-        if ($wilayahInfo) {
-            $template .= "\n               {$wilayahInfo}";
-        }
-
-        $template .= "\n\n━━━━━━━━━━━━━━━━━━━━\n\n";
-        $template .= "*IDENTITAS SURAT*\n";
-        $template .= "*No. Agenda   :* {$noAgenda}\n";
-        $template .= "*No. Surat    :* {$noSurat}\n";
-        $template .= "*Tanggal Surat:* {$tanggalSurat}\n";
-        $template .= "*Asal Surat   :* {$asalSurat}\n";
-        $template .= "*Perihal      :* {$perihal}\n";
-
-        $template .= "\n━━━━━━━━━━━━━━━━━━━━\n\n";
-        $template .= "*Kehadiran    :* {$kehadiran}\n";
-        $template .= "*Status       :* {$statusDisposisi}";
-
-        if ($keterangan) {
-            $template .= "\n\n*Keterangan:*\n{$keterangan}";
-        }
-
-        $template .= "\n\n---\n";
-        $template .= "_Dikirim dari Sistem E-Office Kab. Tasikmalaya_";
-
-        return $template;
     }
 
     /**
@@ -201,5 +108,44 @@ class PenjadwalanTentatifController extends Controller
 
         return redirect()->back()
             ->with('success', 'Jadwal berhasil dihapus.');
+    }
+
+    private function applyUserScope(Builder $query, User $user): void
+    {
+        $query->where(function (Builder $scope) use ($user) {
+            // Jadwal custom: hanya terkait user tersebut.
+            $scope->where(function (Builder $customQuery) use ($user) {
+                $customQuery->whereNull('surat_masuk_id')
+                    ->where(function (Builder $customOwnerQuery) use ($user) {
+                        $customOwnerQuery
+                            ->where('created_by', $user->id)
+                            ->orWhere('dihadiri_oleh_user_id', $user->id);
+                    });
+            });
+
+            // Jadwal berbasis surat: hanya surat yang sudah diterima user atau terkait monitoring.
+            $scope->orWhere(function (Builder $suratScheduleQuery) use ($user) {
+                $suratScheduleQuery->whereNotNull('surat_masuk_id')
+                    ->whereHas('suratMasuk', function (Builder $suratQuery) use ($user) {
+                        $suratQuery->where(function (Builder $relationQuery) use ($user) {
+                            $relationQuery
+                                ->where('created_by', $user->id)
+                                ->orWhereHas('tujuans', function (Builder $tujuanQuery) use ($user) {
+                                    $tujuanQuery
+                                        ->where('tujuan_id', $user->id)
+                                        ->where('status_penerimaan', SuratMasukTujuan::STATUS_DITERIMA);
+                                })
+                                ->orWhereHas('disposisis', function (Builder $disposisiQuery) use ($user) {
+                                    $disposisiQuery->where('dari_user_id', $user->id);
+                                });
+                        });
+                    });
+            });
+        });
+    }
+
+    private function isBupati(User $user): bool
+    {
+        return $user->getJabatanLevel() === 1;
     }
 }

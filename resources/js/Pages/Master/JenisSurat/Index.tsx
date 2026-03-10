@@ -4,7 +4,6 @@ import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination } from '@/Components/ui';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
-import { useToast } from '@/Components/ui/Toast';
 import { TextInput, InputLabel } from '@/Components/form';
 import { useCRUDModal, useDeferredDataMutable } from '@/hooks';
 import type { PageProps } from '@/types';
@@ -25,8 +24,7 @@ interface Props extends PageProps {
 
 const CACHE_TTL_MS = 60_000;
 
-const Index = ({ auth, jenisSurat: initialJenisSurat, filters }: Props) => {
-    const { showToast } = useToast();
+const Index = ({ auth, jenisSurat: initialJenisSurat }: Props) => {
     const { data: jenisSurat, isLoading, hasCached } = useDeferredDataMutable<JenisSurat[]>(
         `master_jenis_surat_${auth.user.id}`,
         initialJenisSurat,

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Head, usePage } from '@inertiajs/react';
-import { Eye, Filter, RotateCcw } from 'lucide-react';
+import { Eye, Filter, RotateCcw, ExternalLink } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Badge, Button, Modal, Pagination } from '@/Components/ui';
 import { FormSelect, TextInput } from '@/Components/form';
@@ -48,6 +48,8 @@ interface PenjadwalanHistoryItem {
     updated_by: { id: number; name: string } | null;
     created_at_formatted: string | null;
     updated_at_formatted: string | null;
+    file_path: string | null;
+    file_url: string | null;
     histories: JadwalHistoryItem[];
 }
 
@@ -400,6 +402,23 @@ export default function Index({
                                         )}
                                     </p>
                                 </div>
+                                {selectedItem.file_url && (
+                                    <div className="sm:col-span-2">
+                                        <p className="text-text-secondary">File Lampiran</p>
+                                        <div className="mt-2">
+                                            <a
+                                                href={selectedItem.file_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title="Lihat file pada tab baru"
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-border-default bg-surface hover:bg-surface-hover text-primary transition-colors"
+                                            >
+                                                <ExternalLink className="h-4 w-4" />
+                                                Buka File
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

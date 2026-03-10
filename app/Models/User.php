@@ -251,6 +251,11 @@ class User extends Authenticatable
             return false; // SuperAdmin tidak ikut alur disposisi
         }
 
+        $level = $this->getJabatanLevel();
+        if ($level !== null && $level >= 6) {
+            return false;
+        }
+
         return (bool) $this->jabatanRelasi?->can_dispose;
     }
 

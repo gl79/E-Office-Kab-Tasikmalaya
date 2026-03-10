@@ -160,7 +160,7 @@ class BupatiJadwalController extends Controller
     public function customForm(Request $request): Response
     {
         $user = $request->user();
-        abort_unless($user->canDispose() || $user->isSuperAdmin(), 403);
+        abort_unless($this->canManageCustomSchedule($user), 403);
 
         return Inertia::render('Penjadwalan/Bupati/CustomForm', [
             'provinsiOptions' => Inertia::defer(fn() => CacheHelper::tags(['master_list'])->remember(
@@ -190,7 +190,7 @@ class BupatiJadwalController extends Controller
     public function storeCustom(CustomJadwalRequest $request): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->canDispose() || $user->isSuperAdmin(), 403);
+        abort_unless($this->canManageCustomSchedule($user), 403);
 
         $result = $this->service->createCustomSchedule($request->validated(), $request->user());
 
@@ -239,5 +239,20 @@ class BupatiJadwalController extends Controller
     private function trimTime(string $time): string
     {
         return strlen($time) >= 5 ? substr($time, 0, 5) : $time;
+    }
+
+    private function canManageCustomSchedule(User $user): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        $level = $user->getJabatanLevel();
+        if (in_array($level, [1, 2, 3], true)) {
+            return true;
+        }
+
+        $jabatanNama = strtolower((string) $user->jabatan_nama);
+        return str_contains($jabatanNama, 'sekretaris daerah');
     }
 }

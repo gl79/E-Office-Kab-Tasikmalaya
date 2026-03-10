@@ -1,4 +1,4 @@
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useRef, useState, useEffect } from 'react';
 import { Upload, X, FileText, File } from 'lucide-react';
 import Button from '../ui/Button';
 
@@ -7,6 +7,7 @@ interface FormFileUploadProps {
     accept?: string;
     maxSize?: number; // in MB
     currentFile?: string | null;
+    selectedFile?: File | null;
     error?: string;
     disabled?: boolean;
 }
@@ -16,6 +17,7 @@ export default function FormFileUpload({
     accept = '.pdf,.doc,.docx',
     maxSize = 5,
     currentFile,
+    selectedFile,
     error,
     disabled = false,
 }: FormFileUploadProps) {
@@ -23,6 +25,22 @@ export default function FormFileUpload({
     const [preview, setPreview] = useState<string | null>(null);
     const [fileName, setFileName] = useState<string | null>(null);
     const [fileError, setFileError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (selectedFile) {
+            setFileName(selectedFile.name);
+            if (selectedFile.type === 'application/pdf') {
+                setPreview(URL.createObjectURL(selectedFile));
+            } else if (selectedFile.type.startsWith('image/')) {
+                setPreview(URL.createObjectURL(selectedFile));
+            } else {
+                setPreview(null);
+            }
+        } else if (!currentFile) {
+            setFileName(null);
+            setPreview(null);
+        }
+    }, [selectedFile, currentFile]);
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

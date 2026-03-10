@@ -7,23 +7,17 @@ import { TextInput } from '@/Components/form';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { useDeferredDataMutable } from '@/hooks';
 import TentatifTable from './Components/TentatifTable';
-import TentatifEditModal from './Components/TentatifEditModal';
+import TindakLanjutModal from './Components/TentatifEditModal';
 import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
-import { buildInternalUserOptions } from '@/utils';
+import { formatDateShort } from '@/utils';
+import DisposisiModal from '@/Components/persuratan/DisposisiModal';
+import TimelineModal from '@/Components/persuratan/TimelineModal';
 import type { PageProps } from '@/types';
 import type { Agenda } from '@/types/penjadwalan';
-
-interface UserOption {
-    id: number;
-    name: string;
-    nip: string | null;
-    jabatan_nama: string | null;
-}
+import type { SuratMasuk } from '@/types/persuratan';
 
 interface Props extends PageProps {
     tentatif?: { data: Agenda[] };
-    userOptions: UserOption[];
-    disposisiOptions: Record<string, string>;
     sifatOptions: Record<string, string>;
     filters: {
         search?: string;
@@ -32,8 +26,6 @@ interface Props extends PageProps {
 
 const TentatifIndex = ({
     tentatif,
-    userOptions,
-    disposisiOptions,
     sifatOptions,
     filters,
 }: Props) => {
@@ -66,15 +58,27 @@ const TentatifIndex = ({
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    // Definitif modal
-    const [definitifModalOpen, setDefinitifModalOpen] = useState(false);
-    const [isUpdatingDefinitif, setIsUpdatingDefinitif] = useState(false);
+    // Disposisi modal
+    const [disposisiModalOpen, setDisposisiModalOpen] = useState(false);
+    const [selectedSuratForDisposisi, setSelectedSuratForDisposisi] = useState<SuratMasuk | null>(null);
+    const [timelineModalOpen, setTimelineModalOpen] = useState(false);
+    const [timelineSurat, setTimelineSurat] = useState<SuratMasuk | null>(null);
 
-    // Form for editing kehadiran
+    // Form for editing kehadiran (Tindak Lanjut)
     const form = useForm({
-        dihadiri_oleh: '',
-        dihadiri_oleh_custom: '',
-        status_disposisi: 'menunggu',
+        tanggal_agenda: '',
+        waktu_mulai: '',
+        waktu_selesai: '',
+        sampai_selesai: false,
+        lokasi_type: 'dalam_daerah',
+        provinsi_id: '',
+        kabupaten_id: '',
+        kecamatan_id: '',
+        desa_id: '',
+        tempat: '',
+        status_kehadiran: 'Dihadiri',
+        nama_yang_mewakili: '',
+        jabatan_yang_mewakili: '',
         keterangan: '',
     });
 
@@ -107,22 +111,65 @@ const TentatifIndex = ({
 
     const handleEditKehadiran = (agenda: Agenda) => {
         setSelectedAgenda(agenda);
-        const hasMasterUser = typeof agenda.dihadiri_oleh_user_id === 'number' && agenda.dihadiri_oleh_user_id > 0;
+        const parts = agenda.kode_wilayah ? agenda.kode_wilayah.split('.') : [];
+        const isDalamDaerah = (agenda.lokasi_type || 'dalam_daerah') === 'dalam_daerah';
 
         form.setData({
-            dihadiri_oleh: hasMasterUser ? String(agenda.dihadiri_oleh_user_id) : '',
-            dihadiri_oleh_custom: hasMasterUser ? '' : (agenda.dihadiri_oleh || ''),
-            status_disposisi: agenda.status_disposisi || 'menunggu',
+            tanggal_agenda: agenda.tanggal_agenda?.substring(0, 10) || '',
+            waktu_mulai: agenda.waktu_mulai || '08:00',
+            waktu_selesai: agenda.waktu_selesai || '',
+            sampai_selesai: !!agenda.sampai_selesai,
+            lokasi_type: agenda.lokasi_type || 'dalam_daerah',
+            provinsi_id: isDalamDaerah ? '32' : (parts[0] || ''),
+            kabupaten_id: isDalamDaerah ? '06' : (parts[1] || ''),
+            kecamatan_id: parts[2] || '',
+            desa_id: parts[3] || '',
+            // Field tempat sengaja dikosongkan agar user mengisi ulang pada saat tindak lanjut.
+            tempat: '',
+            status_kehadiran: agenda.status_kehadiran || 'Dihadiri',
+            nama_yang_mewakili: agenda.nama_yang_mewakili || '',
+            jabatan_yang_mewakili: '', // Add mapping if stored in model, otherwise empty
             keterangan: agenda.keterangan || '',
         });
         setShowEditModal(true);
+    };
+
+    const mapAgendaSuratForTimeline = (agenda: Agenda): SuratMasuk | null => {
+        if (!agenda.surat_masuk) {
+            return null;
+        }
+
+        const surat = agenda.surat_masuk;
+
+        return {
+            id: surat.id,
+            nomor_agenda: surat.nomor_agenda ?? '',
+            tanggal_diterima: surat.tanggal_diterima ?? '',
+            tanggal_surat: surat.tanggal_surat ?? '',
+            asal_surat: surat.asal_surat ?? '-',
+            nomor_surat: surat.nomor_surat ?? '-',
+            sifat: surat.sifat ?? '',
+            perihal: surat.perihal ?? '',
+            isi_ringkas: surat.isi_ringkas ?? null,
+            lampiran: surat.lampiran ?? null,
+            file_path: surat.file_path ?? null,
+            tanggal_diteruskan: surat.tanggal_diteruskan ?? null,
+            catatan_tambahan: surat.catatan_tambahan ?? null,
+            tujuans: surat.tujuans ?? [],
+            created_at: surat.created_at ?? '',
+            jenis_surat: surat.jenis_surat ?? null,
+            indeks_berkas: surat.indeks_berkas ?? null,
+            kode_klasifikasi: surat.kode_klasifikasi ?? null,
+            staff_pengolah: surat.staff_pengolah ?? null,
+            created_by: surat.created_by ?? null,
+        };
     };
 
     const handleSubmitKehadiran = (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedAgenda) return;
 
-        form.put(route('penjadwalan.tentatif.update-kehadiran', selectedAgenda.id), {
+        form.put(route('penjadwalan.tentatif.tindak-lanjut', selectedAgenda.id), {
             onSuccess: () => {
                 setShowEditModal(false);
                 form.reset();
@@ -171,19 +218,6 @@ const TentatifIndex = ({
         }
     };
 
-    const handleJadikanDefinitif = () => {
-        if (!selectedAgenda) return;
-        setIsUpdatingDefinitif(true);
-
-        router.post(route('penjadwalan.tentatif.definitif', selectedAgenda.id), {}, {
-            onFinish: () => {
-                setIsUpdatingDefinitif(false);
-                setDefinitifModalOpen(false);
-                setSelectedAgenda(null);
-            },
-        });
-    };
-
     const handleDelete = () => {
         if (!selectedAgenda) return;
         setIsDeleting(true);
@@ -200,24 +234,10 @@ const TentatifIndex = ({
     const renderDisposisiBadge = (status: string) => (
         <Badge variant={getDisposisiVariant(status)}>{getDisposisiLabel(status)}</Badge>
     );
-
-    const disposisiSelectOptions = useMemo(() => {
-        if (!disposisiOptions) return [];
-        return Object.entries(disposisiOptions).map(([value, label]) => ({
-            value,
-            label,
-        }));
-    }, [disposisiOptions]);
-
     const formWithSubmit = {
         ...form,
         submitHandler: handleSubmitKehadiran
     };
-
-    const dihadiriOlehSelectOptions = useMemo(
-        () => buildInternalUserOptions(userOptions ?? []),
-        [userOptions]
-    );
 
     // Format No Agenda: "SM/0001/2024" → "0001"
     const formatNoAgenda = (nomor?: string) => {
@@ -280,18 +300,26 @@ const TentatifIndex = ({
                 ) : (
                     <TentatifTable
                         data={paginatedData}
-                        onEditKehadiran={handleEditKehadiran}
-                        onJadikanDefinitif={(agenda) => {
-                            setSelectedAgenda(agenda);
-                            setDefinitifModalOpen(true);
-                        }}
+                        onTindakLanjut={handleEditKehadiran}
                         onViewDetail={(agenda) => {
                             setSelectedAgenda(agenda);
                             setShowDetailModal(true);
                         }}
+                        onDisposisi={(agenda) => {
+                            if (agenda.surat_masuk) {
+                                setSelectedSuratForDisposisi(agenda.surat_masuk as SuratMasuk);
+                                setDisposisiModalOpen(true);
+                            }
+                        }}
                         onDelete={(agenda) => {
                             setSelectedAgenda(agenda);
                             setDeleteModalOpen(true);
+                        }}
+                        onViewTimeline={(agenda) => {
+                            const surat = mapAgendaSuratForTimeline(agenda);
+                            if (!surat) return;
+                            setTimelineSurat(surat);
+                            setTimelineModalOpen(true);
                         }}
                         currentPage={currentPage}
                         itemsPerPage={itemsPerPage}
@@ -317,14 +345,12 @@ const TentatifIndex = ({
                 )}
             </div>
 
-            {/* Edit Kehadiran Modal */}
-            <TentatifEditModal
+            {/* Edit Kehadiran / Tindak Lanjut Modal */}
+            <TindakLanjutModal
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
                 selectedAgenda={selectedAgenda}
-                form={formWithSubmit}
-                disposisiSelectOptions={disposisiSelectOptions}
-                dihadiriOlehSelectOptions={dihadiriOlehSelectOptions}
+                form={formWithSubmit as any}
             />
 
             {/* WhatsApp Export Modal */}
@@ -425,6 +451,27 @@ const TentatifIndex = ({
                                 </div>
                             </div>
 
+                            {/* Identitas Agenda */}
+                            <div>
+                                <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
+                                    Identitas Agenda
+                                </h4>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">Tanggal Diterima</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.surat_masuk?.tanggal_diterima ? formatDateShort(selectedAgenda.surat_masuk.tanggal_diterima) : '-'}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-text-secondary w-28 shrink-0">No Agenda</span>
+                                        <span className="font-medium text-text-primary">
+                                            {selectedAgenda.surat_masuk?.nomor_agenda ? (selectedAgenda.surat_masuk.nomor_agenda.split('/')[1] || selectedAgenda.surat_masuk.nomor_agenda) : '-'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Detail Jadwal */}
                             <div>
                                 <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
@@ -440,13 +487,22 @@ const TentatifIndex = ({
                                     <div className="flex gap-2">
                                         <span className="text-text-secondary w-28 shrink-0">Tanggal</span>
                                         <span className="font-medium text-text-primary">
-                                            {selectedAgenda.tanggal_format_indonesia}
+                                            {selectedAgenda.tanggal_agenda ? selectedAgenda.tanggal_format_indonesia : <span className="italic text-text-muted">Menunggu Tindak Lanjut</span>}
                                         </span>
                                     </div>
                                     <div className="flex gap-2">
                                         <span className="text-text-secondary w-28 shrink-0">Waktu</span>
                                         <span className="font-medium text-text-primary">
-                                            {selectedAgenda.waktu_lengkap} WIB
+                                            {selectedAgenda.waktu_mulai ? (
+                                                <>
+                                                    {selectedAgenda.waktu_mulai.substring(0, 5)} WIB {' '}
+                                                    Sampai Dengan {' '}
+                                                    {selectedAgenda.sampai_selesai
+                                                        ? 'Selesai'
+                                                        : (selectedAgenda.waktu_selesai ? `${selectedAgenda.waktu_selesai.substring(0, 5)} WIB` : 'Selesai')
+                                                    }
+                                                </>
+                                            ) : <span className="italic text-text-muted">Belum Diatur</span>}
                                         </span>
                                     </div>
                                     <div className="flex gap-2">
@@ -563,41 +619,6 @@ const TentatifIndex = ({
                 )}
             </Modal>
 
-            {/* Definitif Confirmation */}
-            <ConfirmDialog
-                isOpen={definitifModalOpen}
-                onClose={() => setDefinitifModalOpen(false)}
-                onConfirm={handleJadikanDefinitif}
-                type="warning"
-                title="Jadikan Definitif"
-                message={
-                    <div className="space-y-2">
-                        <p>Apakah Anda yakin ingin menjadikan jadwal berikut sebagai definitif?</p>
-                        <div className="bg-surface-hover rounded-md p-3 text-sm space-y-1">
-                            {selectedAgenda?.surat_masuk?.nomor_agenda && (
-                                <div className="flex gap-2">
-                                    <span className="text-text-secondary w-24 shrink-0">No. Agenda</span>
-                                    <span className="font-medium text-text-primary">
-                                        {formatNoAgenda(selectedAgenda.surat_masuk.nomor_agenda)}
-                                    </span>
-                                </div>
-                            )}
-                            <div className="flex gap-2">
-                                <span className="text-text-secondary w-24 shrink-0">Perihal</span>
-                                <span className="font-medium text-text-primary">
-                                    {selectedAgenda?.surat_masuk?.perihal ?? selectedAgenda?.nama_kegiatan ?? '-'}
-                                </span>
-                            </div>
-                        </div>
-                        <p className="text-text-secondary text-xs">
-                            Jadwal akan dipindahkan ke menu Definitif.
-                        </p>
-                    </div>
-                }
-                confirmText="Ya, Jadikan Definitif"
-                isLoading={isUpdatingDefinitif}
-            />
-
             {/* Delete Confirmation */}
             <ConfirmDialog
                 isOpen={deleteModalOpen}
@@ -613,6 +634,21 @@ const TentatifIndex = ({
                     </p>
                 }
                 isLoading={isDeleting}
+            />
+
+            {/* Disposisi Modal */}
+            <DisposisiModal
+                isOpen={disposisiModalOpen}
+                onClose={() => setDisposisiModalOpen(false)}
+                suratMasukId={selectedSuratForDisposisi?.id ?? null}
+                suratPerihal={selectedSuratForDisposisi?.perihal ?? undefined}
+            />
+
+            <TimelineModal
+                isOpen={timelineModalOpen}
+                onClose={() => setTimelineModalOpen(false)}
+                suratMasuk={timelineSurat}
+                sifatOptions={sifatOptions}
             />
         </>
     );

@@ -1,7 +1,6 @@
-import { ApplicationLogo } from '@/Components/form';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { PropsWithChildren, useEffect } from 'react';
-import { ToastProvider, useToast } from '@/Components/ui';
+import { useToast } from '@/Components/ui';
 import { PageProps } from '@/types';
 import { Copyright } from 'lucide-react';
 
@@ -21,7 +20,7 @@ export default function Guest({ children }: PropsWithChildren) {
     return (
         <div className="flex min-h-screen">
             {/* Left Side - Branding */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary-hover to-primary-dark relative overflow-hidden">
+            <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-primary via-primary-hover to-primary-dark relative overflow-hidden">
                 {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-10">
                     <div className="absolute top-20 left-20 w-72 h-72 bg-surface rounded-full blur-3xl"></div>
@@ -84,4 +83,3 @@ export default function Guest({ children }: PropsWithChildren) {
         </div>
     );
 }
-

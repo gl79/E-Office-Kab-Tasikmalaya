@@ -86,8 +86,9 @@ class PenjadwalanFeatureTest extends TestCase
         ]);
     }
 
-    public function test_update_kehadiran_mencatat_jadwal_history(): void
+    public function test_tindak_lanjut_mencatat_jadwal_history_dan_menjadi_definitif(): void
     {
+        $this->withoutExceptionHandling();
         $superadmin = $this->makeUser(User::ROLE_SUPERADMIN, 'Super Admin');
         $creator = $this->makeUser(User::ROLE_TU, 'TU');
         $surat = $this->makeSuratMasuk($creator);
@@ -109,10 +110,18 @@ class PenjadwalanFeatureTest extends TestCase
         ]);
 
         $this->actingAs($superadmin)
-            ->put(route('penjadwalan.tentatif.update-kehadiran', $jadwal->id), [
-                'dihadiri_oleh_custom' => 'Bupati',
-                'status_disposisi' => Penjadwalan::DISPOSISI_BUPATI,
-                'keterangan' => 'Sudah dikonfirmasi',
+            ->put(route('penjadwalan.tentatif.tindak-lanjut', $jadwal->id), [
+                'tanggal_agenda' => now()->addDay()->toDateString(),
+                'waktu_mulai' => '10:00',
+                'sampai_selesai' => false,
+                'lokasi_type' => 'dalam_daerah',
+                'kecamatan_id' => '01',
+                'desa_id' => '0001',
+                'tempat' => 'Disini',
+                'status_kehadiran' => 'Diwakilkan',
+                'nama_yang_mewakili' => 'Bawahan',
+                'jabatan_yang_mewakili' => 'Staf',
+                'keterangan' => 'Kehadiran diwakilkan kepada bawahan',
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
@@ -122,10 +131,11 @@ class PenjadwalanFeatureTest extends TestCase
             'changed_by' => $superadmin->id,
         ]);
 
-        $history = JadwalHistory::query()->where('jadwal_id', $jadwal->id)->firstOrFail();
-
-        $this->assertSame(Penjadwalan::DISPOSISI_MENUNGGU, $history->old_data['status_disposisi'] ?? null);
-        $this->assertSame(Penjadwalan::DISPOSISI_BUPATI, $history->new_data['status_disposisi'] ?? null);
+        $this->assertDatabaseHas('penjadwalan', [
+            'id' => $jadwal->id,
+            'status' => Penjadwalan::STATUS_DEFINITIF,
+            'status_kehadiran' => 'Diwakilkan',
+        ]);
     }
 
     public function test_status_formal_accessor_tetap_konsisten_dengan_status_existing(): void

@@ -11,6 +11,7 @@ import {
     FormTextarea,
     InputError,
     InputLabel,
+    TextInput,
     TimeSelect,
 } from '@/Components/form';
 import { useDeferredDataWithLoading } from '@/hooks';
@@ -48,6 +49,8 @@ interface JadwalExisting {
     tempat: string;
     keterangan: string | null;
     dihadiri_oleh_user_id: number | null;
+    status_kehadiran?: string | null;
+    nama_yang_mewakili?: string | null;
 }
 
 interface UserOption {
@@ -132,6 +135,8 @@ export default function FormPage({
         dihadiri_oleh_user_id: String(
             existingJadwal?.dihadiri_oleh_user_id ?? context.default_dihadiri_oleh_user_id
         ),
+        status_kehadiran: existingJadwal?.status_kehadiran ?? 'Dihadiri',
+        nama_yang_mewakili: existingJadwal?.nama_yang_mewakili ?? '',
         tanggal_agenda: existingJadwal?.tanggal_agenda ?? '',
         waktu_mulai: existingJadwal?.waktu_mulai ?? '',
         waktu_selesai: existingJadwal?.waktu_selesai ?? '',
@@ -360,6 +365,42 @@ export default function FormPage({
                                 )}
                                 <InputError message={form.errors.dihadiri_oleh_user_id} className="mt-1" />
                             </div>
+
+                            <div>
+                                <InputLabel htmlFor="status_kehadiran" value="Status Kehadiran" required />
+                                <FormSelect
+                                    id="status_kehadiran"
+                                    options={[
+                                        { value: 'Dihadiri', label: 'Dihadiri' },
+                                        { value: 'Diwakilkan', label: 'Diwakilkan' },
+                                        { value: 'Tidak Dihadiri', label: 'Tidak Dihadiri' }
+                                    ]}
+                                    value={form.data.status_kehadiran}
+                                    onChange={(e) => {
+                                        form.setData('status_kehadiran', e.target.value);
+                                        if (e.target.value !== 'Diwakilkan') {
+                                            form.setData('nama_yang_mewakili', '');
+                                        }
+                                    }}
+                                    className="mt-1 w-full"
+                                    placeholder="Pilih status kehadiran"
+                                />
+                                <InputError message={form.errors.status_kehadiran} className="mt-1" />
+                            </div>
+
+                            {form.data.status_kehadiran === 'Diwakilkan' && (
+                                <div>
+                                    <InputLabel htmlFor="nama_yang_mewakili" value="Nama Yang Mewakili" required />
+                                    <TextInput
+                                        id="nama_yang_mewakili"
+                                        value={form.data.nama_yang_mewakili}
+                                        onChange={(e) => form.setData('nama_yang_mewakili', e.target.value)}
+                                        className="mt-1 w-full"
+                                        placeholder="Masukkan nama yang mewakili"
+                                    />
+                                    <InputError message={form.errors.nama_yang_mewakili} className="mt-1" />
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

@@ -10,6 +10,7 @@ export interface SuratMasukTujuan {
     is_tembusan?: boolean;
     status_penerimaan?: string;
     diterima_at?: string | null;
+    user?: { name: string; jabatan_nama: string | null } | null;
 }
 
 export interface SuratMasuk {
@@ -42,6 +43,9 @@ export interface SuratMasuk {
     can_schedule?: boolean;
     can_finalize_schedule?: boolean;
     can_view_schedule?: boolean;
+    can_cetak_disposisi?: boolean;
+    can_masukkan_jadwal?: boolean;
+    status_tindak_lanjut?: string;
     penjadwalan_status?: string;
     penjadwalan_status_label?: string;
     penjadwalan_status_variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';

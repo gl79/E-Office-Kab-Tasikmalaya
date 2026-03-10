@@ -6,13 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Penjadwalan\PenjadwalanResource;
 use App\Models\Penjadwalan;
 use App\Models\SifatSurat;
-use App\Models\SuratMasuk;
+use App\Models\User;
+use App\Services\Penjadwalan\PenjadwalanService;
 use App\Support\CacheHelper;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PenjadwalanDefinitifController extends Controller
 {
+    public function __construct(private readonly PenjadwalanService $service) {}
+
     /**
      * Display calendar view for definitif penjadwalan.
      */
@@ -32,9 +36,11 @@ class PenjadwalanDefinitifController extends Controller
      */
     public function calendarData(Request $request)
     {
-        $cacheKey = "calendar_data_" . md5(json_encode($request->all()));
+        /** @var User $user */
+        $user = $request->user();
+        $cacheKey = 'calendar_data_' . $user->id . '_' . md5(json_encode($request->all()));
 
-        $events = CacheHelper::tags(['penjadwalan'])->remember($cacheKey, 60, function () use ($request) {
+        $events = CacheHelper::tags(['penjadwalan'])->remember($cacheKey, 60, function () use ($request, $user) {
             $query = Penjadwalan::query()
                 ->definitif()
                 ->with([
@@ -43,9 +49,15 @@ class PenjadwalanDefinitifController extends Controller
                     'suratMasuk.indeksBerkas',
                     'suratMasuk.kodeKlasifikasi',
                     'suratMasuk.staffPengolah',
+                    'suratMasuk.disposisis',
                     'suratMasuk.createdBy',
                     'creator',
+                    'dihadiriOlehUser.jabatanRelasi',
                 ]);
+
+            if (!$this->canViewAllDefinitif($user)) {
+                $this->applyUserScope($query, $user);
+            }
 
             // Filter by date range (for calendar pagination)
             if ($request->has('start') && $request->has('end')) {
@@ -69,7 +81,9 @@ class PenjadwalanDefinitifController extends Controller
 
             // Transform to FullCalendar event format
             // Note: Colors are handled by frontend using CSS variables for consistency
-            return $penjadwalan->map(function ($item) {
+            return $penjadwalan->map(function (Penjadwalan $item) {
+                $calendarStatus = $this->resolveCalendarStatus($item);
+
                 return [
                     'id' => $item->id,
                     'title' => $item->nama_kegiatan,
@@ -80,10 +94,10 @@ class PenjadwalanDefinitifController extends Controller
                             ? $item->tanggal_agenda->format('Y-m-d') . 'T' . $item->waktu_selesai
                             : null),
                     'allDay' => false,
-                    'classNames' => ['event-' . $item->status_disposisi],
+                    'classNames' => ['event-' . $calendarStatus],
                     'extendedProps' => [
                         'agenda' => new PenjadwalanResource($item),
-                        'status_disposisi' => $item->status_disposisi,
+                        'status_disposisi' => $calendarStatus,
                     ],
                 ];
             });
@@ -97,7 +111,17 @@ class PenjadwalanDefinitifController extends Controller
      */
     public function show(string $id)
     {
-        $penjadwalan = Penjadwalan::with(['suratMasuk', 'creator', 'updater'])
+        $penjadwalan = Penjadwalan::with([
+            'suratMasuk.tujuans',
+            'suratMasuk.jenisSurat',
+            'suratMasuk.indeksBerkas',
+            'suratMasuk.kodeKlasifikasi',
+            'suratMasuk.staffPengolah',
+            'suratMasuk.disposisis',
+            'suratMasuk.createdBy',
+            'creator',
+            'updater',
+        ])
             ->findOrFail($id);
         $this->authorize('view', $penjadwalan);
 
@@ -105,18 +129,86 @@ class PenjadwalanDefinitifController extends Controller
     }
 
     /**
-     * Delete penjadwalan permanently.
+     * Hapus jadwal definitif: jadwal berbasis surat dikembalikan ke tentatif, custom dihapus.
      */
     public function destroy(string $id)
     {
         $penjadwalan = Penjadwalan::findOrFail($id);
         $this->authorize('delete', $penjadwalan);
 
-        $penjadwalan->delete();
+        if ($penjadwalan->surat_masuk_id) {
+            /** @var \App\Models\User $requestUser */
+            $requestUser = request()->user();
+            $this->service->revertDefinitifToTentatif($penjadwalan, $requestUser);
 
-        CacheHelper::flush(['penjadwalan']);
+            return redirect()->back()
+                ->with('success', 'Jadwal definitif dikembalikan ke Jadwal Tentatif.');
+        }
+
+        $this->service->delete($penjadwalan);
 
         return redirect()->back()
             ->with('success', 'Jadwal berhasil dihapus.');
+    }
+
+    /**
+     * Resolve warna kalender berdasarkan status disposisi/kehadiran aktual.
+     */
+    private function resolveCalendarStatus(Penjadwalan $item): string
+    {
+        if (($item->status_kehadiran ?? null) === 'Diwakilkan') {
+            return Penjadwalan::DISPOSISI_DIWAKILKAN;
+        }
+
+        if ($item->status_disposisi !== Penjadwalan::DISPOSISI_MENUNGGU) {
+            return $item->status_disposisi;
+        }
+
+        $level = $item->dihadiriOlehUser?->jabatanRelasi?->level;
+
+        return match ($level) {
+            1 => Penjadwalan::DISPOSISI_BUPATI,
+            2 => Penjadwalan::DISPOSISI_WAKIL_BUPATI,
+            default => $item->status_disposisi,
+        };
+    }
+
+    private function applyUserScope(Builder $query, User $user): void
+    {
+        $query->where(function (Builder $scope) use ($user) {
+            $scope->where(function (Builder $customQuery) use ($user) {
+                $customQuery->whereNull('surat_masuk_id')
+                    ->where(function (Builder $customOwnerQuery) use ($user) {
+                        $customOwnerQuery
+                            ->where('created_by', $user->id)
+                            ->orWhere('dihadiri_oleh_user_id', $user->id);
+                    });
+            });
+
+            $scope->orWhere(function (Builder $suratScheduleQuery) use ($user) {
+                $suratScheduleQuery->whereNotNull('surat_masuk_id')
+                    ->where('dihadiri_oleh_user_id', $user->id)
+                    ->whereHas('suratMasuk', function (Builder $suratQuery) use ($user) {
+                        $suratQuery->whereHas('disposisis', function (Builder $disposisiQuery) use ($user) {
+                            $disposisiQuery->where('ke_user_id', $user->id);
+                        });
+                    });
+            });
+        });
+    }
+
+    private function canViewAllDefinitif(User $user): bool
+    {
+        if ($user->isSuperAdmin() || $user->isTU()) {
+            return true;
+        }
+
+        $level = $user->getJabatanLevel();
+        if (in_array($level, [1, 2, 3], true)) {
+            return true;
+        }
+
+        $jabatanNama = strtolower((string) $user->jabatan_nama);
+        return str_contains($jabatanNama, 'sekretaris daerah');
     }
 }

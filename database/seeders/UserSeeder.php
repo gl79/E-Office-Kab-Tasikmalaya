@@ -77,7 +77,7 @@ class UserSeeder extends Seeder
                 'plain_password'      => 'tatausaha123@',
                 'role'                => User::ROLE_TU,
                 'nip'                 => null,
-                'jabatan_id'          => $jabatanIds['Staf'] ?? null,
+                'jabatan_id'          => $jabatanIds['Tata Usaha'] ?? null,
                 'jenis_kelamin'       => 'P',
                 'foto'                => 'profile-photos/potoprofildummy.jpg',
                 'created_by'          => $superAdmin->id,

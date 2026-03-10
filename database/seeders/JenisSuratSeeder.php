@@ -40,6 +40,7 @@ class JenisSuratSeeder extends Seeder
             'Sertifikat',
             'Piagam',
             'Surat Perjanjian',
+            'Surat Permohonan',
         ];
 
         foreach ($jenisSurat as $nama) {

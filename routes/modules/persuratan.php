@@ -18,9 +18,8 @@ Route::middleware('auth')->prefix('persuratan')->name('persuratan.')->group(func
     Route::get('surat-masuk/{id}/download', [SuratMasukController::class, 'downloadFile'])->name('surat-masuk.download');
 
     // Aksi Disposisi & Penjadwalan - Surat Masuk
-    Route::post('surat-masuk/{id}/terima-diketahui', [SuratMasukController::class, 'terimaDisketahui'])->name('surat-masuk.terima-diketahui');
     Route::post('surat-masuk/{id}/disposisi', [SuratMasukController::class, 'disposisi'])->name('surat-masuk.disposisi');
-    Route::post('surat-masuk/{id}/jadwalkan', [SuratMasukController::class, 'jadwalkan'])->name('surat-masuk.jadwalkan');
+    Route::post('surat-masuk/{id}/masukkan-jadwal', [SuratMasukController::class, 'masukkanKeJadwal'])->name('surat-masuk.masukkan-jadwal');
     Route::get('surat-masuk/{id}/timeline', [SuratMasukController::class, 'timeline'])->name('surat-masuk.timeline');
 
     // Surat Keluar Routes

@@ -2,7 +2,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePage, router, useForm, Link } from '@inertiajs/react';
 import { Sidebar, Footer } from '@/Components/layout';
 import { PageProps } from '@/types';
-import { Button, Modal, ToastProvider, useToast, Breadcrumb } from '@/Components/ui';
+import { Button, Modal, useToast, Breadcrumb } from '@/Components/ui';
 import { BreadcrumbItem } from '@/Components/ui/Breadcrumb';
 
 interface AppLayoutProps {
@@ -102,9 +102,9 @@ function AppLayoutInner({ children }: AppLayoutProps) {
         // Segments shown as label but NOT clickable (no href)
         const NO_LINK_SEGMENTS = new Set(['master', 'persuratan', 'penjadwalan', 'wilayah']);
 
-        // Label map: URL segment → human-readable label
         const LABEL_MAP: Record<string, string> = {
             'master': 'Data Master',
+            'jabatans': 'Jabatan',
             'persuratan': 'Persuratan',
             'penjadwalan': 'Penjadwalan',
             'wilayah': 'Wilayah',
@@ -144,14 +144,12 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
         // Filter: remove skipped, IDs, and action words following IDs (e.g. edit after a ULID)
         const filtered: { segment: string; cumPath: string }[] = [];
-        let prevWasId = false;
         for (const item of segmentPaths) {
             const seg = item.segment.toLowerCase();
-            if (SKIP_SEGMENTS.has(seg)) { prevWasId = false; continue; }
-            if (isId(item.segment)) { prevWasId = true; continue; }
+            if (SKIP_SEGMENTS.has(seg)) { continue; }
+            if (isId(item.segment)) { continue; }
             // keep "edit" / "create" that come after an ID — they're meaningful
             filtered.push(item);
-            prevWasId = false;
         }
 
         if (filtered.length === 0) return [];

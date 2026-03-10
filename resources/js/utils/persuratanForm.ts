@@ -5,22 +5,56 @@ interface UserLike {
 }
 
 const EXCLUDED_USER_NAMES = new Set(['Sekpri Bupati', 'Sekpri Wakil Bupati']);
+const SPECIAL_JABATAN_PATTERNS = [
+    /\bwakil\s+bupati\b/i,
+    /\bbupati\b/i,
+    /\btata\s+usaha\b/i,
+    /\bsekretaris\s+daerah\b/i,
+];
 
-export function buildInternalUserOptions(users: UserLike[]) {
+interface LabelOptions {
+    includeNameInLabel?: boolean;
+    specialJabatanOnly?: boolean;
+}
+
+export function isSpecialJabatanLabel(jabatanNama?: string | null): boolean {
+    if (!jabatanNama) {
+        return false;
+    }
+
+    const normalized = jabatanNama.trim().replace(/\s+/g, ' ');
+    return SPECIAL_JABATAN_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+export function formatUserLabel(user: UserLike, options: LabelOptions = {}): string {
+    const includeNameInLabel = options.includeNameInLabel ?? false;
+    const specialJabatanOnly = options.specialJabatanOnly ?? false;
+
+    if (user.jabatan_nama && includeNameInLabel && !(specialJabatanOnly && isSpecialJabatanLabel(user.jabatan_nama))) {
+        return `${user.jabatan_nama} - ${user.name}`;
+    }
+
+    return user.jabatan_nama ? user.jabatan_nama : user.name;
+}
+
+export function buildInternalUserOptions(
+    users: UserLike[],
+    options: LabelOptions = {}
+) {
     return users
         .filter((user) => !EXCLUDED_USER_NAMES.has(user.name))
         .map((user) => ({
             value: String(user.id ?? ''),
-            label: user.jabatan_nama ? `${user.name} - ${user.jabatan_nama}` : user.name,
+            label: formatUserLabel(user, options),
         }));
 }
 
-export function buildKepadaUserOptions(users: UserLike[]) {
+export function buildKepadaUserOptions(users: UserLike[], options: LabelOptions = {}) {
     return users
         .filter((user) => !EXCLUDED_USER_NAMES.has(user.name))
         .map((user) => ({
             value: user.name,
-            label: user.jabatan_nama ? `${user.name} - ${user.jabatan_nama}` : user.name,
+            label: formatUserLabel(user, options),
         }));
 }
 

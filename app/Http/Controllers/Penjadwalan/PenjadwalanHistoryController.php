@@ -58,6 +58,8 @@ class PenjadwalanHistoryController extends Controller
             'status_disposisi_label' => $penjadwalan->status_disposisi_label,
             'sumber_jadwal' => $penjadwalan->sumber_jadwal,
             'sumber_jadwal_label' => $penjadwalan->sumber_jadwal_label,
+            'file_path' => $penjadwalan->file_path,
+            'file_url' => $penjadwalan->file_path ? \Illuminate\Support\Facades\Storage::url($penjadwalan->file_path) : null,
             'dihadiri_oleh' => $penjadwalan->dihadiri_oleh,
             'surat_masuk' => $penjadwalan->suratMasuk ? [
                 'id' => $penjadwalan->suratMasuk->id,

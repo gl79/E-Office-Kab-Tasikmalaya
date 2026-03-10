@@ -97,7 +97,7 @@ const Dropdown = ({ trigger, children, align = 'right', width = '48', contentCla
             {open && createPortal(
                 <div
                     ref={dropdownRef}
-                    className={`fixed z-[9999] rounded-md shadow-lg ${widthClasses}`}
+                    className={`fixed z-9999 rounded-md shadow-lg ${widthClasses}`}
                     style={position ? { top: position.top, left: position.left } : { visibility: 'hidden', top: 0, left: 0 }}
                 >
                     <div className={`rounded-md ring-1 ring-border-dark/30 ${contentClasses}`}>

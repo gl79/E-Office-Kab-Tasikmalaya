@@ -15,7 +15,7 @@ import FormFileUpload from '@/Components/form/FormFileUpload';
 import InputLabel from '@/Components/form/InputLabel';
 import InputError from '@/Components/form/InputError';
 import type { PageProps } from '@/types';
-import { buildInternalUserOptions } from '@/utils';
+import { buildInternalUserOptions, formatUserLabel } from '@/utils';
 
 interface JenisSurat {
     id: string;
@@ -134,14 +134,26 @@ export default function Edit({
             }));
     }, [data.indeks_berkas_id, indeksBerkasOptions, indeksKlasifikasiOptions]);
 
-    const internalUserOptions = buildInternalUserOptions(users);
+    const internalUserOptions = buildInternalUserOptions(users, {
+        includeNameInLabel: true,
+        specialJabatanOnly: true,
+    });
     const userOptions = internalUserOptions;
-    const staffPengolahOptions = buildInternalUserOptions(staffPengolahUsers);
+    const staffPengolahOptions = buildInternalUserOptions(staffPengolahUsers, {
+        includeNameInLabel: true,
+        specialJabatanOnly: true,
+    });
 
-    const asalSuratOptions = asalSuratUsers.map((user) => ({
-        value: user.jabatan_nama ? `${user.name} - ${user.jabatan_nama}` : user.name,
-        label: user.jabatan_nama ? `${user.name} - ${user.jabatan_nama}` : user.name,
-    }));
+    const asalSuratOptions = asalSuratUsers.map((user) => {
+        const label = formatUserLabel(user, {
+            includeNameInLabel: true,
+            specialJabatanOnly: true,
+        });
+        return {
+            value: label,
+            label,
+        };
+    });
 
     const jenisSuratSelectOptions = jenisSuratOptions.map((item) => ({
         value: item.id,
@@ -489,6 +501,7 @@ export default function Edit({
                                                         accept=".pdf,.doc,.docx,.jpg,.jpeg"
                                                         maxSize={5}
                                                         currentFile={suratMasuk.file_path}
+                                                        selectedFile={data.file}
                                                         error={errors.file}
                                                     />
                                                     <p className="text-sm text-text-secondary mt-1">

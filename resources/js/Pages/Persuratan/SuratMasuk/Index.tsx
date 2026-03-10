@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Head, router, Link, usePage } from '@inertiajs/react';
-import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw, CalendarPlus, Check, Send, Clock, CheckCircle2 } from 'lucide-react';
+import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw, CalendarPlus, Check, Clock } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
@@ -10,8 +10,6 @@ import FormDatePicker from '@/Components/form/FormDatePicker';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import TimelineModal from '@/Components/persuratan/TimelineModal';
-import DisposisiModal from '@/Components/persuratan/DisposisiModal';
-import JadwalkanModal from '@/Components/persuratan/JadwalkanModal';
 import { PageProps } from '@/types';
 import type { SuratMasuk } from '@/types/persuratan';
 import { useDeferredDataMutable } from '@/hooks';
@@ -41,10 +39,9 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [sifat, setSifat] = useState('');
+    const [statusTindakLanjut, setStatusTindakLanjut] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [periodeFilter, setPeriodeFilter] = useState('');
-    const [penerimaanFilter, setPenerimaanFilter] = useState('');
-    const [penjadwalanFilter, setPenjadwalanFilter] = useState('');
     const itemsPerPage = 10;
 
     // Delete Modal State
@@ -58,18 +55,8 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
 
     // Timeline Modal State
     const [timelineModalOpen, setTimelineModalOpen] = useState(false);
-    const [timelineSuratId, setTimelineSuratId] = useState<string | null>(null);
-    const [timelinePerihal, setTimelinePerihal] = useState('');
+    const [timelineSurat, setTimelineSurat] = useState<SuratMasuk | null>(null);
 
-    // Disposisi Modal State
-    const [disposisiModalOpen, setDisposisiModalOpen] = useState(false);
-    const [disposisiSuratId, setDisposisiSuratId] = useState<string | null>(null);
-    const [disposisiPerihal, setDisposisiPerihal] = useState('');
-
-    // Jadwalkan Modal State
-    const [jadwalkanModalOpen, setJadwalkanModalOpen] = useState(false);
-    const [jadwalkanSuratId, setJadwalkanSuratId] = useState<string | null>(null);
-    const [jadwalkanPerihal, setJadwalkanPerihal] = useState('');
     // Determine penanda tangan index automatically based on current user jabatan level
     const getPenandaTanganIndex = () => {
         const level = auth.user?.jabatan_level;
@@ -107,22 +94,12 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
             data = data.filter(item => item.sifat === sifat);
         }
 
-        // Status Penerimaan filter
-        if (penerimaanFilter) {
-            data = data.filter(item => item.penerimaan_status === penerimaanFilter);
+        // Status filter
+        if (statusTindakLanjut) {
+            data = data.filter(item => item.status_tindak_lanjut === statusTindakLanjut);
         }
-
-        // Status Penjadwalan filter
-        if (penjadwalanFilter) {
-            if (penjadwalanFilter === 'belum') {
-                data = data.filter(item => !item.penjadwalan_status || item.penjadwalan_status === '-');
-            } else {
-                data = data.filter(item => item.penjadwalan_status === penjadwalanFilter);
-            }
-        }
-
         return data;
-    }, [suratMasuk, search, startDate, endDate, sifat]);
+    }, [suratMasuk, search, startDate, endDate, sifat, statusTindakLanjut]);
 
     // Paginate data
     const paginatedData = useMemo(() => {
@@ -138,16 +115,15 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         setCurrentPage(1);
     };
 
-    const hasActiveFilters = !!(search || startDate || endDate || sifat || penerimaanFilter || penjadwalanFilter);
+    const hasActiveFilters = !!(search || startDate || endDate || sifat || statusTindakLanjut);
 
     const handleResetFilters = () => {
         setSearch('');
         setStartDate('');
         setEndDate('');
         setSifat('');
+        setStatusTindakLanjut('');
         setPeriodeFilter('');
-        setPenerimaanFilter('');
-        setPenjadwalanFilter('');
         setCurrentPage(1);
     };
 
@@ -201,35 +177,9 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         });
     };
 
-    const handleTerimaDisketahui = (surat: SuratMasuk) => {
-        router.post(route('persuratan.surat-masuk.terima-diketahui', surat.id), {}, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess: () => {
-                updateAndCache(prev => prev.map(item =>
-                    item.id === surat.id
-                        ? { ...item, status: 'selesai' as const, can_disposisi: false, can_schedule: false }
-                        : item
-                ));
-            },
-        });
-    };
-
-    const handleOpenDisposisi = (surat: SuratMasuk) => {
-        setDisposisiSuratId(surat.id);
-        setDisposisiPerihal(surat.perihal);
-        setDisposisiModalOpen(true);
-    };
-
-    const handleOpenJadwalkan = (surat: SuratMasuk) => {
-        setJadwalkanSuratId(surat.id);
-        setJadwalkanPerihal(surat.perihal);
-        setJadwalkanModalOpen(true);
-    };
 
     const handleOpenTimeline = (surat: SuratMasuk) => {
-        setTimelineSuratId(surat.id);
-        setTimelinePerihal(surat.perihal);
+        setTimelineSurat(surat);
         setTimelineModalOpen(true);
     };
 
@@ -268,6 +218,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
         if (search) filterInfo.push(`Pencarian: "${escapeHtml(search)}"`);
         if (startDate || endDate) filterInfo.push(`Periode: ${startDate || '...'} s/d ${endDate || '...'}`);
         if (sifat) filterInfo.push(`Sifat: ${sifatOptions[sifat] || sifat}`);
+        if (statusTindakLanjut) filterInfo.push(`Status: ${statusTindakLanjut}`);
         exportToPrintWindow({
             title: 'Laporan Data Surat Masuk',
             columns: [
@@ -278,8 +229,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 { header: 'Asal Surat', render: (item) => escapeHtml(item.asal_surat) },
                 { header: 'Perihal', render: (item) => escapeHtml(item.perihal) },
                 { header: 'Sifat', render: (item) => escapeHtml(sifatOptions[item.sifat] || item.sifat) },
-                { header: 'Status Penerimaan', render: (item) => escapeHtml(item.penerimaan_status || '-') },
-                { header: 'Status Penjadwalan', render: (item) => escapeHtml(item.penjadwalan_status_label || '-') },
+                { header: 'Status Tindak Lanjut', render: (item) => escapeHtml(item.status_tindak_lanjut || '-') },
             ],
             data: filteredData,
             filterInfo,
@@ -390,35 +340,19 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-text-secondary mb-1">
-                                            Status Penerimaan
+                                            Status Tindak Lanjut
                                         </label>
                                         <FormSelect
                                             options={[
-                                                { value: 'Diterima', label: 'Diterima' },
-                                                { value: 'Menunggu Penerimaan', label: 'Menunggu Penerimaan' },
+                                                { value: 'Menunggu Tindak Lanjut', label: 'Menunggu Tindak Lanjut' },
+                                                { value: 'Diterima / Diketahui', label: 'Diterima / Diketahui' },
+                                                { value: 'Telah Masuk Jadwal Tentatif', label: 'Telah Masuk Jadwal Tentatif' },
+                                                { value: 'Telah Masuk Jadwal Definitif', label: 'Telah Masuk Jadwal Definitif' },
+                                                { value: 'Telah Didisposisi', label: 'Telah Didisposisi' },
                                             ]}
-                                            value={penerimaanFilter}
+                                            value={statusTindakLanjut}
                                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                                setPenerimaanFilter(e.target.value);
-                                                setCurrentPage(1);
-                                            }}
-                                            placeholder="Semua Status"
-                                            className="w-full px-2 text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-text-secondary mb-1">
-                                            Status Penjadwalan
-                                        </label>
-                                        <FormSelect
-                                            options={[
-                                                { value: 'belum', label: 'Belum Dijadwalkan' },
-                                                { value: 'tentatif', label: 'Tentatif' },
-                                                { value: 'definitif', label: 'Definitif' },
-                                            ]}
-                                            value={penjadwalanFilter}
-                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                                setPenjadwalanFilter(e.target.value);
+                                                setStatusTindakLanjut(e.target.value);
                                                 setCurrentPage(1);
                                             }}
                                             placeholder="Semua Status"
@@ -484,8 +418,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Asal Surat</th>
                                     <th className="border border-border-default px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase">Perihal</th>
                                     <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Sifat</th>
-                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Status Penerimaan</th>
-                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Status Penjadwalan</th>
+                                    <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase">Status Tindak Lanjut</th>
                                     <th className="border border-border-default px-4 py-3 text-center text-xs font-bold text-text-secondary uppercase w-20">Aksi</th>
                                 </tr>
                             </thead>
@@ -515,13 +448,17 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                             {getSifatBadge(item.sifat, sifatOptions)}
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
-                                            <Badge variant={item.penerimaan_status === 'Diterima' ? 'success' : 'warning'}>
-                                                {item.penerimaan_status ?? '-'}
-                                            </Badge>
-                                        </td>
-                                        <td className="border border-border-default px-4 py-3 text-center">
-                                            <Badge variant={item.penjadwalan_status_variant ?? 'default'}>
-                                                {item.penjadwalan_status_label ?? '-'}
+                                            <Badge
+                                                variant={
+                                                    item.status_tindak_lanjut === 'Menunggu Tindak Lanjut' ? 'warning' :
+                                                        item.status_tindak_lanjut === 'Diterima / Diketahui' ? 'primary' :
+                                                            item.status_tindak_lanjut === 'Telah Masuk Jadwal Tentatif' ? 'success' :
+                                                                item.status_tindak_lanjut === 'Telah Masuk Jadwal Definitif' ? 'success' :
+                                                                item.status_tindak_lanjut === 'Telah Didisposisi' ? 'info' :
+                                                                    'default'
+                                                }
+                                            >
+                                                {item.status_tindak_lanjut ?? '-'}
                                             </Badge>
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
@@ -547,6 +484,56 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                                 <Pencil className="h-4 w-4" />
                                                                 <span>Edit</span>
                                                             </Dropdown.Link>
+                                                        )}
+
+                                                        {/* Terima (penerimaan awal) */}
+                                                        {item.can_accept && (
+                                                            <Dropdown.Link
+                                                                as="button"
+                                                                onClick={() => handleTerima(item)}
+                                                                className="flex items-center gap-2 text-success"
+                                                            >
+                                                                <Check className="h-4 w-4" />
+                                                                <span>Terima / Diketahui</span>
+                                                            </Dropdown.Link>
+                                                        )}
+
+                                                        {/* Masukkan Ke Jadwal */}
+                                                        {item.can_masukkan_jadwal && (
+                                                            <Dropdown.Link
+                                                                as="button"
+                                                                onClick={() => {
+                                                                    router.post(route('persuratan.surat-masuk.masukkan-jadwal', item.id), {}, { preserveScroll: true });
+                                                                }}
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <CalendarPlus className="h-4 w-4" />
+                                                                <span>Masukkan Ke Jadwal</span>
+                                                            </Dropdown.Link>
+                                                        )}
+
+                                                        {/* Lihat Jadwal */}
+                                                        {item.can_view_schedule && item.penjadwalan && (
+                                                            <Dropdown.Link
+                                                                href={
+                                                                    item.penjadwalan.status === 'definitif'
+                                                                        ? route('penjadwalan.definitif.index', { search: item.nomor_surat })
+                                                                        : route('penjadwalan.tentatif.index', { search: item.nomor_surat })
+                                                                }
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <CalendarPlus className="h-4 w-4" />
+                                                                <span>
+                                                                    {item.penjadwalan.status === 'definitif'
+                                                                        ? 'Lihat di Jadwal Definitif'
+                                                                        : 'Lihat di Jadwal Tentatif'}
+                                                                </span>
+                                                            </Dropdown.Link>
+                                                        )}
+
+                                                        {/* Separator setelah aksi utama */}
+                                                        {(item.can_accept || item.can_masukkan_jadwal || item.can_view_schedule) && (
+                                                            <div className="border-t border-border-default my-1" />
                                                         )}
 
                                                         <Dropdown.Link
@@ -590,86 +577,8 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                             <span>Cetak Kartu Hanya Isi</span>
                                                         </Dropdown.Link>
 
-                                                        {/* Terima (penerimaan awal) */}
-                                                        {item.can_accept && (
-                                                            <Dropdown.Link
-                                                                as="button"
-                                                                onClick={() => handleTerima(item)}
-                                                                className="flex items-center gap-2 text-success"
-                                                            >
-                                                                <Check className="h-4 w-4" />
-                                                                <span>Terima Surat</span>
-                                                            </Dropdown.Link>
-                                                        )}
-
-                                                        {/* Separator sebelum aksi disposisi/jadwal */}
-                                                        {(item.can_disposisi || item.can_schedule || item.can_view_schedule) && (
-                                                            <div className="border-t border-border-default my-1" />
-                                                        )}
-
-                                                        {/* Terima/Diketahui */}
-                                                        {item.can_disposisi && (
-                                                            <Dropdown.Link
-                                                                as="button"
-                                                                onClick={() => handleTerimaDisketahui(item)}
-                                                                className="flex items-center gap-2 text-secondary"
-                                                            >
-                                                                <CheckCircle2 className="h-4 w-4" />
-                                                                <span>Terima / Diketahui</span>
-                                                            </Dropdown.Link>
-                                                        )}
-
-                                                        {/* Disposisi ke bawahan */}
-                                                        {item.can_disposisi && (
-                                                            <Dropdown.Link
-                                                                as="button"
-                                                                onClick={() => handleOpenDisposisi(item)}
-                                                                className="flex items-center gap-2"
-                                                            >
-                                                                <Send className="h-4 w-4" />
-                                                                <span>Disposisi</span>
-                                                            </Dropdown.Link>
-                                                        )}
-
-                                                        {/* Jadwalkan */}
-                                                        {item.can_schedule && (
-                                                            <Dropdown.Link
-                                                                as="button"
-                                                                onClick={() => handleOpenJadwalkan(item)}
-                                                                className="flex items-center gap-2"
-                                                            >
-                                                                <CalendarPlus className="h-4 w-4" />
-                                                                <span>Jadwalkan</span>
-                                                            </Dropdown.Link>
-                                                        )}
-
-                                                        {/* Lihat Jadwal */}
-                                                        {item.can_view_schedule && item.penjadwalan && (
-                                                            <Dropdown.Link
-                                                                href={route('bupati.jadwal.form', { surat: item.id, type: 'self' })}
-                                                                className="flex items-center gap-2"
-                                                            >
-                                                                <CalendarPlus className="h-4 w-4" />
-                                                                <span>Lihat Jadwal</span>
-                                                            </Dropdown.Link>
-                                                        )}
-
-                                                        {/* Disabled state: belum terima surat */}
-                                                        {item.can_disposisi_disabled && !item.can_disposisi && (
-                                                            <>
-                                                                <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
-                                                                    <Send className="h-4 w-4" />
-                                                                    <span>Disposisi (Terima surat dulu)</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted bg-surface-hover/60 cursor-not-allowed">
-                                                                    <CalendarPlus className="h-4 w-4" />
-                                                                    <span>Jadwalkan (Terima surat dulu)</span>
-                                                                </div>
-                                                            </>
-                                                        )}
-
                                                         {/* Cetak Disposisi */}
-                                                        {(item.can_disposisi || item.can_view_schedule) && (
+                                                        {item.can_cetak_disposisi && (
                                                             <Dropdown.Link
                                                                 as="button"
                                                                 onClick={() => handleCetakDisposisi(item)}
@@ -718,7 +627,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                 {paginatedData.length === 0 && (
                                     <tr>
                                         <td colSpan={10} className="border border-border-default px-4 py-8 text-center text-text-secondary">
-                                            {search || startDate || endDate || sifat ? 'Tidak ada surat masuk yang cocok dengan filter.' : 'Tidak ada data surat masuk.'}
+                                            {search || startDate || endDate || sifat || statusTindakLanjut ? 'Tidak ada surat masuk yang cocok dengan filter.' : 'Tidak ada data surat masuk.'}
                                         </td>
                                     </tr>
                                 )}
@@ -763,31 +672,8 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
             <TimelineModal
                 isOpen={timelineModalOpen}
                 onClose={() => setTimelineModalOpen(false)}
-                suratMasukId={timelineSuratId}
-                suratPerihal={timelinePerihal}
-            />
-
-            {/* Disposisi Modal */}
-            <DisposisiModal
-                isOpen={disposisiModalOpen}
-                onClose={() => setDisposisiModalOpen(false)}
-                suratMasukId={disposisiSuratId}
-                suratPerihal={disposisiPerihal}
-                onSuccess={() => {
-                    // Refresh data setelah disposisi berhasil
-                    router.reload({ only: ['suratMasuk'] });
-                }}
-            />
-
-            {/* Jadwalkan Modal */}
-            <JadwalkanModal
-                isOpen={jadwalkanModalOpen}
-                onClose={() => setJadwalkanModalOpen(false)}
-                suratMasukId={jadwalkanSuratId}
-                suratPerihal={jadwalkanPerihal}
-                onSuccess={() => {
-                    router.reload({ only: ['suratMasuk'] });
-                }}
+                suratMasuk={timelineSurat}
+                sifatOptions={sifatOptions}
             />
 
             {/* Detail Modal */}
@@ -839,7 +725,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                         {detailSurat.tujuans?.length ? (
                                             detailSurat.tujuans.map((t) => (
                                                 <Badge key={t.id} variant="primary" size="sm">
-                                                    {t.tujuan}
+                                                    {t.user?.jabatan_nama || t.tujuan}
                                                 </Badge>
                                             ))
                                         ) : (
@@ -886,7 +772,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">Staff Pengolah</p>
-                                    <p className="font-medium text-text-primary">{detailSurat.staff_pengolah?.name || '-'}</p>
+                                    <p className="font-medium text-text-primary">{detailSurat.staff_pengolah?.jabatan_nama || detailSurat.staff_pengolah?.name || '-'}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">Tanggal Diteruskan</p>

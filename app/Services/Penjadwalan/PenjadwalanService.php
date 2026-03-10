@@ -9,6 +9,7 @@ use App\Models\JadwalHistory;
 use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
+use App\Models\TimelineSurat;
 use App\Models\User;
 use App\Support\CacheHelper;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +39,11 @@ final class PenjadwalanService
     public function createCustomSchedule(array $validated, User $requestUser): array
     {
         return DB::transaction(function () use ($validated, $requestUser) {
+            $filePath = null;
+            if (isset($validated['file']) && $validated['file'] instanceof \Illuminate\Http\UploadedFile) {
+                $filePath = $validated['file']->store('penjadwalans', 'public');
+            }
+
             $payload = [
                 'surat_masuk_id' => null,
                 'nama_kegiatan' => $validated['nama_kegiatan'],
@@ -51,9 +57,12 @@ final class PenjadwalanService
                 'keterangan' => $validated['keterangan'] ?? null,
                 'dihadiri_oleh' => $requestUser->name,
                 'dihadiri_oleh_user_id' => $requestUser->id,
+                'status_kehadiran' => $validated['status_kehadiran'] ?? null,
+                'nama_yang_mewakili' => $validated['nama_yang_mewakili'] ?? null,
                 'status' => Penjadwalan::STATUS_DEFINITIF,
                 'status_disposisi' => $this->resolveDisposisiStatus($requestUser),
                 'sumber_jadwal' => Penjadwalan::SUMBER_SELF,
+                'file_path' => $filePath,
                 'created_by' => $requestUser->id,
                 'updated_by' => $requestUser->id,
             ];
@@ -108,75 +117,134 @@ final class PenjadwalanService
     }
 
     /**
-     * Update kehadiran/disposisi on a penjadwalan record.
+     * Menindaklanjuti jadwal tentatif menjadi jadwal definitif beserta data kehadiran dan lokasinya.
      */
-    public function updateKehadiran(Penjadwalan $penjadwalan, array $validated, User $requestUser): void
+    public function tindakLanjut(Penjadwalan $penjadwalan, array $validated, User $requestUser): void
     {
         DB::transaction(function () use ($penjadwalan, $validated, $requestUser) {
             $oldData = $this->captureHistorySnapshot($penjadwalan);
-            $selectedUser = null;
 
-            if (!empty($validated['dihadiri_oleh'])) {
-                $selectedUser = User::query()
-                    ->select(['id', 'name'])
-                    ->find((int) $validated['dihadiri_oleh']);
+            // Determine attendance based on status_kehadiran enum
+            $attendanceName = null;
+            $attendanceUserId = null;
+
+            if ($validated['status_kehadiran'] === 'Dihadiri') {
+                $attendanceName = $requestUser->name;
+                $attendanceUserId = $requestUser->id;
+            } elseif ($validated['status_kehadiran'] === 'Diwakilkan' && !empty($validated['keterangan'])) {
+                // Simplification for mewakili: just store the text description if it's not a direct system user
+                // Ideally this would link to another user, but per current form, we just rely on string if they type it in Keterangan
+                $attendanceName = 'Diwakilkan';
             }
 
-            $customAttendance = trim((string) ($validated['dihadiri_oleh_custom'] ?? ''));
-            $attendanceName = $selectedUser?->name ?: ($customAttendance !== '' ? $customAttendance : null);
+            // Format nama_yang_mewakili to include jabatan if available
+            $namaMewakili = null;
+            if ($validated['status_kehadiran'] === 'Diwakilkan') {
+                $namaRaw = $validated['nama_yang_mewakili'] ?? '';
+                $jabatanRaw = $validated['jabatan_yang_mewakili'] ?? '';
+                $namaMewakili = trim($namaRaw . ($jabatanRaw ? " ({$jabatanRaw})" : ''));
+            }
 
-            $penjadwalan->update([
-                'dihadiri_oleh' => $attendanceName,
-                'dihadiri_oleh_user_id' => $selectedUser?->id,
-                'status_disposisi' => $validated['status_disposisi'],
+            // Move to Definitive
+            $payload = [
+                'tanggal_agenda' => $validated['tanggal_agenda'],
+                'waktu_mulai' => $validated['waktu_mulai'],
+                'waktu_selesai' => $validated['sampai_selesai'] ? null : ($validated['waktu_selesai'] ?? null),
+                'sampai_selesai' => (bool) ($validated['sampai_selesai'] ?? false),
+                'lokasi_type' => $validated['lokasi_type'],
+                'kode_wilayah' => $this->buildKodeWilayah($validated),
+                'tempat' => $validated['tempat'],
+                'status_kehadiran' => $validated['status_kehadiran'],
+                'nama_yang_mewakili' => $namaMewakili,
                 'keterangan' => $validated['keterangan'] ?? $penjadwalan->keterangan,
-            ]);
-
-            $this->recordHistory($penjadwalan, $oldData, $requestUser);
-        });
-
-        CacheHelper::flush(['penjadwalan']);
-    }
-
-    /**
-     * Promote a tentatif jadwal to definitif.
-     *
-     * @return array{success: bool, message: string}
-     */
-    public function promoteToDefinitif(Penjadwalan $penjadwalan, User $requestUser): array
-    {
-        if ($penjadwalan->status_disposisi === Penjadwalan::DISPOSISI_MENUNGGU) {
-            return [
-                'success' => false,
-                'message' => 'Jadwal masih menunggu peninjauan. Harap perbarui status disposisi terlebih dahulu.',
-            ];
-        }
-
-        DB::transaction(function () use ($penjadwalan, $requestUser) {
-            $oldData = $this->captureHistorySnapshot($penjadwalan);
-
-            $penjadwalan->update([
+                'dihadiri_oleh' => $attendanceName,
+                'dihadiri_oleh_user_id' => $attendanceUserId,
+                'status_disposisi' => $this->resolveDisposisiStatusFromAttendance(
+                    $requestUser,
+                    (string) $validated['status_kehadiran']
+                ),
                 'status' => Penjadwalan::STATUS_DEFINITIF,
-            ]);
+                'updated_by' => $requestUser->id,
+            ];
+
+            $penjadwalan->update($payload);
 
             $this->recordHistory($penjadwalan, $oldData, $requestUser);
+
+            if ($penjadwalan->surat_masuk_id) {
+                TimelineSurat::record(
+                    $penjadwalan->surat_masuk_id,
+                    $requestUser->id,
+                    TimelineSurat::AKSI_DEFINITIF,
+                    'Jadwal ditindaklanjuti (' . $validated['status_kehadiran'] . ') dan menjadi Definitif.'
+                );
+            }
         });
 
-        CacheHelper::flush(['penjadwalan']);
-
-        return [
-            'success' => true,
-            'message' => 'Jadwal berhasil dijadikan definitif.',
-        ];
+        CacheHelper::flush(['penjadwalan', 'persuratan_list', 'dashboard_metrics']);
     }
+
 
     /**
      * Delete a penjadwalan permanently.
+     * 
+     * @param Penjadwalan $penjadwalan
+     * @return void
      */
     public function delete(Penjadwalan $penjadwalan): void
     {
-        $penjadwalan->delete();
-        CacheHelper::flush(['penjadwalan']);
+        /** @var \Illuminate\Database\Eloquent\Model $penjadwalan */
+        DB::transaction(function () use ($penjadwalan) {
+            $suratMasukId = $penjadwalan->surat_masuk_id;
+
+            $penjadwalan->delete();
+
+            if ($suratMasukId) {
+                $suratMasuk = SuratMasuk::find($suratMasukId);
+                if ($suratMasuk) {
+                    $suratMasuk->update([
+                        'status' => SuratMasuk::STATUS_DIPROSES,
+                    ]);
+
+                    TimelineSurat::record(
+                        $suratMasukId,
+                        \Illuminate\Support\Facades\Auth::id(),
+                        TimelineSurat::AKSI_JADWALKAN,
+                        'Jadwal dihapus dari sistem.'
+                    );
+                }
+            }
+        });
+
+        CacheHelper::flush(['penjadwalan', 'persuratan_list']);
+    }
+
+    /**
+     * Revert jadwal definitif (berbasis surat) kembali ke status tentatif.
+     */
+    public function revertDefinitifToTentatif(Penjadwalan $penjadwalan, User $requestUser): void
+    {
+        DB::transaction(function () use ($penjadwalan, $requestUser) {
+            $oldData = $this->captureHistorySnapshot($penjadwalan);
+
+            $restorePayload = $this->buildTentatifRestorePayload($penjadwalan);
+            $restorePayload['updated_by'] = $requestUser->id;
+
+            $penjadwalan->update($restorePayload);
+
+            $this->recordHistory($penjadwalan, $oldData, $requestUser);
+
+            if ($penjadwalan->surat_masuk_id) {
+                TimelineSurat::record(
+                    $penjadwalan->surat_masuk_id,
+                    $requestUser->id,
+                    TimelineSurat::AKSI_JADWALKAN,
+                    'Jadwal definitif dihapus dan dikembalikan ke Jadwal Tentatif.'
+                );
+            }
+        });
+
+        CacheHelper::flush(['penjadwalan', 'persuratan_list', 'dashboard_metrics']);
     }
 
     /**
@@ -186,7 +254,7 @@ final class PenjadwalanService
     {
         return User::query()
             ->where('role', '=', User::ROLE_PEJABAT)
-            ->whereHas('jabatanRelasi', fn($q) => $q->where('level', 1))
+            ->whereHas('jabatanRelasi', fn($q) => $q->where('level', '=', 1))
             ->first();
     }
 
@@ -207,11 +275,11 @@ final class PenjadwalanService
             : $this->normalizeTime((string) $waktuSelesai);
 
         $query = Penjadwalan::query()
-            ->whereDate('tanggal_agenda', '=', $tanggal, 'and')
-            ->where('dihadiri_oleh_user_id', '=', $attendeeUserId, 'and');
+            ->whereDate('tanggal_agenda', '=', $tanggal)
+            ->where('dihadiri_oleh_user_id', '=', $attendeeUserId);
 
         if ($ignoreJadwalId) {
-            $query->where('id', '!=', $ignoreJadwalId);
+            $query->where('id', '<>', $ignoreJadwalId);
         }
 
         return $query->get()->filter(function (Penjadwalan $jadwal) use ($newStart, $newEnd) {
@@ -243,8 +311,51 @@ final class PenjadwalanService
             'sumber_jadwal',
             'dihadiri_oleh',
             'dihadiri_oleh_user_id',
+            'status_kehadiran',
+            'nama_yang_mewakili',
             'keterangan',
         ]);
+    }
+
+    /**
+     * Build payload untuk mengembalikan jadwal ke snapshot tentatif terakhir.
+     */
+    private function buildTentatifRestorePayload(Penjadwalan $penjadwalan): array
+    {
+        $latestDefinitifHistory = $penjadwalan->histories()
+            ->where('new_data->status', '=', Penjadwalan::STATUS_DEFINITIF)
+            ->latest('created_at')
+            ->first();
+
+        $snapshot = is_array($latestDefinitifHistory?->old_data)
+            ? $latestDefinitifHistory->old_data
+            : null;
+
+        if (is_array($snapshot) && (($snapshot['status'] ?? null) === Penjadwalan::STATUS_TENTATIF)) {
+            return [
+                'tanggal_agenda' => $snapshot['tanggal_agenda'] ?? $penjadwalan->tanggal_agenda?->format('Y-m-d'),
+                'waktu_mulai' => $snapshot['waktu_mulai'] ?? $penjadwalan->waktu_mulai,
+                'waktu_selesai' => $snapshot['waktu_selesai'] ?? $penjadwalan->waktu_selesai,
+                'sampai_selesai' => (bool) ($snapshot['sampai_selesai'] ?? $penjadwalan->sampai_selesai),
+                'lokasi_type' => $snapshot['lokasi_type'] ?? $penjadwalan->lokasi_type,
+                'kode_wilayah' => $snapshot['kode_wilayah'] ?? $penjadwalan->kode_wilayah,
+                'tempat' => $snapshot['tempat'] ?? $penjadwalan->tempat,
+                'status' => Penjadwalan::STATUS_TENTATIF,
+                'status_disposisi' => $snapshot['status_disposisi'] ?? $penjadwalan->status_disposisi,
+                'sumber_jadwal' => $snapshot['sumber_jadwal'] ?? $penjadwalan->sumber_jadwal,
+                'dihadiri_oleh' => $snapshot['dihadiri_oleh'] ?? $penjadwalan->dihadiri_oleh,
+                'dihadiri_oleh_user_id' => $snapshot['dihadiri_oleh_user_id'] ?? $penjadwalan->dihadiri_oleh_user_id,
+                'status_kehadiran' => $snapshot['status_kehadiran'] ?? null,
+                'nama_yang_mewakili' => $snapshot['nama_yang_mewakili'] ?? null,
+                'keterangan' => $snapshot['keterangan'] ?? $penjadwalan->keterangan,
+            ];
+        }
+
+        return [
+            'status' => Penjadwalan::STATUS_TENTATIF,
+            'status_kehadiran' => null,
+            'nama_yang_mewakili' => null,
+        ];
     }
 
     // ==================== PRIVATE METHODS ====================
@@ -286,7 +397,7 @@ final class PenjadwalanService
             ) {
                 if (!$existingJadwal) {
                     $alreadyScheduled = Penjadwalan::query()
-                        ->where('surat_masuk_id', '=', $surat->id, 'and')
+                        ->where('surat_masuk_id', '=', $surat->id)
                         ->lockForUpdate()
                         ->exists();
 
@@ -365,6 +476,8 @@ final class PenjadwalanService
             'keterangan' => $validated['keterangan'] ?? null,
             'dihadiri_oleh' => $attendee->name,
             'dihadiri_oleh_user_id' => $attendee->id,
+            'status_kehadiran' => $validated['status_kehadiran'] ?? null,
+            'nama_yang_mewakili' => $validated['nama_yang_mewakili'] ?? null,
             'status' => Penjadwalan::STATUS_TENTATIF,
             'status_disposisi' => $this->resolveDisposisiStatus($attendee),
             'sumber_jadwal' => $validated['sumber_jadwal'] ?? Penjadwalan::SUMBER_DISPOSISI,
@@ -389,6 +502,18 @@ final class PenjadwalanService
         return Penjadwalan::DISPOSISI_DIWAKILKAN;
     }
 
+    /**
+     * Resolve status_disposisi ketika jadwal ditindaklanjuti.
+     */
+    private function resolveDisposisiStatusFromAttendance(User $requestUser, string $statusKehadiran): string
+    {
+        if ($statusKehadiran === 'Diwakilkan') {
+            return Penjadwalan::DISPOSISI_DIWAKILKAN;
+        }
+
+        return $this->resolveDisposisiStatus($requestUser);
+    }
+
     private const TASIKMALAYA_PROVINSI_KODE = '32';
     private const TASIKMALAYA_KABUPATEN_KODE = '06';
 
@@ -397,15 +522,25 @@ final class PenjadwalanService
      */
     private function buildKodeWilayah(array $validated): ?string
     {
-        if ($validated['lokasi_type'] !== Penjadwalan::LOKASI_DALAM_DAERAH) {
+        if ($validated['lokasi_type'] === Penjadwalan::LOKASI_DALAM_DAERAH) {
+            if (empty($validated['kecamatan_id']) && empty($validated['desa_id'])) {
+                return null;
+            }
+            return implode('.', [
+                self::TASIKMALAYA_PROVINSI_KODE,
+                self::TASIKMALAYA_KABUPATEN_KODE,
+                $validated['kecamatan_id'] ?? '',
+                $validated['desa_id'] ?? '',
+            ]);
+        }
+
+        if (empty($validated['provinsi_id']) && empty($validated['kabupaten_id'])) {
             return null;
         }
 
         return implode('.', [
-            self::TASIKMALAYA_PROVINSI_KODE,
-            self::TASIKMALAYA_KABUPATEN_KODE,
-            $validated['kecamatan_id'],
-            $validated['desa_id'],
+            $validated['provinsi_id'] ?? '',
+            $validated['kabupaten_id'] ?? '',
         ]);
     }
 
@@ -414,11 +549,18 @@ final class PenjadwalanService
      */
     private function ensureRecipientTujuan(SuratMasuk $surat, User $attendee): void
     {
-        $alreadyExists = $surat->tujuans()
-            ->where('tujuan_id', '=', $attendee->id, 'and')
-            ->exists();
+        /** @var SuratMasukTujuan|null $existingKeTujuan */
+        $existingKeTujuan = $surat->tujuans()
+            ->where('tujuan_id', '=', $attendee->id)
+            ->first();
 
-        if ($alreadyExists) {
+        if ($existingKeTujuan) {
+            $existingKeTujuan->update([
+                'is_primary' => true,
+                'is_tembusan' => false,
+                'status_penerimaan' => SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN,
+                'diterima_at' => null,
+            ]);
             return;
         }
 

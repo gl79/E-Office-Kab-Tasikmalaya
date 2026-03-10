@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -10,7 +10,6 @@ import {
     FormTextarea,
     InputError,
     InputLabel,
-    TextInput,
     TimeSelect,
 } from '@/Components/form';
 import { useDeferredDataWithLoading } from '@/hooks';
@@ -61,6 +60,7 @@ export default function CustomForm({
         desa_id: '',
         tempat: '',
         keterangan: '',
+        file: null as File | null,
     });
 
     useEffect(() => {
@@ -151,13 +151,13 @@ export default function CustomForm({
                         {/* Nama Kegiatan */}
                         <div>
                             <InputLabel htmlFor="nama_kegiatan" value="Nama Kegiatan" required />
-                            <TextInput
+                            <FormTextarea
                                 id="nama_kegiatan"
-                                type="text"
                                 value={form.data.nama_kegiatan}
                                 onChange={(e) => form.setData('nama_kegiatan', e.target.value)}
                                 className="mt-1 w-full"
                                 placeholder="Contoh: Undangan Pernikahan, Rapat Koordinasi, dll."
+                                rows={3}
                             />
                             <InputError message={form.errors.nama_kegiatan} className="mt-1" />
                         </div>
@@ -325,6 +325,27 @@ export default function CustomForm({
                                 placeholder="Catatan tambahan (opsional)"
                             />
                             <InputError message={form.errors.keterangan} className="mt-1" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="file" value="File Lampiran (Opsional)" />
+                            <input
+                                id="file"
+                                type="file"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files.length > 0) {
+                                        form.setData('file', e.target.files[0]);
+                                    } else {
+                                        form.setData('file', null);
+                                    }
+                                }}
+                                className="mt-1 block w-full text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 border border-border-default rounded-md bg-surface p-1 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            />
+                            <p className="mt-1 text-xs text-text-muted">
+                                Format: PDF, DOC, DOCX, JPG, PNG. Maksimal 5MB.
+                            </p>
+                            <InputError message={form.errors.file} className="mt-1" />
                         </div>
 
                         <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">

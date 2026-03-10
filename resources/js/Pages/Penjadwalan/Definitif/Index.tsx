@@ -28,8 +28,15 @@ const formatNoAgenda = (nomor?: string) => {
     return parts.length >= 2 ? parts[1] : nomor;
 };
 
+const formatTimeNoSeconds = (time?: string | null) => {
+    if (!time) return '';
+    return time.length >= 5 ? time.slice(0, 5) : time;
+};
+
 const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
     const { auth } = usePage<PageProps>().props;
+    const canUseCustomSchedule = auth.user?.role === 'superadmin'
+        || (auth.user?.role === 'pejabat' && [1, 2, 3].includes(auth.user?.jabatan_level ?? -1));
     const cacheKey = `penjadwalan_definitif_${auth.user.id}`;
     const { read, write } = useMemoryCache<CalendarEvent[]>(cacheKey, CACHE_TTL_MS);
     const cachedEvents = read();
@@ -149,6 +156,21 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
         <Badge variant={getDisposisiVariant(status)}>{getDisposisiLabel(status)}</Badge>
     );
 
+    const formatAgendaTime = (agenda: Agenda) => {
+        const mulai = formatTimeNoSeconds(agenda.waktu_mulai);
+        const selesai = formatTimeNoSeconds(agenda.waktu_selesai);
+
+        if (agenda.sampai_selesai) {
+            return `${mulai} - Sampai Selesai`;
+        }
+
+        if (selesai) {
+            return `${mulai} - ${selesai}`;
+        }
+
+        return agenda.waktu_lengkap;
+    };
+
     const disposisiSelectOptions = [
         { value: '', label: 'Semua Status' },
         ...Object.entries(disposisiOptions).map(([value, label]) => ({
@@ -166,8 +188,14 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
     const suratDownloadUrl = suratMasukId
         ? route('persuratan.surat-masuk.download', suratMasukId)
         : null;
-    const isPdfFile = !!suratFilePath && /\.(pdf)$/i.test(suratFilePath);
-    const isImageFile = !!suratFilePath && /\.(jpe?g|png|webp)$/i.test(suratFilePath);
+
+    // Determine the actual file to preview (Surat vs Custom Jadwal)
+    const activeFilePath = selectedAgenda?.file_path ?? suratFilePath;
+    const activePreviewUrl = selectedAgenda?.file_url ?? suratPreviewUrl;
+    const activeDownloadUrl = selectedAgenda?.file_url ?? suratDownloadUrl;
+
+    const isPdfFile = !!activeFilePath && /\.(pdf)$/i.test(activeFilePath);
+    const isImageFile = !!activeFilePath && /\.(jpe?g|png|webp)$/i.test(activeFilePath);
 
     return (
         <>
@@ -204,7 +232,7 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                             </div>
 
                             <div className="flex gap-2 w-full md:w-auto">
-                                {(auth.user?.role === 'pejabat' || auth.user?.role === 'superadmin') && (
+                                {canUseCustomSchedule && (
                                     <Link href={route('bupati.jadwal.custom')}>
                                         <Button className="flex items-center gap-2 whitespace-nowrap">
                                             <CalendarPlus className="h-4 w-4" />
@@ -447,7 +475,7 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                                     </div>
                                     <div>
                                         <p className="text-text-secondary">Waktu</p>
-                                        <p className="font-medium text-text-primary">{selectedAgenda.waktu_lengkap} WIB</p>
+                                        <p className="font-medium text-text-primary">{formatAgendaTime(selectedAgenda)} WIB</p>
                                     </div>
                                     <div>
                                         <p className="text-text-secondary">Lokasi</p>
@@ -472,10 +500,12 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                                             {selectedAgenda.status_formal_label ?? selectedAgenda.status_label}
                                         </Badge>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-text-secondary">Disposisi:</span>
-                                        {renderDisposisiBadge(selectedAgenda.status_disposisi)}
-                                    </div>
+                                    {selectedAgenda.has_disposisi_chain && (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-text-secondary">Disposisi:</span>
+                                            {renderDisposisiBadge(selectedAgenda.status_disposisi)}
+                                        </div>
+                                    )}
                                     {selectedAgenda.dihadiri_oleh && (
                                         <p className="text-sm text-text-primary">
                                             <span className="text-text-secondary">Dihadiri:</span>{' '}
@@ -489,7 +519,7 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                             {sm?.created_by && (
                                 <div className="pt-4 border-t border-border-default">
                                     <p className="text-xs text-text-secondary">
-                                        Diinput oleh <span className="font-medium text-text-primary">{sm.created_by.name}</span>
+                                        Surat diinput oleh <span className="font-medium text-text-primary">{sm.created_by.name}</span>
                                         {sm.created_at && ` pada ${formatDateShort(sm.created_at)}`}
                                     </p>
                                 </div>
@@ -508,13 +538,14 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                             </div>
                         </div>
 
-                        {/* Kolom Kanan - Preview PDF */}
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center justify-between">
-                                <h4 className="font-semibold text-text-primary">Preview Surat</h4>
-                                {suratPreviewUrl && (
+                                <h4 className="font-semibold text-text-primary">
+                                    {selectedAgenda?.file_path ? 'Preview File Jadwal' : 'Preview Surat'}
+                                </h4>
+                                {activePreviewUrl && (
                                     <a
-                                        href={suratPreviewUrl}
+                                        href={activePreviewUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-1 text-xs text-primary hover:underline"
@@ -525,22 +556,26 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                                 )}
                             </div>
                             <div className="bg-surface-hover rounded-lg border border-border-default overflow-hidden flex-1">
-                                {!suratFilePath || !suratPreviewUrl ? (
+                                {!activeFilePath || !activePreviewUrl ? (
                                     <div className="flex items-center justify-center h-[560px]">
-                                        <p className="text-text-secondary text-sm">File surat tidak tersedia</p>
+                                        <p className="text-text-secondary text-sm">
+                                            {selectedAgenda?.sumber_jadwal === 'self' && !selectedAgenda?.surat_masuk
+                                                ? 'Tidak ada file lampiran pada jadwal ini'
+                                                : 'File surat tidak tersedia'}
+                                        </p>
                                     </div>
                                 ) : isPdfFile ? (
                                     <iframe
-                                        src={suratPreviewUrl}
+                                        src={activePreviewUrl}
                                         className="w-full h-[640px]"
-                                        title="Preview Surat"
+                                        title="Preview File"
                                         style={{ border: 'none' }}
                                     />
                                 ) : isImageFile ? (
                                     <div className="p-4">
                                         <img
-                                            src={suratPreviewUrl}
-                                            alt="Preview Surat"
+                                            src={activePreviewUrl}
+                                            alt="Preview File"
                                             className="w-full h-auto max-h-[640px] object-contain rounded border border-border-default bg-surface"
                                         />
                                     </div>
@@ -549,9 +584,10 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                                         <p className="text-text-secondary text-sm">
                                             Preview tidak tersedia untuk format file ini.
                                         </p>
-                                        {suratDownloadUrl && (
+                                        {activeDownloadUrl && (
                                             <a
-                                                href={suratDownloadUrl}
+                                                href={activeDownloadUrl}
+                                                download
                                                 className="text-primary text-sm hover:underline"
                                             >
                                                 Download File
@@ -575,7 +611,10 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                     <p>
                         Apakah Anda yakin ingin menghapus jadwal{' '}
                         <strong>{selectedAgenda?.nama_kegiatan}</strong>?
-                        Data akan dipindahkan ke arsip.
+                        {' '}
+                        {selectedAgenda?.surat_masuk
+                            ? 'Data akan dikembalikan ke Jadwal Tentatif.'
+                            : 'Data akan dihapus permanen.'}
                     </p>
                 }
                 isLoading={isDeleting}

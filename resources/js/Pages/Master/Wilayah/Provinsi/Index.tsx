@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
@@ -28,7 +28,7 @@ interface Props extends PageProps {
 
 const CACHE_TTL_MS = 60_000;
 
-export default function Index({ auth, provinsi: initialProvinsi, filters }: Props) {
+export default function Index({ auth, provinsi: initialProvinsi }: Props) {
     const { showToast } = useToast();
     const { data: provinsi, isLoading, hasCached } = useDeferredDataMutable<WilayahProvinsi[]>(
         `master_wilayah_provinsi_${auth.user.id}`,

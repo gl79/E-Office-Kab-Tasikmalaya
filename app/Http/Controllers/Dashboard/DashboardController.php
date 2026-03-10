@@ -46,54 +46,64 @@ class DashboardController extends Controller
      */
     protected function calculateStats(User $user): array
     {
-        $isAdmin = $user->isSuperAdmin() || $user->isTU();
+        $stats = null;
+        $today = now()->startOfDay();
 
-        // Surat masuk count: admin sees all, others see only addressed to them
-        if ($isAdmin) {
-            $suratMasukCount = SuratMasuk::count();
-        } else {
-            $suratMasukCount = SuratMasuk::whereHas('tujuans', function ($q) use ($user) {
+        // 1. Surat Masuk Hari Ini
+        $suratMasukHariIni = SuratMasuk::whereDate('created_at', now()->toDateString());
+        if (!$user->isSuperAdmin() && !$user->isTU()) {
+            $suratMasukHariIni->whereHas('tujuans', function ($q) use ($user) {
                 $q->where('tujuan_id', $user->id);
-            })->count();
+            });
         }
+        $countSuratMasukHariIni = $suratMasukHariIni->count();
 
-        // Surat keluar count: superadmin sees all, others see only their own
-        if ($user->isSuperAdmin()) {
-            $suratKeluarCount = SuratKeluar::count();
-        } else {
-            $suratKeluarCount = SuratKeluar::where('created_by', $user->id)->count();
+        // 2. Menunggu Tindak Lanjut
+        $menungguTindakLanjut = SuratMasuk::query()->where('status', '<>', SuratMasuk::STATUS_SELESAI);
+        if (!$user->isSuperAdmin() && !$user->isTU()) {
+            $menungguTindakLanjut->whereHas('tujuans', function ($q) use ($user) {
+                $q->where('tujuan_id', $user->id)
+                    ->where('status_penerimaan', '!=', \App\Models\SuratMasukTujuan::STATUS_DITERIMA);
+            });
         }
+        $countMenungguTindakLanjut = $menungguTindakLanjut->count();
+
+        // 3. Agenda Hari Ini (Hanya definitif)
+        $agendaHariIni = Penjadwalan::definitif()->whereDate('tanggal_agenda', now()->toDateString());
+        if (!$user->isSuperAdmin() && !$user->isTU()) {
+            $agendaHariIni->where('dihadiri_oleh_user_id', $user->id);
+        }
+        $countAgendaHariIni = $agendaHariIni->count();
+
+        // 4. Agenda Mendatang (Hanya definitif)
+        $agendaMendatang = Penjadwalan::definitif()->whereDate('tanggal_agenda', '>', now()->toDateString());
+        if (!$user->isSuperAdmin() && !$user->isTU()) {
+            $agendaMendatang->where('dihadiri_oleh_user_id', $user->id);
+        }
+        $countAgendaMendatang = $agendaMendatang->count();
 
         $stats = [
-            'persuratan' => [
-                'surat_masuk' => $suratMasukCount,
-                'surat_keluar' => $suratKeluarCount,
-                'disposisi' => DisposisiSurat::count(),
-            ],
+            'metrics' => [
+                'surat_masuk_hari_ini' => $countSuratMasukHariIni,
+                'menunggu_tindak_lanjut' => $countMenungguTindakLanjut,
+                'agenda_hari_ini' => $countAgendaHariIni,
+                'agenda_mendatang' => $countAgendaMendatang,
+            ]
         ];
 
-        // Penjadwalan stats — visible to admin, TU, and pejabat
-        if ($isAdmin || $user->isPejabat()) {
-            $stats['penjadwalan'] = [
-                'jadwal_tentatif' => Penjadwalan::tentatif()->count(),
-                'jadwal_definitif' => Penjadwalan::definitif()->count(),
-                'history_penjadwalan' => JadwalHistory::count(),
-            ];
-        }
-
         // Admin/TU get full stats
-        if ($isAdmin) {
+        if ($user->isSuperAdmin() || $user->isTU()) {
             $stats['wilayah'] = [
-                'provinsi' => WilayahProvinsi::count(),
-                'kabupaten' => WilayahKabupaten::count(),
-                'kecamatan' => WilayahKecamatan::count(),
-                'desa' => WilayahDesa::count(),
+                'provinsi' => WilayahProvinsi::query()->count(),
+                'kabupaten' => WilayahKabupaten::query()->count(),
+                'kecamatan' => WilayahKecamatan::query()->count(),
+                'desa' => WilayahDesa::query()->count(),
             ];
             $stats['master'] = [
-                'pengguna' => User::count(),
-                'unit_kerja' => UnitKerja::count(),
-                'indeks_surat' => IndeksSurat::count(),
-                'jenis_surat' => JenisSurat::count(),
+                'pengguna' => User::query()->count(),
+                'unit_kerja' => UnitKerja::query()->count(),
+                'indeks_surat' => IndeksSurat::query()->count(),
+                'jenis_surat' => JenisSurat::query()->count(),
             ];
         }
 
@@ -109,7 +119,7 @@ class DashboardController extends Controller
         Cache::forget('dashboard_stats');
 
         // Also clear per-user caches
-        $userIds = User::pluck('id');
+        $userIds = User::query()->pluck('id', 'id');
         foreach ($userIds as $id) {
             Cache::forget('dashboard_stats_' . $id);
         }

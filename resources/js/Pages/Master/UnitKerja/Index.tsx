@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
@@ -26,7 +26,7 @@ interface Props extends PageProps {
 
 const CACHE_TTL_MS = 60_000;
 
-const Index = ({ auth, unitKerja: initialUnitKerja, filters }: Props) => {
+const Index = ({ auth, unitKerja: initialUnitKerja }: Props) => {
     const { showToast } = useToast();
     const { data: unitKerja, isLoading, hasCached } = useDeferredDataMutable<UnitKerja[]>(
         `master_unit_kerja_${auth.user.id}`,

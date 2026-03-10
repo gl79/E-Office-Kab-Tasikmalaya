@@ -28,7 +28,7 @@ interface Props extends PageProps {
 
 const CACHE_TTL_MS = 60_000;
 
-const Index = ({ auth, indeksSurat: initialIndeksSurat, filters }: Props) => {
+const Index = ({ auth, indeksSurat: initialIndeksSurat }: Props) => {
     const { showToast } = useToast();
     const { data: indeksSurat, isLoading, hasCached } = useDeferredDataMutable<IndeksSurat[]>(
         `master_indeks_surat_${auth.user.id}`,

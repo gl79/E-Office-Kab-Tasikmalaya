@@ -20,7 +20,7 @@ interface Props extends PageProps {
 
 const CACHE_TTL_MS = 60_000;
 
-const Index = ({ data, filters, roles, jabatans }: Props) => {
+const Index = ({ data, roles, jabatans }: Props) => {
     const { auth } = usePage<PageProps>().props;
     const { showToast } = useToast();
     const { data: users, isLoading, hasCached } = useDeferredDataMutable<User[]>(

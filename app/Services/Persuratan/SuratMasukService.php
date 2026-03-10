@@ -28,7 +28,7 @@ class SuratMasukService
     public function getListForUser(User $user): Collection
     {
         $query = SuratMasuk::query()
-            ->with(['tujuans.user', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah', 'createdBy', 'jenisSurat', 'penjadwalan'])
+            ->with(['tujuans.user', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah.jabatanRelasi', 'createdBy', 'jenisSurat', 'penjadwalan'])
             ->latest();
 
         $this->applyVisibilityScope($query, $user);
@@ -126,9 +126,13 @@ class SuratMasukService
 
     /**
      * Hard-delete a surat masuk.
+     * 
+     * @param SuratMasuk $suratMasuk
+     * @return void
      */
     public function delete(SuratMasuk $suratMasuk): void
     {
+        /** @var \Illuminate\Database\Eloquent\Model $suratMasuk */
         $suratMasuk->delete();
         CacheHelper::flush(['persuratan_list']);
     }
@@ -192,21 +196,54 @@ class SuratMasukService
 
         $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
         $hasSchedule = (bool) $surat->penjadwalan;
+        $scheduleFollowUpStatus = $this->resolveScheduleFollowUpStatus($surat->penjadwalan);
 
         // Cek apakah user bisa melakukan aksi (primary recipient / disposisi penerima)
         $canDoAction = Gate::forUser($user)->check('disposisi', $surat);
 
+        $hasDisposed = DisposisiSurat::where('surat_masuk_id', $surat->id)
+            ->where('dari_user_id', $user->id)
+            ->exists();
+
         $surat->penerimaan_status = $this->resolvePenerimaanStatus($surat, $tujuan);
         $surat->penerimaan_diterima_at = $tujuan?->diterima_at?->toDateTimeString();
         $surat->can_accept = $isDisposeRecipient && !$isAcceptedByCurrentUser && !$isTembusan;
-        $surat->can_disposisi = $canDoAction && !$isTembusan;
-        $surat->can_disposisi_disabled = $isDisposeRecipient && !$isAcceptedByCurrentUser && !$isTembusan;
-        $surat->can_schedule = $canScheduleByBupati && !$hasSchedule && !$isTembusan;
-        $surat->can_finalize_schedule = false;
-        $surat->can_view_schedule = $hasSchedule && ($canScheduleByBupati || $isDisposeRecipient);
-        $surat->penjadwalan_status = $surat->penjadwalan?->status ?? '-';
-        $surat->penjadwalan_status_label = $surat->penjadwalan?->status_label ?? '-';
-        $surat->penjadwalan_status_variant = $this->resolvePenjadwalanVariant($surat->penjadwalan);
+
+        // Flow Baru: Surat Masuk hanya bisa dimasukkan ke jadwal setelah diterima, belum masuk jadwal, belum didisposisi.
+        $surat->can_masukkan_jadwal = $isDisposeRecipient && $isAcceptedByCurrentUser && !$isTembusan && !$hasSchedule && !$hasDisposed;
+        $surat->can_cetak_disposisi = ($isDisposeRecipient && $isAcceptedByCurrentUser) || $hasDisposed;
+
+        $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
+        $surat->can_view_schedule = $hasSchedule
+            && ($canScheduleByBupati || ($isDisposeRecipient && $isAcceptedByCurrentUser));
+
+        // Status Tindak Lanjut 
+        if (!$tujuan) {
+            // Jika user bukan penerima (contoh: TU / Superadmin), tampilkan progress global
+            $globalHasDisposed = DisposisiSurat::where('surat_masuk_id', $surat->id)->exists();
+            $globalIsAccepted = $surat->penerimaan_status === SuratMasukTujuan::STATUS_DITERIMA;
+
+            if (!$globalIsAccepted) {
+                $surat->status_tindak_lanjut = "Menunggu Tindak Lanjut";
+            } elseif ($hasSchedule) {
+                $surat->status_tindak_lanjut = $scheduleFollowUpStatus;
+            } elseif ($globalHasDisposed) {
+                $surat->status_tindak_lanjut = "Telah Didisposisi";
+            } else {
+                $surat->status_tindak_lanjut = "Diterima / Diketahui";
+            }
+        } else {
+            // Logika untuk penerima spesifik
+            if (!$isAcceptedByCurrentUser) {
+                $surat->status_tindak_lanjut = "Menunggu Tindak Lanjut";
+            } elseif ($hasSchedule) {
+                $surat->status_tindak_lanjut = $scheduleFollowUpStatus;
+            } elseif ($hasDisposed) {
+                $surat->status_tindak_lanjut = "Telah Didisposisi";
+            } else {
+                $surat->status_tindak_lanjut = "Diterima / Diketahui";
+            }
+        }
 
         return $surat;
     }
@@ -257,6 +294,17 @@ class SuratMasukService
         };
     }
 
+    private function resolveScheduleFollowUpStatus(?Penjadwalan $penjadwalan): string
+    {
+        if (!$penjadwalan) {
+            return "Menunggu Tindak Lanjut";
+        }
+
+        return $penjadwalan->status === Penjadwalan::STATUS_DEFINITIF
+            ? "Telah Masuk Jadwal Definitif"
+            : "Telah Masuk Jadwal Tentatif";
+    }
+
     // ==================== PRIVATE: TUJUAN SYNC ====================
 
     /**
@@ -287,6 +335,7 @@ class SuratMasukService
         $lowestLevel = PHP_INT_MAX;
         foreach ($tujuanList as $tujuan) {
             if (!is_numeric($tujuan)) continue;
+            /** @var User $userData */
             $userData = $users->get($tujuan);
             if (!$userData) continue;
             $level = $userData->getJabatanLevel() ?? PHP_INT_MAX;
@@ -321,7 +370,7 @@ class SuratMasukService
             SuratMasukTujuan::create([
                 'surat_masuk_id' => $suratMasuk->id,
                 'tujuan_id' => $userData?->id ?? null,
-                'tujuan' => $userData?->name ?? $tujuan,
+                'tujuan' => $userData?->jabatan_nama ?? $userData?->name ?? $tujuan,
                 'nomor_agenda' => $nomorAgenda,
                 'is_primary' => $isPrimary,
                 'is_tembusan' => $isTembusan,

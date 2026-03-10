@@ -67,6 +67,8 @@ export interface AgendaBase {
     sumber_jadwal?: SumberJadwal;
     sumber_jadwal_label?: string;
     status_kehadiran_column_label?: string;
+    file_path?: string | null;
+    file_url?: string | null;
 }
 
 export interface Agenda extends AgendaBase {
@@ -75,13 +77,18 @@ export interface Agenda extends AgendaBase {
     hari?: string;
     waktu_mulai?: string;
     waktu_selesai?: string | null;
+    sampai_selesai?: boolean;
     lokasi_type?: string;
     lokasi_type_label?: string;
     kode_wilayah?: string | null; // Added code_wilayah
     dihadiri_oleh?: string | null;
     dihadiri_oleh_user_id?: number | null;
+    status_kehadiran?: string | null;
+    nama_yang_mewakili?: string | null;
+    has_disposisi_chain?: boolean;
     keterangan?: string | null;
-    can_edit_kehadiran?: boolean;
+    can_tindak_lanjut?: boolean;
+    can_disposisi?: boolean;
     created_by?: AgendaCreator | null;
 }
 
@@ -117,4 +124,3 @@ export type PenjadwalanStatusFormal =
     | 'ditunda'
     | 'dibatalkan';
 export type SifatSurat = 'biasa' | 'penting' | 'segera' | 'amat_segera';
-

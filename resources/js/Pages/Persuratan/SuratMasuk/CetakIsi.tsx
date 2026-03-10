@@ -1,4 +1,3 @@
-import React from 'react';
 import { Head } from '@inertiajs/react';
 import { formatDateShort } from '@/utils'; // Assuming this utility exists, otherwise use local helper
 

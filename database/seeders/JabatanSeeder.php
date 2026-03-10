@@ -27,7 +27,6 @@ class JabatanSeeder extends Seeder
             ['nama' => 'Staff Ahli III',      'level' => 5, 'can_dispose' => true,  'is_system' => false],
             ['nama' => 'Kepala Dinas',        'level' => 6, 'can_dispose' => false, 'is_system' => false],
             ['nama' => 'Kepala Bagian',       'level' => 7, 'can_dispose' => false, 'is_system' => false],
-            ['nama' => 'Staf',                'level' => 8, 'can_dispose' => false, 'is_system' => false],
             ['nama' => 'Tata Usaha',          'level' => 8, 'can_dispose' => false, 'is_system' => true],
         ];
 

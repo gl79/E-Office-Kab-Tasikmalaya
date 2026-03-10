@@ -121,22 +121,30 @@
    FULLCALENDAR EVENT COLORS
    Using design tokens for consistency
    ================================================ */
-.fc-event.event-bupati {
+.fc .fc-event.event-bupati,
+.fc .fc-daygrid-event.event-bupati,
+.fc .fc-timegrid-event.event-bupati {
     background-color: var(--color-primary) !important;
     border-color: var(--color-primary) !important;
 }
 
-.fc-event.event-wakil_bupati {
+.fc .fc-event.event-wakil_bupati,
+.fc .fc-daygrid-event.event-wakil_bupati,
+.fc .fc-timegrid-event.event-wakil_bupati {
     background-color: var(--color-secondary) !important;
     border-color: var(--color-secondary) !important;
 }
 
-.fc-event.event-diwakilkan {
+.fc .fc-event.event-diwakilkan,
+.fc .fc-daygrid-event.event-diwakilkan,
+.fc .fc-timegrid-event.event-diwakilkan {
     background-color: var(--color-accent) !important;
     border-color: var(--color-accent) !important;
 }
 
-.fc-event.event-menunggu {
+.fc .fc-event.event-menunggu,
+.fc .fc-daygrid-event.event-menunggu,
+.fc .fc-timegrid-event.event-menunggu {
     background-color: var(--color-border-dark) !important;
     border-color: var(--color-border-dark) !important;
 }

@@ -35,6 +35,7 @@ class CustomJadwalRequest extends FormRequest
             'desa_id' => ['nullable', 'string', 'max:4'],
             'tempat' => ['required', 'string', 'max:500'],
             'keterangan' => ['nullable', 'string'],
+            'file' => ['nullable', 'file', 'max:5120', 'mimes:pdf,doc,docx,jpg,jpeg,png'],
         ];
     }
 

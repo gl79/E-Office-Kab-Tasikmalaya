@@ -12,9 +12,7 @@ Route::middleware('auth')->prefix('penjadwalan')->name('penjadwalan.')->group(fu
 
     // Menu Tentatif
     Route::get('/tentatif', [PenjadwalanTentatifController::class, 'index'])->name('tentatif.index');
-    Route::put('/tentatif/{id}/kehadiran', [PenjadwalanTentatifController::class, 'updateKehadiran'])->name('tentatif.update-kehadiran');
-    Route::post('/tentatif/{id}/definitif', [PenjadwalanTentatifController::class, 'jadikanDefinitif'])->name('tentatif.definitif');
-    Route::get('/tentatif/{id}/export-wa', [PenjadwalanTentatifController::class, 'exportWhatsApp'])->name('tentatif.export-wa');
+    Route::put('/tentatif/{id}/tindak-lanjut', [PenjadwalanTentatifController::class, 'tindakLanjut'])->name('tentatif.tindak-lanjut');
     Route::delete('/tentatif/{id}', [PenjadwalanTentatifController::class, 'destroy'])->name('tentatif.destroy');
 
     // Menu Definitif (Calendar View)

@@ -13,40 +13,10 @@ use App\Support\CacheHelper;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Service untuk mengelola disposisi chain dan aksi surat masuk
- * (terima/diketahui, jadwalkan, disposisi).
+ * Service untuk mengelola disposisi chain surat masuk.
  */
 final class DisposisiService
 {
-    /**
-     * Terima / Diketahui — surat hanya perlu diketahui, tidak perlu tindak lanjut.
-     * Status surat → selesai, timeline dicatat.
-     */
-    public function terimaDisketahui(SuratMasuk $suratMasuk, User $user): array
-    {
-        return DB::transaction(function () use ($suratMasuk, $user) {
-            $jabatanNama = $user->jabatan_nama ?? $user->name;
-
-            // Update status surat → selesai
-            $suratMasuk->update(['status' => SuratMasuk::STATUS_SELESAI]);
-
-            // Catat timeline
-            TimelineSurat::record(
-                $suratMasuk->id,
-                $user->id,
-                TimelineSurat::AKSI_TERIMA,
-                "{$jabatanNama} telah menerima dan mengetahui surat"
-            );
-
-            CacheHelper::flush(['persuratan_list', 'penjadwalan']);
-
-            return [
-                'success' => true,
-                'message' => 'Surat berhasil diterima dan diketahui.',
-            ];
-        });
-    }
-
     /**
      * Disposisi surat ke pejabat bawahan.
      * 1 surat hanya bisa didisposisi ke 1 penerima per langkah.
@@ -65,6 +35,16 @@ final class DisposisiService
             $dariJabatan = $dariUser->jabatan_nama ?? $dariUser->name;
             $keJabatan = $keUser->jabatan_nama ?? $keUser->name;
 
+            // Auto accept surat jika belum diterima
+            /** @var \App\Models\SuratMasukTujuan|null $tujuan */
+            $tujuan = $suratMasuk->tujuans()->where('tujuan_id', '=', $dariUser->id)->first();
+            if ($tujuan && $tujuan->status_penerimaan !== \App\Models\SuratMasukTujuan::STATUS_DITERIMA) {
+                $tujuan->update([
+                    'status_penerimaan' => \App\Models\SuratMasukTujuan::STATUS_DITERIMA,
+                    'diterima_at' => now(),
+                ]);
+            }
+
             // Buat record disposisi chain
             DisposisiSurat::create([
                 'surat_masuk_id' => $suratMasuk->id,
@@ -73,9 +53,49 @@ final class DisposisiService
                 'catatan' => $catatan,
             ]);
 
-            // Update status surat → diproses
+            // Update status surat -> diproses
             if ($suratMasuk->status !== SuratMasuk::STATUS_DIPROSES) {
                 $suratMasuk->update(['status' => SuratMasuk::STATUS_DIPROSES]);
+            }
+
+            // Tambahkan atau perbarui status keUser di surat_masuk_tujuans agar surat muncul di daftarnya
+            /** @var \App\Models\SuratMasukTujuan|null $existingKeTujuan */
+            $existingKeTujuan = $suratMasuk->tujuans()->where('tujuan_id', '=', $keUser->id)->first();
+            if ($existingKeTujuan) {
+                // Jika sudah ada (mungkin sebagai tembusan sebelumnya), jadikan primary
+                $existingKeTujuan->update([
+                    'is_primary' => true,
+                    'is_tembusan' => false,
+                    'status_penerimaan' => \App\Models\SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN,
+                    'diterima_at' => null,
+                ]);
+            } else {
+                \App\Models\SuratMasukTujuan::create([
+                    'surat_masuk_id' => $suratMasuk->id,
+                    'tujuan_id' => $keUser->id,
+                    'tujuan' => $keUser->name,
+                    'nomor_agenda' => \App\Models\SuratMasukTujuan::generateNomorAgendaForRecipient((string) $keUser->id),
+                    'is_primary' => true,
+                    'is_tembusan' => false,
+                    'status_penerimaan' => \App\Models\SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN,
+                    'diterima_at' => null,
+                ]);
+            }
+
+            // Sinkronkan jadwal tentatif aktif (jika sudah ada) agar status & PIC sesuai disposisi terbaru.
+            $jadwalTentatif = Penjadwalan::query()
+                ->where('surat_masuk_id', '=', $suratMasuk->id)
+                ->where('status', '=', Penjadwalan::STATUS_TENTATIF)
+                ->latest()
+                ->first();
+
+            if ($jadwalTentatif) {
+                $jadwalTentatif->update([
+                    'status_disposisi' => $this->resolveDisposisiStatus($keUser),
+                    'dihadiri_oleh' => $keUser->name,
+                    'dihadiri_oleh_user_id' => $keUser->id,
+                    'updated_by' => $dariUser->id,
+                ]);
             }
 
             // Catat timeline
@@ -83,67 +103,17 @@ final class DisposisiService
                 $suratMasuk->id,
                 $dariUser->id,
                 TimelineSurat::AKSI_DISPOSISI,
-                "{$dariJabatan} mendisposisi surat ke {$keJabatan}" . ($catatan ? " — {$catatan}" : '')
+                "{$dariJabatan} mendisposisi surat ke {$keJabatan}" . ($catatan ? " - {$catatan}" : '')
             );
+
+            // Kirim notifikasi ke penerima baru
+            $keUser->notify(new \App\Notifications\DisposisiNotification($suratMasuk, $dariUser, $catatan));
 
             CacheHelper::flush(['persuratan_list', 'penjadwalan']);
 
             return [
                 'success' => true,
                 'message' => "Surat berhasil didisposisi ke {$keJabatan}.",
-            ];
-        });
-    }
-
-    /**
-     * Jadwalkan surat masuk sebagai kegiatan tentatif.
-     * Pejabat yang menjadwalkan adalah pemilik jadwal.
-     */
-    public function jadwalkan(SuratMasuk $suratMasuk, User $user, array $jadwalData): array
-    {
-        return DB::transaction(function () use ($suratMasuk, $user, $jadwalData) {
-            $jabatanNama = $user->jabatan_nama ?? $user->name;
-
-            // Buat jadwal tentatif
-            $penjadwalan = Penjadwalan::create([
-                'surat_masuk_id' => $suratMasuk->id,
-                'nama_kegiatan' => $jadwalData['judul_kegiatan'],
-                'tanggal_agenda' => $jadwalData['tanggal'],
-                'waktu_mulai' => $jadwalData['waktu_mulai'],
-                'waktu_selesai' => $jadwalData['waktu_selesai'] ?? null,
-                'sampai_selesai' => !empty($jadwalData['sampai_selesai']),
-                'lokasi_type' => $jadwalData['lokasi_type'] ?? Penjadwalan::LOKASI_DALAM_DAERAH,
-                'tempat' => $jadwalData['lokasi'],
-                'keterangan' => $jadwalData['keterangan'] ?? null,
-                'status' => Penjadwalan::STATUS_TENTATIF,
-                'status_disposisi' => Penjadwalan::DISPOSISI_MENUNGGU,
-                'sumber_jadwal' => Penjadwalan::SUMBER_SELF,
-                'dihadiri_oleh' => $user->name,
-                'dihadiri_oleh_user_id' => $user->id,
-                'pemilik_jadwal_id' => $user->id,
-                'created_by' => $user->id,
-                'updated_by' => $user->id,
-            ]);
-
-            // Update status surat → diproses
-            if ($suratMasuk->status !== SuratMasuk::STATUS_DIPROSES) {
-                $suratMasuk->update(['status' => SuratMasuk::STATUS_DIPROSES]);
-            }
-
-            // Catat timeline
-            TimelineSurat::record(
-                $suratMasuk->id,
-                $user->id,
-                TimelineSurat::AKSI_JADWALKAN,
-                "{$jabatanNama} menjadwalkan kegiatan (Tentatif): {$jadwalData['judul_kegiatan']}"
-            );
-
-            CacheHelper::flush(['persuratan_list', 'penjadwalan']);
-
-            return [
-                'success' => true,
-                'message' => 'Kegiatan berhasil dijadwalkan (Tentatif).',
-                'penjadwalan_id' => $penjadwalan->id,
             ];
         });
     }
@@ -163,7 +133,7 @@ final class DisposisiService
         return User::query()
             ->select(['users.id', 'users.name', 'users.jabatan_id'])
             ->with('jabatanRelasi:id,nama,level')
-            ->where('users.role', '!=', User::ROLE_SUPERADMIN)
+            ->where('users.role', '<>', User::ROLE_SUPERADMIN)
             ->whereHas('jabatanRelasi', function ($q) use ($fromLevel) {
                 $q->where('level', '>', $fromLevel);
             })
@@ -171,5 +141,14 @@ final class DisposisiService
             ->orderBy('jabatans.level')
             ->orderBy('users.name')
             ->get(['users.id', 'users.name', 'users.jabatan_id']);
+    }
+
+    private function resolveDisposisiStatus(User $targetUser): string
+    {
+        return match ($targetUser->getJabatanLevel()) {
+            1 => Penjadwalan::DISPOSISI_BUPATI,
+            2 => Penjadwalan::DISPOSISI_WAKIL_BUPATI,
+            default => Penjadwalan::DISPOSISI_DIWAKILKAN,
+        };
     }
 }

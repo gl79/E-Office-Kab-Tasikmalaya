@@ -3,13 +3,14 @@ import { Modal } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
 import { Clock, User, FileText, Send, Eye, Check, CalendarPlus, CalendarCheck } from 'lucide-react';
 import axios from 'axios';
-import type { TimelineEntry } from '@/types/persuratan';
+import type { TimelineEntry, SuratMasuk } from '@/types/persuratan';
+import { formatDateShort, getSifatBadge } from '@/utils';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    suratMasukId: string | null;
-    suratPerihal?: string;
+    suratMasuk: SuratMasuk | null;
+    sifatOptions: Record<string, string>;
 }
 
 const AKSI_ICON_MAP: Record<string, React.ReactNode> = {
@@ -35,28 +36,28 @@ const AKSI_COLOR_MAP: Record<string, string> = {
 /**
  * Modal untuk menampilkan timeline/riwayat aksi pada surat masuk.
  */
-export default function TimelineModal({ isOpen, onClose, suratMasukId, suratPerihal }: Props) {
+export default function TimelineModal({ isOpen, onClose, suratMasuk, sifatOptions }: Props) {
     const [timelines, setTimelines] = useState<TimelineEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const fetchTimeline = useCallback(async () => {
-        if (!suratMasukId) return;
+        if (!suratMasuk?.id) return;
         setIsLoading(true);
         try {
-            const { data } = await axios.get(route('persuratan.surat-masuk.timeline', suratMasukId));
+            const { data } = await axios.get(route('persuratan.surat-masuk.timeline', suratMasuk.id));
             setTimelines(data.timelines ?? []);
         } catch {
             setTimelines([]);
         } finally {
             setIsLoading(false);
         }
-    }, [suratMasukId]);
+    }, [suratMasuk?.id]);
 
     useEffect(() => {
-        if (isOpen && suratMasukId) {
+        if (isOpen && suratMasuk?.id) {
             fetchTimeline();
         }
-    }, [isOpen, suratMasukId, fetchTimeline]);
+    }, [isOpen, suratMasuk?.id, fetchTimeline]);
 
     const formatTime = (dateStr: string) => {
         const d = new Date(dateStr);
@@ -71,8 +72,54 @@ export default function TimelineModal({ isOpen, onClose, suratMasukId, suratPeri
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Timeline Surat" size="lg">
-            {suratPerihal && (
-                <p className="text-sm text-text-secondary mb-4 line-clamp-2">{suratPerihal}</p>
+            {suratMasuk && (
+                <>
+                    {/* Identitas Surat */}
+                    <div className="mb-6">
+                        <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Identitas Surat</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm text-text-secondary">Tanggal Surat</p>
+                                <p className="font-medium text-text-primary">{formatDateShort(suratMasuk.tanggal_surat)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">Asal Surat</p>
+                                <Badge variant="primary" className="mt-1">{suratMasuk.asal_surat}</Badge>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">Nomor Surat</p>
+                                <p className="font-medium text-text-primary">{suratMasuk.nomor_surat}</p>
+                            </div>
+                            {suratMasuk.jenis_surat ? (
+                                <div>
+                                    <p className="text-sm text-text-secondary">Jenis Surat</p>
+                                    <p className="font-medium text-text-primary">{suratMasuk.jenis_surat.nama}</p>
+                                </div>
+                            ) : <div />}
+                            <div>
+                                <p className="text-sm text-text-secondary">Sifat Surat</p>
+                                {getSifatBadge(suratMasuk.sifat, sifatOptions)}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Identitas Agenda */}
+                    <div className="pt-4 mb-6 border-t border-border-default">
+                        <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Identitas Agenda</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm text-text-secondary">Tanggal Diterima</p>
+                                <p className="font-medium text-text-primary">{formatDateShort(suratMasuk.tanggal_diterima)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">No Agenda</p>
+                                <p className="font-medium text-text-primary">{suratMasuk.nomor_agenda.split('/')[1] || suratMasuk.nomor_agenda}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide pt-4 border-t border-border-default">Riwayat Timeline</h3>
+                </>
             )}
 
             {isLoading ? (
@@ -95,7 +142,7 @@ export default function TimelineModal({ isOpen, onClose, suratMasukId, suratPeri
                     <div className="absolute left-4 top-0 bottom-0 w-[2px] bg-border-default" />
 
                     <div className="space-y-6">
-                        {timelines.map((entry, idx) => (
+                        {[...timelines].reverse().map((entry) => (
                             <div key={entry.id} className="relative flex gap-4 pl-0">
                                 {/* Icon circle */}
                                 <div className={`relative z-10 flex items-center justify-center h-8 w-8 rounded-full shrink-0 ${AKSI_COLOR_MAP[entry.aksi] ?? 'bg-border-dark text-white'}`}>
@@ -110,7 +157,7 @@ export default function TimelineModal({ isOpen, onClose, suratMasukId, suratPeri
                                     </div>
                                     <p className="text-sm text-text-primary mt-1">{entry.keterangan}</p>
                                     <p className="text-xs text-text-secondary mt-0.5">
-                                        {entry.user_name} — {entry.user_jabatan}
+                                        {entry.user_name === 'Sistem' ? 'Sistem' : (entry.user_jabatan || '-')}
                                     </p>
                                 </div>
                             </div>
@@ -121,3 +168,4 @@ export default function TimelineModal({ isOpen, onClose, suratMasukId, suratPeri
         </Modal>
     );
 }
+

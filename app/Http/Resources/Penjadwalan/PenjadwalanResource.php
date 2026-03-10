@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources\Penjadwalan;
 
+use App\Models\DisposisiSurat;
+use App\Models\Penjadwalan;
+use App\Models\SuratMasuk;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
@@ -83,6 +86,8 @@ class PenjadwalanResource extends JsonResource
             'waktu_selesai' => $this->waktu_selesai,
             'sampai_selesai' => $this->sampai_selesai,
             'waktu_lengkap' => $this->waktu_lengkap,
+            'file_path' => $this->file_path,
+            'file_url' => $this->file_path ? Storage::url($this->file_path) : null,
 
             // Lokasi Info
             'lokasi_type' => $this->lokasi_type,
@@ -102,6 +107,9 @@ class PenjadwalanResource extends JsonResource
             'status_kehadiran_column_label' => $this->status_kehadiran_column_label,
             'dihadiri_oleh' => $this->dihadiri_oleh,
             'dihadiri_oleh_user_id' => $this->dihadiri_oleh_user_id,
+            'status_kehadiran' => $this->status_kehadiran,
+            'nama_yang_mewakili' => $this->nama_yang_mewakili,
+            'has_disposisi_chain' => $this->hasDisposisiChain(),
 
             // Catatan
             'keterangan' => $this->keterangan,
@@ -133,53 +141,143 @@ class PenjadwalanResource extends JsonResource
             'deleted_at_formatted' => $this->deleted_at?->format('d/m/Y H:i'),
 
             // Permission flag untuk frontend
-            'can_edit_kehadiran' => $this->determineEditKehadiranPermission(),
+            'can_tindak_lanjut' => $this->determinePermissions()[0],
+            'can_disposisi' => $this->determinePermissions()[1],
         ];
     }
 
     /**
-     * Tentukan apakah user saat ini berhak mengatur kehadiran atau menjadikan jadwal definitif.
+     * Tentukan izin aksi Tindak Lanjut dan Disposisi untuk jadwal ini.
+     * Mengembalikan array [can_tindak_lanjut, can_disposisi].
      */
-    private function determineEditKehadiranPermission(): bool
+    private function determinePermissions(): array
     {
         if (!Auth::check()) {
+            return [false, false];
+        }
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Aksi hanya berlaku untuk jadwal tentatif.
+        if ($this->status !== Penjadwalan::STATUS_TENTATIF) {
+            return [false, false];
+        }
+
+        // Tata Usaha hanya monitoring, tidak bisa tindak lanjut/disposisi.
+        if ($user->isTU()) {
+            return [false, false];
+        }
+
+        // Superadmin bisa mengelola jadwal tentatif.
+        if ($user->isSuperAdmin()) {
+            if (!$this->surat_masuk_id) {
+                // Untuk jadwal custom, hanya pembuat atau yg dihadiri
+                $canAction = $this->created_by === $user->id || $this->dihadiri_oleh_user_id === $user->id;
+                return [$canAction, false]; // Jadwal custom tidak bisa didisposisi
+            }
+            return [true, true]; // Surat masuk -> bisa diurus
+        }
+
+        // Jika tidak ada surat_masuk (Jadwal Custom)
+        if (!$this->surat_masuk_id) {
+            $canAction = $this->created_by === $user->id || $this->dihadiri_oleh_user_id === $user->id;
+            return [$canAction, false];
+        }
+
+        if (!$this->isActiveSuratActor($user->id)) {
+            return [false, false];
+        }
+
+        // Jika berhak, maka dia bisa Tindak Lanjut.
+        // Untuk disposisi, cek aturan batas level Jabatannya (User::canDispose).
+        return [true, $user->canDispose()];
+    }
+
+    private function isActiveSuratActor(int $userId): bool
+    {
+        if (!$this->surat_masuk_id) {
             return false;
         }
 
-        $user = Auth::user();
-
-        // 1. Superadmin dan TU bebas mengelola keseluruhan jadwal
-        if ($user->isSuperAdmin() || $user->isTU()) {
-            return true;
+        $suratMasuk = $this->suratMasuk;
+        if (!$suratMasuk instanceof SuratMasuk) {
+            $suratMasuk = SuratMasuk::query()->find($this->surat_masuk_id);
         }
 
-        // 2. Pemilik yang membuat jadwal juga diijinkan (jika belum didelegasikan)
-        // Kita berikan creator hak akses jika status masih 'menunggu'
-        if ($this->created_by === $user->id && $this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_MENUNGGU) {
-            return true;
+        if (!$suratMasuk) {
+            return false;
         }
 
-        $jabatanLevel = $user->getJabatanLevel();
+        $tujuan = $suratMasuk->tujuans()
+            ->where('tujuan_id', $userId)
+            ->where('is_primary', true)
+            ->where('is_tembusan', false)
+            ->first();
 
-        // 3. Otorisasi berdasarkan status delegasi disposisi
-        if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_BUPATI) {
-            return $jabatanLevel === 1; // Level 1 = Bupati
+        if ($tujuan) {
+            if ($tujuan->status_penerimaan !== \App\Models\SuratMasukTujuan::STATUS_DITERIMA) {
+                return false;
+            }
+
+            $hasDisposed = DisposisiSurat::query()
+                ->where('surat_masuk_id', $suratMasuk->id)
+                ->where('dari_user_id', $userId)
+                ->exists();
+
+            if (!$hasDisposed) {
+                return true;
+            }
         }
 
-        if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_WAKIL_BUPATI) {
-            return $jabatanLevel === 2; // Level 2 = Wakil Bupati
+        $lastDisposisiToUser = DisposisiSurat::query()
+            ->where('surat_masuk_id', $suratMasuk->id)
+            ->where('ke_user_id', $userId)
+            ->latest()
+            ->first();
+
+        if (!$lastDisposisiToUser) {
+            return false;
         }
 
-        if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_DIWAKILKAN) {
-            // Jika diwakilkan, izinkan Sekda (level 3) atau user yang dituju secara spesifik
-            return $jabatanLevel === 3 || $this->dihadiri_oleh_user_id === $user->id;
+        $tujuanDisposisi = $suratMasuk->tujuans()
+            ->where('tujuan_id', $userId)
+            ->first();
+
+        if (
+            !$tujuanDisposisi
+            || $tujuanDisposisi->status_penerimaan !== \App\Models\SuratMasukTujuan::STATUS_DITERIMA
+        ) {
+            return false;
         }
 
-        // 4. Default rules jika sedang menunggu: pejabat can_dispose atau creator
-        if ($this->status_disposisi === \App\Models\Penjadwalan::DISPOSISI_MENUNGGU) {
-            return $user->canDispose() || $this->created_by === $user->id;
+        $hasRedisposed = DisposisiSurat::query()
+            ->where('surat_masuk_id', $suratMasuk->id)
+            ->where('dari_user_id', $userId)
+            ->exists();
+
+        return !$hasRedisposed;
+    }
+
+    private function hasDisposisiChain(): bool
+    {
+        if (!$this->surat_masuk_id) {
+            return false;
         }
 
-        return false;
+        $suratMasuk = $this->suratMasuk;
+        if (!$suratMasuk instanceof SuratMasuk) {
+            $suratMasuk = SuratMasuk::query()->find($this->surat_masuk_id);
+        }
+
+        if (!$suratMasuk) {
+            return false;
+        }
+
+        if ($suratMasuk->relationLoaded('disposisis')) {
+            return $suratMasuk->disposisis->isNotEmpty();
+        }
+
+        return $suratMasuk->disposisis()->exists();
     }
 }

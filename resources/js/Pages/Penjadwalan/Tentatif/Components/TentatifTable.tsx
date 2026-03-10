@@ -1,16 +1,17 @@
 import React from 'react';
 import { Button, Dropdown, Badge } from '@/Components/ui';
-import { MoreVertical, Pencil, CheckCircle, FileText, Trash2 } from 'lucide-react';
+import { MoreVertical, CheckCircle, FileText, Trash2, Clock } from 'lucide-react';
 import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
 import { formatDateShort, getSifatBadge } from '@/utils';
 import type { Agenda } from '@/types/penjadwalan';
 
 interface Props {
     data: Agenda[];
-    onEditKehadiran: (agenda: Agenda) => void;
-    onJadikanDefinitif: (agenda: Agenda) => void;
+    onTindakLanjut: (agenda: Agenda) => void;
     onViewDetail: (agenda: Agenda) => void;
     onDelete: (agenda: Agenda) => void;
+    onDisposisi: (agenda: Agenda) => void;
+    onViewTimeline: (agenda: Agenda) => void;
     currentPage: number;
     itemsPerPage: number;
     search: string;
@@ -25,10 +26,11 @@ const formatNoAgenda = (nomor?: string) => {
 
 const TentatifTable: React.FC<Props> = ({
     data,
-    onEditKehadiran,
-    onJadikanDefinitif,
+    onTindakLanjut,
     onViewDetail,
     onDelete,
+    onDisposisi,
+    onViewTimeline,
     currentPage,
     itemsPerPage,
     search,
@@ -108,27 +110,29 @@ const TentatifTable: React.FC<Props> = ({
                             <td className="border border-border-default px-4 py-3 text-center align-middle">
                                 <div className="mx-auto flex w-full max-w-[220px] flex-col items-center gap-2">
                                     <div className="flex w-full flex-col items-center gap-2">
-                                        {item.can_edit_kehadiran && (
-                                            <Button
-                                                size="sm"
-                                                variant="secondary"
-                                                onClick={() => onEditKehadiran(item)}
-                                                className="w-full justify-center"
-                                            >
-                                                <Pencil className="h-4 w-4 mr-1" />
-                                                Atur Kehadiran
-                                            </Button>
-                                        )}
-
-                                        {item.can_edit_kehadiran && item.status_disposisi !== 'menunggu' && (
+                                        {/* Tindak Lanjut Action */}
+                                        {item.can_tindak_lanjut && (
                                             <Button
                                                 size="sm"
                                                 variant="success"
-                                                onClick={() => onJadikanDefinitif(item)}
-                                                className="w-full justify-center"
+                                                onClick={() => onTindakLanjut(item)}
+                                                className="w-full justify-center bg-green-600 hover:bg-green-700 focus:ring-green-500 text-white border-transparent"
                                             >
                                                 <CheckCircle className="h-4 w-4 mr-1" />
-                                                Jadikan Definitif
+                                                Tindak Lanjut
+                                            </Button>
+                                        )}
+
+                                        {/* Disposisi Action */}
+                                        {item.can_disposisi && item.surat_masuk && (
+                                            <Button
+                                                size="sm"
+                                                variant="primary"
+                                                onClick={() => onDisposisi(item)}
+                                                className="w-full justify-center"
+                                            >
+                                                <FileText className="h-4 w-4 mr-1" />
+                                                Disposisi
                                             </Button>
                                         )}
                                     </div>
@@ -159,6 +163,17 @@ const TentatifTable: React.FC<Props> = ({
                                                 <FileText className="h-4 w-4" />
                                                 <span>Lihat Detail</span>
                                             </Dropdown.Link>
+
+                                            {item.surat_masuk && (
+                                                <Dropdown.Link
+                                                    as="button"
+                                                    onClick={() => onViewTimeline(item)}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <Clock className="h-4 w-4" />
+                                                    <span>Lihat Timeline</span>
+                                                </Dropdown.Link>
+                                            )}
 
                                             <div className="border-t border-border-default my-1"></div>
 

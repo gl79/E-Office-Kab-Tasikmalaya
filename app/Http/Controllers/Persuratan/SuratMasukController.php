@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Persuratan;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Persuratan\DisposisiRequest;
-use App\Http\Requests\Persuratan\JadwalkanSuratRequest;
 use App\Http\Requests\Persuratan\SuratMasukRequest;
 use App\Models\IndeksSurat;
 use App\Models\JenisSurat;
@@ -288,18 +287,6 @@ class SuratMasukController extends Controller
     /**
      * Terima / Diketahui — surat cukup diketahui, status → selesai.
      */
-    public function terimaDisketahui(string $id)
-    {
-        $suratMasuk = SuratMasuk::findOrFail($id);
-        $this->authorize('terimaDisketahui', $suratMasuk);
-
-        $result = $this->disposisiService->terimaDisketahui($suratMasuk, Auth::user());
-
-        return redirect()->back()->with(
-            $result['success'] ? 'success' : 'error',
-            $result['message']
-        );
-    }
 
     /**
      * Disposisi surat ke pejabat bawahan.
@@ -326,21 +313,52 @@ class SuratMasukController extends Controller
     /**
      * Jadwalkan surat masuk sebagai kegiatan tentatif.
      */
-    public function jadwalkan(JadwalkanSuratRequest $request, string $id)
+
+    /**
+     * Masukkan Ke Jadwal (one-click create tentatif schedule).
+     */
+    public function masukkanKeJadwal(Request $request, string $id)
     {
         $suratMasuk = SuratMasuk::findOrFail($id);
-        $this->authorize('jadwalkan', $suratMasuk);
+        $this->authorize('masukkanJadwal', $suratMasuk);
 
-        $result = $this->disposisiService->jadwalkan(
-            $suratMasuk,
-            Auth::user(),
-            $request->validated()
+        // Cek secara sederhana apakah user adalah penerima yang sudah accept surat ini
+        $user = $request->user();
+        $tujuan = $suratMasuk->tujuans()->where('tujuan_id', $user->id)->first();
+        if (!$tujuan || $tujuan->status_penerimaan !== SuratMasukTujuan::STATUS_DITERIMA) {
+            return redirect()->back()->with('error', 'Anda harus menerima surat ini terlebih dahulu.');
+        }
+
+        // Cek apakah sudah ada jadwal sebelumnya
+        if ($suratMasuk->penjadwalan) {
+            return redirect()->back()->with('error', 'Surat Masuk ini sudah dimasukkan ke Jadwal.');
+        }
+
+        // Buat jadwal tentatif
+        // Buat jadwal tentatif dengan nilai default yang diperlukan
+        $penjadwalan = \App\Models\Penjadwalan::create([
+            'surat_masuk_id' => $suratMasuk->id,
+            'status' => \App\Models\Penjadwalan::STATUS_TENTATIF,
+            'tanggal_agenda' => now()->format('Y-m-d'),
+            'waktu_mulai' => '08:00:00',
+            'nama_kegiatan' => $suratMasuk->perihal ?? 'Tindak Lanjut Surat Masuk',
+            'tempat' => 'Menunggu Konfirmasi Lokasi',
+            'dihadiri_oleh_user_id' => $user->id,
+            'status_kehadiran' => 'Dihadiri',
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        TimelineSurat::record(
+            $suratMasuk->id,
+            $user->id,
+            TimelineSurat::AKSI_JADWALKAN,
+            "Surat dimasukkan ke Jadwal Tentatif oleh {$user->name}"
         );
 
-        return redirect()->back()->with(
-            $result['success'] ? 'success' : 'error',
-            $result['message']
-        );
+        CacheHelper::flush(['persuratan_list', 'penjadwalan_list', 'dashboard_metrics']);
+
+        return redirect()->back()->with('success', 'Surat berhasil dimasukkan ke Jadwal Tentatif.');
     }
 
     /**

@@ -19,7 +19,7 @@ export default function Breadcrumb({ items, className = '' }: BreadcrumbProps) {
                 <li className="inline-flex items-center">
                     <Link
                         href="/"
-                        className="inline-flex items-center text-sm font-medium text-text-secondary hover:text-primary transition-colors"
+                        className="inline-flex items-center text-sm font-normal text-text-secondary hover:text-primary transition-colors"
                     >
                         <Home className="w-4 h-4 mr-2" />
                         Dashboard
@@ -32,12 +32,12 @@ export default function Breadcrumb({ items, className = '' }: BreadcrumbProps) {
                             {item.href && !item.active ? (
                                 <Link
                                     href={item.href}
-                                    className="ml-1 md:ml-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
+                                    className="ml-1 md:ml-2 text-sm font-normal text-text-secondary hover:text-primary transition-colors"
                                 >
                                     {item.label}
                                 </Link>
                             ) : (
-                                <span className="ml-1 md:ml-2 text-sm font-medium text-text-primary capitalize">
+                                <span className="ml-1 md:ml-2 text-sm font-normal text-text-primary capitalize">
                                     {item.label}
                                 </span>
                             )}

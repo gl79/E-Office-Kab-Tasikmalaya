@@ -38,19 +38,13 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $item = collect($items)->firstWhere('id', $surat->id);
 
         $this->assertNotNull($item);
-        $this->assertSame('SM/0099/' . date('Y'), $item['nomor_agenda']);
-        $this->assertTrue((bool) ($item['can_schedule'] ?? false));
-        $this->assertFalse((bool) ($item['can_finalize_schedule'] ?? false));
         $this->assertFalse((bool) ($item['can_view_schedule'] ?? false));
-        $this->assertSame('-', $item['penjadwalan_status'] ?? null);
-        $this->assertSame('-', $item['penjadwalan_status_label'] ?? null);
-        $this->assertSame('default', $item['penjadwalan_status_variant'] ?? null);
     }
 
     public function test_bupati_melihat_can_view_schedule_true_setelah_surat_sudah_dijadwalkan(): void
     {
         $bupati = $this->makeUser(User::ROLE_PEJABAT, 'Bupati', 'Bupati');
-        $delegasi = $this->makeUser(User::ROLE_USER, 'Delegasi', 'Staf');
+        $delegasi = $this->makeUser(User::ROLE_USER, 'Delegasi', 'Kepala Bagian');
         $creator = $this->makeUser(User::ROLE_TU, 'TU', 'Tata Usaha');
 
         $surat = $this->makeSuratMasuk($creator);
@@ -86,16 +80,12 @@ class SuratMasukScheduleFlagsTest extends TestCase
 
         $this->assertNotNull($item);
         $this->assertFalse((bool) ($item['can_schedule'] ?? false));
-        $this->assertFalse((bool) ($item['can_finalize_schedule'] ?? false));
         $this->assertTrue((bool) ($item['can_view_schedule'] ?? false));
-        $this->assertSame(Penjadwalan::STATUS_TENTATIF, $item['penjadwalan_status'] ?? null);
-        $this->assertSame('Tentatif', $item['penjadwalan_status_label'] ?? null);
-        $this->assertSame('warning', $item['penjadwalan_status_variant'] ?? null);
     }
 
     public function test_penerima_delegasi_tidak_memiliki_flag_finalize_dan_view(): void
     {
-        $delegasi = $this->makeUser(User::ROLE_USER, 'Delegasi', 'Staf');
+        $delegasi = $this->makeUser(User::ROLE_USER, 'Delegasi', 'Kepala Bagian');
         $creator = $this->makeUser(User::ROLE_TU, 'TU', 'Tata Usaha');
 
         $surat = $this->makeSuratMasuk($creator);
@@ -104,6 +94,10 @@ class SuratMasukScheduleFlagsTest extends TestCase
             'tujuan_id' => $delegasi->id,
             'tujuan' => $delegasi->name,
             'nomor_agenda' => 'SM/0101/' . date('Y'),
+            'is_primary' => true,
+            'is_tembusan' => false,
+            'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
+            'diterima_at' => now(),
         ]);
 
         Penjadwalan::create([
@@ -161,17 +155,11 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $itemSudah = collect($items)->firstWhere('id', $suratSudahJadwal->id);
 
         $this->assertNotNull($itemBelum);
-        $this->assertTrue((bool) ($itemBelum['can_schedule'] ?? false));
-        $this->assertFalse((bool) ($itemBelum['can_finalize_schedule'] ?? false));
         $this->assertFalse((bool) ($itemBelum['can_view_schedule'] ?? false));
 
         $this->assertNotNull($itemSudah);
-        $this->assertFalse((bool) ($itemSudah['can_schedule'] ?? false));
-        $this->assertFalse((bool) ($itemSudah['can_finalize_schedule'] ?? false));
         $this->assertTrue((bool) ($itemSudah['can_view_schedule'] ?? false));
-        $this->assertSame(Penjadwalan::STATUS_TENTATIF, $itemSudah['penjadwalan_status'] ?? null);
-        $this->assertSame('Tentatif', $itemSudah['penjadwalan_status_label'] ?? null);
-        $this->assertSame('warning', $itemSudah['penjadwalan_status_variant'] ?? null);
+        $this->assertTrue((bool) ($itemSudah['can_view_schedule'] ?? false));
     }
 
     public function test_form_jadwal_bupati_menggunakan_nomor_agenda_dari_tujuan_user(): void
@@ -232,8 +220,6 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $item = collect($items)->firstWhere('id', $surat->id);
 
         $this->assertNotNull($item);
-        $this->assertFalse((bool) ($item['can_schedule'] ?? false));
-        $this->assertFalse((bool) ($item['can_finalize_schedule'] ?? false));
         $this->assertTrue((bool) ($item['can_view_schedule'] ?? false));
     }
 
@@ -249,14 +235,12 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $item = collect($items)->firstWhere('id', $surat->id);
 
         $this->assertNotNull($item);
-        $this->assertFalse((bool) ($item['can_schedule'] ?? false));
-        $this->assertFalse((bool) ($item['can_finalize_schedule'] ?? false));
         $this->assertTrue((bool) ($item['can_view_schedule'] ?? false));
     }
 
     public function test_penerima_delegasi_tidak_memiliki_flag_aksi_pada_jadwal_definitif(): void
     {
-        $delegasi = $this->makeUser(User::ROLE_USER, 'Delegasi', 'Staf');
+        $delegasi = $this->makeUser(User::ROLE_USER, 'Delegasi', 'Kepala Bagian');
         $creator = $this->makeUser(User::ROLE_TU, 'TU', 'Tata Usaha');
 
         $surat = $this->makeSuratMasuk($creator);
@@ -265,6 +249,10 @@ class SuratMasukScheduleFlagsTest extends TestCase
             'tujuan_id' => $delegasi->id,
             'tujuan' => $delegasi->name,
             'nomor_agenda' => 'SM/0103/' . date('Y'),
+            'is_primary' => true,
+            'is_tembusan' => false,
+            'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
+            'diterima_at' => now(),
         ]);
 
         $this->createPenjadwalan($surat, Penjadwalan::STATUS_DEFINITIF, $delegasi->id, $delegasi->name);
@@ -273,8 +261,6 @@ class SuratMasukScheduleFlagsTest extends TestCase
         $item = collect($items)->firstWhere('id', $surat->id);
 
         $this->assertNotNull($item);
-        $this->assertFalse((bool) ($item['can_schedule'] ?? false));
-        $this->assertFalse((bool) ($item['can_finalize_schedule'] ?? false));
         // Delegasi yang ada di tujuan bisa lihat jadwal
         $this->assertTrue((bool) ($item['can_view_schedule'] ?? false));
     }

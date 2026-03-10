@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import { Modal, Button } from '@/Components/ui';
-import FormSelect from '@/Components/form/FormSelect';
+import FormSearchableSelect from '@/Components/form/FormSearchableSelect';
 import axios from 'axios';
 import type { DisposisiTarget } from '@/types/persuratan';
+import { formatUserLabel } from '@/utils';
 
 interface Props {
     isOpen: boolean;
@@ -77,7 +78,10 @@ export default function DisposisiModal({ isOpen, onClose, suratMasukId, suratPer
 
     const targetOptions = targets.map(t => ({
         value: String(t.id),
-        label: `${t.name} — ${t.jabatan}`,
+        label: formatUserLabel(
+            { name: t.name, jabatan_nama: t.jabatan !== '-' ? t.jabatan : null },
+            { includeNameInLabel: true, specialJabatanOnly: true }
+        ),
     }));
 
     return (
@@ -96,15 +100,14 @@ export default function DisposisiModal({ isOpen, onClose, suratMasukId, suratPer
                     {isLoading ? (
                         <div className="h-10 bg-border-light rounded animate-pulse" />
                     ) : (
-                        <FormSelect
+                        <FormSearchableSelect
                             options={targetOptions}
                             value={selectedTarget}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                setSelectedTarget(e.target.value);
+                            onChange={(val) => {
+                                setSelectedTarget(val);
                                 setError('');
                             }}
-                            placeholder="Pilih penerima disposisi..."
-                            className="w-full"
+                            placeholder="Ketik untuk mencari penerima disposisi..."
                         />
                     )}
                     <p className="text-xs text-text-muted mt-1">

@@ -8,7 +8,6 @@ import Button from '@/Components/ui/Button';
 import Table, { TableHeader } from '@/Components/ui/Table';
 import Modal from '@/Components/ui/Modal';
 import Pagination from '@/Components/ui/Pagination';
-import { useToast } from '@/Components/ui/Toast';
 import TextInput from '@/Components/form/TextInput';
 import InputLabel from '@/Components/form/InputLabel';
 import type { PageProps } from '@/types';
@@ -38,7 +37,6 @@ interface Props extends PageProps {
 const CACHE_TTL_MS = 60_000;
 
 export default function Index({ auth, kabupaten: initialKabupaten, filters }: Props) {
-    const { showToast } = useToast();
     const { data: kabupaten, isLoading, hasCached } = useDeferredDataMutable<WilayahKabupaten[]>(
         `master_wilayah_kabupaten_${auth.user.id}`,
         initialKabupaten,

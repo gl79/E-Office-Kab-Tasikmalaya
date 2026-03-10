@@ -66,6 +66,8 @@ class Penjadwalan extends Model
         'status',
         'status_disposisi',
         'sumber_jadwal',
+        'status_kehadiran',
+        'nama_yang_mewakili',
         'dihadiri_oleh',
         'dihadiri_oleh_user_id',
         'keterangan',
@@ -73,6 +75,7 @@ class Penjadwalan extends Model
         'created_by',
         'updated_by',
         'deleted_by',
+        'file_path',
     ];
 
     protected $casts = [
@@ -295,11 +298,15 @@ class Penjadwalan extends Model
      */
     public function getWaktuLengkapAttribute(): string
     {
+        $waktuMulai = $this->formatDisplayTime($this->waktu_mulai);
+
         if ($this->sampai_selesai) {
-            return $this->waktu_mulai . ' - Sampai Selesai';
+            return $waktuMulai . ' - Sampai Selesai';
         }
 
-        return $this->waktu_mulai . ($this->waktu_selesai ? ' - ' . $this->waktu_selesai : '');
+        $waktuSelesai = $this->waktu_selesai ? $this->formatDisplayTime($this->waktu_selesai) : null;
+
+        return $waktuMulai . ($waktuSelesai ? ' - ' . $waktuSelesai : '');
     }
 
     /**
@@ -417,5 +424,17 @@ class Penjadwalan extends Model
         /** @var \Illuminate\Support\Carbon|null $tanggal */
         $tanggal = $this->tanggal_agenda;
         return $tanggal?->translatedFormat('l') ?? '-';
+    }
+
+    /**
+     * Trim database time format (H:i:s) to display format (H:i).
+     */
+    private function formatDisplayTime(?string $time): string
+    {
+        if (!$time) {
+            return '';
+        }
+
+        return strlen($time) >= 5 ? substr($time, 0, 5) : $time;
     }
 }
