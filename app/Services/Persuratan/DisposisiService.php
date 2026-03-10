@@ -124,6 +124,10 @@ final class DisposisiService
      */
     public function getDisposisiTargets(User $fromUser): \Illuminate\Database\Eloquent\Collection
     {
+        if (!$fromUser->canDispose()) {
+            return User::query()->where('id', 0)->get();
+        }
+
         $fromLevel = $fromUser->getJabatanLevel();
 
         if ($fromLevel === null) {

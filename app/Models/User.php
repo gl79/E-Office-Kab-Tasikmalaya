@@ -248,15 +248,49 @@ class User extends Authenticatable
     public function canDispose(): bool
     {
         if ($this->isSuperAdmin()) {
-            return false; // SuperAdmin tidak ikut alur disposisi
+            return false;
         }
 
         $level = $this->getJabatanLevel();
-        if ($level !== null && $level >= 6) {
+
+        // Level 1 (Bupati, Wakil Bupati, Sekda) selalu berhak disposisi jika can_dispose true
+        if ($level === 1) {
+            return (bool) $this->jabatanRelasi?->can_dispose;
+        }
+
+        // Level 6 atau lebih rendah (angka lebih besar) tidak bisa disposisi
+        if ($level === null || $level >= 6) {
             return false;
         }
 
         return (bool) $this->jabatanRelasi?->can_dispose;
+    }
+
+    /**
+     * Cek apakah user adalah level 1 (Bupati, Wakil Bupati, Sekda).
+     */
+    public function isLevelOne(): bool
+    {
+        return $this->getJabatanLevel() === 1;
+    }
+
+    /**
+     * Cek apakah user bisa memonitoring semua jadwal (Super Admin, TU, atau level 1-3).
+     */
+    public function canMonitorAllSchedules(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isTU()) {
+            return true;
+        }
+
+        $level = $this->getJabatanLevel();
+        // Level 1-3 (Bupati, Wakil Bupati, Sekda) berhak memantau semua.
+        if ($level !== null && in_array($level, [1, 2, 3], true)) {
+            return true;
+        }
+
+        $jabatanNama = strtolower((string) $this->jabatan_nama);
+        return str_contains($jabatanNama, 'sekretaris daerah');
     }
 
     /**

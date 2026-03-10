@@ -93,7 +93,11 @@ const TentatifTable: React.FC<Props> = ({
                             </td>
                             <td className="border border-border-default px-4 py-3 text-center">
                                 <div className="flex flex-col gap-1 items-center">
-                                    {renderDisposisiBadge(item.status_disposisi)}
+                                    {item.status === 'definitif' ? (
+                                        <Badge variant="success">{item.status_formal_label}</Badge>
+                                    ) : (
+                                        renderDisposisiBadge(item.status_disposisi)
+                                    )}
                                     {item.dihadiri_oleh && (
                                         <div className="text-xs text-text-secondary">
                                             {item.dihadiri_oleh}

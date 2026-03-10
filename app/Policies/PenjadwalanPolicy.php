@@ -37,15 +37,17 @@ class PenjadwalanPolicy
             return true;
         }
 
+        // Jika dia yang menghadiri
+        if ($penjadwalan->dihadiri_oleh_user_id === $user->id) {
+            return true;
+        }
+
+        // Jika dia yang membuat (untuk jadwal custom)
         if (!$penjadwalan->surat_masuk_id) {
-            return $penjadwalan->created_by === $user->id
-                || $penjadwalan->dihadiri_oleh_user_id === $user->id;
+            return (int) $penjadwalan->created_by === (int) $user->id;
         }
 
-        if ($penjadwalan->status === Penjadwalan::STATUS_DEFINITIF) {
-            return $this->isFinalizedByRecipientFromDisposisi($user, $penjadwalan);
-        }
-
+        // Untuk jadwal berbasis surat, cek keterkaitan dengan surat tersebut
         return $this->isRelatedToSurat($user, $penjadwalan->suratMasuk);
     }
 
@@ -216,32 +218,6 @@ class PenjadwalanPolicy
 
     private function canViewAllSchedules(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isTU()) {
-            return true;
-        }
-
-        $level = $user->getJabatanLevel();
-        if (in_array($level, [1, 2, 3], true)) {
-            return true;
-        }
-
-        $jabatanNama = strtolower((string) $user->jabatan_nama);
-        return str_contains($jabatanNama, 'sekretaris daerah');
-    }
-
-    private function isFinalizedByRecipientFromDisposisi(User $user, Penjadwalan $penjadwalan): bool
-    {
-        if (!$penjadwalan->surat_masuk_id || !$penjadwalan->suratMasuk) {
-            return false;
-        }
-
-        if ((int) $penjadwalan->dihadiri_oleh_user_id !== (int) $user->id) {
-            return false;
-        }
-
-        return DisposisiSurat::query()
-            ->where('surat_masuk_id', $penjadwalan->surat_masuk_id)
-            ->where('ke_user_id', $user->id)
-            ->exists();
+        return $user->canMonitorAllSchedules();
     }
 }

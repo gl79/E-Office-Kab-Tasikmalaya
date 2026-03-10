@@ -5,15 +5,16 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { EventInput } from '@fullcalendar/core';
-import { Trash2, ExternalLink, Filter, RotateCcw, CalendarPlus } from 'lucide-react';
+import { Trash2, ExternalLink, Filter, RotateCcw, CalendarPlus, List, Calendar as CalendarIcon } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Button, Modal, Badge, ConfirmDialog } from '@/Components/ui';
+import { Button, Modal, Badge, ConfirmDialog, Pagination } from '@/Components/ui';
 import { TextInput, FormSelect } from '@/Components/form';
 import { useMemoryCache } from '@/hooks/useMemoryCache';
 import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
 import { formatDateShort, getSifatBadge } from '@/utils';
 import type { PageProps } from '@/types';
 import type { Agenda, CalendarEvent } from '@/types/penjadwalan';
+import DefinitifTable from './Components/DefinitifTable';
 
 interface Props extends PageProps {
     disposisiOptions: Record<string, string>;
@@ -45,10 +46,17 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
     const [allEvents, setAllEvents] = useState<CalendarEvent[]>(() => cachedEvents ?? []);
     const [isLoading, setIsLoading] = useState(cachedEvents === null);
 
+    // View state
+    const [activeView, setActiveView] = useState<'calendar' | 'list'>('calendar');
+
     // Client-side filter state — instant, no delay, no URL change
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [showFilters, setShowFilters] = useState(false);
+
+    // Pagination for list view
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Modal states
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -60,7 +68,8 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
     const dateRangeRef = useRef<{ start?: string; end?: string }>({});
     const hasFetched = useRef(false);
 
-    // Fetch ALL events from API (no search/status filters — those are client-side)
+    // Fetch events from API
+    // If start/end not provided, fetches ALL data
     const fetchEvents = useCallback(async (start?: string, end?: string) => {
         if (!hasFetched.current) {
             setIsLoading(true);
@@ -82,18 +91,24 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
         }
     }, [write]);
 
-    // Initial load
+    // Initial load - if starting with list view, fetch all. 
+    // If starting with calendar, fetch will be triggered by handleDatesSet
     useEffect(() => {
-        fetchEvents(dateRangeRef.current.start, dateRangeRef.current.end);
-    }, [fetchEvents]);
+        if (activeView === 'list') {
+            fetchEvents();
+        }
+    }, [activeView, fetchEvents]);
 
-    // Handle date range change (only time we re-fetch from API)
+    // Handle date range change (only time we re-fetch from API for calendar)
     const handleDatesSet = (dateInfo: { startStr: string; endStr: string }) => {
         dateRangeRef.current = { start: dateInfo.startStr, end: dateInfo.endStr };
-        fetchEvents(dateInfo.startStr, dateInfo.endStr);
+        // Only fetch via range if we are in calendar view and not searching
+        if (activeView === 'calendar') {
+            fetchEvents(dateInfo.startStr, dateInfo.endStr);
+        }
     };
 
-    // Client-side filtering — instant, no delay, no URL change (like Surat Masuk)
+    // Client-side filtering — instant, no delay, no URL change
     const filteredEvents = useMemo(() => {
         let events = allEvents;
 
@@ -118,13 +133,34 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
             );
         }
 
-        return events;
-    }, [allEvents, search, statusFilter]);
+        // Sort by date descending for list view
+        if (activeView === 'list') {
+            return [...events].sort((a, b) => {
+                return (b.start as string).localeCompare(a.start as string);
+            });
+        }
 
-    // Handle event click
+        return events;
+    }, [allEvents, search, statusFilter, activeView]);
+
+    // Paginated events for list view
+    const paginatedEvents = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredEvents.slice(start, start + itemsPerPage);
+    }, [filteredEvents, currentPage]);
+
+    const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+
+    // Handle event click (Calendar)
     const handleEventClick = (info: unknown) => {
         const eventInfo = info as { event: { extendedProps: Record<string, unknown> } };
         const agenda = eventInfo.event.extendedProps.agenda as Agenda;
+        setSelectedAgenda(agenda);
+        setShowDetailModal(true);
+    };
+
+    // Handle view detail (List Table)
+    const handleViewDetail = (agenda: Agenda) => {
         setSelectedAgenda(agenda);
         setShowDetailModal(true);
     };
@@ -140,7 +176,13 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                 setDeleteModalOpen(false);
                 setShowDetailModal(false);
                 setSelectedAgenda(null);
-                fetchEvents(dateRangeRef.current.start, dateRangeRef.current.end);
+                
+                // Refresh data
+                if (activeView === 'calendar') {
+                    fetchEvents(dateRangeRef.current.start, dateRangeRef.current.end);
+                } else {
+                    fetchEvents();
+                }
             },
         });
     };
@@ -232,6 +274,26 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                             </div>
 
                             <div className="flex gap-2 w-full md:w-auto">
+                                <div className="flex rounded-lg border border-border-default overflow-hidden mr-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveView('calendar')}
+                                        className={`px-3 py-1.5 flex items-center gap-1.5 text-sm transition-colors ${activeView === 'calendar' ? 'bg-primary text-text-inverse' : 'bg-surface hover:bg-surface-hover text-text-secondary'}`}
+                                        title="Tampilan Kalender"
+                                    >
+                                        <CalendarIcon className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Kalender</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveView('list')}
+                                        className={`px-3 py-1.5 flex items-center gap-1.5 text-sm transition-colors ${activeView === 'list' ? 'bg-primary text-text-inverse' : 'bg-surface hover:bg-surface-hover text-text-secondary'}`}
+                                        title="Tampilan Daftar"
+                                    >
+                                        <List className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Daftar</span>
+                                    </button>
+                                </div>
                                 {canUseCustomSchedule && (
                                     <Link href={route('bupati.jadwal.custom')}>
                                         <Button className="flex items-center gap-2 whitespace-nowrap">
@@ -298,7 +360,7 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                     </div>
                 </div>
 
-                {/* Calendar Container */}
+                {/* Content Container */}
                 <div className="p-4 relative">
                     {/* Loading Overlay */}
                     {isLoading && (
@@ -307,38 +369,60 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                         </div>
                     )}
 
-                    <div className="relative">
-                        <FullCalendar
-                            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                            initialView="dayGridMonth"
-                            headerToolbar={{
-                                left: 'prev,next today',
-                                center: 'title',
-                                right: 'dayGridMonth,timeGridWeek,timeGridDay',
-                            }}
-                            buttonText={{
-                                today: 'Hari Ini',
-                                month: 'Bulan',
-                                week: 'Minggu',
-                                day: 'Hari',
-                            }}
-                            locale="id"
-                            events={filteredEvents as EventInput[]}
-                            eventClick={handleEventClick}
-                            datesSet={handleDatesSet}
-                            height="auto"
-                            contentHeight={600}
-                            eventDisplay="block"
-                            dayMaxEvents={3}
-                            moreLinkText={(num) => `+${num} lagi`}
-                            noEventsText="Tidak ada jadwal"
-                            eventTimeFormat={{
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false,
-                            }}
-                        />
-                    </div>
+                    {activeView === 'calendar' ? (
+                        <div className="relative">
+                            <FullCalendar
+                                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                                initialView="dayGridMonth"
+                                headerToolbar={{
+                                    left: 'prev,next today',
+                                    center: 'title',
+                                    right: 'dayGridMonth,timeGridWeek,timeGridDay',
+                                }}
+                                buttonText={{
+                                    today: 'Hari Ini',
+                                    month: 'Bulan',
+                                    week: 'Minggu',
+                                    day: 'Hari',
+                                }}
+                                locale="id"
+                                events={filteredEvents as EventInput[]}
+                                eventClick={handleEventClick}
+                                datesSet={handleDatesSet}
+                                height="auto"
+                                contentHeight={600}
+                                eventDisplay="block"
+                                dayMaxEvents={3}
+                                moreLinkText={(num) => `+${num} lagi`}
+                                noEventsText="Tidak ada jadwal"
+                                eventTimeFormat={{
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false,
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <DefinitifTable
+                                data={paginatedEvents.map(e => e.extendedProps?.agenda as Agenda)}
+                                onViewDetail={handleViewDetail}
+                                currentPage={currentPage}
+                                itemsPerPage={itemsPerPage}
+                            />
+                            
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border-default pt-4">
+                                <p className="text-sm text-text-secondary">
+                                    Menampilkan {paginatedEvents.length} dari {filteredEvents.length} jadwal
+                                </p>
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

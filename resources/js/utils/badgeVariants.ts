@@ -15,10 +15,10 @@ export const disposisiBadgeConfig: Record<DisposisiStatus, {
     variant: BadgeVariant;
     label: string;
 }> = {
-    menunggu: { variant: 'warning', label: 'Menunggu' },
-    bupati: { variant: 'info', label: 'Bupati' },
-    wakil_bupati: { variant: 'success', label: 'Wakil Bupati' },
-    diwakilkan: { variant: 'success', label: 'Diwakilkan' },
+    menunggu: { variant: 'warning', label: 'Menunggu Disposisi' },
+    bupati: { variant: 'info', label: 'Didisposisikan ke Bupati' },
+    wakil_bupati: { variant: 'success', label: 'Didisposisikan ke Wakil Bupati' },
+    diwakilkan: { variant: 'success', label: 'Didisposisikan / Diwakilkan' },
 };
 
 export function getDisposisiVariant(status: string): BadgeVariant {

@@ -208,6 +208,11 @@ class SuratMasukController extends Controller
             }
         }
 
+        // Update status surat ke 'diproses' setelah diterima (jika masih 'baru')
+        if ($suratMasuk->status === SuratMasuk::STATUS_BARU) {
+            $suratMasuk->update(['status' => SuratMasuk::STATUS_DIPROSES]);
+        }
+
         // Record timeline
         TimelineSurat::record(
             $suratMasuk->id,

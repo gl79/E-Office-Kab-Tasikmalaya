@@ -347,6 +347,13 @@ class Penjadwalan extends Model
     public function getStatusFormalAttribute(): string
     {
         if ($this->status === self::STATUS_DEFINITIF) {
+            // Jika sudah ada status kehadiran, gunakan itu sebagai bagian dari status formal
+            if ($this->status_kehadiran) {
+                return $this->status_kehadiran === 'Dihadiri'
+                    ? 'Telah Dihadiri'
+                    : 'Telah Diwakilkan';
+            }
+
             /** @var \Illuminate\Support\Carbon|null $tanggal */
             $tanggal = $this->tanggal_agenda;
             if ($tanggal && $tanggal->isBefore(today())) {

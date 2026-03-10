@@ -40,9 +40,9 @@ interface DashboardStats {
     };
 }
 
-interface DashboardPageProps extends PageProps {
+type DashboardPageProps = PageProps<{
     stats?: DashboardStats;
-}
+}>;
 
 const CACHE_TTL_MS = 60_000;
 
@@ -100,7 +100,7 @@ const Dashboard = () => {
     const cacheKey = `dashboard_stats_${user.id}`;
     const { read, write } = useMemoryCache<DashboardStats>(cacheKey, CACHE_TTL_MS);
     const cachedStats = read();
-    const [localStats, setLocalStats] = useState<DashboardStats | undefined>(() => deferredStats ?? cachedStats ?? undefined);
+    const [localStats, setLocalStats] = useState<DashboardStats | undefined>(() => deferredStats ?? (cachedStats || undefined));
 
     // Check if user is admin (superadmin or tu)
     const isAdmin = user.role === 'superadmin' || user.role === 'tu';

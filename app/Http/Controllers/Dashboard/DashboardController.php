@@ -34,7 +34,7 @@ class DashboardController extends Controller
             'stats' => Inertia::defer(function () use ($user) {
                 $cacheKey = 'dashboard_stats_' . $user->id;
 
-                return Cache::remember($cacheKey, 60, function () use ($user) {
+                return \App\Support\CacheHelper::tags(['dashboard_metrics'])->remember($cacheKey, 60, function () use ($user) {
                     return $this->calculateStats($user);
                 });
             }),
@@ -69,16 +69,34 @@ class DashboardController extends Controller
         $countMenungguTindakLanjut = $menungguTindakLanjut->count();
 
         // 3. Agenda Hari Ini (Hanya definitif)
-        $agendaHariIni = Penjadwalan::definitif()->whereDate('tanggal_agenda', now()->toDateString());
-        if (!$user->isSuperAdmin() && !$user->isTU()) {
-            $agendaHariIni->where('dihadiri_oleh_user_id', $user->id);
+        $agendaHariIni = Penjadwalan::query()->definitif()->whereDate('tanggal_agenda', now()->toDateString());
+        if (!$user->canMonitorAllSchedules()) {
+            $agendaHariIni->where(function ($q) use ($user) {
+                $q->where('dihadiri_oleh_user_id', $user->id)
+                    ->orWhereHas('suratMasuk.disposisis', function ($dq) use ($user) {
+                        $dq->where('dari_user_id', $user->id)
+                            ->orWhere('ke_user_id', $user->id);
+                    })
+                    ->orWhereHas('suratMasuk', function ($smq) use ($user) {
+                        $smq->where('created_by', $user->id);
+                    });
+            });
         }
         $countAgendaHariIni = $agendaHariIni->count();
 
         // 4. Agenda Mendatang (Hanya definitif)
-        $agendaMendatang = Penjadwalan::definitif()->whereDate('tanggal_agenda', '>', now()->toDateString());
-        if (!$user->isSuperAdmin() && !$user->isTU()) {
-            $agendaMendatang->where('dihadiri_oleh_user_id', $user->id);
+        $agendaMendatang = Penjadwalan::query()->definitif()->whereDate('tanggal_agenda', '>', now()->toDateString());
+        if (!$user->canMonitorAllSchedules()) {
+            $agendaMendatang->where(function ($q) use ($user) {
+                $q->where('dihadiri_oleh_user_id', $user->id)
+                    ->orWhereHas('suratMasuk.disposisis', function ($dq) use ($user) {
+                        $dq->where('dari_user_id', $user->id)
+                            ->orWhere('ke_user_id', $user->id);
+                    })
+                    ->orWhereHas('suratMasuk', function ($smq) use ($user) {
+                        $smq->where('created_by', $user->id);
+                    });
+            });
         }
         $countAgendaMendatang = $agendaMendatang->count();
 
@@ -108,20 +126,5 @@ class DashboardController extends Controller
         }
 
         return $stats;
-    }
-
-    /**
-     * Clear dashboard cache (useful after data changes).
-     */
-    public static function clearCache(): void
-    {
-        // Clear all dashboard caches by forgetting the pattern
-        Cache::forget('dashboard_stats');
-
-        // Also clear per-user caches
-        $userIds = User::query()->pluck('id', 'id');
-        foreach ($userIds as $id) {
-            Cache::forget('dashboard_stats_' . $id);
-        }
     }
 }

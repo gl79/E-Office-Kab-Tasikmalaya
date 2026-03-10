@@ -172,6 +172,10 @@ final class PenjadwalanService
             $this->recordHistory($penjadwalan, $oldData, $requestUser);
 
             if ($penjadwalan->surat_masuk_id) {
+                // Update parent SuratMasuk to SELESAI
+                SuratMasuk::where('id', $penjadwalan->surat_masuk_id)
+                    ->update(['status' => SuratMasuk::STATUS_SELESAI]);
+
                 TimelineSurat::record(
                     $penjadwalan->surat_masuk_id,
                     $requestUser->id,
@@ -235,6 +239,10 @@ final class PenjadwalanService
             $this->recordHistory($penjadwalan, $oldData, $requestUser);
 
             if ($penjadwalan->surat_masuk_id) {
+                // Revert parent SuratMasuk to DIPROSES
+                SuratMasuk::where('id', $penjadwalan->surat_masuk_id)
+                    ->update(['status' => SuratMasuk::STATUS_DIPROSES]);
+
                 TimelineSurat::record(
                     $penjadwalan->surat_masuk_id,
                     $requestUser->id,

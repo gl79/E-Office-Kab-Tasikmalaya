@@ -102,7 +102,7 @@ class SuratMasukPolicy
             return false;
         }
 
-        if ($suratMasuk->isSelesai() || $suratMasuk->hasPenjadwalan()) {
+        if ($suratMasuk->isSelesai()) {
             return false;
         }
 
@@ -122,7 +122,7 @@ class SuratMasukPolicy
             return false;
         }
 
-        if ($suratMasuk->isSelesai() || $suratMasuk->hasPenjadwalan()) {
+        if ($suratMasuk->isSelesai()) {
             return false;
         }
 
@@ -143,7 +143,7 @@ class SuratMasukPolicy
         }
 
         return $suratMasuk->tujuans()
-            ->where('tujuan_id', '=', $user->id)
+            ->where('tujuan_id', $user->id)
             ->exists();
     }
 
@@ -169,14 +169,6 @@ class SuratMasukPolicy
     }
 
     /**
-     * Backward compatibility: disposisiByBupati
-     */
-    public function disposisiByBupati(User $user, SuratMasuk $suratMasuk): bool
-    {
-        return $this->disposisi($user, $suratMasuk);
-    }
-
-    /**
      * Backward compatibility: finalizeDelegatedJadwal
      */
     public function finalizeDelegatedJadwal(User $user, SuratMasuk $suratMasuk): bool
@@ -194,9 +186,9 @@ class SuratMasukPolicy
     private function isActionableRecipient(User $user, SuratMasuk $suratMasuk): bool
     {
         $tujuanPrimary = $suratMasuk->tujuans()
-            ->where('tujuan_id', '=', $user->id)
-            ->where('is_primary', '=', true)
-            ->where('is_tembusan', '=', false)
+            ->where('tujuan_id', $user->id)
+            ->where('is_primary', true)
+            ->where('is_tembusan', false)
             ->first();
 
         if ($tujuanPrimary) {
@@ -204,8 +196,8 @@ class SuratMasukPolicy
                 return false;
             }
 
-            $hasDisposed = DisposisiSurat::where('surat_masuk_id', '=', $suratMasuk->id)
-                ->where('dari_user_id', '=', $user->id)
+            $hasDisposed = DisposisiSurat::where('surat_masuk_id', $suratMasuk->id)
+                ->where('dari_user_id', $user->id)
                 ->exists();
 
             if (!$hasDisposed) {
@@ -213,8 +205,8 @@ class SuratMasukPolicy
             }
         }
 
-        $lastDisposisiToUser = DisposisiSurat::where('surat_masuk_id', '=', $suratMasuk->id)
-            ->where('ke_user_id', '=', $user->id)
+        $lastDisposisiToUser = DisposisiSurat::where('surat_masuk_id', $suratMasuk->id)
+            ->where('ke_user_id', $user->id)
             ->latest()
             ->first();
 
@@ -223,15 +215,15 @@ class SuratMasukPolicy
         }
 
         $tujuanDisposisi = $suratMasuk->tujuans()
-            ->where('tujuan_id', '=', $user->id)
+            ->where('tujuan_id', $user->id)
             ->first();
 
         if (!$tujuanDisposisi || $tujuanDisposisi->status_penerimaan !== SuratMasukTujuan::STATUS_DITERIMA) {
             return false;
         }
 
-        $hasRedisposed = DisposisiSurat::where('surat_masuk_id', '=', $suratMasuk->id)
-            ->where('dari_user_id', '=', $user->id)
+        $hasRedisposed = DisposisiSurat::where('surat_masuk_id', $suratMasuk->id)
+            ->where('dari_user_id', $user->id)
             ->exists();
 
         return !$hasRedisposed;
@@ -242,7 +234,7 @@ class SuratMasukPolicy
      */
     private function isInvolvedInSurat(User $user, SuratMasuk $suratMasuk): bool
     {
-        if ($suratMasuk->tujuans()->where('tujuan_id', '=', $user->id)->exists()) {
+        if ($suratMasuk->tujuans()->where('tujuan_id', $user->id)->exists()) {
             return true;
         }
 
@@ -250,10 +242,10 @@ class SuratMasukPolicy
             return true;
         }
 
-        return DisposisiSurat::where('surat_masuk_id', '=', $suratMasuk->id)
+        return DisposisiSurat::where('surat_masuk_id', $suratMasuk->id)
             ->where(function ($q) use ($user) {
-                $q->where('dari_user_id', '=', $user->id)
-                    ->orWhere('ke_user_id', '=', $user->id);
+                $q->where('dari_user_id', $user->id)
+                    ->orWhere('ke_user_id', $user->id);
             })
             ->exists();
     }

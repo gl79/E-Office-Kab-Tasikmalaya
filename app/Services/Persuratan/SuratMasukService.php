@@ -228,6 +228,7 @@ class SuratMasukService
             } elseif ($hasSchedule) {
                 $surat->status_tindak_lanjut = $scheduleFollowUpStatus;
             } elseif ($globalHasDisposed) {
+                // Prioritaskan status Disposisi jika sudah ada disposisi dan belum ada jadwal definitif
                 $surat->status_tindak_lanjut = "Telah Didisposisi";
             } else {
                 $surat->status_tindak_lanjut = "Diterima / Diketahui";
@@ -300,9 +301,17 @@ class SuratMasukService
             return "Menunggu Tindak Lanjut";
         }
 
-        return $penjadwalan->status === Penjadwalan::STATUS_DEFINITIF
-            ? "Telah Masuk Jadwal Definitif"
-            : "Telah Masuk Jadwal Tentatif";
+        if ($penjadwalan->status === Penjadwalan::STATUS_DEFINITIF) {
+            if ($penjadwalan->status_kehadiran === 'Dihadiri') {
+                return "Telah Dihadiri";
+            }
+            if ($penjadwalan->status_kehadiran === 'Diwakilkan') {
+                return "Telah Diwakilkan";
+            }
+            return "Telah Masuk Jadwal Definitif";
+        }
+
+        return "Telah Masuk Jadwal Tentatif";
     }
 
     // ==================== PRIVATE: TUJUAN SYNC ====================

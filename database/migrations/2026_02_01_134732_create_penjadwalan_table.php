@@ -35,6 +35,9 @@ return new class extends Migration
 
             $table->enum('status', ['definitif', 'tentatif'])->default('tentatif');
             $table->enum('status_disposisi', ['menunggu', 'bupati', 'wakil_bupati', 'diwakilkan'])->default('menunggu');
+            $table->enum('status_kehadiran', ['Dihadiri', 'Diwakilkan', 'Tidak Dihadiri'])->nullable();
+            $table->string('nama_yang_mewakili', 255)->nullable();
+
             $table->enum('sumber_jadwal', ['self', 'disposisi', 'sekretaris'])->default('disposisi')
                 ->comment('Asal jadwal: self=dijadwalkan sendiri, disposisi=didisposisikan, sekretaris=oleh sekretaris');
             $table->string('dihadiri_oleh')->nullable();
@@ -45,6 +48,7 @@ return new class extends Migration
 
             // Catatan
             $table->text('keterangan')->nullable();
+            $table->string('file_path', 2048)->nullable();
 
             // Audit Trail
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

@@ -26,7 +26,7 @@ class CacheHelper
             'surat_keluar_list',
             'surat_masuk_menunggu_penerimaan_',
         ],
-        'dashboard' => [
+        'dashboard_metrics' => [
             'dashboard_stats',
         ],
     ];

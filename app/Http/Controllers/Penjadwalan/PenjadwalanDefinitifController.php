@@ -59,8 +59,15 @@ class PenjadwalanDefinitifController extends Controller
                 $this->applyUserScope($query, $user);
             }
 
-            // Filter by date range (for calendar pagination)
-            if ($request->has('start') && $request->has('end')) {
+            // Show all schedules regardless of date range if requested, 
+            // or if searching to ensure all results are found.
+            if ($request->has('start') && $request->has('end') && !$request->has('search')) {
+                // Keep the filter only if NOT searching, to maintain performance for normal view
+                // but we might want to relax this if the user wants to see ALL in the calendar
+                // regardless of the current view. However, FullCalendar handles range by itself.
+                // The user said "dont disappear even if date passed". 
+                // In a calendar, past events stay unless filtered.
+                // It's likely they want them to stay in searching or general lists.
                 $query->whereBetween('tanggal_agenda', [
                     $request->input('start'),
                     $request->input('end'),
@@ -176,6 +183,7 @@ class PenjadwalanDefinitifController extends Controller
     private function applyUserScope(Builder $query, User $user): void
     {
         $query->where(function (Builder $scope) use ($user) {
+            // 1. Jadwal Custom (Tanpa Surat Masuk)
             $scope->where(function (Builder $customQuery) use ($user) {
                 $customQuery->whereNull('surat_masuk_id')
                     ->where(function (Builder $customOwnerQuery) use ($user) {
@@ -185,13 +193,21 @@ class PenjadwalanDefinitifController extends Controller
                     });
             });
 
+            // 2. Jadwal Berbasis Surat Masuk
             $scope->orWhere(function (Builder $suratScheduleQuery) use ($user) {
                 $suratScheduleQuery->whereNotNull('surat_masuk_id')
-                    ->where('dihadiri_oleh_user_id', $user->id)
-                    ->whereHas('suratMasuk', function (Builder $suratQuery) use ($user) {
-                        $suratQuery->whereHas('disposisis', function (Builder $disposisiQuery) use ($user) {
-                            $disposisiQuery->where('ke_user_id', $user->id);
-                        });
+                    ->where(function (Builder $relatedQuery) use ($user) {
+                        // Jika dia yang menghadiri
+                        $relatedQuery->where('dihadiri_oleh_user_id', $user->id)
+                            // ATAU dia terlibat dalam rantai disposisi (pengirim atau penerima)
+                            ->orWhereHas('suratMasuk.disposisis', function (Builder $disposisiQuery) use ($user) {
+                                $disposisiQuery->where('dari_user_id', $user->id)
+                                    ->orWhere('ke_user_id', $user->id);
+                            })
+                            // ATAU dia adalah pembuat surat masuk (TU yang menginput)
+                            ->orWhereHas('suratMasuk', function (Builder $smQuery) use ($user) {
+                                $smQuery->where('created_by', $user->id);
+                            });
                     });
             });
         });
@@ -199,16 +215,6 @@ class PenjadwalanDefinitifController extends Controller
 
     private function canViewAllDefinitif(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isTU()) {
-            return true;
-        }
-
-        $level = $user->getJabatanLevel();
-        if (in_array($level, [1, 2, 3], true)) {
-            return true;
-        }
-
-        $jabatanNama = strtolower((string) $user->jabatan_nama);
-        return str_contains($jabatanNama, 'sekretaris daerah');
+        return $user->canMonitorAllSchedules();
     }
 }
