@@ -73,6 +73,8 @@ class PenjadwalanResource extends JsonResource
                         ? ['name' => $sm->createdBy->name]
                         : null,
                     'created_at' => $sm->created_at?->format('Y-m-d H:i:s'),
+                    'status_tindak_lanjut' => $sm->status_tindak_lanjut,
+                    'status_tindak_lanjut_label' => $sm->status_tindak_lanjut_label,
                 ];
             }),
 
@@ -102,6 +104,8 @@ class PenjadwalanResource extends JsonResource
             'status_formal_label' => $this->status_formal_label,
             'status_disposisi' => $this->status_disposisi,
             'status_disposisi_label' => $this->status_disposisi_label,
+            'status_tindak_lanjut' => $this->status_tindak_lanjut,
+            'status_tindak_lanjut_label' => $this->status_tindak_lanjut,
             'sumber_jadwal' => $this->sumber_jadwal,
             'sumber_jadwal_label' => $this->sumber_jadwal_label,
             'status_kehadiran_column_label' => $this->status_kehadiran_column_label,

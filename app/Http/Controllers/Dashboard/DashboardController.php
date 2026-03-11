@@ -59,11 +59,11 @@ class DashboardController extends Controller
         $countSuratMasukHariIni = $suratMasukHariIni->count();
 
         // 2. Menunggu Tindak Lanjut
-        $menungguTindakLanjut = SuratMasuk::query()->where('status', '<>', SuratMasuk::STATUS_SELESAI);
+        $menungguTindakLanjut = SuratMasuk::query()
+            ->where('status_tindak_lanjut', '<>', SuratMasuk::STATUS_TINDAK_LANJUT_SELESAI);
         if (!$user->isSuperAdmin() && !$user->isTU()) {
             $menungguTindakLanjut->whereHas('tujuans', function ($q) use ($user) {
-                $q->where('tujuan_id', $user->id)
-                    ->where('status_penerimaan', '!=', \App\Models\SuratMasukTujuan::STATUS_DITERIMA);
+                $q->where('tujuan_id', $user->id);
             });
         }
         $countMenungguTindakLanjut = $menungguTindakLanjut->count();

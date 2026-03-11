@@ -8,7 +8,6 @@ import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { useDeferredDataMutable } from '@/hooks';
 import TentatifTable from './Components/TentatifTable';
 import TindakLanjutModal from './Components/TentatifEditModal';
-import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
 import { formatDateShort } from '@/utils';
 import DisposisiModal from '@/Components/persuratan/DisposisiModal';
 import TimelineModal from '@/Components/persuratan/TimelineModal';
@@ -23,6 +22,21 @@ interface Props extends PageProps {
         search?: string;
     };
 }
+
+const getWorkflowStatusVariant = (status?: string): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' => {
+    switch (status) {
+        case 'Masuk Jadwal Tentatif':
+            return 'warning';
+        case 'Sudah Didisposisi':
+            return 'info';
+        case 'Jadwal Definitif':
+            return 'primary';
+        case 'Selesai':
+            return 'success';
+        default:
+            return 'default';
+    }
+};
 
 const TentatifIndex = ({
     tentatif,
@@ -195,7 +209,7 @@ const TentatifIndex = ({
             if (item.dihadiri_oleh) {
                 lines.push(`   Dihadiri: ${item.dihadiri_oleh}`);
             }
-            lines.push(`   Status: ${item.status_disposisi_label}`);
+            lines.push(`   Status: ${item.status_tindak_lanjut ?? item.status_label}`);
             if (index < filteredData.length - 1) {
                 lines.push('');
             }
@@ -231,9 +245,6 @@ const TentatifIndex = ({
         });
     };
 
-    const renderDisposisiBadge = (status: string) => (
-        <Badge variant={getDisposisiVariant(status)}>{getDisposisiLabel(status)}</Badge>
-    );
     const formWithSubmit = {
         ...form,
         submitHandler: handleSubmitKehadiran
@@ -538,17 +549,9 @@ const TentatifIndex = ({
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-text-secondary w-28 shrink-0">Status Jadwal</span>
-                                        <Badge variant="warning">
-                                            {selectedAgenda.status_formal_label ?? selectedAgenda.status_label}
+                                        <Badge variant={getWorkflowStatusVariant(selectedAgenda.status_tindak_lanjut)}>
+                                            {selectedAgenda.status_tindak_lanjut ?? selectedAgenda.status_formal_label ?? selectedAgenda.status_label}
                                         </Badge>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-text-secondary w-28 shrink-0">
-                                            {selectedAgenda.sumber_jadwal && selectedAgenda.sumber_jadwal !== 'disposisi'
-                                                ? 'Kehadiran'
-                                                : 'Disposisi'}
-                                        </span>
-                                        {renderDisposisiBadge(selectedAgenda.status_disposisi)}
                                     </div>
                                     {selectedAgenda.dihadiri_oleh && (
                                         <div className="flex gap-2 text-sm">

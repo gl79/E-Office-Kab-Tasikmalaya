@@ -1,7 +1,6 @@
 import React from 'react';
 import { Badge, Button } from '@/Components/ui';
 import { Eye, MapPin, Clock, Calendar } from 'lucide-react';
-import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
 import { formatDateShort } from '@/utils';
 import type { Agenda } from '@/types/penjadwalan';
 
@@ -21,6 +20,21 @@ const formatNoAgenda = (nomor?: string) => {
 const formatTimeNoSeconds = (time?: string | null) => {
     if (!time) return '';
     return time.length >= 5 ? time.slice(0, 5) : time;
+};
+
+const getWorkflowStatusVariant = (status?: string): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' => {
+    switch (status) {
+        case 'Jadwal Definitif':
+            return 'primary';
+        case 'Selesai':
+            return 'success';
+        case 'Sudah Didisposisi':
+            return 'info';
+        case 'Masuk Jadwal Tentatif':
+            return 'warning';
+        default:
+            return 'default';
+    }
 };
 
 const DefinitifTable: React.FC<Props> = ({
@@ -82,14 +96,9 @@ const DefinitifTable: React.FC<Props> = ({
                             </td>
                             <td className="border border-border-default px-4 py-3 text-center">
                                 <div className="flex flex-col gap-1 items-center">
-                                    <Badge variant="success">
-                                        {item.status_formal_label || item.status_label || 'Definitif'}
+                                    <Badge variant={getWorkflowStatusVariant(item.status_tindak_lanjut)}>
+                                        {item.status_tindak_lanjut ?? item.status_formal_label ?? item.status_label ?? 'Jadwal Definitif'}
                                     </Badge>
-                                    {item.status_disposisi && (
-                                        <Badge variant={getDisposisiVariant(item.status_disposisi)}>
-                                            {getDisposisiLabel(item.status_disposisi)}
-                                        </Badge>
-                                    )}
                                 </div>
                             </td>
                             <td className="border border-border-default px-4 py-3 text-center align-middle">

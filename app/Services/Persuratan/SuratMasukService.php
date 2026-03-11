@@ -3,7 +3,6 @@
 namespace App\Services\Persuratan;
 
 use App\Models\DisposisiSurat;
-use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
 use App\Models\TimelineSurat;
@@ -28,7 +27,7 @@ class SuratMasukService
     public function getListForUser(User $user): Collection
     {
         $query = SuratMasuk::query()
-            ->with(['tujuans.user', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah.jabatanRelasi', 'createdBy', 'jenisSurat', 'penjadwalan'])
+            ->with(['tujuans.user', 'disposisis', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah.jabatanRelasi', 'createdBy', 'jenisSurat', 'penjadwalan'])
             ->latest();
 
         $this->applyVisibilityScope($query, $user);
@@ -43,6 +42,7 @@ class SuratMasukService
     {
         return DB::transaction(function () use ($data) {
             $data['nomor_agenda'] = SuratMasuk::generateNomorAgenda((string) Auth::id());
+            $data['status_tindak_lanjut'] = SuratMasuk::STATUS_TINDAK_LANJUT_MENUNGGU;
 
             if (isset($data['file']) && $data['file'] instanceof UploadedFile) {
                 $data['file_path'] = FileService::store($data['file'], 'surat-masuk');
@@ -54,6 +54,8 @@ class SuratMasukService
             $suratMasuk = SuratMasuk::create($data);
 
             $this->syncTujuan($suratMasuk, $tujuanList);
+            $suratMasuk->loadMissing(['tujuans.user', 'penjadwalan', 'disposisis']);
+            $this->syncGlobalWorkflowStatus($suratMasuk);
 
             // Catat timeline: surat diinput
             TimelineSurat::record(
@@ -117,6 +119,8 @@ class SuratMasukService
 
             $suratMasuk->tujuans()->delete();
             $this->syncTujuan($suratMasuk, $tujuanList, $oldTujuanAgendas, $oldTujuanPenerimaan);
+            $suratMasuk->loadMissing(['tujuans.user', 'penjadwalan', 'disposisis']);
+            $this->syncGlobalWorkflowStatus($suratMasuk);
 
             CacheHelper::flush(['persuratan_list']);
 
@@ -196,55 +200,28 @@ class SuratMasukService
 
         $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
         $hasSchedule = (bool) $surat->penjadwalan;
-        $scheduleFollowUpStatus = $this->resolveScheduleFollowUpStatus($surat->penjadwalan);
-
-        // Cek apakah user bisa melakukan aksi (primary recipient / disposisi penerima)
-        $canDoAction = Gate::forUser($user)->check('disposisi', $surat);
-
-        $hasDisposed = DisposisiSurat::where('surat_masuk_id', $surat->id)
-            ->where('dari_user_id', $user->id)
-            ->exists();
+        $hasDisposedByCurrentUser = $this->hasDisposisiByUser($surat, $user->id);
+        $globalHasDisposed = $this->hasGlobalDisposisi($surat);
 
         $surat->penerimaan_status = $this->resolvePenerimaanStatus($surat, $tujuan);
         $surat->penerimaan_diterima_at = $tujuan?->diterima_at?->toDateTimeString();
         $surat->can_accept = $isDisposeRecipient && !$isAcceptedByCurrentUser && !$isTembusan;
 
         // Flow Baru: Surat Masuk hanya bisa dimasukkan ke jadwal setelah diterima, belum masuk jadwal, belum didisposisi.
-        $surat->can_masukkan_jadwal = $isDisposeRecipient && $isAcceptedByCurrentUser && !$isTembusan && !$hasSchedule && !$hasDisposed;
-        $surat->can_cetak_disposisi = ($isDisposeRecipient && $isAcceptedByCurrentUser) || $hasDisposed;
+        $surat->can_masukkan_jadwal = $isDisposeRecipient && $isAcceptedByCurrentUser && !$isTembusan && !$hasSchedule && !$hasDisposedByCurrentUser;
+        $surat->can_cetak_disposisi = ($isDisposeRecipient && $isAcceptedByCurrentUser) || $hasDisposedByCurrentUser;
 
         $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
         $surat->can_view_schedule = $hasSchedule
             && ($canScheduleByBupati || ($isDisposeRecipient && $isAcceptedByCurrentUser));
 
-        // Status Tindak Lanjut 
-        if (!$tujuan) {
-            // Jika user bukan penerima (contoh: TU / Superadmin), tampilkan progress global
-            $globalHasDisposed = DisposisiSurat::where('surat_masuk_id', $surat->id)->exists();
-            $globalIsAccepted = $surat->penerimaan_status === SuratMasukTujuan::STATUS_DITERIMA;
-
-            if (!$globalIsAccepted) {
-                $surat->status_tindak_lanjut = "Menunggu Tindak Lanjut";
-            } elseif ($hasSchedule) {
-                $surat->status_tindak_lanjut = $scheduleFollowUpStatus;
-            } elseif ($globalHasDisposed) {
-                // Prioritaskan status Disposisi jika sudah ada disposisi dan belum ada jadwal definitif
-                $surat->status_tindak_lanjut = "Telah Didisposisi";
-            } else {
-                $surat->status_tindak_lanjut = "Diterima / Diketahui";
-            }
-        } else {
-            // Logika untuk penerima spesifik
-            if (!$isAcceptedByCurrentUser) {
-                $surat->status_tindak_lanjut = "Menunggu Tindak Lanjut";
-            } elseif ($hasSchedule) {
-                $surat->status_tindak_lanjut = $scheduleFollowUpStatus;
-            } elseif ($hasDisposed) {
-                $surat->status_tindak_lanjut = "Telah Didisposisi";
-            } else {
-                $surat->status_tindak_lanjut = "Diterima / Diketahui";
-            }
-        }
+        // Status tindak lanjut bersifat global (konsisten untuk semua akun).
+        $resolvedGlobalStatus = SuratMasuk::resolveStatusTindakLanjut(
+            $this->isWorkflowAccepted($surat),
+            $surat->penjadwalan,
+            $globalHasDisposed
+        );
+        $surat->status_tindak_lanjut = $resolvedGlobalStatus;
 
         return $surat;
     }
@@ -280,38 +257,100 @@ class SuratMasukService
     }
 
     /**
-     * Resolve the penjadwalan badge variant.
+     * Sinkronkan status tindak lanjut global ke kolom utama database.
+     *
+     * Method ini dipanggil saat ada perubahan alur agar seluruh akun melihat status yang sama.
      */
-    private function resolvePenjadwalanVariant(?Penjadwalan $penjadwalan): string
+    public function syncGlobalWorkflowStatus(SuratMasuk $suratMasuk): void
     {
-        if (!$penjadwalan) {
-            return 'default';
+        $suratMasuk->loadMissing(['tujuans.user', 'disposisis', 'penjadwalan']);
+
+        $resolvedStatus = SuratMasuk::resolveStatusTindakLanjut(
+            $this->isWorkflowAccepted($suratMasuk),
+            $suratMasuk->penjadwalan,
+            $this->hasGlobalDisposisi($suratMasuk)
+        );
+
+        $legacyStatus = $this->mapToLegacyStatus($resolvedStatus);
+
+        $updates = [];
+        if ($suratMasuk->status_tindak_lanjut !== $resolvedStatus) {
+            $updates['status_tindak_lanjut'] = $resolvedStatus;
+            $suratMasuk->status_tindak_lanjut = $resolvedStatus;
         }
 
-        return match ($penjadwalan->status) {
-            Penjadwalan::STATUS_TENTATIF => 'warning',
-            Penjadwalan::STATUS_DEFINITIF => 'success',
-            default => 'default',
-        };
+        if ($suratMasuk->status !== $legacyStatus) {
+            $updates['status'] = $legacyStatus;
+            $suratMasuk->status = $legacyStatus;
+        }
+
+        if (!empty($updates)) {
+            $suratMasuk->update($updates);
+        }
     }
 
-    private function resolveScheduleFollowUpStatus(?Penjadwalan $penjadwalan): string
+    /**
+     * Cek apakah surat sudah dianggap diterima pada level workflow global.
+     */
+    private function isWorkflowAccepted(SuratMasuk $surat): bool
     {
-        if (!$penjadwalan) {
-            return "Menunggu Tindak Lanjut";
+        $targets = $surat->tujuans->filter(
+            fn(SuratMasukTujuan $tujuan) => (bool) $tujuan->user && $tujuan->is_primary && !$tujuan->is_tembusan
+        );
+
+        if ($targets->isEmpty()) {
+            $targets = $surat->tujuans->filter(
+                fn(SuratMasukTujuan $tujuan) => (bool) $tujuan->user && !$tujuan->is_tembusan
+            );
         }
 
-        if ($penjadwalan->status === Penjadwalan::STATUS_DEFINITIF) {
-            if ($penjadwalan->status_kehadiran === 'Dihadiri') {
-                return "Telah Dihadiri";
-            }
-            if ($penjadwalan->status_kehadiran === 'Diwakilkan') {
-                return "Telah Diwakilkan";
-            }
-            return "Telah Masuk Jadwal Definitif";
+        if ($targets->isEmpty()) {
+            $targets = $surat->tujuans->filter(
+                fn(SuratMasukTujuan $tujuan) => (bool) $tujuan->user
+            );
         }
 
-        return "Telah Masuk Jadwal Tentatif";
+        if ($targets->isEmpty()) {
+            return false;
+        }
+
+        return $targets->every(
+            fn(SuratMasukTujuan $tujuan) => $tujuan->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA
+        );
+    }
+
+    private function hasGlobalDisposisi(SuratMasuk $surat): bool
+    {
+        if ($surat->relationLoaded('disposisis')) {
+            return $surat->disposisis->isNotEmpty();
+        }
+
+        return DisposisiSurat::query()
+            ->where('surat_masuk_id', $surat->id)
+            ->exists();
+    }
+
+    private function hasDisposisiByUser(SuratMasuk $surat, int|string $userId): bool
+    {
+        if ($surat->relationLoaded('disposisis')) {
+            return $surat->disposisis->contains(
+                fn(DisposisiSurat $disposisi) => (string) $disposisi->dari_user_id === (string) $userId
+            );
+        }
+
+        return DisposisiSurat::query()
+            ->where('surat_masuk_id', $surat->id)
+            ->where('dari_user_id', $userId)
+            ->exists();
+    }
+
+    private function mapToLegacyStatus(string $statusTindakLanjut): string
+    {
+        return $statusTindakLanjut === SuratMasuk::STATUS_TINDAK_LANJUT_SELESAI
+            ? SuratMasuk::STATUS_SELESAI
+            : ($statusTindakLanjut === SuratMasuk::STATUS_TINDAK_LANJUT_MENUNGGU
+                ? SuratMasuk::STATUS_BARU
+                : SuratMasuk::STATUS_DIPROSES);
     }
 
     // ==================== PRIVATE: TUJUAN SYNC ====================

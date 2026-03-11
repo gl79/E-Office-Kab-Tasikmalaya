@@ -7,7 +7,6 @@ import { FormSelect, TextInput } from '@/Components/form';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { useDeferredDataMutable } from '@/hooks';
 import type { PageProps } from '@/types';
-import { getDisposisiLabel, getDisposisiVariant, getPenjadwalanFormalStatusLabel, getPenjadwalanFormalStatusVariant } from '@/utils/badgeVariants';
 
 interface HistoryChange {
     field: string;
@@ -34,6 +33,8 @@ interface PenjadwalanHistoryItem {
     status_formal_label: string;
     status_disposisi: string;
     status_disposisi_label: string;
+    status_tindak_lanjut: string;
+    status_tindak_lanjut_label: string;
     sumber_jadwal: string | null;
     sumber_jadwal_label: string | null;
     dihadiri_oleh: string | null;
@@ -55,8 +56,27 @@ interface PenjadwalanHistoryItem {
 
 interface Props extends PageProps {
     histories?: PenjadwalanHistoryItem[];
-    statusFormalOptions: Record<string, string>;
+    statusWorkflowOptions: Record<string, string>;
 }
+
+const getWorkflowStatusVariant = (status?: string): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' => {
+    switch (status) {
+        case 'Menunggu Tindak Lanjut':
+            return 'warning';
+        case 'Diterima / Diketahui':
+            return 'primary';
+        case 'Masuk Jadwal Tentatif':
+            return 'warning';
+        case 'Sudah Didisposisi':
+            return 'info';
+        case 'Jadwal Definitif':
+            return 'primary';
+        case 'Selesai':
+            return 'success';
+        default:
+            return 'default';
+    }
+};
 
 const formatNoAgenda = (nomor?: string | null): string => {
     if (!nomor) return '-';
@@ -66,7 +86,7 @@ const formatNoAgenda = (nomor?: string | null): string => {
 
 export default function Index({
     histories: initialHistories,
-    statusFormalOptions,
+    statusWorkflowOptions,
 }: Props) {
     const { auth } = usePage<PageProps>().props;
     const cacheKey = `penjadwalan_history_${auth.user.id}`;
@@ -79,7 +99,7 @@ export default function Index({
 
     // Client-side search & filter state
     const [search, setSearch] = useState('');
-    const [statusFormal, setStatusFormal] = useState('');
+    const [statusWorkflow, setStatusWorkflow] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -88,15 +108,15 @@ export default function Index({
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<PenjadwalanHistoryItem | null>(null);
 
-    const hasActiveFilters = !!(search || statusFormal);
+    const hasActiveFilters = !!(search || statusWorkflow);
 
-    const statusFormalSelectOptions = useMemo(
+    const statusWorkflowSelectOptions = useMemo(
         () =>
-            Object.entries(statusFormalOptions).map(([value, label]) => ({
+            Object.entries(statusWorkflowOptions).map(([value, label]) => ({
                 value,
                 label,
             })),
-        [statusFormalOptions]
+        [statusWorkflowOptions]
     );
 
     // Client-side filtering — instant, no delay, no URL change
@@ -116,13 +136,13 @@ export default function Index({
             );
         }
 
-        // Status formal filter
-        if (statusFormal) {
-            data = data.filter((item) => item.status_formal === statusFormal);
+        // Status workflow filter
+        if (statusWorkflow) {
+            data = data.filter((item) => item.status_tindak_lanjut === statusWorkflow);
         }
 
         return data;
-    }, [allData, search, statusFormal]);
+    }, [allData, search, statusWorkflow]);
 
     // Client-side pagination
     const paginatedData = useMemo(() => {
@@ -138,13 +158,13 @@ export default function Index({
     };
 
     const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setStatusFormal(e.target.value);
+        setStatusWorkflow(e.target.value);
         setCurrentPage(1);
     };
 
     const resetFilter = () => {
         setSearch('');
-        setStatusFormal('');
+        setStatusWorkflow('');
         setCurrentPage(1);
     };
 
@@ -191,8 +211,8 @@ export default function Index({
                                             Status Jadwal
                                         </label>
                                         <FormSelect
-                                            options={statusFormalSelectOptions}
-                                            value={statusFormal}
+                                            options={statusWorkflowSelectOptions}
+                                            value={statusWorkflow}
                                             onChange={handleStatusChange}
                                             placeholder="Semua Status"
                                             className="w-full px-2 text-sm"
@@ -253,11 +273,8 @@ export default function Index({
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-sm">
                                             <div className="flex flex-col gap-1">
-                                                <Badge variant={getPenjadwalanFormalStatusVariant(item.status_formal)}>
-                                                    {getPenjadwalanFormalStatusLabel(item.status_formal)}
-                                                </Badge>
-                                                <Badge variant={getDisposisiVariant(item.status_disposisi)}>
-                                                    {getDisposisiLabel(item.status_disposisi)}
+                                                <Badge variant={getWorkflowStatusVariant(item.status_tindak_lanjut)}>
+                                                    {item.status_tindak_lanjut_label || item.status_tindak_lanjut || '-'}
                                                 </Badge>
                                             </div>
                                         </td>
@@ -373,20 +390,8 @@ export default function Index({
                                 <div>
                                     <p className="text-text-secondary">Status Jadwal</p>
                                     <div className="mt-1">
-                                        <Badge variant={getPenjadwalanFormalStatusVariant(selectedItem.status_formal)}>
-                                            {getPenjadwalanFormalStatusLabel(selectedItem.status_formal)}
-                                        </Badge>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-text-secondary">
-                                        {selectedItem.sumber_jadwal && selectedItem.sumber_jadwal !== 'disposisi'
-                                            ? 'Status Kehadiran'
-                                            : 'Status Disposisi'}
-                                    </p>
-                                    <div className="mt-1">
-                                        <Badge variant={getDisposisiVariant(selectedItem.status_disposisi)}>
-                                            {getDisposisiLabel(selectedItem.status_disposisi)}
+                                        <Badge variant={getWorkflowStatusVariant(selectedItem.status_tindak_lanjut)}>
+                                            {selectedItem.status_tindak_lanjut_label || selectedItem.status_tindak_lanjut || '-'}
                                         </Badge>
                                     </div>
                                 </div>

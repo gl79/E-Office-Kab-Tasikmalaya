@@ -39,6 +39,9 @@ return new class extends Migration
             $table->text('catatan_tambahan')->nullable();
             $table->string('file_path', 255)->nullable();
             $table->enum('status', ['baru', 'diproses', 'selesai'])->default('baru')->comment('Status alur surat');
+            $table->string('status_tindak_lanjut', 50)
+                ->default('Menunggu Tindak Lanjut')
+                ->comment('Status workflow lintas modul');
 
             // Audit Trail
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -53,6 +56,7 @@ return new class extends Migration
             $table->index('nomor_surat');
             $table->index('tanggal_diterima');
             $table->index('tanggal_surat');
+            $table->index('status_tindak_lanjut', 'surat_masuks_status_tindak_lanjut_idx');
             $table->index('deleted_at');
 
             // Foreign Key Constraints for ULID fields

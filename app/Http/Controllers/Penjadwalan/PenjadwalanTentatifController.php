@@ -39,16 +39,7 @@ class PenjadwalanTentatifController extends Controller
         return Inertia::render('Penjadwalan/Tentatif/Index', [
             'tentatif' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember($cacheKey, 60, function () use ($search, $user) {
                 $query = Penjadwalan::query()
-                    ->where(function ($statusQuery) {
-                        $statusQuery
-                            ->where('status', Penjadwalan::STATUS_TENTATIF)
-                            // Tetap tampilkan jadwal yang sudah menjadi definitif agar bisa dimonitor dari menu Tentatif.
-                            ->orWhere(function ($definitifQuery) {
-                                $definitifQuery
-                                    ->where('status', Penjadwalan::STATUS_DEFINITIF)
-                                    ->whereNotNull('surat_masuk_id');
-                            });
-                    })
+                    ->where('status', Penjadwalan::STATUS_TENTATIF)
                     ->when(
                         !($user->isSuperAdmin() || $this->isBupati($user)),
                         fn(Builder $builder) => $this->applyUserScope($builder, $user)

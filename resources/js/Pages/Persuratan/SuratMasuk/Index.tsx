@@ -22,6 +22,34 @@ interface Props extends PageProps {
 }
 
 const CACHE_TTL_MS = 60_000;
+const STATUS_TINDAK_LANJUT_OPTIONS = [
+    'Menunggu Tindak Lanjut',
+    'Diterima / Diketahui',
+    'Masuk Jadwal Tentatif',
+    'Sudah Didisposisi',
+    'Jadwal Definitif',
+    'Selesai',
+];
+
+const getStatusTindakLanjutVariant = (status?: string): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' => {
+    switch (status) {
+        case 'Menunggu Tindak Lanjut':
+            return 'warning';
+        case 'Diterima / Diketahui':
+            return 'primary';
+        case 'Masuk Jadwal Tentatif':
+            return 'info';
+        case 'Sudah Didisposisi':
+            return 'info';
+        case 'Jadwal Definitif':
+            return 'success';
+        case 'Selesai':
+            return 'success';
+        default:
+            return 'default';
+    }
+};
+
 const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     const { auth } = usePage<PageProps>().props;
     const isEligiblePejabat = auth.user?.can_dispose === true;
@@ -166,6 +194,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                         ...item,
                         penerimaan_status: 'Diterima',
                         penerimaan_diterima_at: new Date().toISOString(),
+                        status_tindak_lanjut: 'Diterima / Diketahui',
                         can_accept: false,
                         can_disposisi: isEligiblePejabat,
                         can_disposisi_disabled: false,
@@ -343,13 +372,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                             Status Tindak Lanjut
                                         </label>
                                         <FormSelect
-                                            options={[
-                                                { value: 'Menunggu Tindak Lanjut', label: 'Menunggu Tindak Lanjut' },
-                                                { value: 'Diterima / Diketahui', label: 'Diterima / Diketahui' },
-                                                { value: 'Telah Masuk Jadwal Tentatif', label: 'Telah Masuk Jadwal Tentatif' },
-                                                { value: 'Telah Masuk Jadwal Definitif', label: 'Telah Masuk Jadwal Definitif' },
-                                                { value: 'Telah Didisposisi', label: 'Telah Didisposisi' },
-                                            ]}
+                                            options={STATUS_TINDAK_LANJUT_OPTIONS.map((status) => ({ value: status, label: status }))}
                                             value={statusTindakLanjut}
                                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                                                 setStatusTindakLanjut(e.target.value);
@@ -449,14 +472,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
                                             <Badge
-                                                variant={
-                                                    item.status_tindak_lanjut === 'Menunggu Tindak Lanjut' ? 'warning' :
-                                                        item.status_tindak_lanjut === 'Diterima / Diketahui' ? 'primary' :
-                                                            item.status_tindak_lanjut === 'Telah Masuk Jadwal Tentatif' ? 'success' :
-                                                                item.status_tindak_lanjut === 'Telah Masuk Jadwal Definitif' ? 'success' :
-                                                                item.status_tindak_lanjut === 'Telah Didisposisi' ? 'info' :
-                                                                    'default'
-                                                }
+                                                variant={getStatusTindakLanjutVariant(item.status_tindak_lanjut)}
                                             >
                                                 {item.status_tindak_lanjut ?? '-'}
                                             </Badge>

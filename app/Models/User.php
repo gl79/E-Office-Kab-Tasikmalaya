@@ -253,13 +253,9 @@ class User extends Authenticatable
 
         $level = $this->getJabatanLevel();
 
-        // Level 1 (Bupati, Wakil Bupati, Sekda) selalu berhak disposisi jika can_dispose true
-        if ($level === 1) {
-            return (bool) $this->jabatanRelasi?->can_dispose;
-        }
-
-        // Level 6 atau lebih rendah (angka lebih besar) tidak bisa disposisi
-        if ($level === null || $level >= 6) {
+        // Level jabatan 1 s.d 6 dapat disposisi (tetap mengikuti flag can_dispose).
+        // Level di atas 6 hanya menerima disposisi.
+        if ($level === null || $level > 6) {
             return false;
         }
 

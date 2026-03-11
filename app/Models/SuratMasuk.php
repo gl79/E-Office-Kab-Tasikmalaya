@@ -35,8 +35,10 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $tanggal_diteruskan
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $status_tindak_lanjut
  *
  * @property-read string $sifat_label
+ * @property-read string $status_tindak_lanjut_label
  * @property-read string $tanggal_diterima_formatted
  * @property-read string $tanggal_surat_formatted
  * @property-read array $tujuan_list
@@ -71,6 +73,25 @@ class SuratMasuk extends Model
         self::STATUS_SELESAI => 'Selesai',
     ];
 
+    /**
+     * Konstanta status tindak lanjut global (lintas modul).
+     */
+    public const STATUS_TINDAK_LANJUT_MENUNGGU = 'Menunggu Tindak Lanjut';
+    public const STATUS_TINDAK_LANJUT_DITERIMA = 'Diterima / Diketahui';
+    public const STATUS_TINDAK_LANJUT_TENTATIF = 'Masuk Jadwal Tentatif';
+    public const STATUS_TINDAK_LANJUT_DISPOSISI = 'Sudah Didisposisi';
+    public const STATUS_TINDAK_LANJUT_DEFINITIF = 'Jadwal Definitif';
+    public const STATUS_TINDAK_LANJUT_SELESAI = 'Selesai';
+
+    public const STATUS_TINDAK_LANJUT_OPTIONS = [
+        self::STATUS_TINDAK_LANJUT_MENUNGGU => self::STATUS_TINDAK_LANJUT_MENUNGGU,
+        self::STATUS_TINDAK_LANJUT_DITERIMA => self::STATUS_TINDAK_LANJUT_DITERIMA,
+        self::STATUS_TINDAK_LANJUT_TENTATIF => self::STATUS_TINDAK_LANJUT_TENTATIF,
+        self::STATUS_TINDAK_LANJUT_DISPOSISI => self::STATUS_TINDAK_LANJUT_DISPOSISI,
+        self::STATUS_TINDAK_LANJUT_DEFINITIF => self::STATUS_TINDAK_LANJUT_DEFINITIF,
+        self::STATUS_TINDAK_LANJUT_SELESAI => self::STATUS_TINDAK_LANJUT_SELESAI,
+    ];
+
     protected $table = 'surat_masuks';
 
     protected $fillable = [
@@ -92,6 +113,7 @@ class SuratMasuk extends Model
         'catatan_tambahan',
         'file_path',
         'status',
+        'status_tindak_lanjut',
         'created_by',
         'updated_by',
     ];
@@ -262,7 +284,8 @@ class SuratMasuk extends Model
      */
     public function isSelesai(): bool
     {
-        return $this->status === self::STATUS_SELESAI
+        return $this->status_tindak_lanjut === self::STATUS_TINDAK_LANJUT_SELESAI
+            || $this->status === self::STATUS_SELESAI
             || ($this->penjadwalan && $this->penjadwalan->status === Penjadwalan::STATUS_DEFINITIF);
     }
 
@@ -344,6 +367,16 @@ class SuratMasuk extends Model
     }
 
     /**
+     * Get label status tindak lanjut global.
+     */
+    public function getStatusTindakLanjutLabelAttribute(): string
+    {
+        return self::STATUS_TINDAK_LANJUT_OPTIONS[$this->status_tindak_lanjut]
+            ?? $this->status_tindak_lanjut
+            ?? self::STATUS_TINDAK_LANJUT_MENUNGGU;
+    }
+
+    /**
      * Get formatted tanggal diterima
      */
     public function getTanggalDiterimaFormattedAttribute(): string
@@ -365,5 +398,34 @@ class SuratMasuk extends Model
     public function getTujuanListAttribute(): array
     {
         return $this->tujuans->pluck('tujuan')->toArray();
+    }
+
+    /**
+     * Resolve status tindak lanjut global berdasarkan kondisi workflow surat.
+     */
+    public static function resolveStatusTindakLanjut(
+        bool $isAccepted,
+        ?Penjadwalan $penjadwalan,
+        bool $hasDisposisi
+    ): string {
+        if ($penjadwalan) {
+            if ($penjadwalan->status === Penjadwalan::STATUS_DEFINITIF) {
+                return $penjadwalan->isKegiatanSelesai()
+                    ? self::STATUS_TINDAK_LANJUT_SELESAI
+                    : self::STATUS_TINDAK_LANJUT_DEFINITIF;
+            }
+
+            return $hasDisposisi
+                ? self::STATUS_TINDAK_LANJUT_DISPOSISI
+                : self::STATUS_TINDAK_LANJUT_TENTATIF;
+        }
+
+        if ($hasDisposisi) {
+            return self::STATUS_TINDAK_LANJUT_DISPOSISI;
+        }
+
+        return $isAccepted
+            ? self::STATUS_TINDAK_LANJUT_DITERIMA
+            : self::STATUS_TINDAK_LANJUT_MENUNGGU;
     }
 }

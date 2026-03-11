@@ -8,16 +8,14 @@ import type { EventInput } from '@fullcalendar/core';
 import { Trash2, ExternalLink, Filter, RotateCcw, CalendarPlus, List, Calendar as CalendarIcon } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Badge, ConfirmDialog, Pagination } from '@/Components/ui';
-import { TextInput, FormSelect } from '@/Components/form';
+import { TextInput } from '@/Components/form';
 import { useMemoryCache } from '@/hooks/useMemoryCache';
-import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
 import { formatDateShort, getSifatBadge } from '@/utils';
 import type { PageProps } from '@/types';
 import type { Agenda, CalendarEvent } from '@/types/penjadwalan';
 import DefinitifTable from './Components/DefinitifTable';
 
 interface Props extends PageProps {
-    disposisiOptions: Record<string, string>;
     sifatOptions: Record<string, string>;
 }
 
@@ -34,7 +32,7 @@ const formatTimeNoSeconds = (time?: string | null) => {
     return time.length >= 5 ? time.slice(0, 5) : time;
 };
 
-const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
+const DefinitifIndex = ({ sifatOptions }: Props) => {
     const { auth } = usePage<PageProps>().props;
     const canUseCustomSchedule = auth.user?.role === 'superadmin'
         || (auth.user?.role === 'pejabat' && [1, 2, 3].includes(auth.user?.jabatan_level ?? -1));
@@ -51,7 +49,6 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
 
     // Client-side filter state — instant, no delay, no URL change
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
     const [showFilters, setShowFilters] = useState(false);
 
     // Pagination for list view
@@ -127,12 +124,6 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
             });
         }
 
-        if (statusFilter) {
-            events = events.filter((event) =>
-                event.extendedProps?.status_disposisi === statusFilter
-            );
-        }
-
         // Sort by date descending for list view
         if (activeView === 'list') {
             return [...events].sort((a, b) => {
@@ -141,7 +132,7 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
         }
 
         return events;
-    }, [allEvents, search, statusFilter, activeView]);
+    }, [allEvents, search, activeView]);
 
     // Paginated events for list view
     const paginatedEvents = useMemo(() => {
@@ -187,16 +178,11 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
         });
     };
 
-    const hasActiveFilters = !!(search || statusFilter);
+    const hasActiveFilters = !!search;
 
     const handleResetFilters = () => {
         setSearch('');
-        setStatusFilter('');
     };
-
-    const renderDisposisiBadge = (status: string) => (
-        <Badge variant={getDisposisiVariant(status)}>{getDisposisiLabel(status)}</Badge>
-    );
 
     const formatAgendaTime = (agenda: Agenda) => {
         const mulai = formatTimeNoSeconds(agenda.waktu_mulai);
@@ -212,14 +198,6 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
 
         return agenda.waktu_lengkap;
     };
-
-    const disposisiSelectOptions = [
-        { value: '', label: 'Semua Status' },
-        ...Object.entries(disposisiOptions).map(([value, label]) => ({
-            value,
-            label,
-        })),
-    ];
 
     const sm = selectedAgenda?.surat_masuk;
     const suratMasukId = sm?.id;
@@ -311,7 +289,7 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                                     Filter
                                     {hasActiveFilters && (
                                         <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-text-inverse">
-                                            {(search ? 1 : 0) + (statusFilter ? 1 : 0)}
+                                            {(search ? 1 : 0)}
                                         </span>
                                     )}
                                 </Button>
@@ -321,7 +299,7 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                         {/* Expandable Filter Panel */}
                         {showFilters && (
                             <div className="p-4 bg-surface-hover rounded-lg border border-border-default animate-in fade-in slide-in-from-top-2 space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-text-secondary mb-1">
                                             Pencarian
@@ -331,18 +309,6 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                                             placeholder="Cari kegiatan, nomor surat, lokasi..."
                                             value={search}
                                             onChange={(e) => setSearch(e.target.value)}
-                                            className="w-full px-2 text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-text-secondary mb-1">
-                                            Status Disposisi
-                                        </label>
-                                        <FormSelect
-                                            options={disposisiSelectOptions}
-                                            value={statusFilter}
-                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
-                                            placeholder="Semua Status"
                                             className="w-full px-2 text-sm"
                                         />
                                     </div>
@@ -580,16 +546,10 @@ const DefinitifIndex = ({ disposisiOptions, sifatOptions }: Props) => {
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-text-secondary">Status Jadwal:</span>
-                                        <Badge variant="success">
-                                            {selectedAgenda.status_formal_label ?? selectedAgenda.status_label}
+                                        <Badge variant="primary">
+                                            {selectedAgenda.status_tindak_lanjut ?? selectedAgenda.status_formal_label ?? selectedAgenda.status_label}
                                         </Badge>
                                     </div>
-                                    {selectedAgenda.has_disposisi_chain && (
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-text-secondary">Disposisi:</span>
-                                            {renderDisposisiBadge(selectedAgenda.status_disposisi)}
-                                        </div>
-                                    )}
                                     {selectedAgenda.dihadiri_oleh && (
                                         <p className="text-sm text-text-primary">
                                             <span className="text-text-secondary">Dihadiri:</span>{' '}

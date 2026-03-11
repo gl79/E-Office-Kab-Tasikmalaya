@@ -25,9 +25,8 @@ class PenjadwalanDefinitifController extends Controller
         $this->authorize('viewAny', Penjadwalan::class);
 
         return Inertia::render('Penjadwalan/Definitif/Index', [
-            'disposisiOptions' => Penjadwalan::DISPOSISI_OPTIONS,
             'sifatOptions' => SifatSurat::getOptions(),
-            'filters' => $request->only(['search', 'status_disposisi']),
+            'filters' => $request->only(['search']),
         ]);
     }
 
@@ -72,11 +71,6 @@ class PenjadwalanDefinitifController extends Controller
                     $request->input('start'),
                     $request->input('end'),
                 ]);
-            }
-
-            // Filter by status_disposisi
-            if ($request->has('status_disposisi') && $request->input('status_disposisi')) {
-                $query->where('status_disposisi', $request->input('status_disposisi'));
             }
 
             // Search

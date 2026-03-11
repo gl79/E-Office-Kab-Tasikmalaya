@@ -17,6 +17,10 @@ use Illuminate\Support\Facades\DB;
  */
 final class DisposisiService
 {
+    public function __construct(
+        private readonly SuratMasukService $suratMasukService,
+    ) {}
+
     /**
      * Disposisi surat ke pejabat bawahan.
      * 1 surat hanya bisa didisposisi ke 1 penerima per langkah.
@@ -52,11 +56,6 @@ final class DisposisiService
                 'ke_user_id' => $keUser->id,
                 'catatan' => $catatan,
             ]);
-
-            // Update status surat -> diproses
-            if ($suratMasuk->status !== SuratMasuk::STATUS_DIPROSES) {
-                $suratMasuk->update(['status' => SuratMasuk::STATUS_DIPROSES]);
-            }
 
             // Tambahkan atau perbarui status keUser di surat_masuk_tujuans agar surat muncul di daftarnya
             /** @var \App\Models\SuratMasukTujuan|null $existingKeTujuan */
@@ -97,6 +96,8 @@ final class DisposisiService
                     'updated_by' => $dariUser->id,
                 ]);
             }
+
+            $this->suratMasukService->syncGlobalWorkflowStatus($suratMasuk);
 
             // Catat timeline
             TimelineSurat::record(

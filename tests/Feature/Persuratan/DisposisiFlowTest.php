@@ -123,7 +123,7 @@ class DisposisiFlowTest extends TestCase
         ]);
     }
 
-    public function test_level_6_cannot_redispose_only_follow_up(): void
+    public function test_level_6_can_redispose_to_lower_level(): void
     {
         // Create a level 6 jabatan
         $jLevel6 = Jabatan::factory()->create(['nama' => 'Kasubag', 'level' => 6, 'can_dispose' => true]);
@@ -149,15 +149,19 @@ class DisposisiFlowTest extends TestCase
         /** @var User $userLevel6 */
         $this->actingAs($userLevel6)->post(route('persuratan.surat-masuk.terima', $this->surat->id));
 
-        // 5. Level 6 tries to redispose (should fail)
+        // 5. Level 6 redisposes ke level di bawahnya (harus boleh)
         /** @var User $userLevel6 */
         $response = $this->actingAs($userLevel6)->post(route('persuratan.surat-masuk.disposisi', $this->surat->id), [
             'ke_user_id' => $this->staff->id,
         ]);
 
-        // Should return 404 (masked 403) or error session depending on implementation
-        // Let's check policy: level 6 logic might be in the policy or controller.
-        // Based on user request "disposisi berhenti di level 6", I probably implemented it in Policy.
-        $response->assertStatus(404);
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('disposisi_surat', [
+            'surat_masuk_id' => $this->surat->id,
+            'dari_user_id' => $userLevel6->id,
+            'ke_user_id' => $this->staff->id,
+        ]);
     }
 }

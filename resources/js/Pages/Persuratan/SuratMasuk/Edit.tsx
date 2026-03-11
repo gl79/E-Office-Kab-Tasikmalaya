@@ -9,7 +9,7 @@ import FormTextarea from '@/Components/form/FormTextarea';
 import FormSelect from '@/Components/form/FormSelect';
 import FormSelectWithCustom from '@/Components/form/FormSelectWithCustom';
 import FormSearchableSelect from '@/Components/form/FormSearchableSelect';
-import FormDatePicker from '@/Components/form/FormDatePicker';
+import FormDateDmyInput from '@/Components/form/FormDateDmyInput';
 import FormMultiSelect from '@/Components/form/FormMultiSelect';
 import FormFileUpload from '@/Components/form/FormFileUpload';
 import InputLabel from '@/Components/form/InputLabel';
@@ -90,7 +90,7 @@ export default function Edit({
 
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
-        tanggal_surat: suratMasuk.tanggal_surat || '',
+        tanggal_surat: suratMasuk.tanggal_surat?.split('T')[0] || '',
         asal_surat: suratMasuk.asal_surat || '',
         tujuan: suratMasuk.tujuans?.map((t) => t.tujuan_id ? t.tujuan_id.toString() : t.tujuan) || [],
         nomor_surat: suratMasuk.nomor_surat || '',
@@ -99,12 +99,12 @@ export default function Edit({
         lampiran: suratMasuk.lampiran?.toString() || '',
         perihal: suratMasuk.perihal || '',
         isi_ringkas: suratMasuk.isi_ringkas || '',
-        tanggal_diterima: suratMasuk.tanggal_diterima || '',
+        tanggal_diterima: suratMasuk.tanggal_diterima?.split('T')[0] || '',
         nomor_agenda: suratMasuk.nomor_agenda || '',
         indeks_berkas_id: suratMasuk.indeks_berkas_id || '',
         kode_klasifikasi_id: suratMasuk.kode_klasifikasi_id || '',
         staff_pengolah_id: suratMasuk.staff_pengolah_id?.toString() || '',
-        tanggal_diteruskan: suratMasuk.tanggal_diteruskan || '',
+        tanggal_diteruskan: suratMasuk.tanggal_diteruskan?.split('T')[0] || '',
         catatan_tambahan: suratMasuk.catatan_tambahan || '',
         file: null as File | null,
     });
@@ -256,13 +256,14 @@ export default function Edit({
                                             <div>
                                                 <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat" required />
                                                 <div className="mt-1">
-                                                    <FormDatePicker
+                                                    <FormDateDmyInput
                                                         id="tanggal_surat"
                                                         value={data.tanggal_surat}
-                                                        onChange={(e) => setData('tanggal_surat', e.target.value)}
+                                                        onChangeValue={(value) => setData('tanggal_surat', value)}
                                                         className="w-full"
                                                     />
                                                 </div>
+                                                <p className="text-xs text-text-secondary mt-1">Format: dd/mm/yyyy</p>
                                                 <InputError message={errors.tanggal_surat} className="mt-1" />
                                             </div>
 
@@ -397,13 +398,14 @@ export default function Edit({
                                             <div>
                                                 <InputLabel htmlFor="tanggal_diterima" value="Tanggal Diterima" required />
                                                 <div className="mt-1">
-                                                    <FormDatePicker
+                                                    <FormDateDmyInput
                                                         id="tanggal_diterima"
                                                         value={data.tanggal_diterima}
-                                                        onChange={(e) => setData('tanggal_diterima', e.target.value)}
+                                                        onChangeValue={(value) => setData('tanggal_diterima', value)}
                                                         className="w-full"
                                                     />
                                                 </div>
+                                                <p className="text-xs text-text-secondary mt-1">Format: dd/mm/yyyy</p>
                                                 <InputError message={errors.tanggal_diterima} className="mt-1" />
                                             </div>
 
@@ -468,13 +470,14 @@ export default function Edit({
                                             <div>
                                                 <InputLabel htmlFor="tanggal_diteruskan" value="Tanggal Diteruskan" />
                                                 <div className="mt-1">
-                                                    <FormDatePicker
+                                                    <FormDateDmyInput
                                                         id="tanggal_diteruskan"
                                                         value={data.tanggal_diteruskan}
-                                                        onChange={(e) => setData('tanggal_diteruskan', e.target.value)}
+                                                        onChangeValue={(value) => setData('tanggal_diteruskan', value)}
                                                         className="w-full"
                                                     />
                                                 </div>
+                                                <p className="text-xs text-text-secondary mt-1">Format: dd/mm/yyyy</p>
                                                 <InputError message={errors.tanggal_diteruskan} className="mt-1" />
                                             </div>
 

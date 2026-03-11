@@ -208,10 +208,7 @@ class SuratMasukController extends Controller
             }
         }
 
-        // Update status surat ke 'diproses' setelah diterima (jika masih 'baru')
-        if ($suratMasuk->status === SuratMasuk::STATUS_BARU) {
-            $suratMasuk->update(['status' => SuratMasuk::STATUS_DIPROSES]);
-        }
+        $this->service->syncGlobalWorkflowStatus($suratMasuk);
 
         // Record timeline
         TimelineSurat::record(
@@ -341,7 +338,7 @@ class SuratMasukController extends Controller
 
         // Buat jadwal tentatif
         // Buat jadwal tentatif dengan nilai default yang diperlukan
-        $penjadwalan = \App\Models\Penjadwalan::create([
+        \App\Models\Penjadwalan::create([
             'surat_masuk_id' => $suratMasuk->id,
             'status' => \App\Models\Penjadwalan::STATUS_TENTATIF,
             'tanggal_agenda' => now()->format('Y-m-d'),
@@ -353,6 +350,8 @@ class SuratMasukController extends Controller
             'created_by' => $user->id,
             'updated_by' => $user->id,
         ]);
+
+        $this->service->syncGlobalWorkflowStatus($suratMasuk);
 
         TimelineSurat::record(
             $suratMasuk->id,

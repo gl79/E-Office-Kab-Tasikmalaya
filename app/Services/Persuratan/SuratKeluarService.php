@@ -111,6 +111,11 @@ class SuratKeluarService
             ? ($sender->jabatan ? "{$sender->name} - {$sender->jabatan}" : $sender->name)
             : 'Unknown';
 
+        $penerimaanState = SuratMasukTujuan::initialPenerimaanState($recipient);
+        $statusTindakLanjut = $penerimaanState['status_penerimaan'] === SuratMasukTujuan::STATUS_DITERIMA
+            ? SuratMasuk::STATUS_TINDAK_LANJUT_DITERIMA
+            : SuratMasuk::STATUS_TINDAK_LANJUT_MENUNGGU;
+
         // Create SuratMasuk
         $suratMasuk = SuratMasuk::create([
             'nomor_agenda' => $nomorAgenda,
@@ -126,12 +131,11 @@ class SuratKeluarService
             'kode_klasifikasi_id' => $suratKeluar->kode_klasifikasi_id,
             'file_path' => $suratKeluar->file_path, // Reference same file
             'catatan_tambahan' => $suratKeluar->catatan,
+            'status_tindak_lanjut' => $statusTindakLanjut,
             'created_by' => $suratKeluar->created_by,
         ]);
 
         // Create tujuan record dengan nomor agenda per-recipient
-        $penerimaanState = SuratMasukTujuan::initialPenerimaanState($recipient);
-
         SuratMasukTujuan::create([
             'surat_masuk_id' => $suratMasuk->id,
             'tujuan_id' => $recipient?->id,

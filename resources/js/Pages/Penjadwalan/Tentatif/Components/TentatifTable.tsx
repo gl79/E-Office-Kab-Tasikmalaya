@@ -1,7 +1,6 @@
 import React from 'react';
 import { Button, Dropdown, Badge } from '@/Components/ui';
 import { MoreVertical, CheckCircle, FileText, Trash2, Clock } from 'lucide-react';
-import { getDisposisiVariant, getDisposisiLabel } from '@/utils/badgeVariants';
 import { formatDateShort, getSifatBadge } from '@/utils';
 import type { Agenda } from '@/types/penjadwalan';
 
@@ -24,6 +23,21 @@ const formatNoAgenda = (nomor?: string) => {
     return parts.length >= 2 ? parts[1] : nomor;
 };
 
+const getWorkflowStatusVariant = (status?: string): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' => {
+    switch (status) {
+        case 'Masuk Jadwal Tentatif':
+            return 'warning';
+        case 'Sudah Didisposisi':
+            return 'info';
+        case 'Jadwal Definitif':
+            return 'primary';
+        case 'Selesai':
+            return 'success';
+        default:
+            return 'default';
+    }
+};
+
 const TentatifTable: React.FC<Props> = ({
     data,
     onTindakLanjut,
@@ -36,10 +50,6 @@ const TentatifTable: React.FC<Props> = ({
     search,
     sifatOptions,
 }) => {
-    const renderDisposisiBadge = (status: string) => (
-        <Badge variant={getDisposisiVariant(status)}>{getDisposisiLabel(status)}</Badge>
-    );
-
     return (
         <div className="overflow-x-auto">
             <table className="min-w-full border-collapse border border-border-default">
@@ -93,11 +103,9 @@ const TentatifTable: React.FC<Props> = ({
                             </td>
                             <td className="border border-border-default px-4 py-3 text-center">
                                 <div className="flex flex-col gap-1 items-center">
-                                    {item.status === 'definitif' ? (
-                                        <Badge variant="success">{item.status_formal_label}</Badge>
-                                    ) : (
-                                        renderDisposisiBadge(item.status_disposisi)
-                                    )}
+                                    <Badge variant={getWorkflowStatusVariant(item.status_tindak_lanjut)}>
+                                        {item.status_tindak_lanjut ?? item.status_formal_label ?? item.status_label}
+                                    </Badge>
                                     {item.dihadiri_oleh && (
                                         <div className="text-xs text-text-secondary">
                                             {item.dihadiri_oleh}

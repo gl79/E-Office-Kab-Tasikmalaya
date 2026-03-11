@@ -7,7 +7,7 @@ import FormWizard from '@/Components/form/FormWizard';
 import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
 import FormSearchableSelect from '@/Components/form/FormSearchableSelect';
-import FormDatePicker from '@/Components/form/FormDatePicker';
+import FormDateDmyInput from '@/Components/form/FormDateDmyInput';
 import FormMultiSelect from '@/Components/form/FormMultiSelect';
 import FormFileUpload from '@/Components/form/FormFileUpload';
 import InputLabel from '@/Components/form/InputLabel';
@@ -256,13 +256,14 @@ export default function Create({
                                             <div>
                                                 <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat" required />
                                                 <div className="mt-1">
-                                                    <FormDatePicker
+                                                    <FormDateDmyInput
                                                         id="tanggal_surat"
                                                         value={data.tanggal_surat}
-                                                        onChange={(e) => setData('tanggal_surat', e.target.value)}
+                                                        onChangeValue={(value) => setData('tanggal_surat', value)}
                                                         className="w-full"
                                                     />
                                                 </div>
+                                                <p className="text-xs text-text-secondary mt-1">Format: dd/mm/yyyy</p>
                                                 <InputError message={errors.tanggal_surat} className="mt-1" />
                                             </div>
 
@@ -397,13 +398,14 @@ export default function Create({
                                             <div>
                                                 <InputLabel htmlFor="tanggal_diterima" value="Tanggal Diterima" required />
                                                 <div className="mt-1">
-                                                    <FormDatePicker
+                                                    <FormDateDmyInput
                                                         id="tanggal_diterima"
                                                         value={data.tanggal_diterima}
-                                                        onChange={(e) => setData('tanggal_diterima', e.target.value)}
+                                                        onChangeValue={(value) => setData('tanggal_diterima', value)}
                                                         className="w-full"
                                                     />
                                                 </div>
+                                                <p className="text-xs text-text-secondary mt-1">Format: dd/mm/yyyy</p>
                                                 <InputError message={errors.tanggal_diterima} className="mt-1" />
                                             </div>
 
@@ -467,13 +469,14 @@ export default function Create({
                                             <div>
                                                 <InputLabel htmlFor="tanggal_diteruskan" value="Tanggal Diteruskan" required />
                                                 <div className="mt-1">
-                                                    <FormDatePicker
+                                                    <FormDateDmyInput
                                                         id="tanggal_diteruskan"
                                                         value={data.tanggal_diteruskan}
-                                                        onChange={(e) => setData('tanggal_diteruskan', e.target.value)}
+                                                        onChangeValue={(value) => setData('tanggal_diteruskan', value)}
                                                         className="w-full"
                                                     />
                                                 </div>
+                                                <p className="text-xs text-text-secondary mt-1">Format: dd/mm/yyyy</p>
                                                 <InputError message={errors.tanggal_diteruskan} className="mt-1" />
                                             </div>
 

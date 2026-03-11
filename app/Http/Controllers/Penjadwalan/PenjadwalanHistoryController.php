@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Penjadwalan;
 use App\Http\Controllers\Controller;
 use App\Models\JadwalHistory;
 use App\Models\Penjadwalan;
+use App\Models\SuratMasuk;
 use App\Support\CacheHelper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class PenjadwalanHistoryController extends Controller
                     return $query->map(fn(Penjadwalan $item) => $this->serializePenjadwalan($item))->values()->all();
                 }
             )),
-            'statusFormalOptions' => Penjadwalan::STATUS_FORMAL_OPTIONS,
+            'statusWorkflowOptions' => SuratMasuk::STATUS_TINDAK_LANJUT_OPTIONS,
         ]);
     }
 
@@ -56,6 +57,8 @@ class PenjadwalanHistoryController extends Controller
             'status_formal_label' => $penjadwalan->status_formal_label,
             'status_disposisi' => $penjadwalan->status_disposisi,
             'status_disposisi_label' => $penjadwalan->status_disposisi_label,
+            'status_tindak_lanjut' => $penjadwalan->status_tindak_lanjut,
+            'status_tindak_lanjut_label' => $penjadwalan->status_tindak_lanjut,
             'sumber_jadwal' => $penjadwalan->sumber_jadwal,
             'sumber_jadwal_label' => $penjadwalan->sumber_jadwal_label,
             'file_path' => $penjadwalan->file_path,

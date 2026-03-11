@@ -36,6 +36,8 @@ export interface SuratMasukBase {
     staff_pengolah?: { name: string; jabatan_nama: string } | null;
     created_by?: { name: string } | null;
     created_at?: string;
+    status_tindak_lanjut?: string;
+    status_tindak_lanjut_label?: string;
 }
 
 export interface SuratMasuk extends SuratMasukBase {
@@ -64,6 +66,8 @@ export interface AgendaBase {
     status_formal_label?: string;
     status_disposisi: string;
     status_disposisi_label: string;
+    status_tindak_lanjut?: string;
+    status_tindak_lanjut_label?: string;
     sumber_jadwal?: SumberJadwal;
     sumber_jadwal_label?: string;
     status_kehadiran_column_label?: string;

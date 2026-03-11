@@ -42,6 +42,7 @@ use Illuminate\Support\Carbon;
  * @property-read string $status_formal
  * @property-read string $status_formal_label
  * @property-read string $status_disposisi_label
+ * @property-read string $status_tindak_lanjut
  * @property-read string $sumber_jadwal_label
  * @property-read string $status_kehadiran_column_label
  * @property-read string $lokasi_type_label
@@ -109,11 +110,11 @@ class Penjadwalan extends Model
     public const STATUS_FORMAL_DIBATALKAN = 'dibatalkan';
 
     public const STATUS_FORMAL_OPTIONS = [
-        self::STATUS_FORMAL_TERJADWAL => 'Terjadwal',
-        self::STATUS_FORMAL_DALAM_PROSES => 'Dalam Proses',
-        self::STATUS_FORMAL_DIDISPOSISIKAN => 'Didisposisikan',
+        self::STATUS_FORMAL_TERJADWAL => 'Jadwal Definitif',
+        self::STATUS_FORMAL_DALAM_PROSES => 'Masuk Jadwal Tentatif',
+        self::STATUS_FORMAL_DIDISPOSISIKAN => 'Sudah Didisposisi',
         self::STATUS_FORMAL_SELESAI => 'Selesai',
-        self::STATUS_FORMAL_DITUNDA => 'Ditunda',
+        self::STATUS_FORMAL_DITUNDA => 'Menunggu Tindak Lanjut',
         self::STATUS_FORMAL_DIBATALKAN => 'Dibatalkan',
     ];
 
@@ -347,20 +348,9 @@ class Penjadwalan extends Model
     public function getStatusFormalAttribute(): string
     {
         if ($this->status === self::STATUS_DEFINITIF) {
-            // Jika sudah ada status kehadiran, gunakan itu sebagai bagian dari status formal
-            if ($this->status_kehadiran) {
-                return $this->status_kehadiran === 'Dihadiri'
-                    ? 'Telah Dihadiri'
-                    : 'Telah Diwakilkan';
-            }
-
-            /** @var \Illuminate\Support\Carbon|null $tanggal */
-            $tanggal = $this->tanggal_agenda;
-            if ($tanggal && $tanggal->isBefore(today())) {
-                return self::STATUS_FORMAL_SELESAI;
-            }
-
-            return self::STATUS_FORMAL_TERJADWAL;
+            return $this->isKegiatanSelesai()
+                ? self::STATUS_FORMAL_SELESAI
+                : self::STATUS_FORMAL_TERJADWAL;
         }
 
         if ($this->status_disposisi === self::DISPOSISI_MENUNGGU) {
@@ -382,6 +372,22 @@ class Penjadwalan extends Model
     public function getStatusFormalLabelAttribute(): string
     {
         return self::STATUS_FORMAL_OPTIONS[$this->status_formal] ?? $this->status_formal;
+    }
+
+    /**
+     * Get status tindak lanjut global untuk UI lintas modul.
+     */
+    public function getStatusTindakLanjutAttribute(): string
+    {
+        if ($this->status === self::STATUS_DEFINITIF) {
+            return $this->isKegiatanSelesai()
+                ? SuratMasuk::STATUS_TINDAK_LANJUT_SELESAI
+                : SuratMasuk::STATUS_TINDAK_LANJUT_DEFINITIF;
+        }
+
+        return $this->status_disposisi === self::DISPOSISI_MENUNGGU
+            ? SuratMasuk::STATUS_TINDAK_LANJUT_TENTATIF
+            : SuratMasuk::STATUS_TINDAK_LANJUT_DISPOSISI;
     }
 
     /**
@@ -443,5 +449,23 @@ class Penjadwalan extends Model
         }
 
         return strlen($time) >= 5 ? substr($time, 0, 5) : $time;
+    }
+
+    /**
+     * Menentukan apakah agenda definitif sudah selesai.
+     */
+    public function isKegiatanSelesai(): bool
+    {
+        if ($this->status !== self::STATUS_DEFINITIF) {
+            return false;
+        }
+
+        if (!empty($this->status_kehadiran)) {
+            return true;
+        }
+
+        /** @var \Illuminate\Support\Carbon|null $tanggal */
+        $tanggal = $this->tanggal_agenda;
+        return (bool) ($tanggal && $tanggal->isBefore(today()));
     }
 }

@@ -11,11 +11,16 @@ use App\Models\SuratMasuk;
 use App\Models\SuratMasukTujuan;
 use App\Models\TimelineSurat;
 use App\Models\User;
+use App\Services\Persuratan\SuratMasukService;
 use App\Support\CacheHelper;
 use Illuminate\Support\Facades\DB;
 
 final class PenjadwalanService
 {
+    public function __construct(
+        private readonly SuratMasukService $suratMasukService,
+    ) {}
+
     /**
      * Create a new schedule for a surat masuk.
      *
@@ -145,6 +150,8 @@ final class PenjadwalanService
                 $namaMewakili = trim($namaRaw . ($jabatanRaw ? " ({$jabatanRaw})" : ''));
             }
 
+            $statusKehadiran = (string) $validated['status_kehadiran'];
+
             // Move to Definitive
             $payload = [
                 'tanggal_agenda' => $validated['tanggal_agenda'],
@@ -154,14 +161,14 @@ final class PenjadwalanService
                 'lokasi_type' => $validated['lokasi_type'],
                 'kode_wilayah' => $this->buildKodeWilayah($validated),
                 'tempat' => $validated['tempat'],
-                'status_kehadiran' => $validated['status_kehadiran'],
+                'status_kehadiran' => $statusKehadiran,
                 'nama_yang_mewakili' => $namaMewakili,
                 'keterangan' => $validated['keterangan'] ?? $penjadwalan->keterangan,
                 'dihadiri_oleh' => $attendanceName,
                 'dihadiri_oleh_user_id' => $attendanceUserId,
                 'status_disposisi' => $this->resolveDisposisiStatusFromAttendance(
                     $requestUser,
-                    (string) $validated['status_kehadiran']
+                    $statusKehadiran
                 ),
                 'status' => Penjadwalan::STATUS_DEFINITIF,
                 'updated_by' => $requestUser->id,
@@ -172,15 +179,19 @@ final class PenjadwalanService
             $this->recordHistory($penjadwalan, $oldData, $requestUser);
 
             if ($penjadwalan->surat_masuk_id) {
-                // Update parent SuratMasuk to SELESAI
-                SuratMasuk::where('id', $penjadwalan->surat_masuk_id)
-                    ->update(['status' => SuratMasuk::STATUS_SELESAI]);
+                $this->syncSuratWorkflowStatus($penjadwalan->surat_masuk_id);
+
+                $statusSummary = match ($statusKehadiran) {
+                    'Dihadiri' => 'Kegiatan dihadiri langsung.',
+                    'Diwakilkan' => 'Kegiatan diwakilkan kepada ' . ($namaMewakili ?: 'pejabat yang ditunjuk') . '.',
+                    default => "Status kehadiran: {$statusKehadiran}.",
+                };
 
                 TimelineSurat::record(
                     $penjadwalan->surat_masuk_id,
                     $requestUser->id,
                     TimelineSurat::AKSI_DEFINITIF,
-                    'Jadwal ditindaklanjuti (' . $validated['status_kehadiran'] . ') dan menjadi Definitif.'
+                    "Jadwal ditindaklanjuti oleh {$requestUser->name} dan menjadi Jadwal Definitif. {$statusSummary}"
                 );
             }
         });
@@ -206,9 +217,7 @@ final class PenjadwalanService
             if ($suratMasukId) {
                 $suratMasuk = SuratMasuk::find($suratMasukId);
                 if ($suratMasuk) {
-                    $suratMasuk->update([
-                        'status' => SuratMasuk::STATUS_DIPROSES,
-                    ]);
+                    $this->syncSuratWorkflowStatus($suratMasukId);
 
                     TimelineSurat::record(
                         $suratMasukId,
@@ -239,9 +248,7 @@ final class PenjadwalanService
             $this->recordHistory($penjadwalan, $oldData, $requestUser);
 
             if ($penjadwalan->surat_masuk_id) {
-                // Revert parent SuratMasuk to DIPROSES
-                SuratMasuk::where('id', $penjadwalan->surat_masuk_id)
-                    ->update(['status' => SuratMasuk::STATUS_DIPROSES]);
+                $this->syncSuratWorkflowStatus($penjadwalan->surat_masuk_id);
 
                 TimelineSurat::record(
                     $penjadwalan->surat_masuk_id,
@@ -427,6 +434,8 @@ final class PenjadwalanService
                     $this->ensureRecipientTujuan($surat, $attendee);
                 }
 
+                $this->syncSuratWorkflowStatus($surat->id);
+
                 CacheHelper::flush(['penjadwalan', 'persuratan_list']);
 
                 event(new JadwalCreated($saved->id, (int) $attendee->id, (int) $requestUser->id));
@@ -550,6 +559,23 @@ final class PenjadwalanService
             $validated['provinsi_id'] ?? '',
             $validated['kabupaten_id'] ?? '',
         ]);
+    }
+
+    /**
+     * Sinkronkan status tindak lanjut surat induk berdasarkan kondisi jadwal terbaru.
+     */
+    private function syncSuratWorkflowStatus(?string $suratMasukId): void
+    {
+        if (!$suratMasukId) {
+            return;
+        }
+
+        $suratMasuk = SuratMasuk::query()->find($suratMasukId);
+        if (!$suratMasuk) {
+            return;
+        }
+
+        $this->suratMasukService->syncGlobalWorkflowStatus($suratMasuk);
     }
 
     /**
