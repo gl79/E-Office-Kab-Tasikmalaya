@@ -6,7 +6,7 @@ import Button from '@/Components/ui/Button';
 import TextInput from '@/Components/form/TextInput';
 import FormTextarea from '@/Components/form/FormTextarea';
 import FormSearchableSelect from '@/Components/form/FormSearchableSelect';
-import FormDateDmyInput from '@/Components/form/FormDateDmyInput';
+import FormDatePicker from '@/Components/form/FormDatePicker';
 import FormFileUpload from '@/Components/form/FormFileUpload';
 import InputLabel from '@/Components/form/InputLabel';
 import InputError from '@/Components/form/InputError';
@@ -220,14 +220,13 @@ export default function Edit({ suratKeluar, jenisSuratOptions, indeksBerkasOptio
                                 <div>
                                     <InputLabel htmlFor="tanggal_surat" value="Tanggal Surat" required />
                                     <div className="mt-1">
-                                        <FormDateDmyInput
+                                        <FormDatePicker
                                             id="tanggal_surat"
                                             value={data.tanggal_surat}
-                                            onChangeValue={(value) => setData('tanggal_surat', value)}
+                                            onChange={(e) => setData('tanggal_surat', e.target.value)}
                                             className="w-full"
                                         />
                                     </div>
-                                    <p className="text-xs text-text-secondary mt-1">Format: dd/mm/yyyy</p>
                                     <InputError message={errors.tanggal_surat} className="mt-1" />
                                 </div>
 

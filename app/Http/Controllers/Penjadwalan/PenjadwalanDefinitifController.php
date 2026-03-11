@@ -176,34 +176,44 @@ class PenjadwalanDefinitifController extends Controller
 
     private function applyUserScope(Builder $query, User $user): void
     {
-        $query->where(function (Builder $scope) use ($user) {
-            // 1. Jadwal Custom (Tanpa Surat Masuk)
-            $scope->where(function (Builder $customQuery) use ($user) {
-                $customQuery->whereNull('surat_masuk_id')
-                    ->where(function (Builder $customOwnerQuery) use ($user) {
-                        $customOwnerQuery
-                            ->where('created_by', $user->id)
-                            ->orWhere('dihadiri_oleh_user_id', $user->id);
-                    });
-            });
+        $isRestrictedPejabat = $user->isPejabat() && in_array($user->getJabatanLevel(), [6, 7], true);
 
-            // 2. Jadwal Berbasis Surat Masuk
-            $scope->orWhere(function (Builder $suratScheduleQuery) use ($user) {
+        $query->where(function (Builder $scope) use ($user, $isRestrictedPejabat) {
+            if (!$isRestrictedPejabat) {
+                // 1. Jadwal Custom (Tanpa Surat Masuk)
+                $scope->where(function (Builder $customQuery) use ($user) {
+                    $customQuery->whereNull('surat_masuk_id')
+                        ->where(function (Builder $customOwnerQuery) use ($user) {
+                            $customOwnerQuery
+                                ->where('created_by', $user->id)
+                                ->orWhere('dihadiri_oleh_user_id', $user->id);
+                        });
+                });
+            }
+
+            $suratScope = function (Builder $suratScheduleQuery) use ($user) {
                 $suratScheduleQuery->whereNotNull('surat_masuk_id')
                     ->where(function (Builder $relatedQuery) use ($user) {
-                        // Jika dia yang menghadiri
-                        $relatedQuery->where('dihadiri_oleh_user_id', $user->id)
-                            // ATAU dia terlibat dalam rantai disposisi (pengirim atau penerima)
+                        $relatedQuery
+                            ->where('dihadiri_oleh_user_id', $user->id)
+                            ->orWhereHas('suratMasuk', function (Builder $smQuery) use ($user) {
+                                $smQuery->where('created_by', $user->id)
+                                    ->orWhereHas('tujuans', function (Builder $tujuanQuery) use ($user) {
+                                        $tujuanQuery->where('tujuan_id', $user->id);
+                                    });
+                            })
                             ->orWhereHas('suratMasuk.disposisis', function (Builder $disposisiQuery) use ($user) {
                                 $disposisiQuery->where('dari_user_id', $user->id)
                                     ->orWhere('ke_user_id', $user->id);
-                            })
-                            // ATAU dia adalah pembuat surat masuk (TU yang menginput)
-                            ->orWhereHas('suratMasuk', function (Builder $smQuery) use ($user) {
-                                $smQuery->where('created_by', $user->id);
                             });
                     });
-            });
+            };
+
+            if ($isRestrictedPejabat) {
+                $scope->where($suratScope);
+            } else {
+                $scope->orWhere($suratScope);
+            }
         });
     }
 

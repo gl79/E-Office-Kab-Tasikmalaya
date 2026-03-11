@@ -198,8 +198,8 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                         can_accept: false,
                         can_disposisi: isEligiblePejabat,
                         can_disposisi_disabled: false,
-                        can_schedule: isEligiblePejabat && !hasSchedule,
-                        can_view_schedule: isEligiblePejabat && hasSchedule,
+                        can_masukkan_jadwal: !hasSchedule,
+                        can_view_schedule: hasSchedule,
                     };
                 }));
             },

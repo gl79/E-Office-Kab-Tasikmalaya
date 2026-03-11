@@ -118,10 +118,6 @@ class SuratMasukPolicy
             return true;
         }
 
-        if (!$user->canDispose()) {
-            return false;
-        }
-
         if ($suratMasuk->isSelesai()) {
             return false;
         }
@@ -138,12 +134,9 @@ class SuratMasukPolicy
             return true;
         }
 
-        if (!$user->canDispose()) {
-            return false;
-        }
-
         return $suratMasuk->tujuans()
             ->where('tujuan_id', $user->id)
+            ->where('is_tembusan', false)
             ->exists();
     }
 

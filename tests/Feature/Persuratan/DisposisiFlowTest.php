@@ -123,7 +123,7 @@ class DisposisiFlowTest extends TestCase
         ]);
     }
 
-    public function test_level_6_can_redispose_to_lower_level(): void
+    public function test_level_6_cannot_redispose_to_lower_level(): void
     {
         // Create a level 6 jabatan
         $jLevel6 = Jabatan::factory()->create(['nama' => 'Kasubag', 'level' => 6, 'can_dispose' => true]);
@@ -149,16 +149,16 @@ class DisposisiFlowTest extends TestCase
         /** @var User $userLevel6 */
         $this->actingAs($userLevel6)->post(route('persuratan.surat-masuk.terima', $this->surat->id));
 
-        // 5. Level 6 redisposes ke level di bawahnya (harus boleh)
+        // 5. Level 6 mencoba redisposisi ke level di bawahnya (harus ditolak)
         /** @var User $userLevel6 */
         $response = $this->actingAs($userLevel6)->post(route('persuratan.surat-masuk.disposisi', $this->surat->id), [
             'ke_user_id' => $this->staff->id,
         ]);
 
-        $response->assertRedirect();
-        $response->assertSessionHas('success');
+        // App masks 403 as 404
+        $response->assertStatus(404);
 
-        $this->assertDatabaseHas('disposisi_surat', [
+        $this->assertDatabaseMissing('disposisi_surat', [
             'surat_masuk_id' => $this->surat->id,
             'dari_user_id' => $userLevel6->id,
             'ke_user_id' => $this->staff->id,

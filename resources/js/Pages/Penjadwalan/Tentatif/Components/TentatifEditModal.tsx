@@ -341,7 +341,12 @@ const TindakLanjutModal: React.FC<Props> = ({
                         <Button type="button" variant="secondary" onClick={onClose}>
                             Batal
                         </Button>
-                        <Button type="submit" disabled={processing} variant="success">
+                        <Button
+                            type="submit"
+                            disabled={processing}
+                            variant="success"
+                            className="!bg-none !bg-green-600 hover:!bg-green-700 focus:!ring-green-500/30 !text-white !border-transparent"
+                        >
                             {processing ? 'Menyimpan...' : 'Simpan & Jadikan Definitif'}
                         </Button>
                     </div>

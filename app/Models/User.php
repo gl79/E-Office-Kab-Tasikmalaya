@@ -253,13 +253,26 @@ class User extends Authenticatable
 
         $level = $this->getJabatanLevel();
 
-        // Level jabatan 1 s.d 6 dapat disposisi (tetap mengikuti flag can_dispose).
-        // Level di atas 6 hanya menerima disposisi.
-        if ($level === null || $level > 6) {
+        // Level jabatan 1 s.d 5 dapat disposisi (tetap mengikuti flag can_dispose).
+        // Level 6 ke atas hanya menerima disposisi.
+        if ($level === null || $level > 5) {
             return false;
         }
 
         return (bool) $this->jabatanRelasi?->can_dispose;
+    }
+
+    /**
+     * Cek apakah user tujuan surat wajib melakukan aksi terima/diketahui.
+     * TU tidak wajib manual accept karena berperan sebagai pengelola administrasi.
+     */
+    public function requiresSuratAcceptance(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isTU()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

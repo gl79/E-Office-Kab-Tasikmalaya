@@ -49,6 +49,7 @@ const TentatifIndex = ({
 
     const {
         data: tentatifDataRaw,
+        updateAndCache,
         isLoading,
     } = useDeferredDataMutable<{ data: Agenda[] }>(cacheKey, tentatif);
 
@@ -182,11 +183,18 @@ const TentatifIndex = ({
     const handleSubmitKehadiran = (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedAgenda) return;
+        const selectedAgendaId = selectedAgenda.id;
 
-        form.put(route('penjadwalan.tentatif.tindak-lanjut', selectedAgenda.id), {
+        form.put(route('penjadwalan.tentatif.tindak-lanjut', selectedAgendaId), {
             onSuccess: () => {
+                // Jadwal sudah menjadi definitif, keluarkan dari tabel tentatif secara langsung.
+                updateAndCache((prev) => ({
+                    ...prev,
+                    data: prev.data.filter((agenda) => agenda.id !== selectedAgendaId),
+                }));
                 setShowEditModal(false);
                 form.reset();
+                setSelectedAgenda(null);
             },
         });
     };
@@ -318,6 +326,7 @@ const TentatifIndex = ({
                         }}
                         onDisposisi={(agenda) => {
                             if (agenda.surat_masuk) {
+                                setSelectedAgenda(agenda);
                                 setSelectedSuratForDisposisi(agenda.surat_masuk as SuratMasuk);
                                 setDisposisiModalOpen(true);
                             }
@@ -645,6 +654,32 @@ const TentatifIndex = ({
                 onClose={() => setDisposisiModalOpen(false)}
                 suratMasukId={selectedSuratForDisposisi?.id ?? null}
                 suratPerihal={selectedSuratForDisposisi?.perihal ?? undefined}
+                onSuccess={() => {
+                    const agendaId = selectedAgenda?.id;
+                    if (agendaId) {
+                        // Setelah disposisi, aksi pindah ke pemegang terakhir.
+                        updateAndCache((prev) => ({
+                            ...prev,
+                            data: prev.data.map((agenda) => (
+                                agenda.id === agendaId
+                                    ? {
+                                        ...agenda,
+                                        status_tindak_lanjut: 'Sudah Didisposisi',
+                                        status_tindak_lanjut_label: 'Sudah Didisposisi',
+                                        can_tindak_lanjut: false,
+                                        can_disposisi: false,
+                                    }
+                                    : agenda
+                            )),
+                        }));
+                    }
+
+                    router.visit(window.location.href, {
+                        only: ['tentatif'],
+                        preserveState: true,
+                        preserveScroll: true,
+                    });
+                }}
             />
 
             <TimelineModal

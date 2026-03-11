@@ -7,7 +7,6 @@ use App\Http\Requests\Jadwal\TindakLanjutRequest;
 use App\Http\Resources\Penjadwalan\PenjadwalanResource;
 use App\Models\Penjadwalan;
 use App\Models\SifatSurat;
-use App\Models\SuratMasukTujuan;
 use App\Models\User;
 use App\Services\Penjadwalan\PenjadwalanService;
 use App\Support\CacheHelper;
@@ -103,35 +102,45 @@ class PenjadwalanTentatifController extends Controller
 
     private function applyUserScope(Builder $query, User $user): void
     {
-        $query->where(function (Builder $scope) use ($user) {
-            // Jadwal custom: hanya terkait user tersebut.
-            $scope->where(function (Builder $customQuery) use ($user) {
-                $customQuery->whereNull('surat_masuk_id')
-                    ->where(function (Builder $customOwnerQuery) use ($user) {
-                        $customOwnerQuery
-                            ->where('created_by', $user->id)
-                            ->orWhere('dihadiri_oleh_user_id', $user->id);
-                    });
-            });
+        $isRestrictedPejabat = $user->isPejabat() && in_array($user->getJabatanLevel(), [6, 7], true);
 
-            // Jadwal berbasis surat: hanya surat yang sudah diterima user atau terkait monitoring.
-            $scope->orWhere(function (Builder $suratScheduleQuery) use ($user) {
-                $suratScheduleQuery->whereNotNull('surat_masuk_id')
-                    ->whereHas('suratMasuk', function (Builder $suratQuery) use ($user) {
-                        $suratQuery->where(function (Builder $relationQuery) use ($user) {
-                            $relationQuery
+        $query->where(function (Builder $scope) use ($user, $isRestrictedPejabat) {
+            if (!$isRestrictedPejabat) {
+                // Jadwal custom: hanya terkait user tersebut.
+                $scope->where(function (Builder $customQuery) use ($user) {
+                    $customQuery->whereNull('surat_masuk_id')
+                        ->where(function (Builder $customOwnerQuery) use ($user) {
+                            $customOwnerQuery
                                 ->where('created_by', $user->id)
-                                ->orWhereHas('tujuans', function (Builder $tujuanQuery) use ($user) {
-                                    $tujuanQuery
-                                        ->where('tujuan_id', $user->id)
-                                        ->where('status_penerimaan', SuratMasukTujuan::STATUS_DITERIMA);
-                                })
-                                ->orWhereHas('disposisis', function (Builder $disposisiQuery) use ($user) {
-                                    $disposisiQuery->where('dari_user_id', $user->id);
-                                });
+                                ->orWhere('dihadiri_oleh_user_id', $user->id);
                         });
+                });
+            }
+
+            $suratScope = function (Builder $suratScheduleQuery) use ($user) {
+                $suratScheduleQuery->whereNotNull('surat_masuk_id')
+                    ->where(function (Builder $relatedQuery) use ($user) {
+                        $relatedQuery
+                            ->where('dihadiri_oleh_user_id', $user->id)
+                            ->orWhereHas('suratMasuk', function (Builder $suratQuery) use ($user) {
+                                $suratQuery->where('created_by', $user->id)
+                                    ->orWhereHas('tujuans', function (Builder $tujuanQuery) use ($user) {
+                                        $tujuanQuery->where('tujuan_id', $user->id);
+                                    })
+                                    ->orWhereHas('disposisis', function (Builder $disposisiQuery) use ($user) {
+                                        $disposisiQuery
+                                            ->where('dari_user_id', $user->id)
+                                            ->orWhere('ke_user_id', $user->id);
+                                    });
+                            });
                     });
-            });
+            };
+
+            if ($isRestrictedPejabat) {
+                $scope->where($suratScope);
+            } else {
+                $scope->orWhere($suratScope);
+            }
         });
     }
 

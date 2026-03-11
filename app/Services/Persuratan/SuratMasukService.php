@@ -194,9 +194,10 @@ class SuratMasukService
             $surat->nomor_agenda = $tujuan->nomor_agenda;
         }
 
-        $isDisposeRecipient = (bool) $tujuan && $user->canDispose();
+        $isRecipient = (bool) $tujuan;
         $isAcceptedByCurrentUser = $tujuan?->status_penerimaan === SuratMasukTujuan::STATUS_DITERIMA;
         $isTembusan = (bool) $tujuan?->is_tembusan;
+        $isActionableRecipient = $isRecipient && !$isTembusan;
 
         $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
         $hasSchedule = (bool) $surat->penjadwalan;
@@ -205,15 +206,15 @@ class SuratMasukService
 
         $surat->penerimaan_status = $this->resolvePenerimaanStatus($surat, $tujuan);
         $surat->penerimaan_diterima_at = $tujuan?->diterima_at?->toDateTimeString();
-        $surat->can_accept = $isDisposeRecipient && !$isAcceptedByCurrentUser && !$isTembusan;
+        $surat->can_accept = $isActionableRecipient && !$isAcceptedByCurrentUser;
 
         // Flow Baru: Surat Masuk hanya bisa dimasukkan ke jadwal setelah diterima, belum masuk jadwal, belum didisposisi.
-        $surat->can_masukkan_jadwal = $isDisposeRecipient && $isAcceptedByCurrentUser && !$isTembusan && !$hasSchedule && !$hasDisposedByCurrentUser;
-        $surat->can_cetak_disposisi = ($isDisposeRecipient && $isAcceptedByCurrentUser) || $hasDisposedByCurrentUser;
+        $surat->can_masukkan_jadwal = $isActionableRecipient && $isAcceptedByCurrentUser && !$hasSchedule && !$hasDisposedByCurrentUser;
+        $surat->can_cetak_disposisi = (($isActionableRecipient && $isAcceptedByCurrentUser && $user->canDispose()) || $hasDisposedByCurrentUser);
 
         $canScheduleByBupati = Gate::forUser($user)->check('scheduleByBupati', $surat);
         $surat->can_view_schedule = $hasSchedule
-            && ($canScheduleByBupati || ($isDisposeRecipient && $isAcceptedByCurrentUser));
+            && ($canScheduleByBupati || ($isActionableRecipient && $isAcceptedByCurrentUser));
 
         // Status tindak lanjut bersifat global (konsisten untuk semua akun).
         $resolvedGlobalStatus = SuratMasuk::resolveStatusTindakLanjut(
@@ -240,7 +241,12 @@ class SuratMasukService
             if (!$recipient) {
                 return false;
             }
-            return $recipient->canDispose();
+
+            if ((bool) $tujuan->is_tembusan) {
+                return false;
+            }
+
+            return $recipient->requiresSuratAcceptance();
         });
 
         if ($disposableTujuans->isEmpty()) {
@@ -403,17 +409,24 @@ class SuratMasukService
                 $nomorAgenda = $oldAgendas[$userData->id] ?? SuratMasukTujuan::generateNomorAgendaForRecipient($userData->id);
             }
 
+            $defaultPenerimaanState = SuratMasukTujuan::initialPenerimaanState($userData);
             $penerimaanState = $userData && isset($oldPenerimaan[$userData->id])
                 ? [
                     'status_penerimaan' => $oldPenerimaan[$userData->id]['status_penerimaan']
-                        ?? SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN,
-                    'diterima_at' => $oldPenerimaan[$userData->id]['diterima_at'] ?? null,
+                        ?? $defaultPenerimaanState['status_penerimaan'],
+                    'diterima_at' => $oldPenerimaan[$userData->id]['diterima_at'] ?? $defaultPenerimaanState['diterima_at'],
                 ]
-                : SuratMasukTujuan::initialPenerimaanState($userData);
+                : $defaultPenerimaanState;
 
             // Auto-determine primary vs tembusan
             $isPrimary = $userData && $userData->id === $primaryUserId;
             $isTembusan = $userData && !$isPrimary && count($tujuanList) > 1;
+            if ($isTembusan) {
+                $penerimaanState = [
+                    'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
+                    'diterima_at' => now(),
+                ];
+            }
 
             SuratMasukTujuan::create([
                 'surat_masuk_id' => $suratMasuk->id,

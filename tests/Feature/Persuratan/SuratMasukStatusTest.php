@@ -70,6 +70,46 @@ class SuratMasukStatusTest extends TestCase
         ]);
     }
 
+    public function test_pejabat_level_7_can_accept_surat_masuk(): void
+    {
+        $jabatanLevel7 = Jabatan::factory()->create([
+            'nama' => 'Kepala Bagian Umum',
+            'level' => 7,
+            'can_dispose' => false,
+        ]);
+
+        $pejabatLevel7 = User::factory()->create([
+            'role' => User::ROLE_PEJABAT,
+            'jabatan_id' => $jabatanLevel7->id,
+        ]);
+
+        $suratLevel7 = SuratMasuk::factory()->create([
+            'created_by' => $this->tu->id,
+            'status' => SuratMasuk::STATUS_BARU,
+        ]);
+
+        SuratMasukTujuan::factory()->create([
+            'surat_masuk_id' => $suratLevel7->id,
+            'tujuan_id' => $pejabatLevel7->id,
+            'is_primary' => true,
+            'is_tembusan' => false,
+            'status_penerimaan' => SuratMasukTujuan::STATUS_MENUNGGU_PENERIMAAN,
+        ]);
+
+        $response = $this->actingAs($pejabatLevel7)
+            ->from(route('persuratan.surat-masuk.index'))
+            ->post(route('persuratan.surat-masuk.terima', $suratLevel7->id));
+
+        $response->assertRedirect(route('persuratan.surat-masuk.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('surat_masuk_tujuans', [
+            'surat_masuk_id' => $suratLevel7->id,
+            'tujuan_id' => $pejabatLevel7->id,
+            'status_penerimaan' => SuratMasukTujuan::STATUS_DITERIMA,
+        ]);
+    }
+
     public function test_surat_status_changes_to_diproses_after_first_acceptance(): void
     {
         // Initial status is baru

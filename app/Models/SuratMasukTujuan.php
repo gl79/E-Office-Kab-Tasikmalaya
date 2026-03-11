@@ -36,14 +36,14 @@ class SuratMasukTujuan extends Model
 
     /**
      * Resolve status penerimaan awal berdasarkan jabatan user tujuan.
-     * User dengan jabatan can_dispose harus menunggu penerimaan (terima surat dulu).
-     * User lainnya langsung diterima.
+     * User penerima non-TU harus menunggu penerimaan (terima/diketahui dulu).
+     * TU langsung diterima otomatis.
      *
      * @return array{status_penerimaan: string, diterima_at: Carbon|null}
      */
     public static function initialPenerimaanState(?User $tujuanUser): array
     {
-        $shouldWaitAcceptance = $tujuanUser && $tujuanUser->canDispose();
+        $shouldWaitAcceptance = $tujuanUser && $tujuanUser->requiresSuratAcceptance();
 
         return [
             'status_penerimaan' => $shouldWaitAcceptance

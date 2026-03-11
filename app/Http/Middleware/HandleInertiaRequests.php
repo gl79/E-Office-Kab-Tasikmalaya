@@ -87,7 +87,7 @@ class HandleInertiaRequests extends Middleware
             $disposisiBelumDiproses = 0;
             $jadwalTentatifPending = 0;
 
-            if ($user->canDispose()) {
+            if ($user->requiresSuratAcceptance()) {
                 // Surat masuk menunggu penerimaan
                 $suratMenunggu = SuratMasukTujuan::query()
                     ->where('tujuan_id', $user->id)
