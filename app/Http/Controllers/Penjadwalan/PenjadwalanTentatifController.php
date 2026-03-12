@@ -40,7 +40,7 @@ class PenjadwalanTentatifController extends Controller
                 $query = Penjadwalan::query()
                     ->where('status', Penjadwalan::STATUS_TENTATIF)
                     ->when(
-                        !($user->isSuperAdmin() || $this->isBupati($user)),
+                        !$user->canMonitorAllSchedules(),
                         fn(Builder $builder) => $this->applyUserScope($builder, $user)
                     )
                     ->with([
@@ -49,7 +49,7 @@ class PenjadwalanTentatifController extends Controller
                         'suratMasuk.indeksBerkas',
                         'suratMasuk.kodeKlasifikasi',
                         'suratMasuk.staffPengolah',
-                        'suratMasuk.disposisis',
+                        'suratMasuk.disposisis.keUser.jabatanRelasi',
                         'suratMasuk.createdBy',
                         'creator',
                     ])
@@ -144,8 +144,4 @@ class PenjadwalanTentatifController extends Controller
         });
     }
 
-    private function isBupati(User $user): bool
-    {
-        return $user->getJabatanLevel() === 1;
-    }
 }

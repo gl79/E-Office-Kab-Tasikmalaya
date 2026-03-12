@@ -19,6 +19,7 @@ class PenjadwalanPolicy
             User::ROLE_SUPERADMIN,
             User::ROLE_PEJABAT,
             User::ROLE_TU,
+            User::ROLE_USER,
         ], true);
     }
 

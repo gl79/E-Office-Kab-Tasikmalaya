@@ -27,7 +27,7 @@ class SuratMasukService
     public function getListForUser(User $user): Collection
     {
         $query = SuratMasuk::query()
-            ->with(['tujuans.user', 'disposisis', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah.jabatanRelasi', 'createdBy', 'jenisSurat', 'penjadwalan'])
+            ->with(['tujuans.user', 'disposisis.keUser.jabatanRelasi', 'indeksBerkas', 'kodeKlasifikasi', 'staffPengolah.jabatanRelasi', 'createdBy', 'jenisSurat', 'penjadwalan'])
             ->latest();
 
         $this->applyVisibilityScope($query, $user);
@@ -223,6 +223,7 @@ class SuratMasukService
             $globalHasDisposed
         );
         $surat->status_tindak_lanjut = $resolvedGlobalStatus;
+        $surat->status_tindak_lanjut_disposisi_ke = $this->resolveDisposisiRecipientLabel($surat);
 
         return $surat;
     }
@@ -357,6 +358,27 @@ class SuratMasukService
             : ($statusTindakLanjut === SuratMasuk::STATUS_TINDAK_LANJUT_MENUNGGU
                 ? SuratMasuk::STATUS_BARU
                 : SuratMasuk::STATUS_DIPROSES);
+    }
+
+    /**
+     * Resolve label penerima disposisi terakhir untuk kebutuhan display UI.
+     */
+    private function resolveDisposisiRecipientLabel(SuratMasuk $surat): ?string
+    {
+        if (!$surat->relationLoaded('disposisis') || $surat->disposisis->isEmpty()) {
+            return null;
+        }
+
+        /** @var DisposisiSurat|null $latestDisposisi */
+        $latestDisposisi = $surat->disposisis
+            ->sortByDesc(fn(DisposisiSurat $disposisi) => $disposisi->created_at?->getTimestamp() ?? 0)
+            ->first();
+
+        if (!$latestDisposisi?->keUser) {
+            return null;
+        }
+
+        return $latestDisposisi->keUser->jabatan_nama ?: $latestDisposisi->keUser->name;
     }
 
     // ==================== PRIVATE: TUJUAN SYNC ====================

@@ -51,6 +51,9 @@ interface Props extends PageProps {
 
 export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksKlasifikasiOptions, unitKerja, users, sifat1Options, nextNoUrut }: Props) {
     const today = new Date().toISOString().split('T')[0];
+    const alignedInputClassName = 'w-full min-h-[42px] px-3 py-2 text-sm';
+    const alignedReadOnlyInputClassName = `${alignedInputClassName} bg-surface-hover cursor-not-allowed`;
+    const alignedTextareaClassName = 'w-full px-3 py-2 text-sm leading-5';
 
     const { data, setData, post, processing, errors } = useForm({
         tanggal_surat: today,
@@ -207,7 +210,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             id="tanggal_surat"
                                             value={data.tanggal_surat}
                                             onChange={(e) => setData('tanggal_surat', e.target.value)}
-                                            className="w-full"
+                                            className={alignedInputClassName}
                                         />
                                     </div>
                                     <InputError message={errors.tanggal_surat} className="mt-1" />
@@ -220,7 +223,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             id="no_urut"
                                             value={data.no_urut}
                                             readOnly
-                                            className="w-full bg-surface-hover cursor-not-allowed"
+                                            className={alignedReadOnlyInputClassName}
                                         />
                                     </div>
                                     <p className="text-xs text-text-secondary mt-1">No agenda digenerate otomatis oleh sistem</p>
@@ -278,7 +281,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             value={data.kode_pengolah}
                                             onChange={(e) => setData('kode_pengolah', e.target.value)}
                                             placeholder="Masukkan kode pengolah"
-                                            className="w-full"
+                                            className={alignedInputClassName}
                                         />
                                     </div>
                                     <InputError message={errors.kode_pengolah} className="mt-1" />
@@ -328,7 +331,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                                             ? 'Index/NoUrut/Pengolah/Tahun'
                                                             : 'Index/NoUrut/Pengolah/Tahun'
                                             }
-                                            className="w-full bg-surface-hover cursor-not-allowed"
+                                            className={alignedReadOnlyInputClassName}
                                         />
                                     </div>
                                     {isSuratDinas && (
@@ -393,7 +396,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             onChange={(e) => setData('lampiran', e.target.value)}
                                             placeholder="Jumlah lampiran"
                                             min="0"
-                                            className="w-full"
+                                            className={alignedInputClassName}
                                         />
                                     </div>
                                     <InputError message={errors.lampiran} className="mt-1" />
@@ -408,7 +411,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             onChange={(e) => setData('perihal', e.target.value)}
                                             placeholder="Masukkan perihal surat"
                                             rows={2}
-                                            className="w-full"
+                                            className={alignedTextareaClassName}
                                         />
                                     </div>
                                     <InputError message={errors.perihal} className="mt-1" />
@@ -423,7 +426,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             onChange={(e) => setData('isi_ringkas', e.target.value)}
                                             placeholder="Masukkan ringkasan isi surat"
                                             rows={4}
-                                            className="w-full"
+                                            className={alignedTextareaClassName}
                                         />
                                     </div>
                                     <InputError message={errors.isi_ringkas} className="mt-1" />
@@ -438,7 +441,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             onChange={(e) => setData('catatan', e.target.value)}
                                             placeholder="Masukkan catatan"
                                             rows={2}
-                                            className="w-full"
+                                            className={alignedTextareaClassName}
                                         />
                                     </div>
                                     <InputError message={errors.catatan} className="mt-1" />

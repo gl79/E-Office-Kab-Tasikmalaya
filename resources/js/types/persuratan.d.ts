@@ -46,6 +46,7 @@ export interface SuratMasuk {
     can_cetak_disposisi?: boolean;
     can_masukkan_jadwal?: boolean;
     status_tindak_lanjut?: string;
+    status_tindak_lanjut_disposisi_ke?: string | null;
     penjadwalan_status?: string;
     penjadwalan_status_label?: string;
     penjadwalan_status_variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';

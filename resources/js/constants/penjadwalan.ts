@@ -9,6 +9,7 @@ export const DISPOSISI_LABELS: Record<DisposisiStatus, string> = {
     menunggu: 'Menunggu',
     bupati: 'Bupati',
     wakil_bupati: 'Wakil Bupati',
+    sekretaris_daerah: 'Sekretaris Daerah',
     diwakilkan: 'Diwakilkan',
 };
 

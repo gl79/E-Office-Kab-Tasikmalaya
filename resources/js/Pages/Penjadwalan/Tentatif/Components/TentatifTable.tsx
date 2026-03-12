@@ -38,6 +38,31 @@ const getWorkflowStatusVariant = (status?: string): 'default' | 'primary' | 'suc
     }
 };
 
+const isDisposedStatus = (status?: string): boolean => {
+    return status === 'Sudah Didisposisi' || status === 'Sudah Disposisi';
+};
+
+const getDisposisiRecipientLabel = (item: Agenda): string | null => {
+    const fromStatus = item.status_tindak_lanjut_disposisi_ke?.trim();
+    if (fromStatus) {
+        return fromStatus;
+    }
+
+    const fromAttend = item.dihadiri_oleh?.trim();
+    return fromAttend || null;
+};
+
+const getWorkflowStatusLabel = (item: Agenda): string => {
+    const status = item.status_tindak_lanjut ?? item.status_formal_label ?? item.status_label ?? '-';
+
+    if (isDisposedStatus(status)) {
+        const recipient = getDisposisiRecipientLabel(item);
+        return recipient ? `Sudah Disposisi Ke ${recipient}` : 'Sudah Disposisi';
+    }
+
+    return status;
+};
+
 const TentatifTable: React.FC<Props> = ({
     data,
     onTindakLanjut,
@@ -104,9 +129,9 @@ const TentatifTable: React.FC<Props> = ({
                             <td className="border border-border-default px-4 py-3 text-center">
                                 <div className="flex flex-col gap-1 items-center">
                                     <Badge variant={getWorkflowStatusVariant(item.status_tindak_lanjut)}>
-                                        {item.status_tindak_lanjut ?? item.status_formal_label ?? item.status_label}
+                                        {getWorkflowStatusLabel(item)}
                                     </Badge>
-                                    {item.dihadiri_oleh && (
+                                    {item.dihadiri_oleh && !isDisposedStatus(item.status_tindak_lanjut) && (
                                         <div className="text-xs text-text-secondary">
                                             {item.dihadiri_oleh}
                                         </div>

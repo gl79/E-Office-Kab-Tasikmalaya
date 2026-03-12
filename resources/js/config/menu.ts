@@ -102,7 +102,7 @@ export const menuItems: MenuItem[] = [
     {
         label: 'Penjadwalan',
         icon: 'calendar',
-        roles: ['superadmin', 'tu', 'pejabat'],
+        roles: ['superadmin', 'tu', 'pejabat', 'user'],
         children: [
             {
                 label: 'Jadwal Tentatif',
@@ -114,11 +114,6 @@ export const menuItems: MenuItem[] = [
                 label: 'Jadwal Definitif',
                 href: '/penjadwalan/definitif',
                 icon: 'calendar-check-2',
-            },
-            {
-                label: 'History Penjadwalan',
-                href: '/penjadwalan/history',
-                icon: 'history',
             },
         ],
     },

@@ -32,6 +32,54 @@ const formatTimeNoSeconds = (time?: string | null) => {
     return time.length >= 5 ? time.slice(0, 5) : time;
 };
 
+const isDisposedStatus = (status?: string): boolean => {
+    return status === 'Sudah Didisposisi' || status === 'Sudah Disposisi';
+};
+
+const getDisposisiRecipientLabel = (agenda: Agenda): string | null => {
+    const fromStatus = agenda.status_tindak_lanjut_disposisi_ke?.trim();
+    if (fromStatus) {
+        return fromStatus;
+    }
+
+    const fromSuratStatus = agenda.surat_masuk?.status_tindak_lanjut_disposisi_ke?.trim();
+    if (fromSuratStatus) {
+        return fromSuratStatus;
+    }
+
+    const fromAttend = agenda.dihadiri_oleh?.trim();
+    return fromAttend || null;
+};
+
+const getWorkflowStatusLabel = (agenda: Agenda): string => {
+    const status = agenda.status_tindak_lanjut ?? agenda.status_formal_label ?? agenda.status_label ?? '-';
+
+    if (isDisposedStatus(status)) {
+        const recipient = getDisposisiRecipientLabel(agenda);
+        return recipient ? `Sudah Disposisi Ke ${recipient}` : 'Sudah Disposisi';
+    }
+
+    return status;
+};
+
+const getDetailedStatusLabel = (agenda: Agenda): string => {
+    const status = getWorkflowStatusLabel(agenda);
+
+    if (status === 'Selesai') {
+        return 'Selesai (Kegiatan Telah Dilaksanakan)';
+    }
+
+    if (status === 'Jadwal Definitif') {
+        return 'Jadwal Definitif (Sudah Terkonfirmasi)';
+    }
+
+    if (status === 'Masuk Jadwal Tentatif') {
+        return 'Masuk Jadwal Tentatif (Menunggu Tindak Lanjut)';
+    }
+
+    return status;
+};
+
 const DefinitifIndex = ({ sifatOptions }: Props) => {
     const { auth } = usePage<PageProps>().props;
     const canUseCustomSchedule = auth.user?.role === 'superadmin'
@@ -188,15 +236,19 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
         const mulai = formatTimeNoSeconds(agenda.waktu_mulai);
         const selesai = formatTimeNoSeconds(agenda.waktu_selesai);
 
+        if (!mulai) {
+            return '-';
+        }
+
         if (agenda.sampai_selesai) {
-            return `${mulai} - Sampai Selesai`;
+            return `${mulai} WIB - Sampai Dengan Selesai`;
         }
 
         if (selesai) {
-            return `${mulai} - ${selesai}`;
+            return `${mulai} WIB - ${selesai} WIB`;
         }
 
-        return agenda.waktu_lengkap;
+        return `${mulai} WIB - Sampai Dengan Selesai`;
     };
 
     const sm = selectedAgenda?.surat_masuk;
@@ -242,12 +294,12 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                     <span className="text-sm text-text-secondary">Wakil Bupati</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-warning"></div>
-                                    <span className="text-sm text-text-secondary">Diwakilkan</span>
+                                    <div className="w-3 h-3 rounded-full bg-danger"></div>
+                                    <span className="text-sm text-text-secondary">Sekretaris Daerah</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-border-dark"></div>
-                                    <span className="text-sm text-text-secondary">Lainnya</span>
+                                    <div className="w-3 h-3 rounded-full bg-warning"></div>
+                                    <span className="text-sm text-text-secondary">Diwakilkan</span>
                                 </div>
                             </div>
 
@@ -525,7 +577,7 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                     </div>
                                     <div>
                                         <p className="text-text-secondary">Waktu</p>
-                                        <p className="font-medium text-text-primary">{formatAgendaTime(selectedAgenda)} WIB</p>
+                                        <p className="font-medium text-text-primary">{formatAgendaTime(selectedAgenda)}</p>
                                     </div>
                                     <div>
                                         <p className="text-text-secondary">Lokasi</p>
@@ -547,12 +599,12 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-text-secondary">Status Jadwal:</span>
                                         <Badge variant="primary">
-                                            {selectedAgenda.status_tindak_lanjut ?? selectedAgenda.status_formal_label ?? selectedAgenda.status_label}
+                                            {getDetailedStatusLabel(selectedAgenda)}
                                         </Badge>
                                     </div>
                                     {selectedAgenda.dihadiri_oleh && (
                                         <p className="text-sm text-text-primary">
-                                            <span className="text-text-secondary">Dihadiri:</span>{' '}
+                                            <span className="text-text-secondary">Dihadiri oleh:</span>{' '}
                                             <span className="font-medium">{selectedAgenda.dihadiri_oleh}</span>
                                         </p>
                                     )}

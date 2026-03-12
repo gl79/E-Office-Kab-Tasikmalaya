@@ -38,6 +38,60 @@ const getWorkflowStatusVariant = (status?: string): 'default' | 'primary' | 'suc
     }
 };
 
+const formatTimeNoSeconds = (time?: string | null) => {
+    if (!time) return '';
+    return time.length >= 5 ? time.slice(0, 5) : time;
+};
+
+const isDisposedStatus = (status?: string): boolean => {
+    return status === 'Sudah Didisposisi' || status === 'Sudah Disposisi';
+};
+
+const getDisposisiRecipientLabel = (agenda: Agenda): string | null => {
+    const fromStatus = agenda.status_tindak_lanjut_disposisi_ke?.trim();
+    if (fromStatus) {
+        return fromStatus;
+    }
+
+    const fromSuratStatus = agenda.surat_masuk?.status_tindak_lanjut_disposisi_ke?.trim();
+    if (fromSuratStatus) {
+        return fromSuratStatus;
+    }
+
+    const fromAttend = agenda.dihadiri_oleh?.trim();
+    return fromAttend || null;
+};
+
+const getWorkflowStatusLabel = (agenda: Agenda): string => {
+    const status = agenda.status_tindak_lanjut ?? agenda.status_formal_label ?? agenda.status_label ?? '-';
+
+    if (isDisposedStatus(status)) {
+        const recipient = getDisposisiRecipientLabel(agenda);
+        return recipient ? `Sudah Disposisi Ke ${recipient}` : 'Sudah Disposisi';
+    }
+
+    return status;
+};
+
+const formatAgendaTimeForDetail = (agenda: Agenda): string => {
+    const mulai = formatTimeNoSeconds(agenda.waktu_mulai);
+    const selesai = formatTimeNoSeconds(agenda.waktu_selesai);
+
+    if (!mulai) {
+        return '';
+    }
+
+    if (agenda.sampai_selesai) {
+        return `${mulai} WIB - Sampai Dengan Selesai`;
+    }
+
+    if (selesai) {
+        return `${mulai} WIB - ${selesai} WIB`;
+    }
+
+    return `${mulai} WIB - Sampai Dengan Selesai`;
+};
+
 const TentatifIndex = ({
     tentatif,
     sifatOptions,
@@ -217,7 +271,7 @@ const TentatifIndex = ({
             if (item.dihadiri_oleh) {
                 lines.push(`   Dihadiri: ${item.dihadiri_oleh}`);
             }
-            lines.push(`   Status: ${item.status_tindak_lanjut ?? item.status_label}`);
+            lines.push(`   Status: ${getWorkflowStatusLabel(item)}`);
             if (index < filteredData.length - 1) {
                 lines.push('');
             }
@@ -266,6 +320,7 @@ const TentatifIndex = ({
     };
 
     const suratMasukId = selectedAgenda?.surat_masuk?.id;
+    const sm = selectedAgenda?.surat_masuk;
     const suratFilePath = selectedAgenda?.surat_masuk?.file_path ?? null;
     const suratPreviewUrl = suratMasukId
         ? route('persuratan.surat-masuk.preview', suratMasukId)
@@ -431,127 +486,146 @@ const TentatifIndex = ({
                                 <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
                                     Identitas Surat
                                 </h4>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">No. Agenda</span>
-                                        <span className="font-medium text-text-primary">
-                                            {formatNoAgenda(selectedAgenda.surat_masuk?.nomor_agenda)}
-                                        </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p className="text-text-secondary">Tanggal Surat</p>
+                                        <p className="font-medium text-text-primary">{sm?.tanggal_surat ? formatDateShort(sm.tanggal_surat) : '-'}</p>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">No. Surat</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.surat_masuk?.nomor_surat || '-'}
-                                        </span>
+                                    <div>
+                                        <p className="text-text-secondary">Asal Surat</p>
+                                        {sm?.asal_surat ? (
+                                            <Badge variant="primary" className="mt-1">{sm.asal_surat}</Badge>
+                                        ) : (
+                                            <p className="font-medium text-text-primary">-</p>
+                                        )}
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">Tanggal Surat</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.surat_masuk?.tanggal_surat_formatted || '-'}
-                                        </span>
+                                    <div className="sm:col-span-2">
+                                        <p className="text-text-secondary">Kepada (Tujuan Surat)</p>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {sm?.tujuans?.length ? (
+                                                sm.tujuans.map((tujuan) => (
+                                                    <Badge key={tujuan.id} variant="primary" size="sm">
+                                                        {tujuan.tujuan}
+                                                    </Badge>
+                                                ))
+                                            ) : (
+                                                <p className="font-medium text-text-primary">-</p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">Asal Surat</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.surat_masuk?.asal_surat || '-'}
-                                        </span>
+                                    <div>
+                                        <p className="text-text-secondary">Nomor Surat</p>
+                                        <p className="font-medium text-text-primary">{sm?.nomor_surat || '-'}</p>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">Perihal</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.surat_masuk?.perihal || '-'}
-                                        </span>
+                                    <div>
+                                        <p className="text-text-secondary">Jenis Surat</p>
+                                        <p className="font-medium text-text-primary">{sm?.jenis_surat?.nama || '-'}</p>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">Sifat</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.surat_masuk?.sifat_label || '-'}
-                                        </span>
+                                    <div>
+                                        <p className="text-text-secondary">Sifat Surat</p>
+                                        <p className="font-medium text-text-primary">{sm?.sifat_label || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Lampiran</p>
+                                        <p className="font-medium text-text-primary">{sm?.lampiran ?? 0} berkas</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Perihal</p>
+                                        <p className="font-medium text-text-primary">{sm?.perihal || '-'}</p>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <p className="text-text-secondary">Isi Ringkas Surat</p>
+                                        <p className="font-medium text-text-primary">{sm?.isi_ringkas || '-'}</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Identitas Agenda */}
-                            <div>
+                            <div className="pt-4 border-t border-border-default">
                                 <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
                                     Identitas Agenda
                                 </h4>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">Tanggal Diterima</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.surat_masuk?.tanggal_diterima ? formatDateShort(selectedAgenda.surat_masuk.tanggal_diterima) : '-'}
-                                        </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p className="text-text-secondary">Tanggal Diterima</p>
+                                        <p className="font-medium text-text-primary">{sm?.tanggal_diterima ? formatDateShort(sm.tanggal_diterima) : '-'}</p>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">No Agenda</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.surat_masuk?.nomor_agenda ? (selectedAgenda.surat_masuk.nomor_agenda.split('/')[1] || selectedAgenda.surat_masuk.nomor_agenda) : '-'}
-                                        </span>
+                                    <div>
+                                        <p className="text-text-secondary">No Agenda</p>
+                                        <p className="font-medium text-text-primary">{formatNoAgenda(sm?.nomor_agenda)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Indeks Surat</p>
+                                        <p className="font-medium text-text-primary">
+                                            {sm?.indeks_berkas
+                                                ? `${sm.indeks_berkas.kode} - ${sm.indeks_berkas.nama}`
+                                                : '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Kode Klasifikasi</p>
+                                        <p className="font-medium text-text-primary">
+                                            {sm?.kode_klasifikasi
+                                                ? `${sm.kode_klasifikasi.kode} - ${sm.kode_klasifikasi.nama}`
+                                                : '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Staff Pengolah</p>
+                                        <p className="font-medium text-text-primary">{sm?.staff_pengolah?.name || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Tanggal Diteruskan</p>
+                                        <p className="font-medium text-text-primary">
+                                            {sm?.tanggal_diteruskan ? formatDateShort(sm.tanggal_diteruskan) : '-'}
+                                        </p>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <p className="text-text-secondary">Catatan Tambahan</p>
+                                        <p className="font-medium text-text-primary">{sm?.catatan_tambahan || '-'}</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Detail Jadwal */}
-                            <div>
+                            <div className="pt-4 border-t border-border-default">
                                 <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
                                     Detail Jadwal
                                 </h4>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">Kegiatan</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.nama_kegiatan}
-                                        </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                    <div className="sm:col-span-2">
+                                        <p className="text-text-secondary">Kegiatan</p>
+                                        <p className="font-medium text-text-primary">{selectedAgenda.nama_kegiatan}</p>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">Tanggal</span>
-                                        <span className="font-medium text-text-primary">
+                                    <div>
+                                        <p className="text-text-secondary">Tanggal</p>
+                                        <p className="font-medium text-text-primary">
                                             {selectedAgenda.tanggal_agenda ? selectedAgenda.tanggal_format_indonesia : <span className="italic text-text-muted">Menunggu Tindak Lanjut</span>}
-                                        </span>
+                                        </p>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">Waktu</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.waktu_mulai ? (
-                                                <>
-                                                    {selectedAgenda.waktu_mulai.substring(0, 5)} WIB {' '}
-                                                    Sampai Dengan {' '}
-                                                    {selectedAgenda.sampai_selesai
-                                                        ? 'Selesai'
-                                                        : (selectedAgenda.waktu_selesai ? `${selectedAgenda.waktu_selesai.substring(0, 5)} WIB` : 'Selesai')
-                                                    }
-                                                </>
-                                            ) : <span className="italic text-text-muted">Belum Diatur</span>}
-                                        </span>
+                                    <div>
+                                        <p className="text-text-secondary">Waktu</p>
+                                        <p className="font-medium text-text-primary">
+                                            {selectedAgenda.waktu_mulai
+                                                ? formatAgendaTimeForDetail(selectedAgenda)
+                                                : <span className="italic text-text-muted">Belum Diatur</span>}
+                                        </p>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-text-secondary w-28 shrink-0">Lokasi</span>
-                                        <span className="font-medium text-text-primary">
-                                            {selectedAgenda.tempat}
-                                        </span>
+                                    <div>
+                                        <p className="text-text-secondary">Lokasi</p>
+                                        <p className="font-medium text-text-primary">{selectedAgenda.tempat || '-'}</p>
                                     </div>
-                                    {selectedAgenda.lokasi_type_label && (
-                                        <div className="flex gap-2">
-                                            <span className="text-text-secondary w-28 shrink-0">Tipe Lokasi</span>
-                                            <span className="font-medium text-text-primary">
-                                                {selectedAgenda.lokasi_type_label}
-                                            </span>
-                                        </div>
-                                    )}
                                     {selectedAgenda.keterangan && (
-                                        <div className="flex gap-2">
-                                            <span className="text-text-secondary w-28 shrink-0">Keterangan</span>
-                                            <span className="font-medium text-text-primary">
-                                                {selectedAgenda.keterangan}
-                                            </span>
+                                        <div>
+                                            <p className="text-text-secondary">Keterangan</p>
+                                            <p className="font-medium text-text-primary">{selectedAgenda.keterangan}</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             {/* Status */}
-                            <div>
+                            <div className="pt-4 border-t border-border-default">
                                 <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
                                     Status
                                 </h4>
@@ -559,12 +633,12 @@ const TentatifIndex = ({
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-text-secondary w-28 shrink-0">Status Jadwal</span>
                                         <Badge variant={getWorkflowStatusVariant(selectedAgenda.status_tindak_lanjut)}>
-                                            {selectedAgenda.status_tindak_lanjut ?? selectedAgenda.status_formal_label ?? selectedAgenda.status_label}
+                                            {getWorkflowStatusLabel(selectedAgenda)}
                                         </Badge>
                                     </div>
                                     {selectedAgenda.dihadiri_oleh && (
                                         <div className="flex gap-2 text-sm">
-                                            <span className="text-text-secondary w-28 shrink-0">Dihadiri</span>
+                                            <span className="text-text-secondary w-28 shrink-0">Dihadiri oleh</span>
                                             <span className="font-medium text-text-primary">
                                                 {selectedAgenda.dihadiri_oleh}
                                             </span>

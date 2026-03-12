@@ -70,6 +70,12 @@ export default function TimelineModal({ isOpen, onClose, suratMasuk, sifatOption
         });
     };
 
+    const formatNoAgenda = (nomor?: string) => {
+        if (!nomor) return '-';
+        const parts = nomor.split('/');
+        return parts.length >= 2 ? parts[1] : nomor;
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Timeline Surat" size="lg">
             {suratMasuk && (
@@ -86,6 +92,20 @@ export default function TimelineModal({ isOpen, onClose, suratMasuk, sifatOption
                                 <p className="text-sm text-text-secondary">Asal Surat</p>
                                 <Badge variant="primary" className="mt-1">{suratMasuk.asal_surat}</Badge>
                             </div>
+                            <div className="sm:col-span-2">
+                                <p className="text-sm text-text-secondary">Kepada (Tujuan Surat)</p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {suratMasuk.tujuans?.length ? (
+                                        suratMasuk.tujuans.map((tujuan) => (
+                                            <Badge key={tujuan.id} variant="primary" size="sm">
+                                                {tujuan.user?.jabatan_nama || tujuan.tujuan}
+                                            </Badge>
+                                        ))
+                                    ) : (
+                                        <p className="font-medium text-text-primary">-</p>
+                                    )}
+                                </div>
+                            </div>
                             <div>
                                 <p className="text-sm text-text-secondary">Nomor Surat</p>
                                 <p className="font-medium text-text-primary">{suratMasuk.nomor_surat}</p>
@@ -100,6 +120,18 @@ export default function TimelineModal({ isOpen, onClose, suratMasuk, sifatOption
                                 <p className="text-sm text-text-secondary">Sifat Surat</p>
                                 {getSifatBadge(suratMasuk.sifat, sifatOptions)}
                             </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">Jumlah Lampiran</p>
+                                <p className="font-medium text-text-primary">{suratMasuk.lampiran ?? 0} berkas</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">Perihal</p>
+                                <p className="font-medium text-text-primary">{suratMasuk.perihal || '-'}</p>
+                            </div>
+                            <div className="sm:col-span-2">
+                                <p className="text-sm text-text-secondary">Isi Ringkas Surat</p>
+                                <p className="font-medium text-text-primary">{suratMasuk.isi_ringkas || '-'}</p>
+                            </div>
                         </div>
                     </div>
 
@@ -113,7 +145,39 @@ export default function TimelineModal({ isOpen, onClose, suratMasuk, sifatOption
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">No Agenda</p>
-                                <p className="font-medium text-text-primary">{suratMasuk.nomor_agenda.split('/')[1] || suratMasuk.nomor_agenda}</p>
+                                <p className="font-medium text-text-primary">{formatNoAgenda(suratMasuk.nomor_agenda)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">Indeks Surat</p>
+                                <p className="font-medium text-text-primary">
+                                    {suratMasuk.indeks_berkas
+                                        ? `${suratMasuk.indeks_berkas.kode} - ${suratMasuk.indeks_berkas.nama}`
+                                        : '-'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">Kode Klasifikasi</p>
+                                <p className="font-medium text-text-primary">
+                                    {suratMasuk.kode_klasifikasi
+                                        ? `${suratMasuk.kode_klasifikasi.kode} - ${suratMasuk.kode_klasifikasi.nama}`
+                                        : '-'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">Staff Pengolah</p>
+                                <p className="font-medium text-text-primary">
+                                    {suratMasuk.staff_pengolah?.jabatan_nama || suratMasuk.staff_pengolah?.name || '-'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">Tanggal Diteruskan</p>
+                                <p className="font-medium text-text-primary">
+                                    {suratMasuk.tanggal_diteruskan ? formatDateShort(suratMasuk.tanggal_diteruskan) : '-'}
+                                </p>
+                            </div>
+                            <div className="sm:col-span-2">
+                                <p className="text-sm text-text-secondary">Catatan Tambahan</p>
+                                <p className="font-medium text-text-primary">{suratMasuk.catatan_tambahan || '-'}</p>
                             </div>
                         </div>
                     </div>
@@ -168,4 +232,3 @@ export default function TimelineModal({ isOpen, onClose, suratMasuk, sifatOption
         </Modal>
     );
 }
-

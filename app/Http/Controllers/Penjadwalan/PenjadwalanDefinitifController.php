@@ -15,6 +15,8 @@ use Inertia\Inertia;
 
 class PenjadwalanDefinitifController extends Controller
 {
+    private const CALENDAR_STATUS_SEKRETARIS_DAERAH = 'sekretaris_daerah';
+
     public function __construct(private readonly PenjadwalanService $service) {}
 
     /**
@@ -48,7 +50,7 @@ class PenjadwalanDefinitifController extends Controller
                     'suratMasuk.indeksBerkas',
                     'suratMasuk.kodeKlasifikasi',
                     'suratMasuk.staffPengolah',
-                    'suratMasuk.disposisis',
+                    'suratMasuk.disposisis.keUser.jabatanRelasi',
                     'suratMasuk.createdBy',
                     'creator',
                     'dihadiriOlehUser.jabatanRelasi',
@@ -118,7 +120,7 @@ class PenjadwalanDefinitifController extends Controller
             'suratMasuk.indeksBerkas',
             'suratMasuk.kodeKlasifikasi',
             'suratMasuk.staffPengolah',
-            'suratMasuk.disposisis',
+            'suratMasuk.disposisis.keUser.jabatanRelasi',
             'suratMasuk.createdBy',
             'creator',
             'updater',
@@ -161,16 +163,23 @@ class PenjadwalanDefinitifController extends Controller
             return Penjadwalan::DISPOSISI_DIWAKILKAN;
         }
 
-        if ($item->status_disposisi !== Penjadwalan::DISPOSISI_MENUNGGU) {
-            return $item->status_disposisi;
-        }
-
         $level = $item->dihadiriOlehUser?->jabatanRelasi?->level;
 
-        return match ($level) {
+        $levelStatus = match ($level) {
             1 => Penjadwalan::DISPOSISI_BUPATI,
             2 => Penjadwalan::DISPOSISI_WAKIL_BUPATI,
-            default => $item->status_disposisi,
+            3 => self::CALENDAR_STATUS_SEKRETARIS_DAERAH,
+            default => null,
+        };
+
+        if ($levelStatus) {
+            return $levelStatus;
+        }
+
+        return match ($item->status_disposisi) {
+            Penjadwalan::DISPOSISI_BUPATI => Penjadwalan::DISPOSISI_BUPATI,
+            Penjadwalan::DISPOSISI_WAKIL_BUPATI => Penjadwalan::DISPOSISI_WAKIL_BUPATI,
+            default => Penjadwalan::DISPOSISI_DIWAKILKAN,
         };
     }
 

@@ -18,6 +18,7 @@ export const disposisiBadgeConfig: Record<DisposisiStatus, {
     menunggu: { variant: 'warning', label: 'Menunggu Disposisi' },
     bupati: { variant: 'info', label: 'Didisposisikan ke Bupati' },
     wakil_bupati: { variant: 'success', label: 'Didisposisikan ke Wakil Bupati' },
+    sekretaris_daerah: { variant: 'danger', label: 'Didisposisikan ke Sekretaris Daerah' },
     diwakilkan: { variant: 'success', label: 'Didisposisikan / Diwakilkan' },
 };
 
@@ -94,4 +95,3 @@ export function getPenjadwalanFormalStatusVariant(status: string): BadgeVariant 
 export function getPenjadwalanFormalStatusLabel(status: string): string {
     return penjadwalanStatusFormalBadgeConfig[status as PenjadwalanStatusFormal]?.label ?? status;
 }
-

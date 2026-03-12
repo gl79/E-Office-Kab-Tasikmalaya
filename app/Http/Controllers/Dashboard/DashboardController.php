@@ -3,12 +3,9 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\DisposisiSurat;
 use App\Models\IndeksSurat;
-use App\Models\JadwalHistory;
 use App\Models\JenisSurat;
 use App\Models\Penjadwalan;
-use App\Models\SuratKeluar;
 use App\Models\SuratMasuk;
 use App\Models\UnitKerja;
 use App\Models\User;
@@ -16,8 +13,8 @@ use App\Models\WilayahDesa;
 use App\Models\WilayahKabupaten;
 use App\Models\WilayahKecamatan;
 use App\Models\WilayahProvinsi;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,9 +43,6 @@ class DashboardController extends Controller
      */
     protected function calculateStats(User $user): array
     {
-        $stats = null;
-        $today = now()->startOfDay();
-
         // 1. Surat Masuk Hari Ini
         $suratMasukHariIni = SuratMasuk::whereDate('created_at', now()->toDateString());
         if (!$user->isSuperAdmin() && !$user->isTU()) {
@@ -70,33 +64,15 @@ class DashboardController extends Controller
 
         // 3. Agenda Hari Ini (Hanya definitif)
         $agendaHariIni = Penjadwalan::query()->definitif()->whereDate('tanggal_agenda', now()->toDateString());
-        if (!$user->canMonitorAllSchedules()) {
-            $agendaHariIni->where(function ($q) use ($user) {
-                $q->where('dihadiri_oleh_user_id', $user->id)
-                    ->orWhereHas('suratMasuk.disposisis', function ($dq) use ($user) {
-                        $dq->where('dari_user_id', $user->id)
-                            ->orWhere('ke_user_id', $user->id);
-                    })
-                    ->orWhereHas('suratMasuk', function ($smq) use ($user) {
-                        $smq->where('created_by', $user->id);
-                    });
-            });
+        if (!$user->isSuperAdmin() && !$user->isTU()) {
+            $this->applyUserAgendaScope($agendaHariIni, $user);
         }
         $countAgendaHariIni = $agendaHariIni->count();
 
         // 4. Agenda Mendatang (Hanya definitif)
         $agendaMendatang = Penjadwalan::query()->definitif()->whereDate('tanggal_agenda', '>', now()->toDateString());
-        if (!$user->canMonitorAllSchedules()) {
-            $agendaMendatang->where(function ($q) use ($user) {
-                $q->where('dihadiri_oleh_user_id', $user->id)
-                    ->orWhereHas('suratMasuk.disposisis', function ($dq) use ($user) {
-                        $dq->where('dari_user_id', $user->id)
-                            ->orWhere('ke_user_id', $user->id);
-                    })
-                    ->orWhereHas('suratMasuk', function ($smq) use ($user) {
-                        $smq->where('created_by', $user->id);
-                    });
-            });
+        if (!$user->isSuperAdmin() && !$user->isTU()) {
+            $this->applyUserAgendaScope($agendaMendatang, $user);
         }
         $countAgendaMendatang = $agendaMendatang->count();
 
@@ -126,5 +102,22 @@ class DashboardController extends Controller
         }
 
         return $stats;
+    }
+
+    private function applyUserAgendaScope(Builder $query, User $user): void
+    {
+        $query->where(function ($q) use ($user) {
+            $q->where('dihadiri_oleh_user_id', $user->id)
+                ->orWhereHas('suratMasuk.disposisis', function ($dq) use ($user) {
+                    $dq->where('dari_user_id', $user->id)
+                        ->orWhere('ke_user_id', $user->id);
+                })
+                ->orWhereHas('suratMasuk', function ($smq) use ($user) {
+                    $smq->where('created_by', $user->id)
+                        ->orWhereHas('tujuans', function ($tujuanQuery) use ($user) {
+                            $tujuanQuery->where('tujuan_id', $user->id);
+                        });
+                });
+        });
     }
 }

@@ -75,6 +75,7 @@ class PenjadwalanResource extends JsonResource
                     'created_at' => $sm->created_at?->format('Y-m-d H:i:s'),
                     'status_tindak_lanjut' => $sm->status_tindak_lanjut,
                     'status_tindak_lanjut_label' => $sm->status_tindak_lanjut_label,
+                    'status_tindak_lanjut_disposisi_ke' => $this->resolveDisposisiRecipientLabel(),
                 ];
             }),
 
@@ -106,6 +107,7 @@ class PenjadwalanResource extends JsonResource
             'status_disposisi_label' => $this->status_disposisi_label,
             'status_tindak_lanjut' => $this->status_tindak_lanjut,
             'status_tindak_lanjut_label' => $this->status_tindak_lanjut,
+            'status_tindak_lanjut_disposisi_ke' => $this->resolveDisposisiRecipientLabel(),
             'sumber_jadwal' => $this->sumber_jadwal,
             'sumber_jadwal_label' => $this->sumber_jadwal_label,
             'status_kehadiran_column_label' => $this->status_kehadiran_column_label,
@@ -173,14 +175,9 @@ class PenjadwalanResource extends JsonResource
             return [false, false];
         }
 
-        // Superadmin bisa mengelola jadwal tentatif.
+        // Superadmin hanya monitoring pada halaman Tentatif.
         if ($user->isSuperAdmin()) {
-            if (!$this->surat_masuk_id) {
-                // Untuk jadwal custom, hanya pembuat atau yg dihadiri
-                $canAction = $this->created_by === $user->id || $this->dihadiri_oleh_user_id === $user->id;
-                return [$canAction, false]; // Jadwal custom tidak bisa didisposisi
-            }
-            return [true, true]; // Surat masuk -> bisa diurus
+            return [false, false];
         }
 
         // Jika tidak ada surat_masuk (Jadwal Custom)
@@ -206,7 +203,7 @@ class PenjadwalanResource extends JsonResource
 
         $suratMasuk = $this->suratMasuk;
         if (!$suratMasuk instanceof SuratMasuk) {
-            $suratMasuk = SuratMasuk::query()->find($this->surat_masuk_id);
+            $suratMasuk = SuratMasuk::query()->find($this->surat_masuk_id, ['*']);
         }
 
         if (!$suratMasuk) {
@@ -214,9 +211,9 @@ class PenjadwalanResource extends JsonResource
         }
 
         $tujuan = $suratMasuk->tujuans()
-            ->where('tujuan_id', $userId)
-            ->where('is_primary', true)
-            ->where('is_tembusan', false)
+            ->where('tujuan_id', '=', $userId)
+            ->where('is_primary', '=', true)
+            ->where('is_tembusan', '=', false)
             ->first();
 
         if ($tujuan) {
@@ -225,8 +222,8 @@ class PenjadwalanResource extends JsonResource
             }
 
             $hasDisposed = DisposisiSurat::query()
-                ->where('surat_masuk_id', $suratMasuk->id)
-                ->where('dari_user_id', $userId)
+                ->where('surat_masuk_id', '=', $suratMasuk->id)
+                ->where('dari_user_id', '=', $userId)
                 ->exists();
 
             if (!$hasDisposed) {
@@ -235,8 +232,8 @@ class PenjadwalanResource extends JsonResource
         }
 
         $lastDisposisiToUser = DisposisiSurat::query()
-            ->where('surat_masuk_id', $suratMasuk->id)
-            ->where('ke_user_id', $userId)
+            ->where('surat_masuk_id', '=', $suratMasuk->id)
+            ->where('ke_user_id', '=', $userId)
             ->latest()
             ->first();
 
@@ -245,7 +242,7 @@ class PenjadwalanResource extends JsonResource
         }
 
         $tujuanDisposisi = $suratMasuk->tujuans()
-            ->where('tujuan_id', $userId)
+            ->where('tujuan_id', '=', $userId)
             ->first();
 
         if (
@@ -256,8 +253,8 @@ class PenjadwalanResource extends JsonResource
         }
 
         $hasRedisposed = DisposisiSurat::query()
-            ->where('surat_masuk_id', $suratMasuk->id)
-            ->where('dari_user_id', $userId)
+            ->where('surat_masuk_id', '=', $suratMasuk->id)
+            ->where('dari_user_id', '=', $userId)
             ->exists();
 
         return !$hasRedisposed;
@@ -271,7 +268,7 @@ class PenjadwalanResource extends JsonResource
 
         $suratMasuk = $this->suratMasuk;
         if (!$suratMasuk instanceof SuratMasuk) {
-            $suratMasuk = SuratMasuk::query()->find($this->surat_masuk_id);
+            $suratMasuk = SuratMasuk::query()->find($this->surat_masuk_id, ['*']);
         }
 
         if (!$suratMasuk) {
@@ -283,5 +280,38 @@ class PenjadwalanResource extends JsonResource
         }
 
         return $suratMasuk->disposisis()->exists();
+    }
+
+    private function resolveDisposisiRecipientLabel(): ?string
+    {
+        if (!$this->surat_masuk_id) {
+            return null;
+        }
+
+        $suratMasuk = $this->suratMasuk;
+        if (!$suratMasuk instanceof SuratMasuk) {
+            $suratMasuk = SuratMasuk::query()
+                ->with('disposisis.keUser.jabatanRelasi')
+                ->find($this->surat_masuk_id, ['*']);
+        }
+
+        if (!$suratMasuk) {
+            return null;
+        }
+
+        $disposisis = $suratMasuk->relationLoaded('disposisis')
+            ? $suratMasuk->disposisis
+            : $suratMasuk->disposisis()->with('keUser.jabatanRelasi')->get();
+
+        /** @var \App\Models\DisposisiSurat|null $latestDisposisi */
+        $latestDisposisi = $disposisis
+            ->sortByDesc(fn(DisposisiSurat $disposisi) => $disposisi->created_at?->getTimestamp() ?? 0)
+            ->first();
+
+        if (!$latestDisposisi?->keUser) {
+            return null;
+        }
+
+        return $latestDisposisi->keUser->jabatan_nama ?: $latestDisposisi->keUser->name;
     }
 }

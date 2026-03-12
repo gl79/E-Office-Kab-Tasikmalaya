@@ -118,7 +118,6 @@ function AppLayoutInner({ children }: AppLayoutProps) {
             'activity-logs': 'Activity Logs',
             'tentatif': 'Jadwal Tentatif',
             'definitif': 'Jadwal Definitif',
-            'history': 'History Penjadwalan',
             'jadwal': 'Form Jadwal',
             'create': 'Tambah',
             'edit': 'Ubah',

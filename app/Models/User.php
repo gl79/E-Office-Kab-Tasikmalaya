@@ -76,7 +76,6 @@ class User extends Authenticatable
         'penjadwalan.jadwal' => 'Penjadwalan - Jadwal',
         'penjadwalan.tentatif' => 'Penjadwalan - Tentatif',
         'penjadwalan.definitif' => 'Penjadwalan - Definitif',
-        'penjadwalan.history' => 'Penjadwalan - History',
     ];
 
     /**
@@ -247,7 +246,7 @@ class User extends Authenticatable
      */
     public function canDispose(): bool
     {
-        if ($this->isSuperAdmin()) {
+        if ($this->isSuperAdmin() || $this->isUser()) {
             return false;
         }
 
@@ -288,6 +287,10 @@ class User extends Authenticatable
      */
     public function canMonitorAllSchedules(): bool
     {
+        if ($this->isUser()) {
+            return false;
+        }
+
         if ($this->isSuperAdmin() || $this->isTU()) {
             return true;
         }

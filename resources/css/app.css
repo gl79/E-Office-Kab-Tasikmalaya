@@ -135,6 +135,13 @@
     border-color: var(--color-secondary) !important;
 }
 
+.fc .fc-event.event-sekretaris_daerah,
+.fc .fc-daygrid-event.event-sekretaris_daerah,
+.fc .fc-timegrid-event.event-sekretaris_daerah {
+    background-color: var(--color-danger) !important;
+    border-color: var(--color-danger) !important;
+}
+
 .fc .fc-event.event-diwakilkan,
 .fc .fc-daygrid-event.event-diwakilkan,
 .fc .fc-timegrid-event.event-diwakilkan {

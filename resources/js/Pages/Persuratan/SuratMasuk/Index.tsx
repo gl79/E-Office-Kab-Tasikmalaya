@@ -50,6 +50,23 @@ const getStatusTindakLanjutVariant = (status?: string): 'default' | 'primary' | 
     }
 };
 
+const getDisposisiRecipient = (item: SuratMasuk): string | null => {
+    if (item.status_tindak_lanjut !== 'Sudah Didisposisi') {
+        return null;
+    }
+
+    const recipient = item.status_tindak_lanjut_disposisi_ke?.trim();
+
+    return recipient ? recipient : null;
+};
+
+const getStatusTindakLanjutDisplay = (item: SuratMasuk): string => {
+    const baseStatus = item.status_tindak_lanjut || '-';
+    const disposisiRecipient = getDisposisiRecipient(item);
+
+    return disposisiRecipient ? `${baseStatus} (Ke akun: ${disposisiRecipient})` : baseStatus;
+};
+
 const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     const { auth } = usePage<PageProps>().props;
     const isEligiblePejabat = auth.user?.can_dispose === true;
@@ -258,7 +275,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                 { header: 'Asal Surat', render: (item) => escapeHtml(item.asal_surat) },
                 { header: 'Perihal', render: (item) => escapeHtml(item.perihal) },
                 { header: 'Sifat', render: (item) => escapeHtml(sifatOptions[item.sifat] || item.sifat) },
-                { header: 'Status Tindak Lanjut', render: (item) => escapeHtml(item.status_tindak_lanjut || '-') },
+                { header: 'Status Tindak Lanjut', render: (item) => escapeHtml(getStatusTindakLanjutDisplay(item)) },
             ],
             data: filteredData,
             filterInfo,
@@ -471,11 +488,23 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                             {getSifatBadge(item.sifat, sifatOptions)}
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
-                                            <Badge
-                                                variant={getStatusTindakLanjutVariant(item.status_tindak_lanjut)}
-                                            >
-                                                {item.status_tindak_lanjut ?? '-'}
-                                            </Badge>
+                                            <div className="flex flex-col items-center">
+                                                <Badge
+                                                    variant={getStatusTindakLanjutVariant(item.status_tindak_lanjut)}
+                                                >
+                                                    {item.status_tindak_lanjut ?? '-'}
+                                                </Badge>
+                                                {(() => {
+                                                    const disposisiRecipient = getDisposisiRecipient(item);
+                                                    if (!disposisiRecipient) return null;
+
+                                                    return (
+                                                        <p className="mt-1 text-xs text-text-secondary">
+                                                            Ke akun: {disposisiRecipient}
+                                                        </p>
+                                                    );
+                                                })()}
+                                            </div>
                                         </td>
                                         <td className="border border-border-default px-4 py-3 text-center">
                                             <div className="flex items-center justify-center gap-1">

@@ -38,6 +38,7 @@ export interface SuratMasukBase {
     created_at?: string;
     status_tindak_lanjut?: string;
     status_tindak_lanjut_label?: string;
+    status_tindak_lanjut_disposisi_ke?: string | null;
 }
 
 export interface SuratMasuk extends SuratMasukBase {
@@ -68,6 +69,7 @@ export interface AgendaBase {
     status_disposisi_label: string;
     status_tindak_lanjut?: string;
     status_tindak_lanjut_label?: string;
+    status_tindak_lanjut_disposisi_ke?: string | null;
     sumber_jadwal?: SumberJadwal;
     sumber_jadwal_label?: string;
     status_kehadiran_column_label?: string;
@@ -117,7 +119,7 @@ export interface CalendarEvent {
 // DISPOSISI TYPES
 // ============================================
 
-export type DisposisiStatus = 'menunggu' | 'bupati' | 'wakil_bupati' | 'diwakilkan';
+export type DisposisiStatus = 'menunggu' | 'bupati' | 'wakil_bupati' | 'sekretaris_daerah' | 'diwakilkan';
 export type PenjadwalanStatus = 'tentatif' | 'definitif';
 export type SumberJadwal = 'self' | 'disposisi' | 'sekretaris';
 export type PenjadwalanStatusFormal =
