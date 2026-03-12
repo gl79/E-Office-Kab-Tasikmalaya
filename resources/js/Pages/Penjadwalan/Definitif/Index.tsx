@@ -6,6 +6,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { EventInput } from '@fullcalendar/core';
 import { Trash2, ExternalLink, Filter, RotateCcw, CalendarPlus, List, Calendar as CalendarIcon } from 'lucide-react';
+import MapPreview from '@/Components/maps/MapPreview';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Badge, ConfirmDialog, Pagination } from '@/Components/ui';
 import { TextInput } from '@/Components/form';
@@ -579,9 +580,10 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                         <p className="text-text-secondary">Waktu</p>
                                         <p className="font-medium text-text-primary">{formatAgendaTime(selectedAgenda)}</p>
                                     </div>
-                                    <div>
+                                    <div className="sm:col-span-2">
                                         <p className="text-text-secondary">Lokasi</p>
                                         <p className="font-medium text-text-primary">{selectedAgenda.tempat}</p>
+                                        <MapPreview lokasi={selectedAgenda.wilayah_text ?? selectedAgenda.tempat} />
                                     </div>
                                     {selectedAgenda.keterangan && (
                                         <div>

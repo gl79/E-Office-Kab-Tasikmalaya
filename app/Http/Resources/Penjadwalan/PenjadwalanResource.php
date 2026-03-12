@@ -97,6 +97,9 @@ class PenjadwalanResource extends JsonResource
             'lokasi_type_label' => $this->lokasi_type_label,
             'kode_wilayah' => $this->kode_wilayah,
             'tempat' => $this->tempat,
+            'wilayah_text' => $this->kode_wilayah
+                ? \App\Support\WilayahHelper::getWilayahText($this->kode_wilayah)
+                : null,
 
             // Status Info
             'status' => $this->status,
