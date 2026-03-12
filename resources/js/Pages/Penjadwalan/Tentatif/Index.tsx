@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Copy, ExternalLink, MessageCircle } from 'lucide-react';
+import { Copy, ExternalLink, Filter, MessageCircle, RotateCcw } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Badge, ConfirmDialog } from '@/Components/ui';
-import { TextInput } from '@/Components/form';
+import { TextInput, FormDatePicker, FormSelect } from '@/Components/form';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { useDeferredDataMutable } from '@/hooks';
 import TentatifTable from './Components/TentatifTable';
@@ -11,6 +11,7 @@ import TindakLanjutModal from './Components/TentatifEditModal';
 import { formatDateShort } from '@/utils';
 import DisposisiModal from '@/Components/persuratan/DisposisiModal';
 import TimelineModal from '@/Components/persuratan/TimelineModal';
+import MapPreview from '@/Components/maps/MapPreview';
 import type { PageProps } from '@/types';
 import type { Agenda } from '@/types/penjadwalan';
 import type { SuratMasuk } from '@/types/persuratan';
@@ -23,11 +24,21 @@ interface Props extends PageProps {
     };
 }
 
+const STATUS_TINDAK_LANJUT_OPTIONS = [
+    'Menunggu Tindak Lanjut',
+    'Diterima / Diketahui',
+    'Masuk Jadwal Tentatif',
+    'Sudah Disposisi',
+    'Jadwal Definitif',
+    'Selesai',
+];
+
 const getWorkflowStatusVariant = (status?: string): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' => {
     switch (status) {
         case 'Masuk Jadwal Tentatif':
             return 'warning';
         case 'Sudah Didisposisi':
+        case 'Sudah Disposisi':
             return 'info';
         case 'Jadwal Definitif':
             return 'primary';
@@ -58,8 +69,7 @@ const getDisposisiRecipientLabel = (agenda: Agenda): string | null => {
         return fromSuratStatus;
     }
 
-    const fromAttend = agenda.dihadiri_oleh?.trim();
-    return fromAttend || null;
+    return null;
 };
 
 const getWorkflowStatusLabel = (agenda: Agenda): string => {
@@ -112,6 +122,11 @@ const TentatifIndex = ({
     // Search state
     const [search, setSearch] = useState(filters.search || '');
     const [currentPage, setCurrentPage] = useState(1);
+    const [showFilters, setShowFilters] = useState(false);
+    const [sifat, setSifat] = useState('');
+    const [statusTindakLanjut, setStatusTindakLanjut] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const itemsPerPage = 10;
 
     // Modal states
@@ -151,19 +166,56 @@ const TentatifIndex = ({
         keterangan: '',
     });
 
+    const sifatSelectOptions = useMemo(
+        () => Object.entries(sifatOptions).map(([value, label]) => ({ value, label })),
+        [sifatOptions]
+    );
+
     // Filter data client-side
     const filteredData = useMemo(() => {
-        if (!search) return allData;
-        const lowerSearch = search.toLowerCase();
-        return allData.filter((item) =>
-            item.nama_kegiatan?.toLowerCase().includes(lowerSearch) ||
-            item.surat_masuk?.nomor_surat?.toLowerCase().includes(lowerSearch) ||
-            item.surat_masuk?.asal_surat?.toLowerCase().includes(lowerSearch) ||
-            item.surat_masuk?.perihal?.toLowerCase().includes(lowerSearch) ||
-            item.tempat?.toLowerCase().includes(lowerSearch) ||
-            item.dihadiri_oleh?.toLowerCase().includes(lowerSearch)
-        );
-    }, [allData, search]);
+        let data = allData;
+
+        if (search) {
+            const lowerSearch = search.toLowerCase();
+            data = data.filter((item) =>
+                item.nama_kegiatan?.toLowerCase().includes(lowerSearch) ||
+                item.surat_masuk?.nomor_surat?.toLowerCase().includes(lowerSearch) ||
+                item.surat_masuk?.asal_surat?.toLowerCase().includes(lowerSearch) ||
+                item.surat_masuk?.perihal?.toLowerCase().includes(lowerSearch) ||
+                item.tempat?.toLowerCase().includes(lowerSearch) ||
+                item.dihadiri_oleh?.toLowerCase().includes(lowerSearch)
+            );
+        }
+
+        if (sifat) {
+            data = data.filter((item) => item.surat_masuk?.sifat === sifat);
+        }
+
+        if (statusTindakLanjut) {
+            data = data.filter((item) => {
+                const status = (item.status_tindak_lanjut ?? item.status_formal_label ?? item.status_label ?? '').trim();
+                return statusTindakLanjut === 'Sudah Disposisi'
+                    ? isDisposedStatus(status)
+                    : status === statusTindakLanjut;
+            });
+        }
+
+        if (startDate) {
+            data = data.filter((item) => {
+                const dateValue = item.surat_masuk?.tanggal_diterima ?? item.tanggal_agenda ?? '';
+                return dateValue !== '' && dateValue >= startDate;
+            });
+        }
+
+        if (endDate) {
+            data = data.filter((item) => {
+                const dateValue = item.surat_masuk?.tanggal_diterima ?? item.tanggal_agenda ?? '';
+                return dateValue !== '' && dateValue <= endDate;
+            });
+        }
+
+        return data;
+    }, [allData, search, sifat, statusTindakLanjut, startDate, endDate]);
 
     // Pagination
     const paginatedData = useMemo(() => {
@@ -175,6 +227,17 @@ const TentatifIndex = ({
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const hasActiveFilters = !!(search || sifat || statusTindakLanjut || startDate || endDate);
+
+    const handleResetFilters = () => {
+        setSearch('');
+        setSifat('');
+        setStatusTindakLanjut('');
+        setStartDate('');
+        setEndDate('');
         setCurrentPage(1);
     };
 
@@ -343,26 +406,117 @@ const TentatifIndex = ({
             <div className="bg-surface rounded-lg border border-border-default">
                 {/* Toolbar */}
                 <div className="p-4 border-b border-border-default">
-                    <div className="flex flex-col sm:flex-row justify-between gap-4">
-                        <div className="flex gap-2 flex-1 max-w-2xl">
-                            <TextInput
-                                type="text"
-                                placeholder="Cari kegiatan, nomor surat, perihal, lokasi..."
-                                value={search}
-                                onChange={handleSearchChange}
-                                className="w-full px-3"
-                            />
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col sm:flex-row justify-between gap-4">
+                            <div className="flex gap-2 flex-1 max-w-2xl">
+                                <TextInput
+                                    type="text"
+                                    placeholder="Cari kegiatan, nomor surat, perihal, lokasi..."
+                                    value={search}
+                                    onChange={handleSearchChange}
+                                    className="w-full px-3"
+                                />
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="gap-2"
+                                    title="Filter Lanjutan"
+                                >
+                                    <Filter className={`h-4 w-4 ${showFilters ? 'text-primary' : ''}`} />
+                                    <span>Filter</span>
+                                    {hasActiveFilters && (
+                                        <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary text-text-inverse">
+                                            {(search ? 1 : 0) + (sifat ? 1 : 0) + (statusTindakLanjut ? 1 : 0) + (startDate ? 1 : 0) + (endDate ? 1 : 0)}
+                                        </span>
+                                    )}
+                                </Button>
+                            </div>
+                            <Button
+                                variant="secondary"
+                                onClick={handleBulkExportWhatsApp}
+                                disabled={filteredData.length === 0}
+                                className="gap-2"
+                                title="Export semua jadwal ke WhatsApp"
+                            >
+                                <MessageCircle className="h-4 w-4" />
+                                <span>Export WhatsApp</span>
+                            </Button>
                         </div>
-                        <Button
-                            variant="secondary"
-                            onClick={handleBulkExportWhatsApp}
-                            disabled={filteredData.length === 0}
-                            className="gap-2"
-                            title="Export semua jadwal ke WhatsApp"
-                        >
-                            <MessageCircle className="h-4 w-4" />
-                            <span>Export WhatsApp</span>
-                        </Button>
+
+                        {showFilters && (
+                            <div className="p-4 bg-surface-hover rounded-lg border border-border-default animate-in fade-in slide-in-from-top-2 space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Sifat Surat
+                                        </label>
+                                        <FormSelect
+                                            options={sifatSelectOptions}
+                                            value={sifat}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                                setSifat(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            placeholder="Semua Sifat"
+                                            className="w-full px-2 text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Status Tindak Lanjut
+                                        </label>
+                                        <FormSelect
+                                            options={STATUS_TINDAK_LANJUT_OPTIONS.map((status) => ({ value: status, label: status }))}
+                                            value={statusTindakLanjut}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                                setStatusTindakLanjut(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            placeholder="Semua Status"
+                                            className="w-full px-2 text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Dari Tanggal
+                                        </label>
+                                        <FormDatePicker
+                                            value={startDate}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                setStartDate(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            className="w-full px-2 text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text-secondary mb-1">
+                                            Sampai Tanggal
+                                        </label>
+                                        <FormDatePicker
+                                            value={endDate}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                setEndDate(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            className="w-full px-2 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex justify-end">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={handleResetFilters}
+                                        className="gap-2"
+                                        disabled={!hasActiveFilters}
+                                    >
+                                        <RotateCcw className="h-4 w-4" />
+                                        Reset Filter
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -611,9 +765,10 @@ const TentatifIndex = ({
                                                 : <span className="italic text-text-muted">Belum Diatur</span>}
                                         </p>
                                     </div>
-                                    <div>
+                                    <div className="sm:col-span-2">
                                         <p className="text-text-secondary">Lokasi</p>
                                         <p className="font-medium text-text-primary">{selectedAgenda.tempat || '-'}</p>
+                                        <MapPreview lokasi={selectedAgenda.wilayah_text ?? selectedAgenda.tempat} />
                                     </div>
                                     {selectedAgenda.keterangan && (
                                         <div>

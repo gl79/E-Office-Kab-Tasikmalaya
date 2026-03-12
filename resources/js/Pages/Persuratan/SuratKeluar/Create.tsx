@@ -54,6 +54,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
     const alignedInputClassName = 'w-full min-h-[42px] px-3 py-2 text-sm';
     const alignedReadOnlyInputClassName = `${alignedInputClassName} bg-surface-hover cursor-not-allowed`;
     const alignedTextareaClassName = 'w-full px-3 py-2 text-sm leading-5';
+    const alignedBlueTextareaClassName = `${alignedTextareaClassName} rounded-lg border-primary focus:border-primary focus:ring-2 focus:ring-primary/20`;
 
     const { data, setData, post, processing, errors } = useForm({
         tanggal_surat: today,
@@ -411,7 +412,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             onChange={(e) => setData('perihal', e.target.value)}
                                             placeholder="Masukkan perihal surat"
                                             rows={2}
-                                            className={alignedTextareaClassName}
+                                            className={alignedBlueTextareaClassName}
                                         />
                                     </div>
                                     <InputError message={errors.perihal} className="mt-1" />
@@ -426,7 +427,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             onChange={(e) => setData('isi_ringkas', e.target.value)}
                                             placeholder="Masukkan ringkasan isi surat"
                                             rows={4}
-                                            className={alignedTextareaClassName}
+                                            className={alignedBlueTextareaClassName}
                                         />
                                     </div>
                                     <InputError message={errors.isi_ringkas} className="mt-1" />
@@ -441,7 +442,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             onChange={(e) => setData('catatan', e.target.value)}
                                             placeholder="Masukkan catatan"
                                             rows={2}
-                                            className={alignedTextareaClassName}
+                                            className={alignedBlueTextareaClassName}
                                         />
                                     </div>
                                     <InputError message={errors.catatan} className="mt-1" />

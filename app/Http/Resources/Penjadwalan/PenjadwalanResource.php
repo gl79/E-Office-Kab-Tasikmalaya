@@ -5,6 +5,7 @@ namespace App\Http\Resources\Penjadwalan;
 use App\Models\DisposisiSurat;
 use App\Models\Penjadwalan;
 use App\Models\SuratMasuk;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
@@ -55,7 +56,18 @@ class PenjadwalanResource extends JsonResource
                     'tanggal_diteruskan' => $sm->tanggal_diteruskan?->format('Y-m-d'),
                     'catatan_tambahan' => $sm->catatan_tambahan,
                     'tujuans' => $sm->relationLoaded('tujuans')
-                        ? $sm->tujuans->map(fn($t) => ['id' => $t->id, 'tujuan' => $t->tujuan])
+                        ? $sm->tujuans->map(function ($t) {
+                            return [
+                                'id' => $t->id,
+                                'tujuan' => $t->tujuan,
+                                'user' => $t->relationLoaded('user') && $t->user
+                                    ? [
+                                        'name' => $t->user->name,
+                                        'jabatan_nama' => $t->user->jabatan_nama,
+                                    ]
+                                    : null,
+                            ];
+                        })
                         : [],
                     'jenis_surat' => $sm->relationLoaded('jenisSurat') && $sm->jenisSurat
                         ? ['id' => $sm->jenisSurat->id, 'nama' => $sm->jenisSurat->nama]
@@ -315,6 +327,49 @@ class PenjadwalanResource extends JsonResource
             return null;
         }
 
-        return $latestDisposisi->keUser->jabatan_nama ?: $latestDisposisi->keUser->name;
+        return $this->formatDisposisiRecipientLabel($latestDisposisi->keUser);
+    }
+
+    /**
+     * Format tujuan disposisi menjadi pola Jabatan - Unit.
+     * Contoh: Kepala Bagian - Prokompim, Kepala Dinas - Kesehatan.
+     */
+    private function formatDisposisiRecipientLabel(User $user): ?string
+    {
+        $jabatan = trim((string) $user->jabatan_nama);
+        $nama = trim((string) $user->name);
+
+        if ($jabatan === '' && $nama === '') {
+            return null;
+        }
+
+        if ($jabatan === '') {
+            return $nama;
+        }
+
+        if ($nama === '') {
+            return $jabatan;
+        }
+
+        $unit = preg_replace('/\s+/', ' ', $nama) ?? $nama;
+
+        if (strcasecmp($jabatan, 'Kepala Bagian') === 0) {
+            $unit = preg_replace('/^(kepala\s+bagian|kabag)\s+/i', '', $unit) ?? $unit;
+        } elseif (strcasecmp($jabatan, 'Kepala Dinas') === 0) {
+            $unit = preg_replace('/^(kepala\s+dinas|kadis)\s+/i', '', $unit) ?? $unit;
+        }
+
+        $unit = trim($unit);
+        if ($unit === '') {
+            return $jabatan;
+        }
+
+        // Fallback untuk nama seperti "Kepala RSUD ..." agar tetap terbaca wajar.
+        if (str_starts_with(strtolower($unit), 'kepala ')) {
+            $normalizedUnit = trim((string) preg_replace('/^kepala\s+/i', '', $unit));
+            $unit = $normalizedUnit !== '' ? $normalizedUnit : $unit;
+        }
+
+        return "{$jabatan} - {$unit}";
     }
 }

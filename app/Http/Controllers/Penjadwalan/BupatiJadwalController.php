@@ -192,14 +192,20 @@ class BupatiJadwalController extends Controller
         $user = $request->user();
         abort_unless($this->canManageCustomSchedule($user), 403);
 
-        $result = $this->service->createCustomSchedule($request->validated(), $request->user());
+        $validated = $request->validated();
+        $result = $this->service->createCustomSchedule($validated, $request->user());
 
         if (!$result['success']) {
             return redirect()->back()->with('error', $result['message']);
         }
 
+        $redirectParams = [];
+        if (!empty($validated['tanggal_agenda'])) {
+            $redirectParams['date'] = $validated['tanggal_agenda'];
+        }
+
         $response = redirect()
-            ->route('penjadwalan.definitif.index')
+            ->route('penjadwalan.definitif.index', $redirectParams)
             ->with('success', $result['message']);
 
         if ($result['has_conflict']) {

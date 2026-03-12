@@ -60,6 +60,8 @@ export default function Create({
     const alignedInputClassName = 'w-full min-h-[42px] px-3 py-2 text-sm';
     const alignedReadOnlyInputClassName = `${alignedInputClassName} bg-surface-hover cursor-not-allowed`;
     const alignedTextareaClassName = 'w-full px-3 py-2 text-sm leading-5';
+    const alignedBlueInputClassName = `${alignedInputClassName} rounded-lg border-primary focus:border-primary focus:ring-2 focus:ring-primary/20`;
+    const alignedBlueTextareaClassName = `${alignedTextareaClassName} rounded-lg border-primary focus:border-primary focus:ring-2 focus:ring-primary/20`;
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -263,7 +265,7 @@ export default function Create({
                                                         id="tanggal_surat"
                                                         value={data.tanggal_surat}
                                                         onChange={(e) => setData('tanggal_surat', e.target.value)}
-                                                        className={alignedInputClassName}
+                                                        className={alignedBlueInputClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.tanggal_surat} className="mt-1" />
@@ -369,7 +371,7 @@ export default function Create({
                                                         onChange={(e) => setData('perihal', e.target.value)}
                                                         placeholder="Masukkan perihal surat"
                                                         rows={2}
-                                                        className={alignedTextareaClassName}
+                                                        className={alignedBlueTextareaClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.perihal} className="mt-1" />
@@ -384,7 +386,7 @@ export default function Create({
                                                         onChange={(e) => setData('isi_ringkas', e.target.value)}
                                                         placeholder="Masukkan ringkasan isi surat"
                                                         rows={4}
-                                                        className={alignedTextareaClassName}
+                                                        className={alignedBlueTextareaClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.isi_ringkas} className="mt-1" />
@@ -404,7 +406,7 @@ export default function Create({
                                                         id="tanggal_diterima"
                                                         value={data.tanggal_diterima}
                                                         onChange={(e) => setData('tanggal_diterima', e.target.value)}
-                                                        className={alignedInputClassName}
+                                                        className={alignedBlueInputClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.tanggal_diterima} className="mt-1" />
@@ -474,7 +476,7 @@ export default function Create({
                                                         id="tanggal_diteruskan"
                                                         value={data.tanggal_diteruskan}
                                                         onChange={(e) => setData('tanggal_diteruskan', e.target.value)}
-                                                        className={alignedInputClassName}
+                                                        className={alignedBlueInputClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.tanggal_diteruskan} className="mt-1" />
@@ -489,7 +491,7 @@ export default function Create({
                                                         onChange={(e) => setData('catatan_tambahan', e.target.value)}
                                                         placeholder="Masukkan catatan tambahan"
                                                         rows={3}
-                                                        className={alignedTextareaClassName}
+                                                        className={alignedBlueTextareaClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.catatan_tambahan} className="mt-1" />

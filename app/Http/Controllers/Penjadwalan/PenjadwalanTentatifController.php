@@ -44,7 +44,7 @@ class PenjadwalanTentatifController extends Controller
                         fn(Builder $builder) => $this->applyUserScope($builder, $user)
                     )
                     ->with([
-                        'suratMasuk.tujuans',
+                        'suratMasuk.tujuans.user',
                         'suratMasuk.jenisSurat',
                         'suratMasuk.indeksBerkas',
                         'suratMasuk.kodeKlasifikasi',

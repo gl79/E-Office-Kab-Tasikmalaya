@@ -45,7 +45,7 @@ class PenjadwalanDefinitifController extends Controller
             $query = Penjadwalan::query()
                 ->definitif()
                 ->with([
-                    'suratMasuk.tujuans',
+                    'suratMasuk.tujuans.user',
                     'suratMasuk.jenisSurat',
                     'suratMasuk.indeksBerkas',
                     'suratMasuk.kodeKlasifikasi',
@@ -115,7 +115,7 @@ class PenjadwalanDefinitifController extends Controller
     public function show(string $id)
     {
         $penjadwalan = Penjadwalan::with([
-            'suratMasuk.tujuans',
+            'suratMasuk.tujuans.user',
             'suratMasuk.jenisSurat',
             'suratMasuk.indeksBerkas',
             'suratMasuk.kodeKlasifikasi',

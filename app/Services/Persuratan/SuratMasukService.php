@@ -378,7 +378,50 @@ class SuratMasukService
             return null;
         }
 
-        return $latestDisposisi->keUser->jabatan_nama ?: $latestDisposisi->keUser->name;
+        return $this->formatDisposisiRecipientLabel($latestDisposisi->keUser);
+    }
+
+    /**
+     * Format tujuan disposisi menjadi pola Jabatan - Unit
+     * contoh: Kepala Bagian - Prokompim, Kepala Dinas - Kesehatan.
+     */
+    private function formatDisposisiRecipientLabel(User $user): ?string
+    {
+        $jabatan = trim((string) $user->jabatan_nama);
+        $nama = trim((string) $user->name);
+
+        if ($jabatan === '' && $nama === '') {
+            return null;
+        }
+
+        if ($jabatan === '') {
+            return $nama;
+        }
+
+        if ($nama === '') {
+            return $jabatan;
+        }
+
+        $unit = preg_replace('/\s+/', ' ', $nama) ?? $nama;
+
+        if (strcasecmp($jabatan, 'Kepala Bagian') === 0) {
+            $unit = preg_replace('/^(kepala\s+bagian|kabag)\s+/i', '', $unit) ?? $unit;
+        } elseif (strcasecmp($jabatan, 'Kepala Dinas') === 0) {
+            $unit = preg_replace('/^(kepala\s+dinas|kadis)\s+/i', '', $unit) ?? $unit;
+        }
+
+        $unit = trim($unit);
+        if ($unit === '') {
+            return $jabatan;
+        }
+
+        // Fallback untuk nama seperti "Kepala RSUD ..." agar tidak tampil "Kepala Dinas - Kepala RSUD ..."
+        if (str_starts_with(strtolower($unit), 'kepala ')) {
+            $normalizedUnit = trim((string) preg_replace('/^kepala\s+/i', '', $unit));
+            $unit = $normalizedUnit !== '' ? $normalizedUnit : $unit;
+        }
+
+        return "{$jabatan} - {$unit}";
     }
 
     // ==================== PRIVATE: TUJUAN SYNC ====================

@@ -28,6 +28,7 @@ const getWorkflowStatusVariant = (status?: string): 'default' | 'primary' | 'suc
         case 'Masuk Jadwal Tentatif':
             return 'warning';
         case 'Sudah Didisposisi':
+        case 'Sudah Disposisi':
             return 'info';
         case 'Jadwal Definitif':
             return 'primary';
@@ -48,8 +49,12 @@ const getDisposisiRecipientLabel = (item: Agenda): string | null => {
         return fromStatus;
     }
 
-    const fromAttend = item.dihadiri_oleh?.trim();
-    return fromAttend || null;
+    const fromSuratStatus = item.surat_masuk?.status_tindak_lanjut_disposisi_ke?.trim();
+    if (fromSuratStatus) {
+        return fromSuratStatus;
+    }
+
+    return null;
 };
 
 const getWorkflowStatusLabel = (item: Agenda): string => {

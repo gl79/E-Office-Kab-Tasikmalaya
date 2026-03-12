@@ -48,8 +48,7 @@ const getDisposisiRecipientLabel = (agenda: Agenda): string | null => {
         return fromSuratStatus;
     }
 
-    const fromAttend = agenda.dihadiri_oleh?.trim();
-    return fromAttend || null;
+    return null;
 };
 
 const getWorkflowStatusLabel = (agenda: Agenda): string => {
@@ -83,6 +82,18 @@ const getDetailedStatusLabel = (agenda: Agenda): string => {
 
 const DefinitifIndex = ({ sifatOptions }: Props) => {
     const { auth } = usePage<PageProps>().props;
+    const initialCalendarDate = useMemo(() => {
+        if (typeof window === 'undefined') {
+            return undefined;
+        }
+
+        const date = new URLSearchParams(window.location.search).get('date');
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return undefined;
+        }
+
+        return date;
+    }, []);
     const canUseCustomSchedule = auth.user?.role === 'superadmin'
         || (auth.user?.role === 'pejabat' && [1, 2, 3].includes(auth.user?.jabatan_level ?? -1));
     const cacheKey = `penjadwalan_definitif_${auth.user.id}`;
@@ -393,6 +404,7 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                             <FullCalendar
                                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                                 initialView="dayGridMonth"
+                                initialDate={initialCalendarDate}
                                 headerToolbar={{
                                     left: 'prev,next today',
                                     center: 'title',
@@ -500,7 +512,7 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                             {sm?.tujuans?.length ? (
                                                 sm.tujuans.map((t) => (
                                                     <Badge key={t.id} variant="primary" size="sm">
-                                                        {t.tujuan}
+                                                        {t.user?.jabatan_nama || t.tujuan}
                                                     </Badge>
                                                 ))
                                             ) : (
