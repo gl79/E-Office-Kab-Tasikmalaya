@@ -94,8 +94,8 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
 
         return date;
     }, []);
-    const canUseCustomSchedule = auth.user?.role === 'superadmin'
-        || (auth.user?.role === 'pejabat' && [1, 2, 3].includes(auth.user?.jabatan_level ?? -1));
+    const canUseCustomSchedule = auth.user?.role === 'pejabat' && [1, 2, 3].includes(auth.user?.jabatan_level ?? -1);
+    const canDeleteSchedule = canUseCustomSchedule; // Only Bupati/Wabup/Sekda can delete
     const cacheKey = `penjadwalan_definitif_${auth.user.id}`;
     const { read, write } = useMemoryCache<CalendarEvent[]>(cacheKey, CACHE_TTL_MS);
     const cachedEvents = read();
@@ -512,7 +512,7 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                             {sm?.tujuans?.length ? (
                                                 sm.tujuans.map((t) => (
                                                     <Badge key={t.id} variant="primary" size="sm">
-                                                        {t.user?.jabatan_nama || t.tujuan}
+                                                        {t.tujuan}
                                                     </Badge>
                                                 ))
                                             ) : (
@@ -635,7 +635,8 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                 </div>
                             )}
 
-                            {/* Action Button */}
+                            {/* Action Button — only for Bupati/Wabup/Sekda */}
+                            {canDeleteSchedule && (
                             <div className="pt-4 border-t border-border-default">
                                 <Button
                                     variant="danger"
@@ -646,6 +647,7 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                     Hapus Jadwal
                                 </Button>
                             </div>
+                            )}
                         </div>
 
                         <div className="flex flex-col gap-3">

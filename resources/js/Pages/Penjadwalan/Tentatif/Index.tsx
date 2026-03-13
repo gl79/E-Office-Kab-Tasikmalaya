@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Copy, ExternalLink, Filter, MessageCircle, RotateCcw } from 'lucide-react';
+import { Copy, ExternalLink, Filter, MessageCircle, RotateCcw, ArrowRight } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Badge, ConfirmDialog } from '@/Components/ui';
 import { TextInput, FormDatePicker, FormSelect } from '@/Components/form';
@@ -147,6 +147,24 @@ const TentatifIndex = ({
     const [selectedSuratForDisposisi, setSelectedSuratForDisposisi] = useState<SuratMasuk | null>(null);
     const [timelineModalOpen, setTimelineModalOpen] = useState(false);
     const [timelineSurat, setTimelineSurat] = useState<SuratMasuk | null>(null);
+
+    // Disposition timeline for detail modal
+    const [detailTimeline, setDetailTimeline] = useState<Array<{
+        id: string; aksi: string; aksi_label: string; keterangan: string;
+        user_name: string; user_jabatan: string; created_at: string;
+    }>>([]);
+    const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
+
+    const fetchDetailTimeline = useCallback((suratMasukId: string) => {
+        setIsLoadingTimeline(true);
+        fetch(route('persuratan.surat-masuk.timeline', suratMasukId), {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        })
+            .then(res => res.json())
+            .then(data => setDetailTimeline(data.timelines || []))
+            .catch(() => setDetailTimeline([]))
+            .finally(() => setIsLoadingTimeline(false));
+    }, []);
 
     // Form for editing kehadiran (Tindak Lanjut)
     const form = useForm({
@@ -304,10 +322,22 @@ const TentatifIndex = ({
 
         form.put(route('penjadwalan.tentatif.tindak-lanjut', selectedAgendaId), {
             onSuccess: () => {
-                // Jadwal sudah menjadi definitif, keluarkan dari tabel tentatif secara langsung.
+                // Jadwal sudah menjadi definitif — tetap di tabel tapi matikan tombol aksi.
                 updateAndCache((prev) => ({
                     ...prev,
-                    data: prev.data.filter((agenda) => agenda.id !== selectedAgendaId),
+                    data: prev.data.map((agenda) =>
+                        agenda.id === selectedAgendaId
+                            ? {
+                                ...agenda,
+                                status: 'definitif' as const,
+                                status_label: 'Definitif',
+                                status_tindak_lanjut: 'Jadwal Definitif',
+                                status_tindak_lanjut_label: 'Jadwal Definitif',
+                                can_tindak_lanjut: false,
+                                can_disposisi: false,
+                            }
+                            : agenda
+                    ),
                 }));
                 setShowEditModal(false);
                 form.reset();
@@ -532,6 +562,11 @@ const TentatifIndex = ({
                         onViewDetail={(agenda) => {
                             setSelectedAgenda(agenda);
                             setShowDetailModal(true);
+                            if (agenda.surat_masuk?.id) {
+                                fetchDetailTimeline(agenda.surat_masuk.id);
+                            } else {
+                                setDetailTimeline([]);
+                            }
                         }}
                         onDisposisi={(agenda) => {
                             if (agenda.surat_masuk) {
@@ -693,6 +728,37 @@ const TentatifIndex = ({
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Alur Disposisi */}
+                            {(() => {
+                                const disposisiEntries = detailTimeline.filter(t => t.aksi === 'disposisi');
+                                if (disposisiEntries.length === 0 && !isLoadingTimeline) return null;
+                                return (
+                                    <div className="pt-4 border-t border-border-default">
+                                        <h4 className="font-semibold text-text-primary mb-3 pb-1 border-b border-border-default">
+                                            Alur Disposisi
+                                        </h4>
+                                        {isLoadingTimeline ? (
+                                            <p className="text-sm text-text-secondary italic">Memuat data disposisi...</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {disposisiEntries.map((entry) => (
+                                                    <div key={entry.id} className="flex items-start gap-2 text-sm">
+                                                        <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                                        <div>
+                                                            <p className="text-text-primary">{entry.keterangan}</p>
+                                                            <p className="text-xs text-text-secondary">
+                                                                {new Date(entry.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                                                {new Date(entry.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
 
                             {/* Identitas Agenda */}
                             <div className="pt-4 border-t border-border-default">

@@ -249,8 +249,9 @@ class BupatiJadwalController extends Controller
 
     private function canManageCustomSchedule(User $user): bool
     {
-        if ($user->isSuperAdmin()) {
-            return true;
+        // Super Admin dan Tata Usaha hanya view-only.
+        if ($user->isSuperAdmin() || $user->isTU()) {
+            return false;
         }
 
         $level = $user->getJabatanLevel();

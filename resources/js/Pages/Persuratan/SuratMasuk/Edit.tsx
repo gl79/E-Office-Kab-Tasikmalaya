@@ -87,6 +87,11 @@ export default function Edit({
     const [currentStep, setCurrentStep] = useState(0);
     const [stepError, setStepError] = useState('');
     const isMounted = useRef(false);
+    const alignedInputClassName = 'w-full min-h-[42px] px-3 py-2 text-sm';
+    const alignedReadOnlyInputClassName = `${alignedInputClassName} bg-surface-hover cursor-not-allowed`;
+    const alignedTextareaClassName = 'w-full px-3 py-2 text-sm leading-5';
+    const alignedBlueInputClassName = `${alignedInputClassName} rounded-lg border-primary focus:border-primary focus:ring-2 focus:ring-primary/20`;
+    const alignedBlueTextareaClassName = `${alignedTextareaClassName} rounded-lg border-primary focus:border-primary focus:ring-2 focus:ring-primary/20`;
 
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
@@ -260,7 +265,7 @@ export default function Edit({
                                                         id="tanggal_surat"
                                                         value={data.tanggal_surat}
                                                         onChange={(e) => setData('tanggal_surat', e.target.value)}
-                                                        className="w-full"
+                                                        className={alignedBlueInputClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.tanggal_surat} className="mt-1" />
@@ -306,7 +311,7 @@ export default function Edit({
                                                         value={data.nomor_surat}
                                                         onChange={(e) => setData('nomor_surat', e.target.value)}
                                                         placeholder="Masukkan nomor surat"
-                                                        className="w-full"
+                                                        className={alignedInputClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.nomor_surat} className="mt-1" />
@@ -351,7 +356,7 @@ export default function Edit({
                                                         onChange={(e) => setData('lampiran', e.target.value)}
                                                         placeholder="Jumlah lampiran"
                                                         min="0"
-                                                        className="w-full"
+                                                        className={alignedInputClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.lampiran} className="mt-1" />
@@ -366,7 +371,7 @@ export default function Edit({
                                                         onChange={(e) => setData('perihal', e.target.value)}
                                                         placeholder="Masukkan perihal surat"
                                                         rows={2}
-                                                        className="w-full"
+                                                        className={alignedBlueTextareaClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.perihal} className="mt-1" />
@@ -381,7 +386,7 @@ export default function Edit({
                                                         onChange={(e) => setData('isi_ringkas', e.target.value)}
                                                         placeholder="Masukkan ringkasan isi surat"
                                                         rows={4}
-                                                        className="w-full"
+                                                        className={alignedBlueTextareaClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.isi_ringkas} className="mt-1" />
@@ -401,7 +406,7 @@ export default function Edit({
                                                         id="tanggal_diterima"
                                                         value={data.tanggal_diterima}
                                                         onChange={(e) => setData('tanggal_diterima', e.target.value)}
-                                                        className="w-full"
+                                                        className={alignedBlueInputClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.tanggal_diterima} className="mt-1" />
@@ -414,7 +419,7 @@ export default function Edit({
                                                         id="nomor_agenda"
                                                         value={data.nomor_agenda.split('/')[1] || data.nomor_agenda}
                                                         readOnly
-                                                        className="w-full bg-surface-hover cursor-not-allowed"
+                                                        className={alignedReadOnlyInputClassName}
                                                     />
                                                 </div>
                                                 <p className="text-xs text-text-secondary mt-1">No agenda tidak dapat diubah</p>
@@ -472,7 +477,7 @@ export default function Edit({
                                                         id="tanggal_diteruskan"
                                                         value={data.tanggal_diteruskan}
                                                         onChange={(e) => setData('tanggal_diteruskan', e.target.value)}
-                                                        className="w-full"
+                                                        className={alignedBlueInputClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.tanggal_diteruskan} className="mt-1" />
@@ -487,7 +492,7 @@ export default function Edit({
                                                         onChange={(e) => setData('catatan_tambahan', e.target.value)}
                                                         placeholder="Catatan internal (opsional)"
                                                         rows={3}
-                                                        className="w-full"
+                                                        className={alignedBlueTextareaClassName}
                                                     />
                                                 </div>
                                                 <InputError message={errors.catatan_tambahan} className="mt-1" />

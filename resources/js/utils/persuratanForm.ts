@@ -50,12 +50,20 @@ export function buildInternalUserOptions(
 }
 
 export function buildKepadaUserOptions(users: UserLike[], options: LabelOptions = {}) {
+    const mergedOptions: LabelOptions = {
+        includeNameInLabel: true,
+        specialJabatanOnly: true,
+        ...options,
+    };
     return users
         .filter((user) => !EXCLUDED_USER_NAMES.has(user.name))
-        .map((user) => ({
-            value: user.name,
-            label: formatUserLabel(user, options),
-        }));
+        .map((user) => {
+            const label = formatUserLabel(user, mergedOptions);
+            return {
+                value: label,
+                label,
+            };
+        });
 }
 
 export function getSifatCode(sifat: string): string {

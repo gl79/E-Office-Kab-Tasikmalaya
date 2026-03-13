@@ -54,6 +54,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
     const alignedInputClassName = 'w-full min-h-[42px] px-3 py-2 text-sm';
     const alignedReadOnlyInputClassName = `${alignedInputClassName} bg-surface-hover cursor-not-allowed`;
     const alignedTextareaClassName = 'w-full px-3 py-2 text-sm leading-5';
+    const alignedBlueInputClassName = `${alignedInputClassName} rounded-lg border-primary focus:border-primary focus:ring-2 focus:ring-primary/20`;
     const alignedBlueTextareaClassName = `${alignedTextareaClassName} rounded-lg border-primary focus:border-primary focus:ring-2 focus:ring-primary/20`;
 
     const { data, setData, post, processing, errors } = useForm({
@@ -211,7 +212,7 @@ export default function Create({ jenisSuratOptions, indeksBerkasOptions, indeksK
                                             id="tanggal_surat"
                                             value={data.tanggal_surat}
                                             onChange={(e) => setData('tanggal_surat', e.target.value)}
-                                            className={alignedInputClassName}
+                                            className={alignedBlueInputClassName}
                                         />
                                     </div>
                                     <InputError message={errors.tanggal_surat} className="mt-1" />

@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Head, router, Link, usePage } from '@inertiajs/react';
-import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw, CalendarPlus, Check, Clock } from 'lucide-react';
+import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw, CalendarPlus, Check, Clock, ArrowRight } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
 import Badge from '@/Components/ui/Badge';
@@ -108,6 +108,24 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
     // Detail Modal State
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailSurat, setDetailSurat] = useState<SuratMasuk | null>(null);
+
+    // Disposition timeline for detail modal
+    const [detailTimeline, setDetailTimeline] = useState<Array<{
+        id: string; aksi: string; aksi_label: string; keterangan: string;
+        user_name: string; user_jabatan: string; created_at: string;
+    }>>([]);
+    const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
+
+    const fetchDetailTimeline = useCallback((suratId: string) => {
+        setIsLoadingTimeline(true);
+        fetch(route('persuratan.surat-masuk.timeline', suratId), {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        })
+            .then(res => res.json())
+            .then(data => setDetailTimeline(data.timelines || []))
+            .catch(() => setDetailTimeline([]))
+            .finally(() => setIsLoadingTimeline(false));
+    }, []);
 
     // Timeline Modal State
     const [timelineModalOpen, setTimelineModalOpen] = useState(false);
@@ -585,6 +603,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                                             onClick={() => {
                                                                 setDetailSurat(item);
                                                                 setDetailModalOpen(true);
+                                                                fetchDetailTimeline(item.id);
                                                             }}
                                                             className="flex items-center gap-2"
                                                         >
@@ -769,7 +788,7 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                         {detailSurat.tujuans?.length ? (
                                             detailSurat.tujuans.map((t) => (
                                                 <Badge key={t.id} variant="primary" size="sm">
-                                                    {t.user?.jabatan_nama || t.tujuan}
+                                                    {t.tujuan}
                                                 </Badge>
                                             ))
                                         ) : (
@@ -785,6 +804,35 @@ const Index = ({ suratMasuk: initialSuratMasuk, sifatOptions }: Props) => {
                                 )}
                             </div>
                         </div>
+
+                        {/* Alur Disposisi */}
+                        {(() => {
+                            const disposisiEntries = detailTimeline.filter(t => t.aksi === 'disposisi');
+                            if (disposisiEntries.length === 0 && !isLoadingTimeline) return null;
+                            return (
+                                <div className="pt-4 border-t border-border-default">
+                                    <h3 className="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide">Alur Disposisi</h3>
+                                    {isLoadingTimeline ? (
+                                        <p className="text-sm text-text-secondary italic">Memuat data disposisi...</p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {disposisiEntries.map((entry) => (
+                                                <div key={entry.id} className="flex items-start gap-2 text-sm">
+                                                    <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                                    <div>
+                                                        <p className="text-text-primary">{entry.keterangan}</p>
+                                                        <p className="text-xs text-text-secondary">
+                                                            {new Date(entry.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                                            {new Date(entry.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         {/* Identitas Agenda */}
                         <div className="pt-4 border-t border-border-default">

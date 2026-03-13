@@ -195,7 +195,7 @@ const Dashboard = () => {
                 <>
                     {/* System Metrics Section */}
                     <div className="mb-8">
-                        <h2 className="text-lg font-semibold text-text-primary mb-4">Statistik E-Office</h2>
+                        <h2 className="text-lg font-semibold text-text-primary mb-4">Ringkasan Dashboard</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {metricsCards.map((stat) => {
                                 const Icon = stat.icon;
@@ -281,7 +281,7 @@ const Dashboard = () => {
             ) : (
                 /* Metrics for non-admin roles */
                 <div className="mb-8">
-                    <h2 className="text-lg font-semibold text-text-primary mb-4">Statistik E-Office</h2>
+                    <h2 className="text-lg font-semibold text-text-primary mb-4">Ringkasan Dashboard</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {metricsCards.map((card) => {
                             const Icon = card.icon;

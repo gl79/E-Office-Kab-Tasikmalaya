@@ -3,6 +3,7 @@ import { Head, router, Link, usePage } from '@inertiajs/react';
 import { Pencil, Trash2, Plus, Eye, Printer, FileText, Filter, MoreVertical, Download, RotateCcw } from 'lucide-react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Pagination, Dropdown } from '@/Components/ui';
+import Badge from '@/Components/ui/Badge';
 import ConfirmDialog from '@/Components/ui/ConfirmDialog';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { TextInput } from '@/Components/form';
@@ -516,7 +517,11 @@ const Index = ({ suratKeluar: initialSuratKeluar, sifat1Options }: Props) => {
                                 </div>
                                 <div>
                                     <p className="text-sm text-text-secondary">Kepada</p>
-                                    <p className="font-medium text-text-primary">{detailSurat.kepada}</p>
+                                    <div className="mt-1">
+                                        <Badge variant="primary" size="sm">
+                                            {detailSurat.kepada}
+                                        </Badge>
+                                    </div>
                                 </div>
 
                                 {/* Lampiran | Perihal */}

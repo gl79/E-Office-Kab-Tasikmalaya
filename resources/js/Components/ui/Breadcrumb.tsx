@@ -37,7 +37,7 @@ export default function Breadcrumb({ items, className = '' }: BreadcrumbProps) {
                                     {item.label}
                                 </Link>
                             ) : (
-                                <span className="ml-1 md:ml-2 text-sm font-normal text-text-primary capitalize">
+                                <span className="ml-1 md:ml-2 text-sm font-semibold text-text-primary capitalize">
                                     {item.label}
                                 </span>
                             )}
