@@ -24,14 +24,15 @@ export const formatDate = (date: DateInput): string => {
 };
 
 /**
- * Format date to short format: "01/01/2024"
+ * Format date to Indonesian format with day name: "Kamis, 26 Maret 2026"
  */
 export const formatDateShort = (date: DateInput): string => {
     if (!date) return '-';
     try {
         return new Date(date).toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: '2-digit',
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
             year: 'numeric',
         });
     } catch {
@@ -48,23 +49,6 @@ export const formatDateNumeric = (date: DateInput): string => {
         return new Date(date).toLocaleDateString('id-ID', {
             day: '2-digit',
             month: 'short',
-            year: 'numeric',
-        });
-    } catch {
-        return '-';
-    }
-};
-
-/**
- * Format date with day name: "Senin, 1 Januari 2024"
- */
-export const formatDateWithDay = (date: DateInput): string => {
-    if (!date) return '-';
-    try {
-        return new Date(date).toLocaleDateString('id-ID', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
             year: 'numeric',
         });
     } catch {

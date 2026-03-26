@@ -80,7 +80,7 @@ class Penjadwalan extends Model
     ];
 
     protected $casts = [
-        'tanggal_agenda' => 'datetime',
+        'tanggal_agenda' => 'date',
         'sampai_selesai' => 'boolean',
         'dihadiri_oleh_user_id' => 'integer',
         'created_at' => 'datetime',
@@ -453,15 +453,12 @@ class Penjadwalan extends Model
 
     /**
      * Menentukan apakah agenda definitif sudah selesai.
+     * Selesai hanya jika tanggal agenda sudah lewat (bukan hari ini).
      */
     public function isKegiatanSelesai(): bool
     {
         if ($this->status !== self::STATUS_DEFINITIF) {
             return false;
-        }
-
-        if (!empty($this->status_kehadiran)) {
-            return true;
         }
 
         /** @var \Illuminate\Support\Carbon|null $tanggal */

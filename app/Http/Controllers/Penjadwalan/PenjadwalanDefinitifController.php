@@ -39,71 +39,57 @@ class PenjadwalanDefinitifController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        $cacheKey = 'calendar_data_' . $user->id . '_' . md5(json_encode($request->all()));
+        $query = Penjadwalan::query()
+            ->definitif()
+            ->with([
+                'suratMasuk.tujuans.user',
+                'suratMasuk.jenisSurat',
+                'suratMasuk.indeksBerkas',
+                'suratMasuk.kodeKlasifikasi',
+                'suratMasuk.staffPengolah',
+                'suratMasuk.disposisis.keUser.jabatanRelasi',
+                'suratMasuk.createdBy',
+                'creator',
+                'dihadiriOlehUser.jabatanRelasi',
+            ]);
 
-        $events = CacheHelper::tags(['penjadwalan'])->remember($cacheKey, 60, function () use ($request, $user) {
-            $query = Penjadwalan::query()
-                ->definitif()
-                ->with([
-                    'suratMasuk.tujuans.user',
-                    'suratMasuk.jenisSurat',
-                    'suratMasuk.indeksBerkas',
-                    'suratMasuk.kodeKlasifikasi',
-                    'suratMasuk.staffPengolah',
-                    'suratMasuk.disposisis.keUser.jabatanRelasi',
-                    'suratMasuk.createdBy',
-                    'creator',
-                    'dihadiriOlehUser.jabatanRelasi',
-                ]);
+        if (!$this->canViewAllDefinitif($user)) {
+            $this->applyUserScope($query, $user);
+        }
 
-            if (!$this->canViewAllDefinitif($user)) {
-                $this->applyUserScope($query, $user);
+        // Search
+        if ($request->has('search') && $request->input('search')) {
+            $query->search($request->input('search'));
+        }
+
+        $penjadwalan = $query->get();
+
+        $events = $penjadwalan->map(function (Penjadwalan $item) {
+            $calendarStatus = $this->resolveCalendarStatus($item);
+
+            // Gunakan getRawOriginal untuk menghindari timezone shift dari Carbon
+            $date = $item->getRawOriginal('tanggal_agenda');
+            // Jika raw original mengembalikan format lengkap (misal di DB), ambil Y-m-d saja
+            if ($date && strlen($date) > 10) {
+                $date = substr($date, 0, 10);
             }
 
-            // Show all schedules regardless of date range if requested, 
-            // or if searching to ensure all results are found.
-            if ($request->has('start') && $request->has('end') && !$request->has('search')) {
-                // Keep the filter only if NOT searching, to maintain performance for normal view
-                // but we might want to relax this if the user wants to see ALL in the calendar
-                // regardless of the current view. However, FullCalendar handles range by itself.
-                // The user said "dont disappear even if date passed". 
-                // In a calendar, past events stay unless filtered.
-                // It's likely they want them to stay in searching or general lists.
-                $query->whereBetween('tanggal_agenda', [
-                    $request->input('start'),
-                    $request->input('end'),
-                ]);
-            }
-
-            // Search
-            if ($request->has('search') && $request->input('search')) {
-                $query->search($request->input('search'));
-            }
-
-            $penjadwalan = $query->get();
-
-            // Transform to FullCalendar event format
-            // Note: Colors are handled by frontend using CSS variables for consistency
-            return $penjadwalan->map(function (Penjadwalan $item) {
-                $calendarStatus = $this->resolveCalendarStatus($item);
-
-                return [
-                    'id' => $item->id,
-                    'title' => $item->nama_kegiatan,
-                    'start' => $item->tanggal_agenda->format('Y-m-d') . 'T' . $item->waktu_mulai,
-                    'end' => $item->sampai_selesai
-                        ? null
-                        : ($item->waktu_selesai
-                            ? $item->tanggal_agenda->format('Y-m-d') . 'T' . $item->waktu_selesai
-                            : null),
-                    'allDay' => false,
-                    'classNames' => ['event-' . $calendarStatus],
-                    'extendedProps' => [
-                        'agenda' => new PenjadwalanResource($item),
-                        'status_disposisi' => $calendarStatus,
-                    ],
-                ];
-            });
+            return [
+                'id' => $item->id,
+                'title' => $item->nama_kegiatan,
+                'start' => ($date ?: $item->tanggal_agenda->format('Y-m-d')) . 'T' . $item->waktu_mulai,
+                'end' => $item->sampai_selesai
+                    ? null
+                    : ($item->waktu_selesai
+                        ? ($date ?: $item->tanggal_agenda->format('Y-m-d')) . 'T' . $item->waktu_selesai
+                        : null),
+                'allDay' => false,
+                'classNames' => ['event-' . $calendarStatus],
+                'extendedProps' => [
+                    'agenda' => new PenjadwalanResource($item),
+                    'status_disposisi' => $calendarStatus,
+                ],
+            ];
         });
 
         return response()->json($events);

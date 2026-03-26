@@ -96,6 +96,7 @@ export interface Agenda extends AgendaBase {
     keterangan?: string | null;
     can_tindak_lanjut?: boolean;
     can_disposisi?: boolean;
+    can_delete?: boolean;
     created_by?: AgendaCreator | null;
 }
 

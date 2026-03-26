@@ -16,10 +16,18 @@ class DesaRequest extends FormRequest
     {
         $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
 
+        // Validasi geo fields (berlaku untuk store & update)
+        $geoRules = [
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'alamat' => ['nullable', 'string', 'max:500'],
+        ];
+
         if ($isUpdate) {
-            // Untuk update, hanya validasi nama
+            // Untuk update, hanya validasi nama + geo
             return [
                 'nama' => ['required', 'string', 'max:255'],
+                ...$geoRules,
             ];
         }
 
@@ -50,6 +58,7 @@ class DesaRequest extends FormRequest
                 }),
             ],
             'nama' => ['required', 'string', 'max:255'],
+            ...$geoRules,
         ];
     }
 

@@ -18,6 +18,7 @@ import { Link } from '@inertiajs/react';
 import DashboardShimmer from '@/Components/shimmer/DashboardShimmer';
 import { useEffect, useState } from 'react';
 import { useMemoryCache } from '@/hooks/useMemoryCache';
+import DashboardMap from '@/Components/dashboard/DashboardMap';
 
 interface DashboardStats {
     wilayah?: {
@@ -189,6 +190,13 @@ const Dashboard = () => {
                     greeting={getGreeting()}
                 />
             </div>
+
+            {/* Bupati Special Feature: Google Maps Map */}
+            {(user.jabatan_id === 1 || user.jabatan_level === 1) && (
+                <div className="mb-8">
+                    <DashboardMap />
+                </div>
+            )}
 
             {/* Content based on role */}
             {isAdmin ? (

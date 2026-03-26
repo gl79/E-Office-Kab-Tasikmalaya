@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import TableShimmer from '@/Components/shimmer/TableShimmer';
 import { Head, useForm, router } from '@inertiajs/react';
-import { Pencil, Trash2, Plus, Search } from 'lucide-react';
+import { Pencil, Trash2, Plus, Search, MapPin } from 'lucide-react';
 import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout';
 import Button from '@/Components/ui/Button';
@@ -29,6 +29,9 @@ interface WilayahKecamatan {
     kabupaten_kode: string;
     kode: string;
     nama: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    alamat?: string | null;
     kabupaten?: {
         nama: string;
         provinsi?: {
@@ -108,6 +111,9 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
         kabupaten_kode: '',
         kode: '',
         nama: '',
+        latitude: '',
+        longitude: '',
+        alamat: '',
     });
 
     // Reset page when filter changes
@@ -166,6 +172,9 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
             kabupaten_kode: item.kabupaten_kode,
             kode: item.kode,
             nama: item.nama,
+            latitude: item.latitude != null ? String(item.latitude) : '',
+            longitude: item.longitude != null ? String(item.longitude) : '',
+            alamat: item.alamat || '',
         });
         clearErrors();
         setIsEditModalOpen(true);
@@ -231,6 +240,20 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
             key: 'desa_count',
             label: 'Jumlah Desa',
             render: (value) => <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">{String(value)}</span>
+        },
+        {
+            key: 'koordinat',
+            label: 'Koordinat',
+            render: (_: unknown, item: WilayahKecamatan) => (
+                item.latitude && item.longitude ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-success">
+                        <MapPin className="h-3 w-3" />
+                        {Number(item.latitude).toFixed(4)}, {Number(item.longitude).toFixed(4)}
+                    </span>
+                ) : (
+                    <span className="text-xs text-text-tertiary italic">Belum diisi</span>
+                )
+            ),
         },
         {
             key: 'actions',
@@ -410,6 +433,49 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
                     </div>
+
+                    {/* Geo Fields */}
+                    <div className="border-t border-border-default pt-4 mt-2">
+                        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5" /> Data Geolokasi <span className="text-text-tertiary font-normal">(Opsional)</span>
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <InputLabel htmlFor="latitude" value="Latitude" />
+                                <TextInput
+                                    id="latitude"
+                                    value={formData.latitude}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('latitude', e.target.value)}
+                                    placeholder="Contoh: -7.459600"
+                                    className="w-full px-2"
+                                />
+                                {errors.latitude && <p className="text-sm text-danger">{errors.latitude}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <InputLabel htmlFor="longitude" value="Longitude" />
+                                <TextInput
+                                    id="longitude"
+                                    value={formData.longitude}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('longitude', e.target.value)}
+                                    placeholder="Contoh: 107.982390"
+                                    className="w-full px-2"
+                                />
+                                {errors.longitude && <p className="text-sm text-danger">{errors.longitude}</p>}
+                            </div>
+                        </div>
+                        <div className="space-y-2 mt-4">
+                            <InputLabel htmlFor="alamat" value="Alamat Lengkap" />
+                            <textarea
+                                id="alamat"
+                                value={formData.alamat}
+                                onChange={(e) => setData('alamat', e.target.value)}
+                                placeholder="Contoh: Taraju, Kec. Taraju, Kabupaten Tasikmalaya, Jawa Barat 46474"
+                                rows={2}
+                                className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm px-3 py-2 text-sm"
+                            />
+                            {errors.alamat && <p className="text-sm text-danger">{errors.alamat}</p>}
+                        </div>
+                    </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Batal</Button>
                         <Button type="submit" disabled={processing}>Simpan</Button>
@@ -470,6 +536,49 @@ export default function Index({ auth, kecamatan: initialKecamatan, filters }: Pr
                             className="w-full px-2"
                         />
                         {errors.nama && <p className="text-sm text-danger">{errors.nama}</p>}
+                    </div>
+
+                    {/* Geo Fields */}
+                    <div className="border-t border-border-default pt-4 mt-2">
+                        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5" /> Data Geolokasi <span className="text-text-tertiary font-normal">(Opsional)</span>
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <InputLabel htmlFor="edit-latitude" value="Latitude" />
+                                <TextInput
+                                    id="edit-latitude"
+                                    value={formData.latitude}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('latitude', e.target.value)}
+                                    placeholder="Contoh: -7.459600"
+                                    className="w-full px-2"
+                                />
+                                {errors.latitude && <p className="text-sm text-danger">{errors.latitude}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <InputLabel htmlFor="edit-longitude" value="Longitude" />
+                                <TextInput
+                                    id="edit-longitude"
+                                    value={formData.longitude}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('longitude', e.target.value)}
+                                    placeholder="Contoh: 107.982390"
+                                    className="w-full px-2"
+                                />
+                                {errors.longitude && <p className="text-sm text-danger">{errors.longitude}</p>}
+                            </div>
+                        </div>
+                        <div className="space-y-2 mt-4">
+                            <InputLabel htmlFor="edit-alamat" value="Alamat Lengkap" />
+                            <textarea
+                                id="edit-alamat"
+                                value={formData.alamat}
+                                onChange={(e) => setData('alamat', e.target.value)}
+                                placeholder="Contoh: Taraju, Kec. Taraju, Kabupaten Tasikmalaya, Jawa Barat 46474"
+                                rows={2}
+                                className="w-full border-border-default focus:border-primary focus:ring-primary rounded-md shadow-sm px-3 py-2 text-sm"
+                            />
+                            {errors.alamat && <p className="text-sm text-danger">{errors.alamat}</p>}
+                        </div>
                     </div>
                     <div className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>Batal</Button>

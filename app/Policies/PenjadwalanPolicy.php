@@ -118,9 +118,20 @@ class PenjadwalanPolicy
             return false;
         }
 
-        // Setelah definitif, hanya superadmin yang bisa hapus
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        // Setelah definitif:
         if ($penjadwalan->isLockedDefinitif()) {
-            return $user->isSuperAdmin();
+            // Jadwal berbasis surat: hanya pemilik jadwal (user terakhir tindak lanjut) yang bisa hapus
+            if ($penjadwalan->surat_masuk_id) {
+                return $penjadwalan->pemilik_jadwal_id !== null
+                    && $penjadwalan->pemilik_jadwal_id === $user->id;
+            }
+
+            // Jadwal custom: hanya pembuat yang bisa hapus
+            return (int) $penjadwalan->created_by === (int) $user->id;
         }
 
         return true;

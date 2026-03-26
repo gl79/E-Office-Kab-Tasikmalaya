@@ -10,7 +10,12 @@ class WilayahDesa extends Model
     use Compoships;
     protected $table = 'wilayah_desa';
     public $incrementing = false;
-    protected $fillable = ['provinsi_kode', 'kabupaten_kode', 'kecamatan_kode', 'kode', 'nama'];
+    protected $fillable = ['provinsi_kode', 'kabupaten_kode', 'kecamatan_kode', 'kode', 'nama', 'latitude', 'longitude', 'alamat'];
+
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
+    ];
 
     public function getKeyName()
     {

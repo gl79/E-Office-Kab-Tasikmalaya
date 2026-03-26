@@ -37,6 +37,9 @@ return new class extends Migration
             $table->char('kabupaten_kode', 2);
             $table->char('kode', 2);
             $table->string('nama');
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+            $table->text('alamat')->nullable();
             $table->primary(['provinsi_kode', 'kabupaten_kode', 'kode']);
             $table->foreign(['provinsi_kode', 'kabupaten_kode'])
                 ->references(['provinsi_kode', 'kode'])->on('wilayah_kabupaten')
@@ -52,6 +55,9 @@ return new class extends Migration
             $table->char('kecamatan_kode', 2);
             $table->char('kode', 4);
             $table->string('nama');
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+            $table->text('alamat')->nullable();
             $table->primary(['provinsi_kode', 'kabupaten_kode', 'kecamatan_kode', 'kode']);
             $table->foreign(['provinsi_kode', 'kabupaten_kode', 'kecamatan_kode'])
                 ->references(['provinsi_kode', 'kabupaten_kode', 'kode'])->on('wilayah_kecamatan')

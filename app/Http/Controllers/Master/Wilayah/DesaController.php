@@ -20,7 +20,7 @@ class DesaController extends Controller
         $this->authorize('viewAny', WilayahDesa::class);
 
         $query = WilayahDesa::query()
-            ->select(['provinsi_kode', 'kabupaten_kode', 'kecamatan_kode', 'kode', 'nama', 'created_at'])
+            ->select(['provinsi_kode', 'kabupaten_kode', 'kecamatan_kode', 'kode', 'nama', 'latitude', 'longitude', 'alamat', 'created_at'])
             ->with(['kecamatan:provinsi_kode,kabupaten_kode,kode,nama']);
 
         if ($request->search) {
@@ -123,4 +123,3 @@ class DesaController extends Controller
         );
     }
 }
-

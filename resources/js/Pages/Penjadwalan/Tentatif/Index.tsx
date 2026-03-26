@@ -107,7 +107,10 @@ const TentatifIndex = ({
     sifatOptions,
     filters,
 }: Props) => {
-    const { auth } = usePage<PageProps>().props;
+    const { auth, notifications } = usePage<PageProps & { notifications?: { jadwal_tentatif_pending?: number } }>().props;
+    const pendingTentatifCount = (auth.user?.role !== 'superadmin' && auth.user?.role !== 'tu')
+        ? (notifications?.jadwal_tentatif_pending ?? 0)
+        : 0;
 
     const cacheKey = `penjadwalan_tentatif_${auth.user.id}`;
 
@@ -429,7 +432,14 @@ const TentatifIndex = ({
             <Head title="Jadwal Tentatif" />
 
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-text-primary">Jadwal Tentatif</h1>
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-semibold text-text-primary">Jadwal Tentatif</h1>
+                    {pendingTentatifCount > 0 && (
+                        <Badge variant="danger">
+                            {pendingTentatifCount} Belum Ditindaklanjuti
+                        </Badge>
+                    )}
+                </div>
                 <p className="text-text-secondary text-sm mt-1">Kelola jadwal yang masih dalam tahap konfirmasi</p>
             </div>
 

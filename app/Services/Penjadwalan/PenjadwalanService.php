@@ -130,16 +130,14 @@ final class PenjadwalanService
             $oldData = $this->captureHistorySnapshot($penjadwalan);
 
             // Determine attendance based on status_kehadiran enum
-            $attendanceName = null;
-            $attendanceUserId = null;
+            // We preserve the original attendee (e.g., Bupati) if it's already set in the tentative record.
+            $targetAttendee = $penjadwalan->dihadiriOlehUser ?: $requestUser;
+            $attendanceName = $targetAttendee->name;
+            $attendanceUserId = $targetAttendee->id;
 
-            if ($validated['status_kehadiran'] === 'Dihadiri') {
-                $attendanceName = $requestUser->name;
-                $attendanceUserId = $requestUser->id;
-            } elseif ($validated['status_kehadiran'] === 'Diwakilkan' && !empty($validated['keterangan'])) {
-                // Simplification for mewakili: just store the text description if it's not a direct system user
-                // Ideally this would link to another user, but per current form, we just rely on string if they type it in Keterangan
+            if ($validated['status_kehadiran'] === 'Diwakilkan') {
                 $attendanceName = 'Diwakilkan';
+                $attendanceUserId = null;
             }
 
             // Format nama_yang_mewakili to include jabatan if available
@@ -167,10 +165,11 @@ final class PenjadwalanService
                 'dihadiri_oleh' => $attendanceName,
                 'dihadiri_oleh_user_id' => $attendanceUserId,
                 'status_disposisi' => $this->resolveDisposisiStatusFromAttendance(
-                    $requestUser,
+                    $targetAttendee,
                     $statusKehadiran
                 ),
                 'status' => Penjadwalan::STATUS_DEFINITIF,
+                'pemilik_jadwal_id' => $requestUser->id,
                 'updated_by' => $requestUser->id,
             ];
 
@@ -329,6 +328,7 @@ final class PenjadwalanService
             'status_kehadiran',
             'nama_yang_mewakili',
             'keterangan',
+            'pemilik_jadwal_id',
         ]);
     }
 
@@ -363,6 +363,7 @@ final class PenjadwalanService
                 'status_kehadiran' => $snapshot['status_kehadiran'] ?? null,
                 'nama_yang_mewakili' => $snapshot['nama_yang_mewakili'] ?? null,
                 'keterangan' => $snapshot['keterangan'] ?? $penjadwalan->keterangan,
+                'pemilik_jadwal_id' => $snapshot['pemilik_jadwal_id'] ?? $penjadwalan->pemilik_jadwal_id,
             ];
         }
 
@@ -522,13 +523,13 @@ final class PenjadwalanService
     /**
      * Resolve status_disposisi ketika jadwal ditindaklanjuti.
      */
-    private function resolveDisposisiStatusFromAttendance(User $requestUser, string $statusKehadiran): string
+    private function resolveDisposisiStatusFromAttendance(User $attendee, string $statusKehadiran): string
     {
         if ($statusKehadiran === 'Diwakilkan') {
             return Penjadwalan::DISPOSISI_DIWAKILKAN;
         }
 
-        return $this->resolveDisposisiStatus($requestUser);
+        return $this->resolveDisposisiStatus($attendee);
     }
 
     private const TASIKMALAYA_PROVINSI_KODE = '32';

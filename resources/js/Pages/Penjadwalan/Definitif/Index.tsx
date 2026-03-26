@@ -70,7 +70,7 @@ const getDetailedStatusLabel = (agenda: Agenda): string => {
     }
 
     if (status === 'Jadwal Definitif') {
-        return 'Jadwal Definitif (Sudah Terkonfirmasi)';
+        return 'Telah Dijadwalkan (Menunggu Pelaksanaan)';
     }
 
     if (status === 'Masuk Jadwal Tentatif') {
@@ -95,7 +95,6 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
         return date;
     }, []);
     const canUseCustomSchedule = auth.user?.role === 'pejabat' && [1, 2, 3].includes(auth.user?.jabatan_level ?? -1);
-    const canDeleteSchedule = canUseCustomSchedule; // Only Bupati/Wabup/Sekda can delete
     const cacheKey = `penjadwalan_definitif_${auth.user.id}`;
     const { read, write } = useMemoryCache<CalendarEvent[]>(cacheKey, CACHE_TTL_MS);
     const cachedEvents = read();
@@ -125,18 +124,13 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
     const dateRangeRef = useRef<{ start?: string; end?: string }>({});
     const hasFetched = useRef(false);
 
-    // Fetch events from API
-    // If start/end not provided, fetches ALL data
-    const fetchEvents = useCallback(async (start?: string, end?: string) => {
+    // Fetch events from API — always fetches ALL definitif data
+    const fetchEvents = useCallback(async () => {
         if (!hasFetched.current) {
             setIsLoading(true);
         }
         try {
-            const params = new URLSearchParams();
-            if (start) params.append('start', start);
-            if (end) params.append('end', end);
-
-            const response = await fetch(`${route('penjadwalan.definitif.calendar-data')}?${params.toString()}`);
+            const response = await fetch(route('penjadwalan.definitif.calendar-data', undefined, false));
             const data = await response.json();
             setAllEvents(data);
             write(data);
@@ -151,18 +145,15 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
     // Initial load - if starting with list view, fetch all. 
     // If starting with calendar, fetch will be triggered by handleDatesSet
     useEffect(() => {
-        if (activeView === 'list') {
+        if (!hasFetched.current) {
             fetchEvents();
         }
-    }, [activeView, fetchEvents]);
+    }, [fetchEvents]);
 
-    // Handle date range change (only time we re-fetch from API for calendar)
+    // Handle date range change — just track the current range, data is always complete
     const handleDatesSet = (dateInfo: { startStr: string; endStr: string }) => {
         dateRangeRef.current = { start: dateInfo.startStr, end: dateInfo.endStr };
-        // Only fetch via range if we are in calendar view and not searching
-        if (activeView === 'calendar') {
-            fetchEvents(dateInfo.startStr, dateInfo.endStr);
-        }
+        // No need to fetch here if we fetch on mount
     };
 
     // Client-side filtering — instant, no delay, no URL change
@@ -229,11 +220,7 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                 setSelectedAgenda(null);
                 
                 // Refresh data
-                if (activeView === 'calendar') {
-                    fetchEvents(dateRangeRef.current.start, dateRangeRef.current.end);
-                } else {
-                    fetchEvents();
-                }
+                fetchEvents();
             },
         });
     };
@@ -622,6 +609,12 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                             <span className="font-medium">{selectedAgenda.dihadiri_oleh}</span>
                                         </p>
                                     )}
+                                    {selectedAgenda.status_kehadiran === 'Diwakilkan' && selectedAgenda.nama_yang_mewakili && (
+                                        <p className="text-sm text-text-primary">
+                                            <span className="text-text-secondary">Diwakilkan kepada:</span>{' '}
+                                            <span className="font-medium">{selectedAgenda.nama_yang_mewakili}</span>
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -635,8 +628,8 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                 </div>
                             )}
 
-                            {/* Action Button — only for Bupati/Wabup/Sekda */}
-                            {canDeleteSchedule && (
+                            {/* Action Button — hanya yang berhak hapus (pemilik jadwal terakhir) */}
+                            {selectedAgenda.can_delete && (
                             <div className="pt-4 border-t border-border-default">
                                 <Button
                                     variant="danger"

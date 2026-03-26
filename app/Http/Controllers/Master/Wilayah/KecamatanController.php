@@ -20,7 +20,7 @@ class KecamatanController extends Controller
         $this->authorize('viewAny', WilayahKecamatan::class);
 
         $query = WilayahKecamatan::query()
-            ->select(['provinsi_kode', 'kabupaten_kode', 'kode', 'nama', 'created_at'])
+            ->select(['provinsi_kode', 'kabupaten_kode', 'kode', 'nama', 'latitude', 'longitude', 'alamat', 'created_at'])
             ->with(['kabupaten:provinsi_kode,kode,nama', 'kabupaten.provinsi:kode,nama']);
 
         if ($request->search) {
@@ -118,4 +118,3 @@ class KecamatanController extends Controller
         );
     }
 }
-

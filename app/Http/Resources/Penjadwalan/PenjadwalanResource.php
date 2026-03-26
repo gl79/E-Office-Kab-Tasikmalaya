@@ -32,7 +32,7 @@ class PenjadwalanResource extends JsonResource
             'id' => $this->id,
 
             // Surat Masuk Info
-            'surat_masuk' => $this->when($this->relationLoaded('suratMasuk'), function () {
+            'surat_masuk' => $this->when($this->relationLoaded('suratMasuk') && $this->suratMasuk, function () {
                 $sm = $this->suratMasuk;
                 return [
                     'id' => $sm->id,
@@ -164,6 +164,9 @@ class PenjadwalanResource extends JsonResource
             // Permission flag untuk frontend
             'can_tindak_lanjut' => $this->determinePermissions()[0],
             'can_disposisi' => $this->determinePermissions()[1],
+            'can_delete' => Auth::check()
+                ? Auth::user()->can('delete', $this->resource)
+                : false,
         ];
     }
 

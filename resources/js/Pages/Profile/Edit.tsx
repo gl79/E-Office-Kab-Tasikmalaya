@@ -96,14 +96,14 @@ const Edit = ({ user }: Props) => {
 
             <div className="space-y-6">
                 {/* ── Profile Overview Card ── */}
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary to-primary-dark p-6 shadow-sm">
+                <div className="relative overflow-hidden rounded-xl bg-linear-to-r from-primary to-primary-dark p-6 shadow-sm">
                     {/* Dekorasi lingkaran */}
                     <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10" />
                     <div className="pointer-events-none absolute -bottom-12 -right-4 h-32 w-32 rounded-full bg-white/5" />
 
                     <div className="relative flex items-center gap-5">
                         {/* Avatar dengan tombol ganti foto */}
-                        <div className="relative flex-shrink-0">
+                        <div className="relative shrink-0">
                             <div className="h-20 w-20 overflow-hidden rounded-full ring-4 ring-white/30 shadow-lg">
                                 <img
                                     src={currentPhoto || avatarFallback}
@@ -118,6 +118,14 @@ const Edit = ({ user }: Props) => {
                             >
                                 <Camera className="h-3.5 w-3.5 text-primary" />
                             </label>
+                            <input
+                                id="foto"
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleFileChange}
+                            />
+                            {errors.foto && <p className="mt-1 text-xs text-danger">{errors.foto}</p>}
                         </div>
 
                         {/* Informasi singkat user */}
@@ -279,45 +287,6 @@ const Edit = ({ user }: Props) => {
                             </div>
                         </div>
 
-                        <div className="border-t border-border-default" />
-
-                        {/* ── Seksi 2: Foto Profil ── */}
-                        <div className="p-6">
-                            <div className="mb-5 flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-light">
-                                    <Camera className="h-4 w-4 text-accent" />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-text-primary">Foto Profil</h3>
-                                    <p className="text-xs text-text-secondary">Foto tampil di sidebar dan halaman profil</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-border-default">
-                                    <img
-                                        src={currentPhoto || avatarFallback}
-                                        alt={user.name}
-                                        className="h-full w-full object-cover"
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <input
-                                        id="foto"
-                                        type="file"
-                                        accept="image/*"
-                                        className="block w-full text-sm text-text-secondary
-                                            file:mr-3 file:cursor-pointer file:rounded-lg file:border-0
-                                            file:bg-primary-light file:px-4 file:py-2
-                                            file:text-sm file:font-medium file:text-primary
-                                            file:transition-colors hover:file:bg-primary hover:file:text-text-inverse"
-                                        onChange={handleFileChange}
-                                    />
-                                    <p className="mt-1.5 text-xs text-text-muted">Format JPG atau PNG, maksimal 2MB.</p>
-                                    {errors.foto && <p className="mt-1 text-xs text-danger">{errors.foto}</p>}
-                                </div>
-                            </div>
-                        </div>
 
                         <div className="border-t border-border-default" />
 
@@ -329,7 +298,7 @@ const Edit = ({ user }: Props) => {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-semibold text-text-primary">Keamanan Akun</h3>
-                                    <p className="text-xs text-text-secondary">Kosongkan semua field jika tidak ingin mengubah password. Min. 8 karakter.</p>
+                                    <p className="text-xs text-text-secondary"> Min. 8 karakter. Kosongkan semua field jika tidak ingin mengubah password.</p>
                                 </div>
                             </div>
 
