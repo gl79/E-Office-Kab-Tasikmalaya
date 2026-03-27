@@ -191,8 +191,8 @@ const Dashboard = () => {
                 />
             </div>
 
-            {/* Bupati Special Feature: Google Maps Map */}
-            {(user.jabatan_id === 1 || user.jabatan_level === 1) && (
+            {/* Bupati & Super Admin Special Feature: Map */}
+            {(user.role === 'superadmin' || user.jabatan_id === 1 || user.jabatan_level === 1) && (
                 <div className="mb-8">
                     <DashboardMap />
                 </div>

@@ -112,6 +112,12 @@ class PenjadwalanResource extends JsonResource
             'wilayah_text' => $this->kode_wilayah
                 ? \App\Support\WilayahHelper::getWilayahText($this->kode_wilayah)
                 : null,
+            'wilayah_details' => $this->kode_wilayah
+                ? \App\Support\WilayahHelper::getWilayahDetails($this->kode_wilayah)
+                : null,
+            'lokasi_koordinat' => $this->kode_wilayah
+                ? \App\Support\WilayahHelper::getWilayahCoordinates($this->kode_wilayah)
+                : null,
 
             // Status Info
             'status' => $this->status,

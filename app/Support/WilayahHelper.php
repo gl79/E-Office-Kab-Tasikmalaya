@@ -71,6 +71,109 @@ class WilayahHelper
     }
 
     /**
+     * Get detailed wilayah components.
+     *
+     * @param string $kodeWilayah
+     * @return array{provinsi: ?string, kabupaten: ?string, kecamatan: ?string, desa: ?string}
+     */
+    public static function getWilayahDetails(string $kodeWilayah): array
+    {
+        $parts = explode('.', $kodeWilayah);
+
+        $result = [
+            'provinsi' => null,
+            'kabupaten' => null,
+            'kecamatan' => null,
+            'desa' => null,
+        ];
+
+        if (count($parts) < 2) {
+            return $result;
+        }
+
+        self::loadCache();
+
+        $provinsiKode = $parts[0] ?? '';
+        $kabupatenKode = $parts[1] ?? '';
+        $kecamatanKode = $parts[2] ?? '';
+        $desaKode = $parts[3] ?? '';
+
+        $provinsiKey = $provinsiKode;
+        $kabupatenKey = "{$provinsiKode}.{$kabupatenKode}";
+        $kecamatanKey = "{$provinsiKode}.{$kabupatenKode}.{$kecamatanKode}";
+        $desaKey = "{$provinsiKode}.{$kabupatenKode}.{$kecamatanKode}.{$desaKode}";
+
+        if ($provinsiKode && isset(self::$memoryCache['provinsi'][$provinsiKey])) {
+            $result['provinsi'] = self::$memoryCache['provinsi'][$provinsiKey];
+        }
+
+        if ($kabupatenKode && isset(self::$memoryCache['kabupaten'][$kabupatenKey])) {
+            $result['kabupaten'] = self::$memoryCache['kabupaten'][$kabupatenKey];
+        }
+
+        if ($kecamatanKode && isset(self::$memoryCache['kecamatan'][$kecamatanKey])) {
+            $result['kecamatan'] = self::$memoryCache['kecamatan'][$kecamatanKey];
+        }
+
+        if ($desaKode && isset(self::$memoryCache['desa'][$desaKey])) {
+            $result['desa'] = self::$memoryCache['desa'][$desaKey];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get latitude and longitude from kode wilayah.
+     * Prioritizes Desa coordinate, fallbacks to Kecamatan.
+     * 
+     * @param string $kodeWilayah 
+     * @return array{lat: float|null, lng: float|null}
+     */
+    public static function getWilayahCoordinates(string $kodeWilayah): array
+    {
+        $parts = explode('.', $kodeWilayah);
+        $result = ['lat' => null, 'lng' => null];
+
+        // Format is normally 32.06.xx.xxxx
+        if (count($parts) < 3 || $parts[0] !== '32' || $parts[1] !== '06') {
+            return $result;
+        }
+
+        $kecamatanKode = $parts[2];
+        $desaKode = $parts[3] ?? '';
+
+        // Try getting Desa coordinates first
+        if ($desaKode !== '') {
+            $desa = WilayahDesa::query()
+                ->where('provinsi_kode', $parts[0])
+                ->where('kabupaten_kode', $parts[1])
+                ->where('kecamatan_kode', $kecamatanKode)
+                ->where('kode', $desaKode)
+                ->first(['latitude', 'longitude']);
+
+            if ($desa && $desa->latitude && $desa->longitude) {
+                $result['lat'] = (float) $desa->latitude;
+                $result['lng'] = (float) $desa->longitude;
+                return $result;
+            }
+        }
+
+        // Fallback to Kecamatan
+        $kecamatan = WilayahKecamatan::query()
+            ->where('provinsi_kode', $parts[0])
+            ->where('kabupaten_kode', $parts[1])
+            ->where('kode', $kecamatanKode)
+            ->first(['latitude', 'longitude']);
+
+        if ($kecamatan && $kecamatan->latitude && $kecamatan->longitude) {
+            $result['lat'] = (float) $kecamatan->latitude;
+            $result['lng'] = (float) $kecamatan->longitude;
+        }
+
+        return $result;
+    }
+
+    /**
      * Get individual wilayah name by type and kode.
      *
      * @param string $type provinsi|kabupaten|kecamatan|desa

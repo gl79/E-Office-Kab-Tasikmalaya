@@ -28,7 +28,11 @@
         "@fullcalendar/interaction": "^6.1.10",
         "@fullcalendar/react": "^6.1.10",
         "@fullcalendar/timegrid": "^6.1.10",
+        "@types/leaflet": "^1.9.21",
         "axios": "^1.11.0",
-        "lucide-react": "^0.563.0"
+        "leaflet": "^1.9.4",
+        "lucide-react": "^0.563.0",
+        "react-leaflet": "^5.0.0",
+        "react-leaflet-cluster": "^4.0.0"
     }
 }

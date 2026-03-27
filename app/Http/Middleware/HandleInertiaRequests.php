@@ -101,11 +101,22 @@ class HandleInertiaRequests extends Middleware
                     ->whereNull('dibaca_at')
                     ->count();
 
-                // Jadwal tentatif di mana user adalah pemilik jadwal
+                // Jadwal tentatif di mana user adalah pemilik jadwal atau diundang
                 $jadwalTentatifPending = Penjadwalan::query()
-                    ->where('pemilik_jadwal_id', $user->id)
                     ->where('status', Penjadwalan::STATUS_TENTATIF)
                     ->whereNull('deleted_at')
+                    ->with(['suratMasuk.tujuans', 'suratMasuk.disposisis']) // Eager load to prevent N+1 on Resource filter
+                    ->where(function ($q) use ($user) {
+                        $q->where('dihadiri_oleh_user_id', $user->id)
+                            ->orWhere('pemilik_jadwal_id', $user->id)
+                            ->orWhere('created_by', $user->id)
+                            ->orWhereHas('suratMasuk.tujuans', fn($tq) => $tq->where('tujuan_id', $user->id))
+                            ->orWhereHas('suratMasuk.disposisis', fn($dq) => $dq->where('ke_user_id', $user->id));
+                    })
+                    ->get()
+                    ->filter(function ($jadwal) use ($user) {
+                        return (new \App\Http\Resources\Penjadwalan\PenjadwalanResource($jadwal))->toArray(request())['can_tindak_lanjut'] ?? false;
+                    })
                     ->count();
             }
 

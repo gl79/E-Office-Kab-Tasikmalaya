@@ -1,12 +1,13 @@
 import React from 'react';
-import { Badge, Button } from '@/Components/ui';
-import { Eye, MapPin, Clock, Calendar } from 'lucide-react';
+import { Badge, Button, Dropdown } from '@/Components/ui';
+import { Eye, MapPin, Clock, Calendar, MoreVertical } from 'lucide-react';
 import { formatDateShort } from '@/utils';
 import type { Agenda } from '@/types/penjadwalan';
 
 interface Props {
     data: Agenda[];
     onViewDetail: (agenda: Agenda) => void;
+    onViewTimeline?: (agenda: Agenda) => void;
     currentPage: number;
     itemsPerPage: number;
 }
@@ -40,6 +41,7 @@ const getWorkflowStatusVariant = (status?: string): 'default' | 'primary' | 'suc
 const DefinitifTable: React.FC<Props> = ({
     data,
     onViewDetail,
+    onViewTimeline,
     currentPage,
     itemsPerPage,
 }) => {
@@ -102,15 +104,46 @@ const DefinitifTable: React.FC<Props> = ({
                                 </div>
                             </td>
                             <td className="border border-border-default px-4 py-3 text-center align-middle">
-                                <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    onClick={() => onViewDetail(item)}
-                                    className="inline-flex items-center gap-1.5"
+                                <Dropdown
+                                    align="right"
+                                    width="48"
+                                    trigger={
+                                        <button
+                                            type="button"
+                                            aria-label="Aksi lainnya"
+                                            className="
+                                                inline-flex h-8 w-8 items-center justify-center rounded-lg
+                                                border border-border-default bg-surface text-text-secondary
+                                                transition-colors hover:bg-surface-hover hover:text-text-primary
+                                                mx-auto
+                                            "
+                                        >
+                                            <MoreVertical className="h-4 w-4" />
+                                        </button>
+                                    }
                                 >
-                                    <Eye className="h-4 w-4" />
-                                    Detail
-                                </Button>
+                                    <div className="py-1">
+                                        <Dropdown.Link
+                                            as="button"
+                                            onClick={() => onViewDetail(item)}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                            <span>Lihat Detail</span>
+                                        </Dropdown.Link>
+                                        
+                                        {onViewTimeline && item.surat_masuk && (
+                                            <Dropdown.Link
+                                                as="button"
+                                                onClick={() => onViewTimeline(item)}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Clock className="h-4 w-4" />
+                                                <span>Lihat Timeline</span>
+                                            </Dropdown.Link>
+                                        )}
+                                    </div>
+                                </Dropdown>
                             </td>
                         </tr>
                     ))}

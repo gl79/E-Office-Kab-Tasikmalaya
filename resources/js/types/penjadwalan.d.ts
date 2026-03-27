@@ -88,6 +88,16 @@ export interface Agenda extends AgendaBase {
     lokasi_type_label?: string;
     kode_wilayah?: string | null;
     wilayah_text?: string | null;
+    wilayah_details?: {
+        provinsi: string | null;
+        kabupaten: string | null;
+        kecamatan: string | null;
+        desa: string | null;
+    } | null;
+    lokasi_koordinat?: {
+        lat: number | null;
+        lng: number | null;
+    } | null;
     dihadiri_oleh?: string | null;
     dihadiri_oleh_user_id?: number | null;
     status_kehadiran?: string | null;

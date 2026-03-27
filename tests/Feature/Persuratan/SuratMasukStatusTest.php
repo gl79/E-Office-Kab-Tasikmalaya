@@ -78,6 +78,7 @@ class SuratMasukStatusTest extends TestCase
             'can_dispose' => false,
         ]);
 
+        /** @var \App\Models\User $pejabatLevel7 */
         $pejabatLevel7 = User::factory()->create([
             'role' => User::ROLE_PEJABAT,
             'jabatan_id' => $jabatanLevel7->id,

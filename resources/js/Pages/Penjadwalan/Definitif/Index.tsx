@@ -7,6 +7,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import type { EventInput } from '@fullcalendar/core';
 import { Trash2, ExternalLink, Filter, RotateCcw, CalendarPlus, List, Calendar as CalendarIcon } from 'lucide-react';
 import MapPreview from '@/Components/maps/MapPreview';
+import TimelineModal from '@/Components/persuratan/TimelineModal';
 import AppLayout from '@/Layouts/AppLayout';
 import { Button, Modal, Badge, ConfirmDialog, Pagination } from '@/Components/ui';
 import { TextInput } from '@/Components/form';
@@ -14,6 +15,7 @@ import { useMemoryCache } from '@/hooks/useMemoryCache';
 import { formatDateShort, getSifatBadge } from '@/utils';
 import type { PageProps } from '@/types';
 import type { Agenda, CalendarEvent } from '@/types/penjadwalan';
+import type { SuratMasuk } from '@/types/persuratan';
 import DefinitifTable from './Components/DefinitifTable';
 
 interface Props extends PageProps {
@@ -62,7 +64,42 @@ const getWorkflowStatusLabel = (agenda: Agenda): string => {
     return status;
 };
 
+const getDetailedStatusVariant = (agenda: Agenda): 'success' | 'info' | 'primary' | 'warning' | 'default' => {
+    if (agenda.tanggal_agenda) {
+        const dateAgenda = new Date(agenda.tanggal_agenda);
+        const today = new Date();
+        
+        // Reset waktu agar komparasi hanya berdasarkan tanggal (Y-m-d)
+        dateAgenda.setHours(0, 0, 0, 0);
+        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        if (dateAgenda.getTime() < todayDate.getTime()) {
+            return 'default';
+        } else if (dateAgenda.getTime() === todayDate.getTime()) {
+            return 'success';
+        } else {
+            return 'info';
+        }
+    }
+    return 'primary';
+};
+
 const getDetailedStatusLabel = (agenda: Agenda): string => {
+    if (agenda.tanggal_agenda) {
+        const dateAgenda = new Date(agenda.tanggal_agenda);
+        const today = new Date();
+        
+        // Reset waktu agar komparasi hanya berdasarkan tanggal (Y-m-d)
+        dateAgenda.setHours(0, 0, 0, 0);
+        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        if (dateAgenda.getTime() < todayDate.getTime()) {
+            return 'Sudah Dilaksanakan / Selesai';
+        } else {
+            return 'Belum Beres / Akan Dilaksanakan';
+        }
+    }
+
     const status = getWorkflowStatusLabel(agenda);
 
     if (status === 'Selesai') {
@@ -119,6 +156,26 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
     const [selectedAgenda, setSelectedAgenda] = useState<Agenda | null>(null);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    
+    // Timeline Modal States
+    const [timelineModalOpen, setTimelineModalOpen] = useState(false);
+    const [timelineSurat, setTimelineSurat] = useState<SuratMasuk | null>(null);
+
+    const mapAgendaSuratForTimeline = (agenda: Agenda): SuratMasuk | null => {
+        if (!agenda.surat_masuk) return null;
+        const surat = agenda.surat_masuk;
+        return {
+            ...surat,
+            id: surat.id,
+            nomor_agenda: surat.nomor_agenda ?? '',
+            tanggal_diterima: surat.tanggal_diterima ?? '',
+            tanggal_surat: surat.tanggal_surat ?? '',
+            asal_surat: surat.asal_surat ?? '-',
+            nomor_surat: surat.nomor_surat ?? '-',
+            sifat: surat.sifat ?? '',
+            perihal: surat.perihal ?? '',
+        } as SuratMasuk;
+    };
 
     // Date range ref
     const dateRangeRef = useRef<{ start?: string; end?: string }>({});
@@ -425,6 +482,12 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                             <DefinitifTable
                                 data={paginatedEvents.map(e => e.extendedProps?.agenda as Agenda)}
                                 onViewDetail={handleViewDetail}
+                                onViewTimeline={(agenda) => {
+                                    const surat = mapAgendaSuratForTimeline(agenda);
+                                    if (!surat) return;
+                                    setTimelineSurat(surat);
+                                    setTimelineModalOpen(true);
+                                }}
                                 currentPage={currentPage}
                                 itemsPerPage={itemsPerPage}
                             />
@@ -579,10 +642,42 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                         <p className="text-text-secondary">Waktu</p>
                                         <p className="font-medium text-text-primary">{formatAgendaTime(selectedAgenda)}</p>
                                     </div>
-                                    <div className="sm:col-span-2">
-                                        <p className="text-text-secondary">Lokasi</p>
+                                    
+                                    <div className="sm:col-span-2 border-t border-border-default/50 pt-3 mt-1"></div>
+                                    
+                                    <div>
+                                        <p className="text-text-secondary">Jenis Lokasi</p>
+                                        <p className="font-medium text-text-primary">
+                                            {selectedAgenda.lokasi_type === 'dalam_daerah' ? 'Dalam Daerah' : 
+                                             selectedAgenda.lokasi_type === 'luar_daerah' ? 'Luar Daerah' : '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Provinsi</p>
+                                        <p className="font-medium text-text-primary">{selectedAgenda.wilayah_details?.provinsi || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Kabupaten/Kota</p>
+                                        <p className="font-medium text-text-primary">{selectedAgenda.wilayah_details?.kabupaten || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Kecamatan</p>
+                                        <p className="font-medium text-text-primary">{selectedAgenda.wilayah_details?.kecamatan || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-text-secondary">Desa/Kelurahan</p>
+                                        <p className="font-medium text-text-primary">{selectedAgenda.wilayah_details?.desa || '-'}</p>
+                                    </div>
+
+                                    <div className="sm:col-span-2 pt-2">
+                                        <p className="text-text-secondary">Tempat / Detail Lokasi</p>
                                         <p className="font-medium text-text-primary">{selectedAgenda.tempat}</p>
-                                        <MapPreview lokasi={selectedAgenda.wilayah_text ?? selectedAgenda.tempat} />
+                                        <div className="mt-2">
+                                            <MapPreview 
+                                                lokasi={selectedAgenda.wilayah_text ?? selectedAgenda.tempat} 
+                                                koordinat={selectedAgenda.lokasi_koordinat} 
+                                            />
+                                        </div>
                                     </div>
                                     {selectedAgenda.keterangan && (
                                         <div>
@@ -599,7 +694,7 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-text-secondary">Status Jadwal:</span>
-                                        <Badge variant="primary">
+                                        <Badge variant={getDetailedStatusVariant(selectedAgenda)}>
                                             {getDetailedStatusLabel(selectedAgenda)}
                                         </Badge>
                                     </div>
@@ -723,6 +818,13 @@ const DefinitifIndex = ({ sifatOptions }: Props) => {
                     </p>
                 }
                 isLoading={isDeleting}
+            />
+
+            <TimelineModal
+                isOpen={timelineModalOpen}
+                onClose={() => setTimelineModalOpen(false)}
+                suratMasuk={timelineSurat}
+                sifatOptions={sifatOptions}
             />
         </>
     );

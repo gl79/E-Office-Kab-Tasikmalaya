@@ -38,7 +38,10 @@ class PenjadwalanTentatifController extends Controller
         return Inertia::render('Penjadwalan/Tentatif/Index', [
             'tentatif' => Inertia::defer(fn() => CacheHelper::tags(['penjadwalan'])->remember($cacheKey, 60, function () use ($search, $user) {
                 $query = Penjadwalan::query()
-                    ->where('status', Penjadwalan::STATUS_TENTATIF)
+                    ->where(function ($q) {
+                        $q->where('status', Penjadwalan::STATUS_TENTATIF)
+                            ->orWhereNotNull('surat_masuk_id');
+                    })
                     ->when(
                         !$user->canMonitorAllSchedules(),
                         fn(Builder $builder) => $this->applyUserScope($builder, $user)
@@ -143,5 +146,4 @@ class PenjadwalanTentatifController extends Controller
             }
         });
     }
-
 }
